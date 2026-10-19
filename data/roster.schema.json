@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hawkey original roster",
+  "type": "object",
+  "required": ["schema_version", "teams"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "teams": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "city", "name", "players"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "city": {"type": "string"},
+          "name": {"type": "string"},
+          "players": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "name", "position", "ratings"],
+              "properties": {
+                "id": {"type": "string", "minLength": 1},
+                "name": {"type": "string"},
+                "position": {"enum": ["C", "LW", "RW", "D", "G"]},
+                "ratings": {
+                  "type": "object",
+                  "required": ["speed", "acceleration", "agility"],
+                  "properties": {
+                    "speed": {"type": "number", "minimum": 0, "maximum": 100},
+                    "acceleration": {"type": "number", "minimum": 0, "maximum": 100},
+                    "agility": {"type": "number", "minimum": 0, "maximum": 100}
+                  },
+                  "additionalProperties": {"type": "number", "minimum": 0, "maximum": 100}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
