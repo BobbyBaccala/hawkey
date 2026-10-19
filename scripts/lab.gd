@@ -28,7 +28,7 @@ var previous_puck := Vector3.ZERO
 var debug := false
 var paused := false
 var rating := 85.0
-var zoom := 1.0
+var zoom := 0.8
 var wide_camera := false
 var goal_timer := 0.0
 var elapsed := 0.0
@@ -149,6 +149,8 @@ func _ready() -> void:
 	add_child(audio)
 	reset_puck()
 	# Screenshot automation is opt-in and only runs in a real rendering session.
+	if "--portrait" in OS.get_cmdline_user_args():
+		zoom = 0.25
 	if "--wide" in OS.get_cmdline_user_args():
 		wide_camera = true
 	if "--capture" in OS.get_cmdline_user_args():
@@ -319,7 +321,7 @@ func _physics_process(delta: float) -> void:
 	var target_rotation := atan2(-aim.x,-aim.z)
 	var old_rotation := player_visual.rotation.y
 	player_visual.rotation.y = rotate_toward(old_rotation,target_rotation,7.5 * delta)
-	player_visual.animate(velocity.length(),delta,angle_difference(old_rotation,target_rotation) * velocity.length() * 0.02)
+	player_visual.animate(velocity.length(),delta,angle_difference(old_rotation,target_rotation) * velocity.length() * 0.02,intent.length_squared()>0.01,Input.is_physical_key_pressed(KEY_CTRL))
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		charge = minf(1,charge + delta * 1.3)
 	# Stable critically damped stick spring with speed and reach limits.
@@ -376,7 +378,7 @@ func update_partner(delta: float) -> void:
 	teammate.move_and_slide()
 	if dir.length() > 0.4:
 		teammate_visual.rotation.y = rotate_toward(teammate_visual.rotation.y,atan2(-dir.x,-dir.z),5 * delta)
-	teammate_visual.animate(teammate.velocity.length(),delta)
+	teammate_visual.animate(teammate.velocity.length(),delta,0,dir.length()>0.4)
 	if cooldown <= 0 and teammate.position.distance_to(puck.position) < 1.2 and not pickup_owner:
 		# Catch softly, rather than automatically firing the puck back.
 		puck.linear_velocity *= 0.35

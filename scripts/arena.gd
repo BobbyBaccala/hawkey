@@ -150,10 +150,12 @@ func _ready() -> void:
 	texture.as_normal_map = true
 	texture.bump_strength = 0.15
 	var ice_material := mat(Color("#afc0cc"), 0.38)
+	ice_material.albedo_texture = preload("res://assets/ice-surface-v1.png")
+	ice_material.albedo_color = Color("#9badb9")
 	ice_material.normal_enabled = true
 	ice_material.normal_texture = texture
 	ice_material.normal_scale = 0.12
-	ice_material.uv1_scale = Vector3(8, 16, 1)
+	ice_material.uv1_scale = Vector3(3, 6, 1)
 	ice.material_override = ice_material
 	# Rounded perimeter: half width 15, half length 30, 8 metre corners.
 	var points: Array[Vector3] = []
@@ -175,6 +177,12 @@ func _ready() -> void:
 	surface.surface_end()
 	var surface_instance := MeshInstance3D.new()
 	surface_instance.mesh = surface
+	var ice_shader := Shader.new()
+	ice_shader.code = "shader_type spatial; render_mode cull_disabled; uniform sampler2D ice_tex:source_color,repeat_enable,filter_linear_mipmap; void fragment(){vec3 tex=texture(ice_tex,UV*vec2(3.0,6.0)).rgb;float grain=dot(tex,vec3(0.3,0.59,0.11));ALBEDO=vec3(0.50,0.55,0.58)+(grain-0.4)*0.16;ROUGHNESS=0.34;SPECULAR=0.55;}"
+	var ice_shader_material := ShaderMaterial.new()
+	ice_shader_material.shader = ice_shader
+	ice_shader_material.set_shader_parameter("ice_tex",preload("res://assets/ice-surface-v1.png"))
+	surface_instance.material_override = ice_shader_material
 	add_child(surface_instance)
 	for i in range(points.size()):
 		board_segment(points[i], points[(i + 1) % points.size()])
@@ -222,13 +230,13 @@ func _ready() -> void:
 	logo.rotation_degrees.x = -90
 	logo.position = Vector3(0, 0.022, 0)
 	add_child(logo)
-	# Stepped seating and repeated seats establish arena scale.
+	# Occupied seating bowl: dark structural steps behind photographic crowd cards.
 	for side in [-1.0,1.0]:
-		for row in range(7):
-			block(self, Vector3(1.4,0.5 + row * 0.48,65), Vector3(side * (17 + row * 1.3),row * 0.24,0), Color("#17283d"))
-			for seat in range(45):
-				var z := -30 + seat * 1.36
-				block(self, Vector3(0.7,0.65,0.8), Vector3(side * (17 + row * 1.3),0.6 + row * 0.48,z), Color("#284961") if seat % 4 else Color("#49758c"))
+		for row in range(10):
+			block(self, Vector3(1.0,0.45 + row * 0.5,61),Vector3(side * (16.5 + row * 0.9),row * 0.25,0),Color("#0f1a27"))
+		block(self,Vector3(0.2,1.2,64),Vector3(side * 25.6,5.5,0),Color("#101c2c"))
+		block(self,Vector3(0.1,0.20,62),Vector3(side * 25.4,5.9,0),Color("#1d7d99"))
+	add_child(preload("res://scripts/crowd.gd").new())
 	for side in [-1.0,1.0]:
 		block(self, Vector3(30,1.5,2), Vector3(0,0.75,side * 33), Color("#152a40"))
 		var banner := Label3D.new()

@@ -1,0 +1,33 @@
+# Assets and provenance — 0.3
+
+## Human foundation
+- Asset: assets/player-base-v1.glb.
+- Provider: Innerscene, adapted from MakeHuman CC0 assets.
+- Source: https://www.innerscene.com/tools/library/3d-parts/male-base-mesh-3d-person-rigged-a-pose-380e6d89
+- Download: https://www.innerscene.com/api/library/male-base-mesh-3d-person-rigged-a-pose-380e6d89/download
+- Source page explicitly dedicates the model to CC0, allowing modification, redistribution and commercial use.
+- Licence: CC0 1.0, https://creativecommons.org/publicdomain/zero/1.0/
+- Downloaded 2026-10-19. Original is a neutral anatomical base; the game renders a clothed derivative.
+- Preparation: tools/prepare_player.py welds split seam vertices before mesh simplification, retains the 163-bone rig/weights, adds a padded cloth envelope and semantic uniform color regions. Requires numpy, scipy, trimesh and fast-simplification.
+- Original additions: jersey surface, uniform shader, numbers, helmet/visor/straps, stick/tape, skates/laces/blades, goalkeeper pads, two-bone posing and lateral push/glide animation.
+- No real player likenesses, NHL logos, EA code or extracted game assets are included.
+- The asset is a base for further art development, not a finished scanned hockey player.
+
+## Generated image assets
+Generated with the built-in image-generation tool, then copied into the project and referenced by the actual playable scene.
+
+### assets/crowd-spectators-v1.png
+Prompt:
+Use case: photorealistic-natural. Asset type: PC 3D hockey game crowd texture atlas. Create a photorealistic horizontal sprite strip showing EIGHT DIFFERENT seated adult ice hockey spectators, each fully separated in an equal-width cell, one row, on a genuinely transparent background. Each person faces directly toward camera, fully visible head to shoes, sitting with bent knees as if seated in a stadium chair but NO CHAIRS included. Diverse men and women ages 20 to 65, varied skin tones, realistic winter casual clothing and generic navy, grey, burgundy or teal hockey sweaters, no logos, no lettering. Some with hands on knees, one clapping, one cheering with forearms raised. Natural anatomy and accurate faces. Neutral indoor arena illumination, crisp photographed textures, no dramatic light, orthographic frontal camera. Leave clear transparent padding between all eight figures and at image borders; no person crosses another cell. Equal scale and baseline for all subjects, approximately 1:1.5 width to seated height per cell. Very wide canvas approximately 3:1; exactly eight full seated people evenly spaced. No background, no ice rink, no seats, no floor, no captions, no watermark.
+
+Integration: alpha-cutout cards placed in 3D stepped seating, varied tint and mirroring. These are photographic 2D spectator representations, not volumetric 3D people or individually animated crowds. Repetition is visible at close range.
+
+### assets/ice-surface-v1.png
+Prompt:
+Use case: photorealistic-natural. Asset type: seamless PBR diffuse ice surface texture for a realistic 3D ice hockey rink. Square image, straight orthographic top-down scan of well-used indoor hockey ice. Subtle dense fine skate blade cuts, curved shallow scratch trails, shaved frost dust and faint resurfacing bands in compressed translucent ice. Uniform neutral pale blue-grey illumination, no pure white highlights, no directional shadows, no reflections, no rink lines, no graphics, no people, no puck, no boards, no writing or logos. Seamlessly tileable, continuous edges; low contrast physically realistic photographed surface, fine detailed texture. Entire frame filled with ice, no perspective.
+
+Integration: shader reduces texture contrast and saturation to retain puck/marking readability. Generated texture has not undergone a numerical seam-continuity test.
+
+## Engine and code dependencies
+Godot: MIT, engine licence/notices must accompany distributed engine builds.
+Python preparation tools are development-only dependencies; obtain their licence notices before distributing a bundled preparation environment.
