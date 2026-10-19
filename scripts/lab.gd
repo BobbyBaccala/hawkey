@@ -1,247 +1,401 @@
 extends Node3D
 const Skating = preload("res://scripts/skating.gd")
-var player: Node3D
-var teammate: Node3D
+const Arena = preload("res://scripts/arena.gd")
+const Skater = preload("res://scripts/skater_visual.gd")
+var arena: Node3D
+var player: CharacterBody3D
+var teammate: CharacterBody3D
 var puck: RigidBody3D
 var camera: Camera3D
 var hud: Label
 var help: Label
+var status: Label
+var power: ProgressBar
+var player_visual: Node3D
+var teammate_visual: Node3D
+var goalkeepers: Array[CharacterBody3D] = []
+var goalie_visuals: Array[Node3D] = []
 var velocity := Vector3.ZERO
 var aim := Vector3.FORWARD
 var charge := 0.0
 var cooldown := 0.0
 var goals := 0
+var away_goals := 0
 var shots := 0
 var passes := 0
+var saves := 0
 var previous_puck := Vector3.ZERO
-var debug := true
+var debug := false
 var paused := false
 var rating := 85.0
-var tone: AudioStreamPlayer
-var generator: AudioStreamGenerator
-var audio_playback: AudioStreamGeneratorPlayback
-var sound_phase := 0.0
+var zoom := 1.0
+var wide_camera := false
+var goal_timer := 0.0
+var elapsed := 0.0
+var camera_target := Vector3.ZERO
+var pickup_owner := false
+var audio: AudioStreamPlayer
+var selection: MeshInstance3D
 
-func material(color: Color, metallic: float = 0.0) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = color
-	m.metallic = metallic
-	m.roughness = 0.3
-	return m
-
-func box(size: Vector3, position_: Vector3, color: Color, solid: bool = false) -> MeshInstance3D:
-	var mesh := MeshInstance3D.new()
-	var shape := BoxMesh.new()
-	shape.size = size
-	mesh.mesh = shape
-	mesh.material_override = material(color)
-	mesh.position = position_
-	add_child(mesh)
-	if solid:
-		var body := StaticBody3D.new()
-		var collision := CollisionShape3D.new()
-		var box_shape := BoxShape3D.new()
-		box_shape.size = size
-		collision.shape = box_shape
-		body.add_child(collision)
-		mesh.add_child(body)
-		var physics_material := PhysicsMaterial.new()
-		physics_material.bounce = 0.65
-		body.physics_material_override = physics_material
-	return mesh
-
-func skater(position_: Vector3, color: Color) -> Node3D:
-	var root := Node3D.new()
-	add_child(root)
-	root.position = position_
-	var torso := MeshInstance3D.new()
-	var capsule := CapsuleMesh.new()
-	capsule.radius = 0.32
-	capsule.height = 1.4
-	torso.mesh = capsule
-	torso.material_override = material(color)
-	torso.position.y = 0.9
-	root.add_child(torso)
-	var stick := MeshInstance3D.new()
-	var stick_shape := BoxMesh.new()
-	stick_shape.size = Vector3(0.07, 0.07, 1.4)
-	stick.mesh = stick_shape
-	stick.material_override = material(Color("#26364c"))
-	stick.position = Vector3(0.4, 0.2, -0.65)
-	root.add_child(stick)
-	return root
+func make_skater(pos: Vector3, color: Color, jersey: String, is_goalie: bool = false) -> CharacterBody3D:
+	var body := CharacterBody3D.new()
+	add_child(body)
+	body.position = pos
+	body.motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
+	body.collision_layer = 2
+	body.collision_mask = 3
+	var collision := CollisionShape3D.new()
+	var shape := CapsuleShape3D.new()
+	shape.radius = 0.34 if not is_goalie else 0.58
+	shape.height = 1.7
+	if is_goalie:
+		var pads := BoxShape3D.new()
+		pads.size = Vector3(1.0,1.3,0.45)
+		collision.shape = pads
+		collision.position.y = 0.66
+	else:
+		collision.shape = shape
+		collision.position.y = 0.88
+	body.add_child(collision)
+	var visual := Skater.new()
+	visual.kit = color
+	visual.number = jersey
+	visual.goalie = is_goalie
+	body.add_child(visual)
+	return body
 
 func _ready() -> void:
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-60, -25, 0)
-	sun.light_energy = 1.5
-	add_child(sun)
 	var world := WorldEnvironment.new()
 	world.environment = Environment.new()
 	world.environment.background_mode = Environment.BG_COLOR
+	world.environment.background_color = Color("#091222")
 	world.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	world.environment.ambient_light_color = Color("#b9d5ec")
-	world.environment.ambient_light_energy = 0.7
+	world.environment.ambient_light_color = Color("#cbdfee")
+	world.environment.ambient_light_energy = 0.35
+	world.environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	add_child(world)
-	box(Vector3(30, 0.3, 60), Vector3(0, -0.2, 0), Color("#dcecf2"), true)
-	for x in [-15.0, 15.0]:
-		box(Vector3(0.3, 1.2, 60), Vector3(x, 0.5, 0), Color("#e6f6ff"), true)
-	for z in [-30.0, 30.0]:
-		box(Vector3(30, 1.2, 0.3), Vector3(0, 0.5, z), Color("#e6f6ff"), true)
-	for z in [-10.0, 10.0]:
-		box(Vector3(29.7, 0.01, 0.22), Vector3(0, -0.035, z), Color("#2875b9"))
-	for z in [-25.0, 0.0, 25.0]:
-		box(Vector3(29.7, 0.01, 0.12), Vector3(0, -0.03, z), Color("#c64861"))
-	# Solid side/back net stops behind-the-net entry; open front at z=-25.
-	for x in [-1.06, 1.06]:
-		box(Vector3(0.12, 1.22, 0.12), Vector3(x, 0.58, -25), Color("#e63e52"), true)
-		box(Vector3(0.10, 1.22, 1.5), Vector3(x, 0.58, -25.75), Color("#8c9caa"), true)
-	box(Vector3(2.2, 0.12, 0.12), Vector3(0, 1.16, -25), Color("#e63e52"), true)
-	box(Vector3(2.2, 1.22, 0.1), Vector3(0, 0.58, -26.5), Color("#8c9caa"), true)
-	player = skater(Vector3(0, 0, 3), Color("#22a9cd"))
-	teammate = skater(Vector3(7, 0, -8), Color("#22a9cd"))
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-68,-28,0)
+	sun.light_energy = 0.65
+	sun.shadow_enabled = true
+	sun.directional_shadow_max_distance = 100
+	add_child(sun)
+	for x in [-10.0,10.0]:
+		for z in [-20.0,0.0,20.0]:
+			var light := OmniLight3D.new()
+			light.position = Vector3(x,12,z)
+			light.omni_range = 25
+			light.light_energy = 0.04
+			add_child(light)
+	arena = Arena.new()
+	add_child(arena)
+	player = make_skater(Vector3(0,0,0),Color("#116c9e"),"17")
+	player_visual = player.get_child(1)
+	teammate = make_skater(Vector3(6,0,-7),Color("#116c9e"),"28")
+	teammate_visual = teammate.get_child(1)
+	for end_ in [-1.0,1.0]:
+		var goalie := make_skater(Vector3(0,0,end_ * 24),Color("#b62c49") if end_ < 0 else Color("#116c9e"),"31",true)
+		goalie.rotation.y = PI if end_ < 0 else 0
+		goalkeepers.append(goalie)
+		goalie_visuals.append(goalie.get_child(1))
 	puck = RigidBody3D.new()
 	puck.mass = 0.17
 	puck.continuous_cd = true
-	puck.linear_damp = 0.22
+	puck.linear_damp = 0
 	puck.angular_damp = 0.8
-	var puck_mesh := MeshInstance3D.new()
+	puck.axis_lock_angular_x = true
+	puck.axis_lock_angular_z = true
+	puck.collision_layer = 4
+	puck.collision_mask = 3
+	puck.contact_monitor = true
+	puck.max_contacts_reported = 4
+	var pm := PhysicsMaterial.new()
+	pm.friction = 0.015
+	pm.bounce = 0.08
+	puck.physics_material_override = pm
 	var cylinder := CylinderMesh.new()
-	cylinder.top_radius = 0.15
-	cylinder.bottom_radius = 0.15
-	cylinder.height = 0.08
-	puck_mesh.mesh = cylinder
-	puck_mesh.material_override = material(Color("#101820"))
-	puck.add_child(puck_mesh)
+	cylinder.top_radius = 0.13
+	cylinder.bottom_radius = 0.13
+	cylinder.height = 0.07
+	var mesh := MeshInstance3D.new()
+	mesh.mesh = cylinder
+	mesh.material_override = arena.mat(Color("#10151b"),0.4)
+	puck.add_child(mesh)
 	var collision := CollisionShape3D.new()
-	var puck_shape := CylinderShape3D.new()
-	puck_shape.radius = 0.15
-	puck_shape.height = 0.08
-	collision.shape = puck_shape
+	var shape := CylinderShape3D.new()
+	shape.radius = 0.13
+	shape.height = 0.07
+	collision.shape = shape
 	puck.add_child(collision)
 	add_child(puck)
+	puck.body_entered.connect(_on_puck_contact)
+	selection = MeshInstance3D.new()
+	var ring := TorusMesh.new()
+	ring.inner_radius = 0.43
+	ring.outer_radius = 0.49
+	selection.mesh = ring
+	selection.material_override = arena.mat(Color("#22bcdf"))
+	add_child(selection)
 	camera = Camera3D.new()
 	add_child(camera)
-	camera.position = Vector3(0, 43, 27)
-	camera.look_at(Vector3(0, 0, -5))
-	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	camera.size = 52
+	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+	camera.fov = 48
+	camera.far = 160
+	camera.position = Vector3(19,23,23)
+	camera.look_at(Vector3(0,0,-4))
+	build_hud()
+	audio = AudioStreamPlayer.new()
+	audio.volume_db = -15
+	add_child(audio)
+	reset_puck()
+	# Screenshot automation is opt-in and only runs in a real rendering session.
+	if "--wide" in OS.get_cmdline_user_args():
+		wide_camera = true
+	if "--capture" in OS.get_cmdline_user_args():
+		capture_preview()
+
+func build_hud() -> void:
 	var canvas := CanvasLayer.new()
 	add_child(canvas)
-	var panel := ColorRect.new()
-	panel.color = Color(0.02, 0.04, 0.09, 0.94)
-	panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	panel.offset_bottom = 94
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	canvas.add_child(panel)
+	var top := PanelContainer.new()
+	top.position = Vector2(30,24)
+	top.size = Vector2(560,82)
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("#101e30")
+	style.border_color = Color("#28afcf")
+	style.border_width_bottom = 3
+	style.content_margin_left = 22
+	style.content_margin_top = 10
+	style.content_margin_right = 22
+	style.content_margin_bottom = 12
+	style.corner_radius_bottom_right = 10
+	top.add_theme_stylebox_override("panel",style)
+	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	canvas.add_child(top)
 	hud = Label.new()
-	hud.position = Vector2(28, 16)
-	hud.add_theme_font_size_override("font_size", 22)
-	canvas.add_child(hud)
+	hud.add_theme_font_size_override("font_size",23)
+	top.add_child(hud)
+	status = Label.new()
+	status.position = Vector2(32,118)
+	status.add_theme_font_size_override("font_size",18)
+	status.add_theme_color_override("font_color",Color("#76deef"))
+	canvas.add_child(status)
+	var bottom := PanelContainer.new()
+	bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	bottom.offset_top = -84
+	var bs := StyleBoxFlat.new()
+	bs.bg_color = Color(0.025,0.055,0.10,0.96)
+	bs.content_margin_left = 30
+	bs.content_margin_top = 15
+	bottom.add_theme_stylebox_override("panel",bs)
+	canvas.add_child(bottom)
 	help = Label.new()
-	help.position = Vector2(28, 105)
-	help.add_theme_font_size_override("font_size", 16)
-	help.add_theme_color_override("font_color", Color("#183347"))
-	canvas.add_child(help)
-	tone = AudioStreamPlayer.new()
-	generator = AudioStreamGenerator.new()
-	generator.mix_rate = 22050
-	generator.buffer_length = 0.1
-	tone.stream = generator
-	add_child(tone)
-	tone.play()
-	audio_playback = tone.get_stream_playback()
-	reset_puck()
+	help.add_theme_font_size_override("font_size",16)
+	bottom.add_child(help)
+	power = ProgressBar.new()
+	power.position = Vector2(32,150)
+	power.size = Vector2(180,10)
+	power.show_percentage = false
+	power.max_value = 1
+	canvas.add_child(power)
+
+func capture_preview() -> void:
+	await get_tree().create_timer(2).timeout
+	await RenderingServer.frame_post_draw
+	get_viewport().get_texture().get_image().save_png("/tmp/hawkey-preview.png")
+	get_tree().quit()
+
+func beep(frequency: float) -> void:
+	# Finite original synthetic impact; no persistent playback generator.
+	var bytes := PackedByteArray()
+	for i in range(1600):
+		var sample := int(sin(float(i) * frequency * TAU / 22050) * 9000 * exp(-float(i) / 300))
+		bytes.append(sample & 255)
+		bytes.append((sample >> 8) & 255)
+	var stream := AudioStreamWAV.new()
+	stream.format = AudioStreamWAV.FORMAT_16_BITS
+	stream.mix_rate = 22050
+	stream.data = bytes
+	audio.stream = stream
+	audio.play()
 
 func reset_puck() -> void:
-	puck.position = player.position + Vector3(0, 0.15, -1)
+	charge = 0
+	pickup_owner = false
+	puck.position = player.position + aim * 1.05 + Vector3(0,0.09,0)
 	puck.linear_velocity = Vector3.ZERO
 	puck.angular_velocity = Vector3.ZERO
 	previous_puck = puck.position
-	cooldown = 0.3
-
-func beep(frequency: float) -> void:
-	# Original synthetic placeholder; replace with licensed/original hockey recordings.
-	for i in range(mini(audio_playback.get_frames_available(), 1700)):
-		var value := sin(float(i) * frequency * TAU / 22050.0) * 0.12 * (1.0 - float(i) / 1700.0)
-		audio_playback.push_frame(Vector2(value, value))
+	cooldown = 0.15
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
 			KEY_ESCAPE:
 				paused = not paused
+				charge = 0
 			KEY_R:
+				player.position = Vector3(0,0,0)
+				velocity = Vector3.ZERO
 				reset_puck()
-			KEY_F1:
-				debug = not debug
-			KEY_1:
-				rating = 55.0
-			KEY_2:
-				rating = 85.0
-	if paused:
-		return
+			KEY_F1: debug = not debug
+			KEY_C: wide_camera = not wide_camera
+			KEY_1: rating = 55
+			KEY_2: rating = 85
+			KEY_SPACE:
+				var old := player
+				player = teammate
+				teammate = old
+				player_visual = player.get_child(1)
+				teammate_visual = teammate.get_child(1)
+				velocity = player.velocity
+				pickup_owner = false
+	if paused: return
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
-			camera.size = maxf(25, camera.size - 2)
+			zoom = clampf(zoom - 0.08,0.65,1.7)
 		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
-			camera.size = minf(75, camera.size + 2)
+			zoom = clampf(zoom + 0.08,0.65,1.7)
 		if event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
-			strike(aim, lerpf(12, 34, charge))
-			charge = 0.0
+			strike(aim,lerpf(14,36,charge))
+			charge = 0
 		if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
-			strike((teammate.position - puck.position).normalized(), 15)
-			passes += 1
+			var direction := (teammate.position + teammate.velocity * 0.25 - puck.position)
+			direction.y = 0
+			if strike(direction.normalized(),17,true):
+				passes += 1
 
-func strike(direction: Vector3, speed: float) -> void:
-	if player.position.distance_to(puck.position) > 1.7:
-		return
-	puck.linear_velocity = direction * speed
-	cooldown = 0.45
-	shots += 1
-	beep(180)
+func strike(direction: Vector3, speed: float, is_pass: bool = false) -> bool:
+	if player.position.distance_to(puck.position) > 1.8 or cooldown > 0:
+		return false
+	direction.y = 0
+	puck.linear_velocity = direction.normalized() * speed + velocity * 0.25
+	pickup_owner = false
+	cooldown = 0.42
+	if not is_pass: shots += 1
+	beep(180 if not is_pass else 260)
+	return true
+
+func _on_puck_contact(body: Node) -> void:
+	if body is CharacterBody3D and body in goalkeepers:
+		saves += 1
+		cooldown = 0.22
+		beep(115)
+	elif puck.linear_velocity.length() > 5:
+		beep(320)
+
+func update_camera(delta: float) -> void:
+	var focus := player.position * 0.65 + puck.position * 0.35
+	focus.x = clampf(focus.x,-7,7)
+	focus.z = clampf(focus.z,-21,21)
+	if wide_camera:
+		focus = Vector3.ZERO
+	camera_target = camera_target.lerp(focus,1 - exp(-delta * 4))
+	var offset := Vector3(24,49,44) if wide_camera else Vector3(5,16,20) * zoom
+	camera.position = camera.position.lerp(camera_target + offset,1 - exp(-delta * 5))
+	camera.look_at(camera_target + Vector3(0,0.3,-2))
+	selection.position = player.position + Vector3(0,0.025,0)
 
 func _physics_process(delta: float) -> void:
 	puck.freeze = paused
 	if paused:
-		hud.text = "HAWKEY / LABORATORY     PAUSED — Esc to resume"
+		status.text = "PAUSED  /  Escape to resume"
 		return
-	cooldown = maxf(0, cooldown - delta)
-	var intent := Vector3(float(Input.is_physical_key_pressed(KEY_D)) - float(Input.is_physical_key_pressed(KEY_A)), 0, float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W)))
-	velocity = Skating.step(velocity, intent, rating, Input.is_physical_key_pressed(KEY_SHIFT), delta)
-	player.position += velocity * delta
-	player.position.x = clampf(player.position.x, -14.2, 14.2)
-	player.position.z = clampf(player.position.z, -29.2, 29.2)
-	var mouse := get_viewport().get_mouse_position()
-	var intersection = Plane(Vector3.UP, 0).intersects_ray(camera.project_ray_origin(mouse), camera.project_ray_normal(mouse))
+	elapsed += delta
+	cooldown = maxf(0,cooldown - delta)
+	goal_timer = maxf(0,goal_timer - delta)
+	var intent := Vector3(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),0,float(Input.is_physical_key_pressed(KEY_S))-float(Input.is_physical_key_pressed(KEY_W)))
+	velocity = Skating.step(velocity,intent,rating,Input.is_physical_key_pressed(KEY_SHIFT),delta)
+	if Input.is_physical_key_pressed(KEY_CTRL):
+		velocity = velocity.move_toward(Vector3.ZERO,22 * delta)
+	player.velocity = velocity
+	player.move_and_slide()
+	velocity = player.velocity
+	var intersection = Plane(Vector3.UP,0).intersects_ray(camera.project_ray_origin(get_viewport().get_mouse_position()),camera.project_ray_normal(get_viewport().get_mouse_position()))
 	if intersection != null:
-		var direction: Vector3 = intersection - player.position
-		direction.y = 0
-		if direction.length_squared() > 0.01:
-			aim = direction.normalized()
-	player.rotation.y = atan2(-aim.x, -aim.z)
+		var dir: Vector3 = intersection - player.position
+		dir.y = 0
+		if dir.length_squared() > 0.2: aim = dir.normalized()
+	var target_rotation := atan2(-aim.x,-aim.z)
+	var old_rotation := player_visual.rotation.y
+	player_visual.rotation.y = rotate_toward(old_rotation,target_rotation,7.5 * delta)
+	player_visual.animate(velocity.length(),delta,angle_difference(old_rotation,target_rotation) * velocity.length() * 0.02)
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-		charge = minf(1, charge + delta)
-	# Assisted stick constraint: velocity spring, never teleport attachment.
-	if cooldown <= 0 and player.position.distance_to(puck.position) < 1.6 and puck.linear_velocity.length() < 13:
-		var target := player.position + aim * 0.95 + Vector3(0, 0.1, 0)
-		puck.linear_velocity += ((target - puck.position) * 45 - (puck.linear_velocity - velocity) * 8) * delta
-	if cooldown <= 0 and teammate.position.distance_to(puck.position) < 1.5:
-		puck.linear_velocity = (player.position - puck.position).normalized() * 12
-		cooldown = 0.6
-		beep(280)
-	if Skating.goal_crossing(previous_puck, puck.position):
-		goals += 1
-		beep(540)
+		charge = minf(1,charge + delta * 1.3)
+	# Stable critically damped stick spring with speed and reach limits.
+	var puck_flat := puck.position
+	puck_flat.y = 0
+	var distance_ := player.position.distance_to(puck_flat)
+	if distance_ > 1.9 or cooldown > 0: pickup_owner = false
+	if cooldown <= 0 and distance_ < 1.25 and (puck.linear_velocity - velocity).length() < 14:
+		pickup_owner = true
+	if pickup_owner:
+		var stick_forward := -player_visual.global_basis.z
+		var stick_right := player_visual.global_basis.x
+		var target := player.position + stick_forward * 1.02 + stick_right * 0.28
+		var error := target - puck.position
+		error.y = 0
+		var relative := puck.linear_velocity - velocity
+		relative.y = 0
+		var accel := (error * 160 - relative * 25).limit_length(100)
+		puck.linear_velocity += accel * delta
+	# Ice drag acts horizontally, instead of slowing gravity with linear damping.
+	var horizontal := Vector3(puck.linear_velocity.x,0,puck.linear_velocity.z)
+	horizontal = horizontal.move_toward(Vector3.ZERO,0.35 * delta)
+	puck.linear_velocity.x = horizontal.x
+	puck.linear_velocity.z = horizontal.z
+	update_partner(delta)
+	update_goalkeepers(delta)
+	if goal_timer <= 0:
+		for sign_ in [-1.0,1.0]:
+			if Skating.goal_crossing_end(previous_puck,puck.position,sign_):
+				if sign_ < 0: goals += 1
+				else: away_goals += 1
+				goal_timer = 2.5
+				pickup_owner = false
+				beep(550)
 	previous_puck = puck.position
-	if puck.position.y < -3:
+	if puck.position.y < -2 or absf(puck.position.x) > 18 or absf(puck.position.z) > 33:
 		reset_puck()
-	hud.text = "HAWKEY  /  PRACTICE LAB     GOALS %02d     RELEASES %02d     PASSES %02d\nPlaceholder 3D assets • Native PC prototype • Rating %d • Charge %d%%" % [goals, shots, passes, rating, charge * 100]
-	help.text = "WASD Skate   Shift Effort   Mouse Aim   Hold / release LMB Shoot   RMB Pass to partner\nR Reset puck   Esc Pause   Wheel Zoom   1 / 2 Compare skating ratings   F1 Debug"
+	update_camera(delta)
+	hud.text = "HAWKEY   /   OPEN PRACTICE\nTOR   %02d     —     %02d   MTL      •      %02d:%02d" % [goals,away_goals,int(elapsed)/60,int(elapsed)%60]
+	status.text = "GOAL  /  R to restart" if goal_timer > 0 else ("PUCK CONTROL  •  Hold left mouse to load shot" if pickup_owner else "FREE PUCK  •  Skate into reach to collect")
+	power.value = charge
+	power.visible = charge > 0
+	help.text = "WASD Skate    Shift Effort    Ctrl Stop    Mouse Aim    Hold / release LMB Shoot    RMB Pass\nSpace Switch skater    R Reset    C Broadcast / full rink    Wheel Zoom    Esc Pause    F1 Diagnostics"
 	if debug:
-		help.text += "\nSpeed %.2f m/s   Puck %.2f m/s   Aim %.2f, %.2f   Fixed simulation 120 Hz" % [velocity.length(), puck.linear_velocity.length(), aim.x, aim.z]
+		help.text = "Speed %.1f m/s   Puck %.1f m/s   Shots %d   Passes %d   Pad contacts %d   Rating %d\n1 / 2 Compare ratings    Fixed physics 120 Hz    C Camera    F1 Close diagnostics" % [velocity.length(),puck.linear_velocity.length(),shots,passes,saves,rating]
 
-func _exit_tree() -> void:
-	audio_playback = null
-	if is_instance_valid(tone):
-		tone.stop()
+func update_partner(delta: float) -> void:
+	var target := Vector3(clampf(player.position.x + (6 if player.position.x < 0 else -6),-11,11),0,clampf(player.position.z - 5,-21,21))
+	# Receiver moves to the pass, otherwise holds a supporting lane.
+	if cooldown > 0.05 and passes > 0 and teammate.position.distance_to(puck.position) < 5:
+		target = Vector3(puck.position.x,0,puck.position.z)
+	var dir := target - teammate.position
+	teammate.velocity = teammate.velocity.move_toward(dir.limit_length(1) * 5,9 * delta)
+	teammate.move_and_slide()
+	if dir.length() > 0.4:
+		teammate_visual.rotation.y = rotate_toward(teammate_visual.rotation.y,atan2(-dir.x,-dir.z),5 * delta)
+	teammate_visual.animate(teammate.velocity.length(),delta)
+	if cooldown <= 0 and teammate.position.distance_to(puck.position) < 1.2 and not pickup_owner:
+		# Catch softly, rather than automatically firing the puck back.
+		puck.linear_velocity *= 0.35
+		status.text = "PASS RECEIVED  /  Space to switch"
+		if teammate.position.distance_to(player.position) > 2:
+			var old := player
+			player = teammate
+			teammate = old
+			player_visual = player.get_child(1)
+			teammate_visual = teammate.get_child(1)
+			velocity = player.velocity
+			pickup_owner = true
+
+func update_goalkeepers(delta: float) -> void:
+	for i in range(goalkeepers.size()):
+		var goalie := goalkeepers[i]
+		var end_ := -1.0 if i == 0 else 1.0
+		var depth := clampf(absf(puck.position.z - end_ * 25) * 0.05,0.35,1.4)
+		var target := Vector3(clampf(puck.position.x * 0.13,-0.75,0.75),0,end_ * (25 - depth))
+		goalie.velocity = (target - goalie.position).limit_length(1) * 3.8
+		goalie.move_and_slide()
+		goalie_visuals[i].animate(goalie.velocity.length(),delta)
