@@ -141,21 +141,7 @@ func _ready() -> void:
 	block(self, Vector3(85, 0.5, 100), Vector3(0, -0.65, 0), Color("#101e31"))
 	var ice := block(self, Vector3(30, 0.3, 60), Vector3(0, -0.15, 0), Color("#e4edf2"), true, 0.02)
 	ice.visible = false
-	var noise := FastNoiseLite.new()
-	noise.frequency = 8
-	var texture := NoiseTexture2D.new()
-	texture.width = 256
-	texture.height = 256
-	texture.noise = noise
-	texture.as_normal_map = true
-	texture.bump_strength = 0.15
-	var ice_material := mat(Color("#afc0cc"), 0.38)
-	ice_material.albedo_texture = preload("res://assets/ice-surface-v1.png")
-	ice_material.albedo_color = Color("#9badb9")
-	ice_material.normal_enabled = true
-	ice_material.normal_texture = texture
-	ice_material.normal_scale = 0.12
-	ice_material.uv1_scale = Vector3(3, 6, 1)
+	var ice_material := mat(Color("#afc0cc"),0.38)
 	ice.material_override = ice_material
 	# Rounded perimeter: half width 15, half length 30, 8 metre corners.
 	var points: Array[Vector3] = []

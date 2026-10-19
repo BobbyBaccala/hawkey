@@ -6,7 +6,13 @@ const Arena = preload("res://scripts/arena.gd")
 var kit := Color("#116c9e")
 var number := "17"
 var goalie := false
+var referee := false
+var nameplate: Label3D
 var phase := 0.0
+var butterfly := 0.0
+var shot_follow := 0.0
+var number_label: Label3D
+var goalie_gloves: Array[Node3D] = []
 var rig: Node3D
 var skeleton: Skeleton3D
 var rest: Dictionary = {}
@@ -89,11 +95,20 @@ func _ready() -> void:
 			rig.add_child(pad)
 			build_pad(pad)
 			pads.append(pad)
+			var glove := Node3D.new()
+			rig.add_child(glove)
+			if side>0:
+				ellipsoid(glove,Vector3(0.22,0.24,0.10),Vector3.ZERO,Color("#becbd3"))
+				ellipsoid(glove,Vector3(0.12,0.14,0.02),Vector3(0,0,0.052),Color("#253544"))
+			else:
+				block(glove,Vector3(0.17,0.24,0.06),Vector3.ZERO,Color("#c6d0d8"))
+			goalie_gloves.append(glove)
+	if referee: sticks.visible=false
 	pose(0,0)
 
 func build_skate(parent: Node3D) -> void:
-	ellipsoid(parent,Vector3(0.14,0.23,0.23),Vector3(0,0.10,0.02),Color("#18212a"))
-	ellipsoid(parent,Vector3(0.14,0.13,0.32),Vector3(0,0.03,0.08),Color("#111923"))
+	ellipsoid(parent,Vector3(0.13,0.18,0.21),Vector3(0,0.10,0.02),Color("#18212a"))
+	ellipsoid(parent,Vector3(0.12,0.10,0.31),Vector3(0,0.03,0.08),Color("#111923"))
 	for side in [-1.0,1.0]:
 		segment(parent,Vector3(side * 0.045,-0.015,-0.06),Vector3(side * 0.045,-0.015,0.19),0.012,Color("#c0cbd0"))
 	block(parent,Vector3(0.014,0.035,0.32),Vector3(0,-0.045,0.065),Color("#91a5b2"))
@@ -109,7 +124,7 @@ func build_pad(parent: Node3D) -> void:
 
 func build_helmet() -> void:
 	var mesh := ImmediateMesh.new()
-	mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES,material(Color("#132434"),0.27))
+	mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES,material(Color("#c6ced4") if goalie else Color("#132434"),0.27))
 	for row in range(10):
 		for column in range(32):
 			var vertices: Array[Vector3] = []
@@ -127,6 +142,13 @@ func build_helmet() -> void:
 	var glass := material(Color(0.55,0.75,0.82,0.25),0.15)
 	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	visor.material_override = glass
+	if goalie:
+		visor.visible=false
+		for x in [-0.08,0.0,0.08]:
+			segment(helmet,Vector3(x,0.035,0.14),Vector3(x,-0.12,0.16),0.005,Color("#56646d"))
+		for y in [0.02,-0.04,-0.10]:
+			segment(helmet,Vector3(-0.10,y,0.15),Vector3(0.10,y,0.15),0.005,Color("#56646d"))
+		ellipsoid(helmet,Vector3(0.14,0.075,0.06),Vector3(0,-0.12,0.13),Color("#c5cdd2"))
 	for x in [-0.055,0.0,0.055]:
 		block(helmet,Vector3(0.018,0.008,0.065),Vector3(x,0.123,-0.02),Color("#050d16"))
 	segment(helmet,Vector3(-0.09,-0.02,0.03),Vector3(0,-0.13,0.1),0.009,Color("#adb9c4"))
@@ -153,15 +175,31 @@ func build_jersey() -> void:
 	var m := ShaderMaterial.new()
 	m.shader = shader
 	m.set_shader_parameter("kit",kit.darkened(0.35))
+	if referee:
+		var ref_shader:=Shader.new()
+		ref_shader.code="shader_type spatial; render_mode cull_disabled; void fragment(){float stripe=step(0.0,sin(UV.x*62.83));ALBEDO=mix(vec3(0.015),vec3(0.7),stripe);ROUGHNESS=0.8;}"
+		m.shader=ref_shader
 	instance.material_override = m
 	shirt.add_child(instance)
 	var jersey_number := Label3D.new()
+	number_label = jersey_number
 	jersey_number.text = number
 	jersey_number.font_size = 64
 	jersey_number.pixel_size = 0.004
 	jersey_number.position = Vector3(0,1.31,-0.195)
 	jersey_number.rotation.y = PI
 	jersey_number.modulate = Color("#d0dbe2")
+	jersey_number.outline_size = 2
+	jersey_number.visible = not referee
+	nameplate = Label3D.new()
+	nameplate.text = ""
+	nameplate.font_size = 48
+	nameplate.pixel_size = 0.0018
+	nameplate.outline_size = 1
+	nameplate.position = Vector3(0,1.44,-0.17)
+	nameplate.rotation.y = PI
+	nameplate.modulate = Color("#d0dbe2")
+	shirt.add_child(nameplate)
 	shirt.add_child(jersey_number)
 
 func override_pose(name: String, transform_: Transform3D) -> void:
@@ -189,7 +227,7 @@ func knee_position(hip: Vector3, ankle: Vector3, pole: Vector3, upper: float, lo
 func pose(speed: float, turn: float) -> void:
 	skeleton.clear_bones_global_pose_override()
 	var root_rest: Transform3D = rest["root"]
-	var drop := Vector3(0,-0.18,0.01)
+	var drop := Vector3(0,-0.18 - (butterfly*0.22 if goalie else 0),0.01)
 	var root_pose := root_rest
 	root_pose.origin += drop
 	override_pose("root",root_pose)
@@ -212,7 +250,7 @@ func pose(speed: float, turn: float) -> void:
 		var push := smoothstep(0,0.55,cycle) if cycle < 0.55 else 1-smoothstep(0.55,1,cycle)
 		var lift := sin((cycle-0.55)/0.45*PI)*0.045 if cycle > 0.55 else 0.0
 		var ankle := Vector3(side*(0.20+push*0.34*push_blend),0.115+lift*push_blend,0.06-push*0.30*push_blend)
-		if goalie: ankle = Vector3(side*0.29,0.115,0.05)
+		if goalie: ankle = Vector3(side*lerpf(0.29,0.55,butterfly),0.115,0.05)
 		feet[i] = ankle
 		var hip: Vector3 = rest["upperleg01"+suffix].origin+drop
 		var knee := knee_position(hip,ankle,Vector3(0,0,1),0.44,0.45)
@@ -224,11 +262,19 @@ func pose(speed: float, turn: float) -> void:
 		override_pose("foot"+suffix,foot_pose)
 		skates[i].position = ankle
 		skates[i].rotation.y = side*push*0.23*push_blend
-		if goalie: pads[i].position = Vector3(ankle.x,0,ankle.z)
+		if goalie:
+			pads[i].position = Vector3(ankle.x,0,ankle.z)
+			pads[i].rotation.z = -side*butterfly*0.6
 		# Elbows and wrists stay on a two-hand stick posture, never running arm swings.
 		var shoulder_original: Transform3D = rest["upperarm01"+suffix]
 		var shoulder := pivot+drop+bend*(shoulder_original.origin-pivot)
 		var wrist := Vector3(0.10,0.83,0.67) if i==0 else Vector3(-0.06,1.0,0.45)
+		if referee: wrist=Vector3(side*0.32,0.96,0.03)
+		if goalie:
+			wrist=Vector3(side*0.36,0.78-butterfly*0.18,0.40)
+			goalie_gloves[i].position=wrist+Vector3(0,0,0.04)
+		wrist.x += shot_follow * 0.18
+		wrist.z += shot_follow * 0.15
 		var pole := Vector3(side,0,-0.3)
 		var elbow := knee_position(shoulder,wrist,pole,0.28,0.29)
 		align_bone("upperarm01"+suffix,"lowerarm01"+suffix,shoulder,elbow)
@@ -239,6 +285,7 @@ func pose(speed: float, turn: float) -> void:
 	rig.rotation.z = clampf(turn,-0.13,0.13)
 
 func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, braking: bool = false) -> void:
+	shot_follow = maxf(0,shot_follow-delta*3)
 	var target := clampf(speed/5.0,0,1) if pushing and not braking and not goalie else 0.0
 	push_blend = move_toward(push_blend,target,delta*4)
 	if push_blend > 0.01:
@@ -247,3 +294,10 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	if braking:
 		skates[0].rotation.y = 0.7
 		skates[1].rotation.y = 0.7
+
+func set_number(value: String) -> void:
+	number=value
+	if is_instance_valid(number_label): number_label.text=value
+
+func set_nameplate(value: String) -> void:
+	if is_instance_valid(nameplate): nameplate.text=value.to_upper()

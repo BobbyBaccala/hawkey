@@ -9,7 +9,7 @@ func _initialize() -> void:
 	call_deferred("run")
 
 func run() -> void:
-	var scene = load("res://main.tscn").instantiate()
+	var scene = load("res://practice.tscn").instantiate()
 	root.add_child(scene)
 	await physics_frame
 	var key := InputEventKey.new()

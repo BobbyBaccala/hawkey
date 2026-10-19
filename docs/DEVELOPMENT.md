@@ -1,5 +1,7 @@
 # Product and technical notes
 
+Current exhibition implementation and limits: MATCH_STATUS.md. Video workflow: MOTION_CAPTURE.md.
+
 ## Product
 Original premium PC hockey simulation. Primary input: mouse and keyboard; overhead 3D view. Fictional identities, authentic hockey decisions. Practice quality precedes match and management scope.
 
@@ -8,7 +10,9 @@ Godot 4.6 standard/GDScript was selected because its editor and headless runtime
 
 ## Architecture
 - project.godot: native project and 120 Hz timing.
-- main.tscn: entry point.
+- main.tscn: five-on-five exhibition entry point; scripts/match.gd extends the reusable rink/input/puck laboratory.
+- scripts/match_state.gd: authoritative match clock, phase, score and penalty eligibility.
+- practice.tscn: earlier isolated laboratory entry point.
 - scripts/lab.gd: character/puck simulation, practice partner, goalkeeper tracking, cameras, input, HUD and finite event sounds.
 - scripts/arena.gd: rounded rink, markings, two goals, netting, glass and seating.
 - scripts/skater_visual.gd: CC0 skinned human foundation, original kit and two-bone lateral push/glide posing.
@@ -20,7 +24,7 @@ Godot 4.6 standard/GDScript was selected because its editor and headless runtime
 
 Physics owns puck movement. Player motion is an explicit velocity model. Assisted possession is a proximity velocity spring, not a teleport or permanent parent-child attachment. Rendered geometry is separate from skating velocity. Goal detection uses interpolation across the mouth plane. Boards/posts use static collision and puck uses continuous collision detection.
 
-## Known issues and unimplemented requirements
+## Practice-lab limitations (0.3; current exhibition status is in MATCH_STATUS.md)
 - Skinned human uses a 163-bone foundation and original two-bone poses, not motion capture. No crossover, backward-skating, shooting, checking or fall animation families. Equipment and garment skinning still need specialist polish.
 - Photographic crowd cards repeat eight generated people. They are flat representations, not volumetric or individually animated spectators.
 - Skater contact uses CharacterBody collision, without mass/angle-based checking or falls.
@@ -69,6 +73,7 @@ Manual checklist: mouse aim alignment, effort turns, charge responsiveness, zoom
 Open project.godot in Godot 4.6 and play the laboratory. Report skating/aim/puck-control feel before expanding modes. No purchase or Steam account action is needed yet.
 
 ## Changelog
+0.4: Added a separate five-on-five exhibition scene, three-period match state, timed contextual minors and strength changes, roster lines/bench handoff/fatigue, role-based AI, physical goalkeeper improvements, officials and a level camera. Evaluated video pose tracking; low-quality reference was rejected rather than integrated.
 0.3: Added a clothed derivative of a CC0 skinned human, original equipment/garment meshes, knee/arm IK posing, lateral skating and glide blending, generated spectator cards and ice texture. Added animation checks and asset provenance.
 0.2: Rebuilt rink and both nets, perspective follow/wide cameras, procedural skater animation, collision movement and stops, stable stick spring, practice support, physical goalkeeper tracking, HUD and finite audio. Added rendered inspection and input/goalkeeper integration tests.
 

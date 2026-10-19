@@ -101,6 +101,8 @@ func _ready() -> void:
 	puck = RigidBody3D.new()
 	puck.mass = 0.17
 	puck.continuous_cd = true
+	puck.gravity_scale = 0
+	puck.axis_lock_linear_y = true
 	puck.linear_damp = 0
 	puck.angular_damp = 0.8
 	puck.axis_lock_angular_x = true
@@ -114,17 +116,17 @@ func _ready() -> void:
 	pm.bounce = 0.08
 	puck.physics_material_override = pm
 	var cylinder := CylinderMesh.new()
-	cylinder.top_radius = 0.13
-	cylinder.bottom_radius = 0.13
-	cylinder.height = 0.07
+	cylinder.top_radius = 0.05
+	cylinder.bottom_radius = 0.05
+	cylinder.height = 0.028
 	var mesh := MeshInstance3D.new()
 	mesh.mesh = cylinder
 	mesh.material_override = arena.mat(Color("#10151b"),0.4)
 	puck.add_child(mesh)
 	var collision := CollisionShape3D.new()
 	var shape := CylinderShape3D.new()
-	shape.radius = 0.13
-	shape.height = 0.07
+	shape.radius = 0.05
+	shape.height = 0.028
 	collision.shape = shape
 	puck.add_child(collision)
 	add_child(puck)
@@ -141,7 +143,7 @@ func _ready() -> void:
 	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
 	camera.fov = 48
 	camera.far = 160
-	camera.position = Vector3(19,23,23)
+	camera.position = Vector3(0,23,23)
 	camera.look_at(Vector3(0,0,-4))
 	build_hud()
 	audio = AudioStreamPlayer.new()
@@ -208,6 +210,7 @@ func capture_preview() -> void:
 	get_tree().quit()
 
 func beep(frequency: float) -> void:
+	if DisplayServer.get_name()=="headless": return
 	# Finite original synthetic impact; no persistent playback generator.
 	var bytes := PackedByteArray()
 	for i in range(1600):
@@ -224,7 +227,7 @@ func beep(frequency: float) -> void:
 func reset_puck() -> void:
 	charge = 0
 	pickup_owner = false
-	puck.position = player.position + aim * 1.05 + Vector3(0,0.09,0)
+	puck.position = player.position + aim * 1.05 + Vector3(0,0.017,0)
 	puck.linear_velocity = Vector3.ZERO
 	puck.angular_velocity = Vector3.ZERO
 	previous_puck = puck.position
@@ -293,7 +296,7 @@ func update_camera(delta: float) -> void:
 	if wide_camera:
 		focus = Vector3.ZERO
 	camera_target = camera_target.lerp(focus,1 - exp(-delta * 4))
-	var offset := Vector3(24,49,44) if wide_camera else Vector3(5,16,20) * zoom
+	var offset := Vector3(0,49,44) if wide_camera else Vector3(0,16,20) * zoom
 	camera.position = camera.position.lerp(camera_target + offset,1 - exp(-delta * 5))
 	camera.look_at(camera_target + Vector3(0,0.3,-2))
 	selection.position = player.position + Vector3(0,0.025,0)
@@ -401,3 +404,8 @@ func update_goalkeepers(delta: float) -> void:
 		goalie.velocity = (target - goalie.position).limit_length(1) * 3.8
 		goalie.move_and_slide()
 		goalie_visuals[i].animate(goalie.velocity.length(),delta)
+
+func _exit_tree() -> void:
+	if is_instance_valid(audio):
+		audio.stop()
+		audio.stream=null

@@ -1,26 +1,34 @@
-# Hawkey — 0.3 skinned players, skating and crowd
+# Hawkey — 0.4 five-on-five exhibition
 
-Native Godot 4.6 PC hockey practice prototype. Uses a CC0 skinned human foundation with original hockey equipment, procedural skating and generated crowd/ice textures. This is still a practice prototype, not EA NHL-level photorealism or a complete match.
+Native Godot 4.6 PC hockey exhibition prototype. Uses a CC0 skinned human foundation with original hockey equipment, procedural skating and generated crowd/ice textures. This is an early exhibition prototype, not EA NHL-level photorealism or a complete regulation ruleset.
 
 ## Open this version
 Download the ZIP from the **prototype/skating-puck-lab** branch, extract to a new folder, then import that folder's **project.godot** in Godot 4.6. Press F5. Opening an older downloaded folder will continue running the old build.
 
-## Controls
+## Match controls
 | Input | Action |
 | --- | --- |
-| WASD | Skate |
-| Shift | Increased effort |
-| Ctrl | Hockey stop |
-| Mouse | Aim |
-| Hold/release left mouse | Charge/shoot |
-| Right mouse | Pass to partner |
-| Space | Switch skater |
-| C | Close perspective / full rink |
-| Mouse wheel | Zoom |
-| R | Reset player and puck |
-| Escape | Pause |
-| F1 | Diagnostics |
-| 1 / 2 | Compare skating ratings |
+| WASD / Shift / Ctrl | Skate / effort / stop |
+| Mouse / hold-release LMB | Aim / charge and shoot |
+| RMB | Pass toward aimed teammate |
+| Space | Switch controlled skater |
+| 1–4 | Request forward line |
+| Q | Cycle defence pair |
+| E / F | Poke / body check (illegal context can cause a minor) |
+| L | Toggle automatic fatigue-based forward changes |
+| C / wheel | Straight follow/full-rink camera / zoom |
+| Escape / F1 | Pause / diagnostics |
+
+## New in 0.4
+- Full ten-skater exhibition scene, two goalkeepers and two visual officials.
+- Three periods, clock, stoppages, faceoff setups, goals, end switching and match end.
+- 18 fictional roster entries per side, manual/on-the-fly line changes and fatigue.
+- Three contextual minor types with timers, queued minors, power-play strength and goal-release logic.
+- Delayed goalkeeper tracking, prediction, butterfly/recovery poses, mask/gloves and directed rebounds.
+- Camera has no lateral offset or roll.
+- Actual video pose-extraction experiment rejected low-quality footage; no video-derived animation is shipped.
+- Full implemented/absent feature list: docs/MATCH_STATUS.md.
+- Actual in-engine screenshot: docs/screenshots/gameplay-v04.png.
 
 ## New in 0.3
 - Replaced rounded body-part placeholders with a skinned 163-bone human mesh, original jersey, helmet/visor, skates/blades/laces and equipment.
@@ -42,16 +50,19 @@ Download the ZIP from the **prototype/skating-puck-lab** branch, extract to a ne
 
 ## Validation
 Godot 4.6 Linux headless import and scene smoke tests pass.
-Four executable suites:
+Seven executable suites:
 ```
 godot --headless --path . --script tests/test_simulation.gd
 godot --headless --path . --script tests/test_lab.gd
 godot --headless --path . --script tests/test_controls.gd
 godot --headless --path . --script tests/test_animation.gd
+godot --headless --path . --script tests/test_match_state.gd
+godot --headless --path . --script tests/test_match.gd
+godot --headless --path . --script tests/test_match_loop.gd
 ```
 Tests cover ratings, deceleration, directional goal detection, two nets, rounded boards, perspective camera, high-speed board rebound, goal counting, reset/pause, goalkeeper contact/save, actual W/Ctrl input and stationary puck-control stability.
 
-Rendered screenshots were inspected at 1440×900 using Linux Mesa llvmpipe software rendering. This verifies appearance and framing, not Windows performance, controller behavior or satisfying human gameplay feel. The imported human is a foundation with procedural equipment and posing; motion capture, photorealistic player textures, advanced skating transitions, full team AI, complete rules, GM and career are not implemented.
+Rendered screenshots were inspected at 1440×900 using Linux Mesa llvmpipe software rendering. This verifies appearance and framing, not Windows performance, controller behavior or satisfying human gameplay feel. The imported human is a foundation with procedural equipment and posing; motion capture, photorealistic player textures, advanced skating transitions, sophisticated tactics, complete rules, GM and career are not implemented.
 
 ## Windows export
 Install matching Godot 4.6 export templates, then Project > Export > Add > Windows Desktop. Export to a separate empty folder. Windows export/installation has not been validated here and no executable is supplied.
