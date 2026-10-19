@@ -10,7 +10,8 @@ void vertex() {
 	rest_height = COLOR.g * 2.0;
 }
 void fragment() {
-	if(region>0.5 && region<1.5 && abs(rest_x)<0.28 && rest_height>0.98 && rest_height<1.5) discard;
+	// Retain the continuous skinned undershirt at shoulders/armpits.
+	// Discarding it left visible gaps when the arms moved away from the shell.
 	vec3 navy = vec3(0.018,0.032,0.052);
 	vec3 white = vec3(0.62,0.68,0.72);
 	vec3 color = vec3(0.34,0.22,0.16);

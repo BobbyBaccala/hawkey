@@ -1,5 +1,7 @@
 extends "res://scripts/lab.gd"
 const MatchState = preload("res://scripts/match_state.gd")
+const ControllerInput = preload("res://scripts/controller_input.gd")
+const PuckPhysics = preload("res://scripts/puck.gd")
 var match_state := MatchState.new()
 var skaters: Array[CharacterBody3D] = []
 var rosters: Array = [[],[]]
@@ -18,11 +20,33 @@ var auto_lines := true
 var goalie_targets: Array[Vector3] = [Vector3(0,0,-24),Vector3(0,0,24)]
 var goalie_reaction := 0.0
 var goalie_contact_timer := 0.0
-var capture_time := 8.0
+var capture_time := 3.0
 var known_period := 1
+var controller := ControllerInput.new()
+var shot_lift := 0.0
+var next_faceoff := Vector3.ZERO
+var puck_shadow: MeshInstance3D
+var controller_help := false
 
 func _ready() -> void:
 	super._ready()
+	Input.joy_connection_changed.connect(on_controller_connection)
+	var devices:=Input.get_connected_joypads()
+	if not devices.is_empty():
+		controller.device_id=devices[0]
+		controller.connected=true
+		controller.active=true
+	puck_shadow=MeshInstance3D.new()
+	var shadow_mesh:=CylinderMesh.new()
+	shadow_mesh.top_radius=0.09
+	shadow_mesh.bottom_radius=0.09
+	shadow_mesh.height=0.001
+	puck_shadow.mesh=shadow_mesh
+	var shadow_material: StandardMaterial3D=arena.mat(Color(0.015,0.02,0.025,0.35))
+	shadow_material.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	puck_shadow.material_override=shadow_material
+	puck_shadow.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(puck_shadow)
 	player.queue_free()
 	teammate.queue_free()
 	rosters = [[],[]]
@@ -153,7 +177,7 @@ func setup_faceoff() -> void:
 	pickup_owner = false
 	charge = 0
 	cooldown = 0.3
-	puck.position = Vector3(0,0.017,0)
+	puck.position = next_faceoff+Vector3(0,0.017,0)
 	puck.linear_velocity = Vector3.ZERO
 	puck.angular_velocity = Vector3.ZERO
 	previous_puck = puck.position
@@ -164,6 +188,9 @@ func setup_faceoff() -> void:
 		var slot := int(actor.get_meta("slot"))
 		actor.position = spots[slot]
 		actor.position.z *= -sign_
+		actor.position+=next_faceoff
+		actor.position.x=clampf(actor.position.x,-12.5,12.5)
+		actor.position.z=clampf(actor.position.z,-28,28)
 		actor.velocity = Vector3.ZERO
 		actor.get_child(1).rotation.y = 0 if sign_<0 else PI
 	sync_strength()
@@ -188,6 +215,7 @@ func sync_strength() -> void:
 			actor.set_meta("eligible",eligible)
 			actor.visible = eligible
 			actor.collision_layer = 2 if eligible else 0
+			set_puck_contacts_enabled(actor,eligible)
 			if eligible and not old:
 				actor.position = Vector3(13.6,0,team*4-2)
 				actor.velocity = Vector3.ZERO
@@ -201,6 +229,7 @@ func sync_strength() -> void:
 					actor.set_meta("eligible",true)
 					actor.visible = true
 					actor.collision_layer = 2
+					set_puck_contacts_enabled(actor,true)
 					active_count += 1
 					break
 				if active_count>=target_count: break
@@ -255,6 +284,16 @@ func switch_player() -> void:
 		velocity=player.velocity
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventJoypadMotion or event is InputEventJoypadButton:
+		controller.handle(event)
+		return
+	if event is InputEventMouseMotion and event.relative.length()>2:
+		controller.active=false
+	if event is InputEventMouseButton: controller.active=false
+	if event is InputEventKey and event.pressed:
+		if event.physical_keycode in [KEY_W,KEY_A,KEY_S,KEY_D]:
+			controller.active=false
+		if event.keycode==KEY_F2: controller_help=not controller_help
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode==KEY_ESCAPE:
 			paused=not paused
@@ -284,7 +323,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			if target!=null:
 				var direction := target.position+target.velocity*0.25-puck.position
 				direction.y=0
-				if strike(direction.normalized(),17,true): passes+=1
+				if strike(direction.normalized(),17,true,0.18 if Input.is_physical_key_pressed(KEY_SHIFT) else 0.0): passes+=1
 
 func pass_target(actor: CharacterBody3D, direction: Vector3) -> CharacterBody3D:
 	var best: CharacterBody3D
@@ -296,21 +335,25 @@ func pass_target(actor: CharacterBody3D, direction: Vector3) -> CharacterBody3D:
 		if score_>best_score: best_score=score_;best=other
 	return best
 
-func strike(direction: Vector3, speed: float, is_pass: bool = false) -> bool:
-	if match_state.phase!=MatchState.Phase.PLAY or cooldown>0 or player.position.distance_to(puck.position)>1.8: return false
-	release_puck(player,direction,speed)
+func strike(direction: Vector3, speed: float, is_pass: bool = false, elevation: float = -1.0) -> bool:
+	if match_state.phase!=MatchState.Phase.PLAY or cooldown>0 or player.position.distance_to(puck.position)>1.8 or puck.position.y>0.22: return false
+	if elevation<0:
+		elevation=0.0 if is_pass else shot_lift
+	release_puck(player,direction,speed,elevation)
 	if not is_pass:
 		shots+=1
 		roster(player).shots+=1
 	return true
 
-func release_puck(actor: CharacterBody3D, direction: Vector3, speed: float) -> void:
-	direction.y=0
-	puck.linear_velocity=direction.normalized()*speed+actor.velocity*0.2
+func release_puck(actor: CharacterBody3D, direction: Vector3, speed: float, elevation: float = 0.0) -> void:
+	puck.sleeping=false
+	puck.linear_velocity=PuckPhysics.launch(direction,speed,elevation)+actor.velocity*0.2
+	puck.angular_velocity=Vector3(0,lerpf(-8,8,controller.right_stick.x) if actor==player else 6,0)
 	carrier=null
 	pickup_owner=false
 	cooldown=0.42
 	actor.get_child(1).shot_follow=1.0
+	actor.get_child(1).shot_charge=0
 	beep(170)
 
 func defensive_action(body_check: bool) -> void:
@@ -354,21 +397,27 @@ func assess_penalty(actor: CharacterBody3D, reason: String) -> void:
 		beep(900)
 
 func _on_puck_contact(body: Node) -> void:
-	if body is CharacterBody3D and body in goalkeepers and goalie_contact_timer<=0:
-		goalie_contact_timer=0.35
+	var actor:=hit_actor(body)
+	if actor is CharacterBody3D and actor in goalkeepers and goalie_contact_timer<=0:
+		goalie_contact_timer=0.25
 		saves+=1
-		var end_ := signf(body.position.z)
-		var side := 1.0 if puck.position.x>=body.position.x else -1.0
-		var speed := clampf(last_puck_velocity.length()*0.32,2,10)
-		puck.linear_velocity=Vector3(side*0.7,0,-end_*0.8).normalized()*speed
 		cooldown=0.2
 		carrier=null
+		# Engine contact normals/materials resolve rebound direction and vertical speed.
+		if str(body.get_meta("zone",""))=="catcher" and last_puck_velocity.length()<32:
+			match_state.phase=MatchState.Phase.STOPPAGE
+			match_state.phase_timer=2
+			match_state.event="Goalkeeper catch"
+			next_faceoff=Vector3(-6.5 if puck.position.x<0 else 6.5,0,signf(actor.position.z)*20)
+			puck.linear_velocity=Vector3.ZERO
+			puck.freeze=true
 		beep(115)
 	elif puck.linear_velocity.length()>8:
 		beep(300)
 
 func _physics_process(delta: float) -> void:
 	if skaters.is_empty(): return
+	process_controller_edges()
 	puck.freeze=paused or match_state.phase!=MatchState.Phase.PLAY
 	if paused:
 		status.text="PAUSED  •  Escape to resume"
@@ -399,13 +448,12 @@ func _physics_process(delta: float) -> void:
 		update_possession(delta)
 		update_goalkeepers(delta)
 		update_officials(delta)
-		var horizontal:=Vector3(puck.linear_velocity.x,0,puck.linear_velocity.z).move_toward(Vector3.ZERO,0.35*delta)
-		puck.linear_velocity.x=horizontal.x
-		puck.linear_velocity.z=horizontal.z
+
 		for end_ in [-1.0,1.0]:
 			if Skating.goal_crossing_end(previous_puck,puck.position,end_):
 				var scoring_team:=0 if attack_direction(0)==end_ else 1
 				match_state.goal(scoring_team)
+				next_faceoff=Vector3.ZERO
 				beep(550)
 				carrier=null
 				break
@@ -421,24 +469,48 @@ func _physics_process(delta: float) -> void:
 	away_goals=match_state.score[1]
 	update_camera(delta)
 	update_match_hud()
+	if is_instance_valid(puck_shadow):
+		puck_shadow.position=Vector3(puck.position.x,0.003,puck.position.z)
+		var shadow_scale:=clampf(1+puck.position.y*0.15,1,1.8)
+		puck_shadow.scale=Vector3(shadow_scale,1,shadow_scale)
 
 func control_player(delta: float) -> void:
 	if not bool(player.get_meta("eligible")): switch_player()
-	var intent:=Vector3(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),0,float(Input.is_physical_key_pressed(KEY_S))-float(Input.is_physical_key_pressed(KEY_W)))
-	var m=Plane(Vector3.UP,0).intersects_ray(camera.project_ray_origin(get_viewport().get_mouse_position()),camera.project_ray_normal(get_viewport().get_mouse_position()))
-	if m!=null:
-		var d:Vector3=m-player.position
-		d.y=0
-		if d.length()>0.3: aim=d.normalized()
+	var intent:=Vector3.ZERO
+	var effort:=false
+	var braking:=false
+	if controller.active:
+		intent=Vector3(controller.left_stick.x,0,controller.left_stick.y)
+		if intent.length()>0.05: aim=intent.normalized()
+		effort=controller.effort
+		braking=controller.stop
+		shot_lift=controller.lift*0.32
+		player_visual.desired_stick=controller.right_stick
+		if controller.trigger_down:
+			charge=minf(1,charge+delta*lerpf(0.6,1.3,controller.shoot_trigger))
+	else:
+		intent=Vector3(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),0,float(Input.is_physical_key_pressed(KEY_S))-float(Input.is_physical_key_pressed(KEY_W)))
+		var m=Plane(Vector3.UP,0).intersects_ray(camera.project_ray_origin(get_viewport().get_mouse_position()),camera.project_ray_normal(get_viewport().get_mouse_position()))
+		if m!=null:
+			var d:Vector3=m-player.position
+			d.y=0
+			if d.length()>0.3: aim=d.normalized()
+		effort=Input.is_physical_key_pressed(KEY_SHIFT)
+		braking=Input.is_physical_key_pressed(KEY_CTRL)
+		shot_lift=0.18 if Input.is_physical_key_pressed(KEY_ALT) else 0.02
+		player_visual.desired_stick=Vector2.ZERO
+		if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT): charge=minf(1,charge+delta*1.3)
 	if bool(player.get_meta("changing")): return
-	velocity=Skating.step(player.velocity,intent,float(roster(player).speed)*lerpf(0.65,1,float(roster(player).stamina)),Input.is_physical_key_pressed(KEY_SHIFT),delta)
-	if Input.is_physical_key_pressed(KEY_CTRL): velocity=velocity.move_toward(Vector3.ZERO,22*delta)
+	velocity=Skating.step(player.velocity,intent,float(roster(player).speed)*lerpf(0.65,1,float(roster(player).stamina)),effort,delta)
+	if braking: velocity=velocity.move_toward(Vector3.ZERO,22*delta)
 	player.velocity=velocity
 	player.move_and_slide()
 	var visual:=player.get_child(1)
 	visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-aim.x,-aim.z),6*delta)
-	visual.animate(player.velocity.length(),delta,0,intent.length_squared()>0.01,Input.is_physical_key_pressed(KEY_CTRL))
-	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT): charge=minf(1,charge+delta*1.3)
+	visual.shot_charge=charge
+	visual.animate(player.velocity.length(),delta,0,intent.length_squared()>0.01,braking)
+	var contact:=player.get_node("PuckContact")
+	contact.rotation.y=visual.rotation.y
 
 func update_roster_stamina(delta: float) -> void:
 	for team in range(2):
@@ -492,7 +564,9 @@ func update_team_ai(delta: float) -> void:
 					var goalie:=goalkeeper_at_end(attack)
 					var target_x:float= -0.65 if goalie.position.x>=0 else 0.65
 					var shot_dir:Vector3=Vector3(target_x,0.1,attack*25)-puck.position
-					release_puck(actor,shot_dir,29)
+					var distance_:float=Vector2(shot_dir.x,shot_dir.z).length()
+					var elevation_:float=PuckPhysics.solve_elevation(distance_,29,0.85,puck.position.y)
+					release_puck(actor,shot_dir,29,elevation_)
 					roster(actor).shots+=1
 				elif pressure<2.6:
 					var other:=pass_target(actor,Vector3(0,0,attack))
@@ -520,6 +594,7 @@ func update_team_ai(delta: float) -> void:
 			actor.velocity=Skating.step(actor.velocity,intent,rating_,false,delta)
 		actor.move_and_slide()
 		var visual:=actor.get_child(1)
+		actor.get_node("PuckContact").rotation.y=visual.rotation.y
 		var face:=intent if intent.length()>0.1 else (puck.position-actor.position).normalized()
 		if actor==carrier: face=(Vector3(0,0,attack*25)-actor.position).normalized()
 		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-face.x,-face.z),4.8*delta)
@@ -539,9 +614,9 @@ func closest_opponent_distance(actor: CharacterBody3D) -> float:
 
 func update_possession(delta: float) -> void:
 	if carrier!=null:
-		if not bool(carrier.get_meta("eligible")) or carrier.position.distance_to(puck.position)>1.9 or cooldown>0:
+		if not bool(carrier.get_meta("eligible")) or carrier.position.distance_to(puck.position)>1.9 or cooldown>0 or puck.position.y>0.18:
 			carrier=null
-	if carrier==null and cooldown<=0:
+	if carrier==null and cooldown<=0 and puck.position.y<0.14:
 		var best:=1.15
 		for actor in skaters:
 			if not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")): continue
@@ -551,7 +626,7 @@ func update_possession(delta: float) -> void:
 				carrier=actor
 	if carrier!=null:
 		var visual:=carrier.get_child(1)
-		var target:Vector3=carrier.position-visual.global_basis.z*1.02+visual.global_basis.x*0.20
+		var target:Vector3=visual.get_blade_world()
 		var error:=target-puck.position
 		error.y=0
 		var relative:=puck.linear_velocity-carrier.velocity
@@ -580,16 +655,38 @@ func update_goalkeepers(delta: float) -> void:
 		var keeper:=goalkeepers[i]
 		var visual:=keeper.get_child(1)
 		var end_:=signf(keeper.position.z)
-		var threat:=puck.linear_velocity.z*end_>3 and absf(puck.position.z-keeper.position.z)<11
-		visual.butterfly=move_toward(visual.butterfly,1.0 if threat else 0.0,delta*(6 if threat else 2))
-		var shape:BoxShape3D=keeper.get_child(0).shape
-		shape.size=Vector3(lerpf(1,1.35,visual.butterfly),lerpf(1.3,0.75,visual.butterfly),0.45)
-		keeper.get_child(0).position.y=shape.size.y/2+0.01
+		var incoming:=puck.linear_velocity.z*end_>3
+		var intercept_time:=0.0
+		if incoming: intercept_time=clampf((keeper.position.z-puck.position.z)/puck.linear_velocity.z,0,1)
+		var intercept_height:=PuckPhysics.ballistic_height(puck.position.y,puck.linear_velocity.y,intercept_time)
+		var threat:=incoming and absf(puck.position.z-keeper.position.z)<12
+		var low_shot:=threat and intercept_height<0.60
+		visual.butterfly=move_toward(visual.butterfly,1.0 if low_shot else 0.0,delta*(6 if low_shot else 2))
+		visual.goalie_save_height=clampf(intercept_height-0.7,0,0.55) if threat else 0.0
+		# Movement capsule is separate from physical puck-facing pads/torso/gloves.
+		var contact:=keeper.get_node("PuckContact")
+		var pad_shape:BoxShape3D=contact.get_node("Pads").shape
+		pad_shape.size=Vector3(lerpf(0.90,1.30,visual.butterfly),lerpf(0.60,0.35,visual.butterfly),0.28)
+		contact.get_node("Pads").position.y=pad_shape.size.y/2+0.01
+		contact.get_node("Torso").position.y=lerpf(1.0,0.75,visual.butterfly)
 		keeper.velocity=(goalie_targets[i]-keeper.position).limit_length(1)*3.8
 		keeper.move_and_slide()
 		var facing:=puck.position-keeper.position
 		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-facing.x,-facing.z)-keeper.rotation.y,delta*4)
+		contact.rotation.y=visual.rotation.y
+		for glove_name in ["Catcher","Blocker"]:
+			var glove:=keeper.get_node(glove_name)
+			var side:float= -1 if glove_name=="Catcher" else 1
+			glove.position=Vector3(side*0.38,0.78-visual.butterfly*0.18+visual.goalie_save_height,-0.30).rotated(Vector3.UP,visual.rotation.y)
 		visual.animate(keeper.velocity.length(),delta,0,false)
+		if puck.position.y<0.13 and puck.linear_velocity.length()<2 and keeper.position.distance_to(puck.position)<0.65 and cooldown<=0:
+			match_state.phase=MatchState.Phase.STOPPAGE
+			match_state.phase_timer=2
+			match_state.event="Goalkeeper cover"
+			next_faceoff=Vector3(-6.5 if puck.position.x<0 else 6.5,0,end_*20)
+			puck.freeze=true
+			puck.linear_velocity=Vector3.ZERO
+			carrier=null
 
 func update_camera(delta: float) -> void:
 	# No lateral offset, yaw or roll: rink markings remain horizontally aligned.
@@ -617,7 +714,13 @@ func update_match_hud() -> void:
 	team_panel.text=line_text
 	power.visible=charge>0
 	power.value=charge
-	if debug: status.text+="  |  FPS %d  •  %d skaters  •  puck %.1f m/s"%[Engine.get_frames_per_second(),skaters.size(),puck.linear_velocity.length()]
+	if controller.active:
+		help.text="LS Skate / aim   •   RS Stickhandle   •   RT/R2 Shoot   •   LT/L2 Elevation   •   RB/R1 Pass   •   Y/△ Saucer   •   A/× Switch   •   F2 Controls"
+	else:
+		help.text="WASD Skate  •  Mouse Aim  •  LMB Shoot  •  Alt Lift  •  RMB Pass  •  Shift+RMB Saucer  •  Space Switch  •  1–4 Lines  •  E Poke  •  F Check"
+	if controller_help:
+		status.text="LS Move + shot direction  |  RS Stickhandle  |  RT/R2 Charge / release  |  LT/L2 Lift  |  RB/R1 Pass  |  L3 Effort  |  R3 Stop  |  D-pad Lines  |  Deadzone %.2f"%controller.deadzone
+	if debug: status.text+="  |  FPS %d  •  puck %.1f m/s  •  height %.2f m"%[Engine.get_frames_per_second(),puck.linear_velocity.length(),puck.position.y]
 
 func capture_preview() -> void:
 	await get_tree().create_timer(capture_time).timeout
@@ -643,3 +746,38 @@ func update_officials(delta: float) -> void:
 		if move.length()>0.2:
 			official.rotation.y=rotate_toward(official.rotation.y,atan2(-move.x,-move.z),delta*4)
 		official.animate(move.length(),delta,0,move.length()>0.2)
+
+func process_controller_edges() -> void:
+	if controller.pause_pressed:
+		paused=not paused
+		charge=0
+	if not controller.active:
+		controller.clear_edges()
+		return
+	if controller.left_stick.length()>0.05:
+		aim=Vector3(controller.left_stick.x,0,controller.left_stick.y).normalized()
+	if not paused:
+		if controller.switch_pressed: switch_player()
+		if controller.line_delta!=0: request_line(0,active_lines[0]+controller.line_delta)
+		if controller.pair_delta!=0: request_line(0,defense_pairs[0]+controller.pair_delta,true)
+		if controller.check_pressed: defensive_action(true)
+		if controller.poke_pressed: defensive_action(false)
+		if match_state.phase==MatchState.Phase.PLAY:
+			if controller.shoot_released:
+				strike(aim,lerpf(16,36,charge),false,controller.lift*0.32)
+				charge=0
+			if controller.pass_pressed or controller.saucer_pressed:
+				var target:=pass_target(player,aim)
+				if target!=null:
+					var direction:=target.position+target.velocity*0.25-puck.position
+					direction.y=0
+					if strike(direction.normalized(),16,true,0.18 if controller.saucer_pressed else 0): passes+=1
+	controller.clear_edges()
+
+func on_controller_connection(device: int, is_connected: bool) -> void:
+	if not is_connected and controller.disconnected(device):
+		paused=true
+		charge=0
+		status.text="CONTROLLER DISCONNECTED — reconnect, then Start / Options"
+	elif is_connected:
+		controller.connected=true

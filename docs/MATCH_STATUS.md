@@ -1,4 +1,4 @@
-# 0.4 exhibition simulation status
+# 0.5 exhibition simulation status
 
 ## Implemented
 - Ten on-ice skater actors and two goalkeepers; 18 fictional roster entries per team.
@@ -17,7 +17,7 @@
 - Previous practice lab remains at practice.tscn for isolated tests.
 
 ## Verification
-Seven scripts: test_simulation, test_lab, test_controls, test_animation, test_match_state, test_match, test_match_loop.
+Nine scripts (including synthetic controller input and free puck flight): test_simulation, test_lab, test_controls, test_animation, test_match_state, test_match, test_match_loop.
 State tests cover stopped clocks, period advancement/end, minor expiry, queued minors and power-play goal release.
 Scene tests cover 5v5 counts, unique roster IDs, pause, strength reduction/restoration, bench changes, camera alignment and goalie end switching.
 A 2,400-tick / 20-second headless match-loop test retained valid player counts and rink bounds, advanced game clock, scored a goal and restarted.
@@ -25,13 +25,15 @@ Linux software-render PNG inspected. No Windows/hardware performance validation 
 
 ## Explicit gaps
 This is an early exhibition prototype, not an NHL-accurate rules implementation or EA NHL-quality production.
-- Offside, icing, delayed calls, coincidental penalties, majors/misconducts, goalie covering, authentic faceoff mechanics and full special-team systems are absent.
+- Offside, icing, delayed calls, coincidental penalties, majors/misconducts, authentic faceoff mechanics and full special-team systems are absent.
 - A tied regulation match ends as a draw; overtime/shootouts are absent.
 - AI is basic positioning/decision logic, without validated hockey tactics or difficulty calibration.
-- Goalkeeper reaction uses a simple shared interval, with no screen recognition, catcher/blocker-specific saves, true shot-height selection or motion-captured butterfly/post integrations.
-- Shots remain flat. Puck vertical motion is locked to its ice plane to prevent capsule collisions from spuriously launching it; loft, air bounces and 3D shot trajectories are absent. Contact has no falling/ragdoll or checking animation.
+- Goalkeeper reaction uses a simple shared interval and ballistic height prediction, with basic pad/glove colliders and catch/cover logic. Screen recognition, realistic save selection, motion-captured saves and butterfly/post integrations remain absent.
+- Puck now has gravity, free vertical motion, loft and air rebounds. Dedicated puck colliders avoid the movement capsules. Coefficients still need reference calibration; flexible sticks and aerodynamic lift are absent. Contact has no falling/ragdoll or checking animation.
 - Bench handoff reuses the actor at the boards; no hopping-over-boards animation or visible reserve-player population.
 - Rink dimensions remain prototype approximations.
 - Rendered skinned players remain a CC0 human derivative with procedural garments/equipment; production skin/fabric textures, garment deformation and animation transitions need substantial work.
 - Crowd members are repeated flat cutout cards.
 - Video pose extraction was tested and rejected the available low-resolution clip. No retargeted video-derived animation is claimed; see MOTION_CAPTURE.md.
+
+See SPORTS_GAME_RESEARCH.md for source-backed implementation choices and remaining production gates.

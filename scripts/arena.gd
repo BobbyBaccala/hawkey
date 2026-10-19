@@ -102,7 +102,7 @@ func board_segment(a: Vector3, b: Vector3) -> void:
 	block(root, Vector3(length_, 1.05, 0.24), Vector3(0, 0.525, 0), WHITE, true)
 	block(root, Vector3(length_, 0.18, 0.27), Vector3(0, 0.09, 0), Color("#e8ba37"))
 	block(root, Vector3(length_, 0.08, 0.29), Vector3(0, 1.07, 0), Color("#19364f"))
-	block(root, Vector3(length_, 1.55, 0.045), Vector3(0, 1.88, 0), Color(0.58, 0.8, 0.87, 0.12))
+	block(root, Vector3(length_, 1.55, 0.045), Vector3(0, 1.88, 0), Color(0.58, 0.8, 0.87, 0.12),true,0.35)
 	tube(root, Vector3(-length_ / 2, 1.1, 0), Vector3(-length_ / 2, 2.66, 0), 0.025, Color("#8a9fac"))
 	board_count += 1
 
@@ -123,6 +123,8 @@ func goal(end_sign: float) -> void:
 	tube(root, Vector3(-0.96, 1.22, 0), Vector3(0.96, 1.22, 0), 0.035, RED, true)
 	var back := block(root, Vector3(1.96, 1.2, 0.06), Vector3(0, 0.6, -1.12), Color(1,1,1,0), true, 0.12)
 	back.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var roof:=block(root,Vector3(1.96,0.05,1.1),Vector3(0,1.20,-0.55),Color(1,1,1,0),true,0.12)
+	roof.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for i in range(21):
 		var x := lerpf(-0.95, 0.95, float(i) / 20)
 		tube(root, Vector3(x, 0.06, -1.08), Vector3(x, 1.15, -1.08), 0.008, WHITE)
@@ -140,6 +142,7 @@ func goal(end_sign: float) -> void:
 func _ready() -> void:
 	block(self, Vector3(85, 0.5, 100), Vector3(0, -0.65, 0), Color("#101e31"))
 	var ice := block(self, Vector3(30, 0.3, 60), Vector3(0, -0.15, 0), Color("#e4edf2"), true, 0.02)
+	ice.get_child(0).physics_material_override.friction=0.0
 	ice.visible = false
 	var ice_material := mat(Color("#afc0cc"),0.38)
 	ice.material_override = ice_material

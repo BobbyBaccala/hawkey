@@ -14,6 +14,8 @@ func _initialize() -> void:
 	assert(not Skating.goal_crossing(Vector3(0, 2, -24), Vector3(0, 2, -26)))
 	assert(Skating.goal_crossing_end(Vector3(0,0.1,24),Vector3(0,0.1,26),1))
 	assert(not Skating.goal_crossing_end(Vector3(0,0.1,26),Vector3(0,0.1,24),1))
+	assert(not Skating.goal_crossing(Vector3(0,0.1,-24.9),Vector3(0,0.1,-25.02)), "Whole puck must cross line")
+	assert(Skating.goal_crossing(Vector3(0,0.1,-25.02),Vector3(0,0.1,-25.05)))
 	var reversed := Skating.step(Vector3(0,0,-8),Vector3.BACK,85,false,1.0/120)
 	assert(reversed.z < 0, "Reversing input must not instantly reverse momentum")
 	print("PASS: rating acceleration, deceleration, front-mouth goal, back entry, wide and high misses")

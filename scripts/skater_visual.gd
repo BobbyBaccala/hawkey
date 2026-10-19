@@ -11,6 +11,14 @@ var nameplate: Label3D
 var phase := 0.0
 var butterfly := 0.0
 var shot_follow := 0.0
+var shot_charge := 0.0
+var desired_stick := Vector2.ZERO
+var stick_intent := Vector2.ZERO
+var goalie_save_height := 0.0
+var blade_position := Vector3(-0.20,0.035,0.95)
+var stick_shaft: MeshInstance3D
+var stick_blade: MeshInstance3D
+var grip_tape: MeshInstance3D
 var number_label: Label3D
 var goalie_gloves: Array[Node3D] = []
 var rig: Node3D
@@ -81,10 +89,16 @@ func _ready() -> void:
 	build_jersey()
 	sticks = Node3D.new()
 	rig.add_child(sticks)
-	segment(sticks,Vector3(-0.06,1.0,0.45),Vector3(0.28,0.10,1.05),0.016,Color("#171f28"))
-	block(sticks,Vector3(0.28,0.055,0.045),Vector3(0.16,0.085,1.05),Color("#151c23"))
-	# Tape at the top hand and blade.
-	segment(sticks,Vector3(-0.06,1.0,0.45),Vector3(-0.025,0.91,0.51),0.019,Color("#cad2d7"))
+	stick_shaft=MeshInstance3D.new()
+	var shaft_mesh:=CylinderMesh.new()
+	shaft_mesh.top_radius=0.014
+	shaft_mesh.bottom_radius=0.014
+	shaft_mesh.height=1
+	stick_shaft.mesh=shaft_mesh
+	stick_shaft.material_override=material(Color("#171f28"),0.35)
+	sticks.add_child(stick_shaft)
+	stick_blade=block(sticks,Vector3(0.28,0.045,0.035),blade_position,Color("#151c23"))
+	grip_tape=block(sticks,Vector3(0.035,0.11,0.035),Vector3.ZERO,Color("#cad2d7"))
 	for side in [-1.0,1.0]:
 		var skate := Node3D.new()
 		rig.add_child(skate)
@@ -268,13 +282,11 @@ func pose(speed: float, turn: float) -> void:
 		# Elbows and wrists stay on a two-hand stick posture, never running arm swings.
 		var shoulder_original: Transform3D = rest["upperarm01"+suffix]
 		var shoulder := pivot+drop+bend*(shoulder_original.origin-pivot)
-		var wrist := Vector3(0.10,0.83,0.67) if i==0 else Vector3(-0.06,1.0,0.45)
+		var wrist := stick_grip().lerp(blade_position+Vector3(-0.12,0.025,0),0.26) if i==0 else stick_grip()
 		if referee: wrist=Vector3(side*0.32,0.96,0.03)
 		if goalie:
-			wrist=Vector3(side*0.36,0.78-butterfly*0.18,0.40)
+			wrist=Vector3(side*0.36,0.78-butterfly*0.18+goalie_save_height,0.40)
 			goalie_gloves[i].position=wrist+Vector3(0,0,0.04)
-		wrist.x += shot_follow * 0.18
-		wrist.z += shot_follow * 0.15
 		var pole := Vector3(side,0,-0.3)
 		var elbow := knee_position(shoulder,wrist,pole,0.28,0.29)
 		align_bone("upperarm01"+suffix,"lowerarm01"+suffix,shoulder,elbow)
@@ -283,9 +295,12 @@ func pose(speed: float, turn: float) -> void:
 		wrist_pose.origin = wrist
 		override_pose("wrist"+suffix,wrist_pose)
 	rig.rotation.z = clampf(turn,-0.13,0.13)
+	update_stick()
 
 func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, braking: bool = false) -> void:
 	shot_follow = maxf(0,shot_follow-delta*3)
+	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
+	blade_position=Vector3(-(0.20+stick_intent.x*0.65),0.035,0.95-stick_intent.y*0.35)
 	var target := clampf(speed/5.0,0,1) if pushing and not braking and not goalie else 0.0
 	push_blend = move_toward(push_blend,target,delta*4)
 	if push_blend > 0.01:
@@ -301,3 +316,20 @@ func set_number(value: String) -> void:
 
 func set_nameplate(value: String) -> void:
 	if is_instance_valid(nameplate): nameplate.text=value.to_upper()
+
+func stick_grip() -> Vector3:
+	return Vector3(-0.15-stick_intent.x*0.16-shot_follow*0.12,1.0+shot_charge*0.06,0.36-stick_intent.y*0.10-shot_charge*0.18+shot_follow*0.22)
+
+func update_stick() -> void:
+	var top:=stick_grip()
+	var bottom:=blade_position+Vector3(-0.12,0.025,0)
+	var axis:=top-bottom
+	stick_shaft.position=(top+bottom)*0.5
+	stick_shaft.basis=Basis(Quaternion(Vector3.UP,axis.normalized()))
+	stick_shaft.scale=Vector3(1,axis.length(),1)
+	stick_blade.position=blade_position
+	grip_tape.position=top
+	grip_tape.basis=stick_shaft.basis
+
+func get_blade_world() -> Vector3:
+	return rig.to_global(blade_position)

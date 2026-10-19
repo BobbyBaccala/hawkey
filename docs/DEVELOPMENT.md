@@ -78,3 +78,7 @@ Open project.godot in Godot 4.6 and play the laboratory. Report skating/aim/puck
 0.2: Rebuilt rink and both nets, perspective follow/wide cameras, procedural skater animation, collision movement and stops, stable stick spring, practice support, physical goalkeeper tracking, HUD and finite audio. Added rendered inspection and input/goalkeeper integration tests.
 
 0.1: Created native practice laboratory, deterministic skating/goal tests and development documentation.
+
+## Version 0.5 controller / flight revision
+
+See SPORTS_GAME_RESEARCH.md for primary references and production requirements. The match now has native controller input and a free 3D puck with a convex disk collider. It ignores movement capsules and hits separate equipment/body colliders. Prior flat-puck limitations are superseded; production models/mocap and measured physics calibration are still outstanding. The two new suites test synthetic controller input and isolated airborne/ground puck behavior.

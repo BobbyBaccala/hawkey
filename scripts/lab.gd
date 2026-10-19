@@ -62,6 +62,8 @@ func make_skater(pos: Vector3, color: Color, jersey: String, is_goalie: bool = f
 	visual.number = jersey
 	visual.goalie = is_goalie
 	body.add_child(visual)
+	body.set_meta("goalie",is_goalie)
+	add_puck_collision(body,is_goalie)
 	return body
 
 func _ready() -> void:
@@ -98,35 +100,42 @@ func _ready() -> void:
 		goalie.rotation.y = PI if end_ < 0 else 0
 		goalkeepers.append(goalie)
 		goalie_visuals.append(goalie.get_child(1))
-	puck = RigidBody3D.new()
+	puck = preload("res://scripts/puck.gd").new()
 	puck.mass = 0.17
 	puck.continuous_cd = true
-	puck.gravity_scale = 0
-	puck.axis_lock_linear_y = true
+	puck.gravity_scale = 1
+	puck.axis_lock_linear_y = false
+	puck.linear_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
 	puck.linear_damp = 0
 	puck.angular_damp = 0.8
-	puck.axis_lock_angular_x = true
-	puck.axis_lock_angular_z = true
+	puck.axis_lock_angular_x = false
+	puck.axis_lock_angular_z = false
 	puck.collision_layer = 4
-	puck.collision_mask = 3
+	puck.collision_mask = 9
 	puck.contact_monitor = true
 	puck.max_contacts_reported = 4
 	var pm := PhysicsMaterial.new()
-	pm.friction = 0.015
-	pm.bounce = 0.08
+	pm.friction = 0.0
+	pm.bounce = 0.12
 	puck.physics_material_override = pm
 	var cylinder := CylinderMesh.new()
-	cylinder.top_radius = 0.05
-	cylinder.bottom_radius = 0.05
-	cylinder.height = 0.028
+	cylinder.top_radius = 0.0381
+	cylinder.bottom_radius = 0.0381
+	cylinder.height = 0.0254
 	var mesh := MeshInstance3D.new()
 	mesh.mesh = cylinder
 	mesh.material_override = arena.mat(Color("#10151b"),0.4)
 	puck.add_child(mesh)
 	var collision := CollisionShape3D.new()
-	var shape := CylinderShape3D.new()
-	shape.radius = 0.05
-	shape.height = 0.028
+	# Convex disk avoids documented CylinderShape3D contact bugs at puck scale.
+	var shape := ConvexPolygonShape3D.new()
+	shape.margin=0.001
+	var points:=PackedVector3Array()
+	for y in [-0.0127,0.0127]:
+		for i in range(32):
+			var angle:=TAU*i/32
+			points.append(Vector3(cos(angle)*0.0381,y,sin(angle)*0.0381))
+	shape.points=points
 	collision.shape = shape
 	puck.add_child(collision)
 	add_child(puck)
@@ -282,7 +291,8 @@ func strike(direction: Vector3, speed: float, is_pass: bool = false) -> bool:
 	return true
 
 func _on_puck_contact(body: Node) -> void:
-	if body is CharacterBody3D and body in goalkeepers:
+	var actor:=hit_actor(body)
+	if actor is CharacterBody3D and actor in goalkeepers:
 		saves += 1
 		cooldown = 0.22
 		beep(115)
@@ -331,24 +341,19 @@ func _physics_process(delta: float) -> void:
 	var puck_flat := puck.position
 	puck_flat.y = 0
 	var distance_ := player.position.distance_to(puck_flat)
-	if distance_ > 1.9 or cooldown > 0: pickup_owner = false
-	if cooldown <= 0 and distance_ < 1.25 and (puck.linear_velocity - velocity).length() < 14:
+	if distance_ > 1.9 or cooldown > 0 or puck.position.y>0.18: pickup_owner = false
+	if cooldown <= 0 and distance_ < 1.25 and puck.position.y<0.14 and (puck.linear_velocity - velocity).length() < 14:
 		pickup_owner = true
 	if pickup_owner:
 		var stick_forward := -player_visual.global_basis.z
 		var stick_right := player_visual.global_basis.x
-		var target := player.position + stick_forward * 1.02 + stick_right * 0.28
+		var target: Vector3 = player_visual.get_blade_world()
 		var error := target - puck.position
 		error.y = 0
 		var relative := puck.linear_velocity - velocity
 		relative.y = 0
 		var accel := (error * 160 - relative * 25).limit_length(100)
 		puck.linear_velocity += accel * delta
-	# Ice drag acts horizontally, instead of slowing gravity with linear damping.
-	var horizontal := Vector3(puck.linear_velocity.x,0,puck.linear_velocity.z)
-	horizontal = horizontal.move_toward(Vector3.ZERO,0.35 * delta)
-	puck.linear_velocity.x = horizontal.x
-	puck.linear_velocity.z = horizontal.z
 	update_partner(delta)
 	update_goalkeepers(delta)
 	if goal_timer <= 0:
@@ -409,3 +414,56 @@ func _exit_tree() -> void:
 	if is_instance_valid(audio):
 		audio.stop()
 		audio.stream=null
+
+func add_puck_collision(actor: CharacterBody3D, is_goalie: bool) -> void:
+	var contact:=AnimatableBody3D.new()
+	contact.name="PuckContact"
+	contact.collision_layer=8
+	contact.collision_mask=4
+	contact.set_meta("actor",actor)
+	contact.set_meta("zone","pads" if is_goalie else "body")
+	actor.add_child(contact)
+	var pm:=PhysicsMaterial.new()
+	pm.bounce=0.22 if is_goalie else 0.12
+	pm.friction=0.15
+	contact.physics_material_override=pm
+	var boxes: Array[Dictionary]
+	if is_goalie:
+		boxes=[{"size":Vector3(0.90,0.60,0.28),"pos":Vector3(0,0.31,-0.1),"name":"Pads"},
+			   {"size":Vector3(0.50,0.70,0.28),"pos":Vector3(0,1.0,0),"name":"Torso"}]
+	else:
+		boxes=[{"size":Vector3(0.48,0.65,0.30),"pos":Vector3(0,1.14,0),"name":"Torso"},
+			   {"size":Vector3(0.16,0.12,0.30),"pos":Vector3(-0.18,0.065,-0.02),"name":"LeftSkate"},
+			   {"size":Vector3(0.16,0.12,0.30),"pos":Vector3(0.18,0.065,-0.02),"name":"RightSkate"}]
+	for entry in boxes:
+		var collision:=CollisionShape3D.new()
+		var box_shape:=BoxShape3D.new()
+		box_shape.size=entry.size
+		collision.shape=box_shape
+		collision.position=entry.pos
+		collision.name=entry.name
+		contact.add_child(collision)
+	if is_goalie:
+		for side in [-1.0,1.0]:
+			var glove:=AnimatableBody3D.new()
+			glove.name="Catcher" if side<0 else "Blocker"
+			glove.collision_layer=8
+			glove.collision_mask=4
+			glove.set_meta("actor",actor)
+			glove.set_meta("zone","catcher" if side<0 else "blocker")
+			actor.add_child(glove)
+			var collision:=CollisionShape3D.new()
+			var sphere:=SphereShape3D.new()
+			sphere.radius=0.13
+			collision.shape=sphere
+			glove.add_child(collision)
+			glove.position=Vector3(side*0.38,0.9,-0.28)
+
+func hit_actor(body: Node) -> Node:
+	if body.has_meta("actor"): return body.get_meta("actor")
+	return body
+
+func set_puck_contacts_enabled(actor: CharacterBody3D, enabled: bool) -> void:
+	for child in actor.get_children():
+		if child is AnimatableBody3D:
+			child.collision_layer=8 if enabled else 0

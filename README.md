@@ -1,9 +1,36 @@
-# Hawkey — 0.4 five-on-five exhibition
+# Hawkey — 0.5 controller-first hockey simulation prototype
 
 Native Godot 4.6 PC hockey exhibition prototype. Uses a CC0 skinned human foundation with original hockey equipment, procedural skating and generated crowd/ice textures. This is an early exhibition prototype, not EA NHL-level photorealism or a complete regulation ruleset.
 
 ## Open this version
 Download the ZIP from the **prototype/skating-puck-lab** branch, extract to a new folder, then import that folder's **project.godot** in Godot 4.6. Press F5. Opening an older downloaded folder will continue running the old build.
+
+## Controller controls
+Godot's native gamepad support is used; no separate plugin is required. Controller hardware has not been tested here.
+
+| Input | Action |
+| --- | --- |
+| Left stick | Skate and aim shot; direction persists at neutral |
+| Right stick | Move stick blade / stickhandle |
+| RT / R2 | Hold to charge, release to shoot |
+| LT / L2 | Shot elevation, from flat to lifted |
+| RB / R1 | Assisted pass toward aimed teammate |
+| Y / Triangle | Saucer pass |
+| A / Cross | Switch skater |
+| B / Circle; X / Square | Body check; poke |
+| D-pad up/down; left/right | Forward line; defence pair |
+| L3; R3; Start | Effort; stop; pause |
+| F2 | Expanded controller help |
+
+## New in 0.5
+- Removed puck height lock: gravity, airborne shots, saucer passes, spin/tumbling and physical rebounds.
+- Puck-specific skate/body/pad/glove colliders replace rounded movement capsules for puck contacts.
+- Shot-height prediction drives basic goalie pad/glove coverage; catches/covers whistle for a zone faceoff.
+- Stick blade, shaft and hand targets follow the right stick; analog movement and disconnect pause.
+- Shoulder/armpit gaps repaired by retaining the continuous skinned undershirt.
+- Actual renders: docs/screenshots/gameplay-v05.png (live match) and flight-review-v05.png (explicitly labelled scripted shot fixture).
+- Research and explicit production gaps: [SPORTS_GAME_RESEARCH.md](docs/SPORTS_GAME_RESEARCH.md).
+- Player art remains provisional and below the requested EA NHL standard. No new motion-capture library is shipped.
 
 ## Match controls
 | Input | Action |
@@ -50,7 +77,7 @@ Download the ZIP from the **prototype/skating-puck-lab** branch, extract to a ne
 
 ## Validation
 Godot 4.6 Linux headless import and scene smoke tests pass.
-Seven executable suites:
+Nine executable suites:
 ```
 godot --headless --path . --script tests/test_simulation.gd
 godot --headless --path . --script tests/test_lab.gd
@@ -59,10 +86,12 @@ godot --headless --path . --script tests/test_animation.gd
 godot --headless --path . --script tests/test_match_state.gd
 godot --headless --path . --script tests/test_match.gd
 godot --headless --path . --script tests/test_match_loop.gd
+godot --headless --path . --script tests/test_controller.gd
+godot --headless --path . --script tests/test_puck_flight.gd
 ```
 Tests cover ratings, deceleration, directional goal detection, two nets, rounded boards, perspective camera, high-speed board rebound, goal counting, reset/pause, goalkeeper contact/save, actual W/Ctrl input and stationary puck-control stability.
 
-Rendered screenshots were inspected at 1440×900 using Linux Mesa llvmpipe software rendering. This verifies appearance and framing, not Windows performance, controller behavior or satisfying human gameplay feel. The imported human is a foundation with procedural equipment and posing; motion capture, photorealistic player textures, advanced skating transitions, sophisticated tactics, complete rules, GM and career are not implemented.
+Rendered screenshots were inspected at 1728×1080 using Linux Mesa llvmpipe software rendering. This verifies appearance and framing, not Windows performance, physical controller compatibility or satisfying human gameplay feel. The imported human is a foundation with procedural equipment and posing; motion capture, photorealistic player textures, advanced skating transitions, sophisticated tactics, complete rules, GM and career are not implemented.
 
 ## Windows export
 Install matching Godot 4.6 export templates, then Project > Export > Add > Windows Desktop. Export to a separate empty folder. Windows export/installation has not been validated here and no executable is supplied.

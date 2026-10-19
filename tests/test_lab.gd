@@ -19,6 +19,7 @@ func run() -> void:
 	# Isolate the goal-mouth physics test from goalkeeper interference.
 	for goalie in scene.goalkeepers:
 		goalie.collision_layer = 0
+		scene.set_puck_contacts_enabled(goalie,false)
 	scene.cooldown = 0
 	scene.player.position = Vector3(0, 0, -23.8)
 	scene.puck.position = Vector3(0, 0.15, -24.6)
@@ -50,6 +51,7 @@ func run() -> void:
 	scene.goals = 0
 	for goalie in scene.goalkeepers:
 		goalie.collision_layer = 2
+		scene.set_puck_contacts_enabled(goalie,true)
 	scene.goalkeepers[0].position = Vector3(0,0,-24)
 	scene.goalkeepers[0].velocity = Vector3.ZERO
 	scene.player.position = Vector3(4,0,-20)

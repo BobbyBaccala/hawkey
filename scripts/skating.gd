@@ -4,6 +4,7 @@ static func step(velocity: Vector3, intent: Vector3, rating: float, effort: bool
 	var top_speed := lerpf(5.8,9.4,attribute)
 	var acceleration := lerpf(7,13,attribute)
 	if effort: top_speed *= 1.12
+	top_speed *= minf(1,intent.length())
 	if intent.length_squared() < 0.01:
 		return velocity.move_toward(Vector3.ZERO,1.7 * delta)
 	var direction := intent.normalized()
@@ -24,7 +25,8 @@ static func goal_crossing(previous: Vector3, current: Vector3) -> bool:
 static func goal_crossing_end(previous: Vector3, current: Vector3, end_sign: float) -> bool:
 	var before := previous.z * end_sign
 	var after := current.z * end_sign
-	if before >= 25 or after < 25: return false
-	var t := (25 - before) / (after - before)
+	var whole_puck_plane:=25.0381
+	if before >= whole_puck_plane or after < whole_puck_plane: return false
+	var t := (whole_puck_plane - before) / (after - before)
 	var crossing := previous.lerp(current,t)
-	return absf(crossing.x) < 0.83 and crossing.y >= 0 and crossing.y < 1.15
+	return absf(crossing.x) < 0.8869 and crossing.y >= 0 and crossing.y < 1.15
