@@ -1,4 +1,4 @@
-# 0.5 exhibition simulation status
+# 0.6 exhibition simulation status
 
 ## Implemented
 - Ten on-ice skater actors and two goalkeepers; 18 fictional roster entries per team.
@@ -17,7 +17,7 @@
 - Previous practice lab remains at practice.tscn for isolated tests.
 
 ## Verification
-Nine scripts (including synthetic controller input and free puck flight): test_simulation, test_lab, test_controls, test_animation, test_match_state, test_match, test_match_loop.
+Ten scripts (including synthetic controller input, free puck flight and goalie equipment): test_simulation, test_lab, test_controls, test_animation, test_match_state, test_match, test_match_loop.
 State tests cover stopped clocks, period advancement/end, minor expiry, queued minors and power-play goal release.
 Scene tests cover 5v5 counts, unique roster IDs, pause, strength reduction/restoration, bench changes, camera alignment and goalie end switching.
 A 2,400-tick / 20-second headless match-loop test retained valid player counts and rink bounds, advanced game clock, scored a goal and restarted.
@@ -37,3 +37,5 @@ This is an early exhibition prototype, not an NHL-accurate rules implementation 
 - Video pose extraction was tested and rejected the available low-resolution clip. No retargeted video-derived animation is claimed; see MOTION_CAPTURE.md.
 
 See SPORTS_GAME_RESEARCH.md for source-backed implementation choices and remaining production gates.
+
+0.6 replaces the shared goalie pad wall with pose-aligned individual gear. GOALIE_GEAR.md records behavior and limits.

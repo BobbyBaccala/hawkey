@@ -1,4 +1,4 @@
-# Hawkey — 0.5 controller-first hockey simulation prototype
+# Hawkey — 0.6 active stance and goalie equipment revision
 
 Native Godot 4.6 PC hockey exhibition prototype. Uses a CC0 skinned human foundation with original hockey equipment, procedural skating and generated crowd/ice textures. This is an early exhibition prototype, not EA NHL-level photorealism or a complete regulation ruleset.
 
@@ -21,6 +21,17 @@ Godot's native gamepad support is used; no separate plugin is required. Controll
 | D-pad up/down; left/right | Forward line; defence pair |
 | L3; R3; Start | Effort; stop; pause |
 | F2 | Expanded controller help |
+
+## New in 0.6
+- Lower active skater/goalie stances, forward knee flexion and grounded skate blades.
+- Curved, thin stick blades; rectangular shafts, goalie paddle, corrected hand/gear assignment and closed gloves.
+- Continuous IK-driven cloth sleeves, matte team kits and beveled pad shells.
+- Independent pad, catcher, blocker, paddle, blade, torso and mask collision; transforms follow the visible gear.
+- Butterfly pads rotate and seal at the ice rather than expanding an invisible wall.
+- Different equipment rebound materials; front-pocket catch logic rejects rear glove hits.
+- Steeper centred broadcast camera, neutral quieter ice and a smaller scoreboard.
+- Actual engine PNGs: docs/screenshots/gameplay-v06.png, equipment-v06.png and goalie-closeup-v06.png.
+- Implementation and limits: docs/GOALIE_GEAR.md.
 
 ## New in 0.5
 - Removed puck height lock: gravity, airborne shots, saucer passes, spin/tumbling and physical rebounds.
@@ -77,7 +88,7 @@ Godot's native gamepad support is used; no separate plugin is required. Controll
 
 ## Validation
 Godot 4.6 Linux headless import and scene smoke tests pass.
-Nine executable suites:
+Ten executable suites:
 ```
 godot --headless --path . --script tests/test_simulation.gd
 godot --headless --path . --script tests/test_lab.gd
@@ -88,6 +99,7 @@ godot --headless --path . --script tests/test_match.gd
 godot --headless --path . --script tests/test_match_loop.gd
 godot --headless --path . --script tests/test_controller.gd
 godot --headless --path . --script tests/test_puck_flight.gd
+godot --headless --path . --script tests/test_goalie_gear.gd
 ```
 Tests cover ratings, deceleration, directional goal detection, two nets, rounded boards, perspective camera, high-speed board rebound, goal counting, reset/pause, goalkeeper contact/save, actual W/Ctrl input and stationary puck-control stability.
 

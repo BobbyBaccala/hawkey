@@ -167,7 +167,7 @@ func _ready() -> void:
 	var surface_instance := MeshInstance3D.new()
 	surface_instance.mesh = surface
 	var ice_shader := Shader.new()
-	ice_shader.code = "shader_type spatial; render_mode cull_disabled; uniform sampler2D ice_tex:source_color,repeat_enable,filter_linear_mipmap; void fragment(){vec3 tex=texture(ice_tex,UV*vec2(3.0,6.0)).rgb;float grain=dot(tex,vec3(0.3,0.59,0.11));ALBEDO=vec3(0.50,0.55,0.58)+(grain-0.4)*0.16;ROUGHNESS=0.34;SPECULAR=0.55;}"
+	ice_shader.code = "shader_type spatial; render_mode cull_disabled; uniform sampler2D ice_tex:source_color,repeat_enable,filter_linear_mipmap; void fragment(){vec3 tex=texture(ice_tex,UV*vec2(3.0,6.0)).rgb;float grain=dot(tex,vec3(0.3,0.59,0.11));ALBEDO=vec3(0.43,0.45,0.46)+(grain-0.4)*0.035;ROUGHNESS=0.48;SPECULAR=0.3;}"
 	var ice_shader_material := ShaderMaterial.new()
 	ice_shader_material.shader = ice_shader
 	ice_shader_material.set_shader_parameter("ice_tex",preload("res://assets/ice-surface-v1.png"))

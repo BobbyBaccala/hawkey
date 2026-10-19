@@ -91,7 +91,7 @@ func _ready() -> void:
 		match_state.phase_timer = 0.3
 
 func team_color(team: int) -> Color:
-	return Color("#174669") if team==0 else Color("#7c1f39")
+	return Color("#185c73") if team==0 else Color("#d5dcdf")
 
 func attack_direction(team: int) -> float:
 	var direction := -1.0 if team==0 else 1.0
@@ -108,7 +108,7 @@ func build_hud() -> void:
 	add_child(canvas)
 	var top := PanelContainer.new()
 	top.position = Vector2(32,24)
-	top.size = Vector2(650,76)
+	top.size = Vector2(325,58)
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.025,0.045,0.075,0.98)
 	style.border_color = Color("#6994af")
@@ -120,10 +120,10 @@ func build_hud() -> void:
 	top.add_theme_stylebox_override("panel",style)
 	canvas.add_child(top)
 	hud = Label.new()
-	hud.add_theme_font_size_override("font_size",25)
+	hud.add_theme_font_size_override("font_size",18)
 	top.add_child(hud)
 	var status_panel := PanelContainer.new()
-	status_panel.position = Vector2(32,110)
+	status_panel.position = Vector2(32,94)
 	var ss := StyleBoxFlat.new()
 	ss.bg_color = Color(0.025,0.045,0.075,0.90)
 	ss.content_margin_left = 12
@@ -133,7 +133,7 @@ func build_hud() -> void:
 	status_panel.add_theme_stylebox_override("panel",ss)
 	canvas.add_child(status_panel)
 	status = Label.new()
-	status.add_theme_font_size_override("font_size",16)
+	status.add_theme_font_size_override("font_size",12)
 	status_panel.add_child(status)
 	var right := PanelContainer.new()
 	right.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
@@ -144,7 +144,7 @@ func build_hud() -> void:
 	right.add_theme_stylebox_override("panel",rs)
 	canvas.add_child(right)
 	penalties_label = Label.new()
-	penalties_label.add_theme_font_size_override("font_size",18)
+	penalties_label.add_theme_font_size_override("font_size",14)
 	right.add_child(penalties_label)
 	var line_box := PanelContainer.new()
 	line_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
@@ -154,7 +154,7 @@ func build_hud() -> void:
 	line_box.add_theme_stylebox_override("panel",ss.duplicate())
 	canvas.add_child(line_box)
 	team_panel = Label.new()
-	team_panel.add_theme_font_size_override("font_size",17)
+	team_panel.add_theme_font_size_override("font_size",14)
 	line_box.add_child(team_panel)
 	var bottom := PanelContainer.new()
 	bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
@@ -404,7 +404,9 @@ func _on_puck_contact(body: Node) -> void:
 		cooldown=0.2
 		carrier=null
 		# Engine contact normals/materials resolve rebound direction and vertical speed.
-		if str(body.get_meta("zone",""))=="catcher" and last_puck_velocity.length()<32:
+		var pocket:Vector3=body.to_local(puck.global_position)
+		var front_entry:bool=last_puck_velocity.dot(body.global_basis.z)<-1
+		if str(body.get_meta("zone",""))=="catcher" and last_puck_velocity.length()<32 and front_entry and absf(pocket.x)<0.085 and absf(pocket.y)<0.10:
 			match_state.phase=MatchState.Phase.STOPPAGE
 			match_state.phase_timer=2
 			match_state.event="Goalkeeper catch"
@@ -509,8 +511,7 @@ func control_player(delta: float) -> void:
 	visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-aim.x,-aim.z),6*delta)
 	visual.shot_charge=charge
 	visual.animate(player.velocity.length(),delta,0,intent.length_squared()>0.01,braking)
-	var contact:=player.get_node("PuckContact")
-	contact.rotation.y=visual.rotation.y
+	sync_skater_contacts(player)
 
 func update_roster_stamina(delta: float) -> void:
 	for team in range(2):
@@ -594,11 +595,11 @@ func update_team_ai(delta: float) -> void:
 			actor.velocity=Skating.step(actor.velocity,intent,rating_,false,delta)
 		actor.move_and_slide()
 		var visual:=actor.get_child(1)
-		actor.get_node("PuckContact").rotation.y=visual.rotation.y
 		var face:=intent if intent.length()>0.1 else (puck.position-actor.position).normalized()
 		if actor==carrier: face=(Vector3(0,0,attack*25)-actor.position).normalized()
 		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-face.x,-face.z),4.8*delta)
 		visual.animate(actor.velocity.length(),delta,0,intent.length_squared()>0.01)
+		sync_skater_contacts(actor)
 		# Poke separation only within physical reach; AI uses the same puck object.
 		if carrier!=null and body_team(carrier)!=team and actor.position.distance_to(puck.position)<1.0 and cooldown<=0:
 			puck.linear_velocity=(puck.position-actor.position).normalized()*5
@@ -662,23 +663,14 @@ func update_goalkeepers(delta: float) -> void:
 		var threat:=incoming and absf(puck.position.z-keeper.position.z)<12
 		var low_shot:=threat and intercept_height<0.60
 		visual.butterfly=move_toward(visual.butterfly,1.0 if low_shot else 0.0,delta*(6 if low_shot else 2))
-		visual.goalie_save_height=clampf(intercept_height-0.7,0,0.55) if threat else 0.0
-		# Movement capsule is separate from physical puck-facing pads/torso/gloves.
-		var contact:=keeper.get_node("PuckContact")
-		var pad_shape:BoxShape3D=contact.get_node("Pads").shape
-		pad_shape.size=Vector3(lerpf(0.90,1.30,visual.butterfly),lerpf(0.60,0.35,visual.butterfly),0.28)
-		contact.get_node("Pads").position.y=pad_shape.size.y/2+0.01
-		contact.get_node("Torso").position.y=lerpf(1.0,0.75,visual.butterfly)
+		var desired_height:=clampf(intercept_height-0.7,0,0.40) if threat else 0.0
+		visual.goalie_save_height=move_toward(visual.goalie_save_height,desired_height,delta*2.8)
 		keeper.velocity=(goalie_targets[i]-keeper.position).limit_length(1)*3.8
 		keeper.move_and_slide()
 		var facing:=puck.position-keeper.position
 		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-facing.x,-facing.z)-keeper.rotation.y,delta*4)
-		contact.rotation.y=visual.rotation.y
-		for glove_name in ["Catcher","Blocker"]:
-			var glove:=keeper.get_node(glove_name)
-			var side:float= -1 if glove_name=="Catcher" else 1
-			glove.position=Vector3(side*0.38,0.78-visual.butterfly*0.18+visual.goalie_save_height,-0.30).rotated(Vector3.UP,visual.rotation.y)
 		visual.animate(keeper.velocity.length(),delta,0,false)
+		sync_goalie_contacts(keeper)
 		if puck.position.y<0.13 and puck.linear_velocity.length()<2 and keeper.position.distance_to(puck.position)<0.65 and cooldown<=0:
 			match_state.phase=MatchState.Phase.STOPPAGE
 			match_state.phase_timer=2
@@ -693,7 +685,7 @@ func update_camera(delta: float) -> void:
 	var focus:=Vector3(puck.position.x*0.55,0,clampf(puck.position.z,-20,20))
 	if wide_camera: focus=Vector3.ZERO
 	camera_target=camera_target.lerp(focus,1-exp(-delta*3.5))
-	var offset:=Vector3(0,51,44) if wide_camera else Vector3(0,17,22)*zoom
+	var offset:=Vector3(0,51,27) if wide_camera else Vector3(0,25,15)*zoom
 	camera.position=camera.position.lerp(camera_target+offset,1-exp(-delta*5))
 	camera.position.x=camera_target.x
 	camera.look_at(camera_target+Vector3(0,0.4,-3),Vector3.UP)
@@ -703,9 +695,10 @@ func update_camera(delta: float) -> void:
 
 func update_match_hud() -> void:
 	var strength:="%d ON %d"%[match_state.count(0),match_state.count(1)]
-	hud.text="TOR  %02d    —    %02d  MTL     |     %s    %s\nHAWKEY    •    EXHIBITION    •    %s"%[match_state.score[0],match_state.score[1],str(match_state.period)+"st" if match_state.period==1 else str(match_state.period)+("nd" if match_state.period==2 else "rd"),match_state.clock_text(),strength]
+	hud.text="TOR  %d     |     MTL  %d\n%s  •  %s  •  %s"%[match_state.score[0],match_state.score[1],str(match_state.period)+"st" if match_state.period==1 else str(match_state.period)+("nd" if match_state.period==2 else "rd"),match_state.clock_text(),strength]
 	status.text=match_state.event if match_state.phase!=MatchState.Phase.PLAY else ("TORONTO POSSESSION" if carrier!=null and body_team(carrier)==0 else ("MONTREAL POSSESSION" if carrier!=null else "LOOSE PUCK"))
 	var penalty_text:=match_state.penalty_text()
+	penalties_label.get_parent().visible=not penalty_text.is_empty() or debug
 	penalties_label.text="PENALTIES\n"+(penalty_text if not penalty_text.is_empty() else "None  •  Even strength")
 	var line_text:="TORONTO  •  LINE %d   /   D PAIR %d"%[active_lines[0]+1,defense_pairs[0]+1]
 	for actor in skaters:

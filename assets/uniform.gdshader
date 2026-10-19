@@ -10,6 +10,8 @@ void vertex() {
 	rest_height = COLOR.g * 2.0;
 }
 void fragment() {
+	if(region>3.5) discard; // Closed equipment gloves replace open bare-hand topology.
+	if(region>0.5 && region<1.5) discard; // Continuous hockey shell and articulated sleeves cover torso/arms.
 	// Retain the continuous skinned undershirt at shoulders/armpits.
 	// Discarding it left visible gaps when the arms moved away from the shell.
 	vec3 navy = vec3(0.018,0.032,0.052);

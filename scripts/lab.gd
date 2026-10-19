@@ -73,12 +73,13 @@ func _ready() -> void:
 	world.environment.background_color = Color("#091222")
 	world.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	world.environment.ambient_light_color = Color("#cbdfee")
-	world.environment.ambient_light_energy = 0.35
+	world.environment.ambient_light_energy = 0.48
 	world.environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	add_child(world)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-68,-28,0)
-	sun.light_energy = 0.65
+	sun.light_energy = 0.55
+	sun.shadow_opacity=0.55
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 100
 	add_child(sun)
@@ -335,6 +336,7 @@ func _physics_process(delta: float) -> void:
 	var old_rotation := player_visual.rotation.y
 	player_visual.rotation.y = rotate_toward(old_rotation,target_rotation,7.5 * delta)
 	player_visual.animate(velocity.length(),delta,angle_difference(old_rotation,target_rotation) * velocity.length() * 0.02,intent.length_squared()>0.01,Input.is_physical_key_pressed(KEY_CTRL))
+	sync_skater_contacts(player)
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		charge = minf(1,charge + delta * 1.3)
 	# Stable critically damped stick spring with speed and reach limits.
@@ -387,6 +389,7 @@ func update_partner(delta: float) -> void:
 	if dir.length() > 0.4:
 		teammate_visual.rotation.y = rotate_toward(teammate_visual.rotation.y,atan2(-dir.x,-dir.z),5 * delta)
 	teammate_visual.animate(teammate.velocity.length(),delta,0,dir.length()>0.4)
+	sync_skater_contacts(teammate)
 	if cooldown <= 0 and teammate.position.distance_to(puck.position) < 1.2 and not pickup_owner:
 		# Catch softly, rather than automatically firing the puck back.
 		puck.linear_velocity *= 0.35
@@ -409,6 +412,7 @@ func update_goalkeepers(delta: float) -> void:
 		goalie.velocity = (target - goalie.position).limit_length(1) * 3.8
 		goalie.move_and_slide()
 		goalie_visuals[i].animate(goalie.velocity.length(),delta)
+		sync_goalie_contacts(goalie)
 
 func _exit_tree() -> void:
 	if is_instance_valid(audio):
@@ -416,7 +420,11 @@ func _exit_tree() -> void:
 		audio.stream=null
 
 func add_puck_collision(actor: CharacterBody3D, is_goalie: bool) -> void:
+	if is_goalie:
+		build_goalie_contacts(actor)
+		return
 	var contact:=AnimatableBody3D.new()
+	contact.sync_to_physics=false
 	contact.name="PuckContact"
 	contact.collision_layer=8
 	contact.collision_mask=4
@@ -427,14 +435,10 @@ func add_puck_collision(actor: CharacterBody3D, is_goalie: bool) -> void:
 	pm.bounce=0.22 if is_goalie else 0.12
 	pm.friction=0.15
 	contact.physics_material_override=pm
-	var boxes: Array[Dictionary]
-	if is_goalie:
-		boxes=[{"size":Vector3(0.90,0.60,0.28),"pos":Vector3(0,0.31,-0.1),"name":"Pads"},
-			   {"size":Vector3(0.50,0.70,0.28),"pos":Vector3(0,1.0,0),"name":"Torso"}]
-	else:
-		boxes=[{"size":Vector3(0.48,0.65,0.30),"pos":Vector3(0,1.14,0),"name":"Torso"},
-			   {"size":Vector3(0.16,0.12,0.30),"pos":Vector3(-0.18,0.065,-0.02),"name":"LeftSkate"},
-			   {"size":Vector3(0.16,0.12,0.30),"pos":Vector3(0.18,0.065,-0.02),"name":"RightSkate"}]
+	var boxes: Array[Dictionary]=[
+		{"size":Vector3(0.48,0.65,0.30),"pos":Vector3(0,1.14,0),"name":"Torso"},
+		{"size":Vector3(0.16,0.12,0.30),"pos":Vector3(-0.18,0.065,-0.02),"name":"LeftSkate"},
+		{"size":Vector3(0.16,0.12,0.30),"pos":Vector3(0.18,0.065,-0.02),"name":"RightSkate"}]
 	for entry in boxes:
 		var collision:=CollisionShape3D.new()
 		var box_shape:=BoxShape3D.new()
@@ -443,21 +447,6 @@ func add_puck_collision(actor: CharacterBody3D, is_goalie: bool) -> void:
 		collision.position=entry.pos
 		collision.name=entry.name
 		contact.add_child(collision)
-	if is_goalie:
-		for side in [-1.0,1.0]:
-			var glove:=AnimatableBody3D.new()
-			glove.name="Catcher" if side<0 else "Blocker"
-			glove.collision_layer=8
-			glove.collision_mask=4
-			glove.set_meta("actor",actor)
-			glove.set_meta("zone","catcher" if side<0 else "blocker")
-			actor.add_child(glove)
-			var collision:=CollisionShape3D.new()
-			var sphere:=SphereShape3D.new()
-			sphere.radius=0.13
-			collision.shape=sphere
-			glove.add_child(collision)
-			glove.position=Vector3(side*0.38,0.9,-0.28)
 
 func hit_actor(body: Node) -> Node:
 	if body.has_meta("actor"): return body.get_meta("actor")
@@ -467,3 +456,53 @@ func set_puck_contacts_enabled(actor: CharacterBody3D, enabled: bool) -> void:
 	for child in actor.get_children():
 		if child is AnimatableBody3D:
 			child.collision_layer=8 if enabled else 0
+
+func build_goalie_contacts(actor: CharacterBody3D) -> void:
+	var visual:=actor.get_child(1)
+	var equipment:Dictionary=visual.get_goalie_gear()
+	# Empty compatibility node; it has no broad pad wall and no puck collision.
+	var root_contact:=AnimatableBody3D.new()
+	root_contact.name="PuckContact"
+	root_contact.collision_layer=0
+	root_contact.collision_mask=0
+	actor.add_child(root_contact)
+	for name_ in equipment:
+		var spec:Dictionary=equipment[name_]
+		var body:=AnimatableBody3D.new()
+		body.sync_to_physics=false # Updated explicitly from the same physics-tick pose as the mesh.
+		body.name=name_
+		body.collision_layer=8
+		body.collision_mask=4
+		body.set_meta("actor",actor)
+		body.set_meta("zone",spec.zone)
+		var material_:=PhysicsMaterial.new()
+		material_.bounce=spec.bounce
+		material_.friction=0.12
+		body.physics_material_override=material_
+		var collision:=CollisionShape3D.new()
+		var box:=BoxShape3D.new()
+		box.size=spec.size
+		box.margin=0.002
+		collision.shape=box
+		body.add_child(collision)
+		actor.add_child(body)
+		body.transform=spec.transform
+
+func sync_goalie_contacts(actor: CharacterBody3D) -> void:
+	var equipment:Dictionary=actor.get_child(1).get_goalie_gear()
+	for name_ in equipment:
+		var body:AnimatableBody3D=actor.get_node(name_)
+		var spec:Dictionary=equipment[name_]
+		body.transform=spec.transform
+		var box:BoxShape3D=body.get_child(0).shape
+		box.size=spec.size
+
+func sync_skater_contacts(actor: CharacterBody3D) -> void:
+	var visual:=actor.get_child(1)
+	var contact:=actor.get_node("PuckContact")
+	contact.transform=Transform3D.IDENTITY
+	var frame:Transform3D=visual.transform*visual.rig.transform
+	contact.get_node("Torso").transform=frame*visual.torso_pose
+	for i in range(2):
+		var name_:String="LeftSkate" if i==0 else "RightSkate"
+		contact.get_node(name_).transform=frame*visual.skates[i].transform*Transform3D(Basis.IDENTITY,Vector3(0,-0.0025,0.06))
