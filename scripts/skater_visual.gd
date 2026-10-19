@@ -3,7 +3,10 @@ extends Node3D
 const Human = preload("res://assets/player-base-v1.glb")
 const Uniform = preload("res://assets/uniform.gdshader")
 const Arena = preload("res://scripts/arena.gd")
+const Gear = preload("res://scripts/gear_builder.gd")
 var kit := Color("#116c9e")
+## Secondary team colour for pad, glove and mask graphics; derived from kit when unset.
+var accent := Color(0,0,0,0)
 var number := "17"
 var goalie := false
 var referee := false
@@ -21,7 +24,7 @@ var stick_blade: MeshInstance3D
 var grip_tape: MeshInstance3D
 var goalie_paddle: MeshInstance3D
 var knees: Array[Vector3] = [Vector3.ZERO,Vector3.ZERO]
-var pad_size := Vector3(0.28,0.64,0.17)
+var pad_size := Vector3(0.28,0.88,0.14)
 var stick_blade_length := 0.28
 var torso_pose := Transform3D.IDENTITY
 var number_label: Label3D
@@ -37,6 +40,9 @@ var helmet: Node3D
 var shirt: Node3D
 var sticks: Node3D
 var pads: Array[Node3D] = []
+var thigh_rises: Array[Node3D] = []
+var pant_legs: Array[MeshInstance3D] = []
+var socks: Array[MeshInstance3D] = []
 var push_blend := 0.0
 var posed_head := Vector3.ZERO
 var bend := Basis.IDENTITY
@@ -74,6 +80,7 @@ func segment(parent: Node3D, a: Vector3, b: Vector3, radius: float, color: Color
 	helper.free()
 
 func _ready() -> void:
+	if accent.a == 0: accent = kit.darkened(0.45)
 	rig = Node3D.new()
 	rig.rotation.y = PI # Imported human faces +Z; game-facing direction is -Z.
 	add_child(rig)
@@ -85,6 +92,8 @@ func _ready() -> void:
 	var uniform := ShaderMaterial.new()
 	uniform.shader = Uniform
 	uniform.set_shader_parameter("team_color",kit)
+	uniform.set_shader_parameter("hide_pants",not referee)
+	uniform.set_shader_parameter("hide_socks",not referee and not goalie)
 	for child in skeleton.get_children():
 		if child is MeshInstance3D:
 			child.material_override = uniform
@@ -102,11 +111,11 @@ func _ready() -> void:
 	stick_shaft.mesh=shaft_mesh
 	stick_shaft.material_override=material(Color("#171f28"),0.35)
 	sticks.add_child(stick_shaft)
-	stick_blade_length=0.36 if goalie else 0.28
+	stick_blade_length=0.39 if goalie else 0.28
 	stick_blade=build_blade()
 	sticks.add_child(stick_blade)
 	if goalie:
-		goalie_paddle=block(sticks,Vector3(0.085,1,0.024),Vector3.ZERO,Color("#d3d9db"))
+		goalie_paddle=block(sticks,Vector3(0.088,1,0.026),Vector3.ZERO,Color("#e3e7e9"))
 	grip_tape=block(sticks,Vector3(0.035,0.11,0.035),Vector3.ZERO,Color("#cad2d7"))
 	for side in [1.0,-1.0]:
 		var sleeve:=MeshInstance3D.new()
@@ -114,6 +123,11 @@ func _ready() -> void:
 		sleeve.material_override=material(kit,0.87)
 		rig.add_child(sleeve)
 		cloth_sleeves.append(sleeve)
+		if not referee:
+			var pants := add_mesh(rig,Gear.pants_leg(side,kit,Color("#151c24")))
+			pant_legs.append(pants)
+			if not goalie:
+				socks.append(add_mesh(rig,Gear.sock(kit,Color("#e4e8ea"))))
 		var skate := Node3D.new()
 		rig.add_child(skate)
 		build_skate(skate)
@@ -121,51 +135,62 @@ func _ready() -> void:
 		if goalie:
 			var pad := Node3D.new()
 			rig.add_child(pad)
-			build_pad(pad)
+			build_pad(pad,side)
 			pads.append(pad)
+			# Catcher on the left (+x) hand, blocker on the stick hand.
 			var glove := Node3D.new()
 			rig.add_child(glove)
-			if side>0:
-				ellipsoid(glove,Vector3(0.22,0.24,0.10),Vector3.ZERO,Color("#becbd3"))
-				ellipsoid(glove,Vector3(0.12,0.14,0.02),Vector3(0,0,0.052),Color("#253544"))
-			else:
-				block(glove,Vector3(0.17,0.24,0.06),Vector3.ZERO,Color("#c6d0d8"))
+			add_mesh(glove,Gear.catcher(side,kit,accent) if side>0 else Gear.blocker(side,kit,accent))
 			goalie_gloves.append(glove)
 		else:
 			var glove:=Node3D.new()
 			rig.add_child(glove)
 			build_player_glove(glove)
 			skater_gloves.append(glove)
-	blade_position=Vector3(-0.05,0.034,0.79) if goalie else Vector3(-0.20,0.029,0.83)
+	blade_position=Vector3(-0.02,0.042,0.50) if goalie else Vector3(-0.20,0.029,0.83)
 	if referee: sticks.visible=false
 	pose(0,0)
 
-func build_skate(parent: Node3D) -> void:
-	ellipsoid(parent,Vector3(0.13,0.18,0.21),Vector3(0,0.10,0.02),Color("#18212a"))
-	ellipsoid(parent,Vector3(0.12,0.10,0.31),Vector3(0,0.03,0.08),Color("#111923"))
-	for side in [-1.0,1.0]:
-		segment(parent,Vector3(side * 0.045,-0.015,-0.06),Vector3(side * 0.045,-0.015,0.19),0.012,Color("#c0cbd0"))
-	block(parent,Vector3(0.014,0.035,0.32),Vector3(0,-0.045,0.065),Color("#91a5b2"))
-	for i in range(5):
-		var z := float(i) * 0.028
-		segment(parent,Vector3(-0.035,0.13-z*0.3,z),Vector3(0.035,0.13-z*0.3,z+0.018),0.005,Color("#aab5bd"))
+func add_mesh(parent: Node3D, mesh: Mesh) -> MeshInstance3D:
+	var instance := MeshInstance3D.new()
+	instance.mesh = mesh
+	parent.add_child(instance)
+	return instance
 
-func build_pad(parent: Node3D) -> void:
-	# One broad, flat pad face with a knee roll, toe taper and binding.
-	build_pad_shell(parent)
-	for x in [-0.126,0.126]:
-		block(parent,Vector3(0.018,0.62,0.018),Vector3(x,0,0.089),Color("#253948"))
-	for y in [-0.18,-0.04,0.10]:
-		block(parent,Vector3(0.245,0.012,0.010),Vector3(0,y,0.091),Color("#aab8bf"))
-	block(parent,Vector3(0.25,0.055,0.02),Vector3(0,0.20,0.092),kit.darkened(0.15))
-	block(parent,Vector3(0.18,0.025,0.025),Vector3(0,-0.27,0.095),kit.darkened(0.1))
+func build_skate(parent: Node3D) -> void:
+	add_mesh(parent,Gear.skate(goalie))
+
+func build_pad(parent: Node3D, side: float) -> void:
+	# Sculpted box-style pad: flat face, outer roll, knee/boot breaks, toe bridge.
+	add_mesh(parent,Gear.goalie_pad(side,kit,accent,-1.0,Gear.PAD_BREAK))
+	# Thigh rise hinges back along the thigh at the break above the knee.
+	var hinge := Node3D.new()
+	hinge.position = Vector3(0,Gear.PAD_BREAK,-0.04)
+	parent.add_child(hinge)
+	var upper := add_mesh(hinge,Gear.goalie_pad(side,kit,accent,Gear.PAD_BREAK,1.0))
+	upper.position = Vector3(0,-Gear.PAD_BREAK,0.04)
+	thigh_rises.append(hinge)
+
+## Collision box over the part of the pad that faces the shooter: the whole
+## pad when standing, the shin-to-knee section once the thigh rise folds back.
+## Stretches a unit-length limb shell between two joints, facing forward.
+func fit_limb(shell: MeshInstance3D, top: Vector3, bottom: Vector3, girth: float) -> void:
+	var axis:=top-bottom
+	var up:=axis.normalized()
+	var forward:=(Vector3.BACK-up*up.dot(Vector3.BACK)).normalized()
+	shell.transform=Transform3D(Basis(up.cross(forward)*girth,up*axis.length(),forward*girth),top)
+
+func pad_box() -> Array:
+	var length:float=lerpf(Gear.PAD_LENGTH,Gear.PAD_BREAK+Gear.PAD_LENGTH*0.5,butterfly)
+	var center:float=lerpf(0.0,Gear.PAD_BREAK-length*0.5,butterfly)
+	return [Transform3D(Basis(),Vector3(0,center,0)),Vector3(pad_size.x,length,pad_size.z)]
 
 func build_blade() -> MeshInstance3D:
 	var mesh:=ImmediateMesh.new()
 	mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
 	var length_:float=stick_blade_length
-	var height_:float=0.062 if goalie else 0.050
-	var thickness:float=0.013 if goalie else 0.009
+	var height_:float=0.080 if goalie else 0.050
+	var thickness:float=0.016 if goalie else 0.009
 	for i in range(16):
 		var a:=float(i)/16
 		var b:=float(i+1)/16
@@ -196,6 +221,10 @@ func blade_section(t: float, length_: float, height_: float, thickness: float) -
 	return [Vector3(x,toe-height_*0.5,curve-thickness*0.5),Vector3(x,top-height_*0.5,curve-thickness*0.5),Vector3(x,top-height_*0.5,curve+thickness*0.5),Vector3(x,toe-height_*0.5,curve+thickness*0.5)]
 
 func build_helmet() -> void:
+	if goalie:
+		var mask := add_mesh(helmet,Gear.goalie_mask(kit,accent))
+		mask.position = Vector3(0,-0.035,0.01)
+		return
 	var mesh := ImmediateMesh.new()
 	mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES,material(Color("#c6ced4") if goalie else Color("#132434"),0.27))
 	for row in range(10):
@@ -230,6 +259,9 @@ func build_helmet() -> void:
 func build_jersey() -> void:
 	var mesh := ImmediateMesh.new()
 	var sections := [Vector3(0.24,0.98,0.16),Vector3(0.22,1.10,0.155),Vector3(0.25,1.31,0.17),Vector3(0.27,1.44,0.14),Vector3(0.11,1.50,0.09)]
+	if goalie:
+		# Oversized sweater over a chest protector with shoulder floaters.
+		sections = [Vector3(0.28,0.94,0.19),Vector3(0.28,1.10,0.21),Vector3(0.31,1.30,0.22),Vector3(0.345,1.44,0.19),Vector3(0.14,1.53,0.11)]
 	mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
 	for row in range(sections.size()-1):
 		for column in range(32):
@@ -254,6 +286,12 @@ func build_jersey() -> void:
 		m.shader=ref_shader
 	instance.material_override = m
 	shirt.add_child(instance)
+	# Shoulder pads (or a goalie's shoulder floaters) shape the sweater.
+	if not referee:
+		var cap:=Vector3(0.21,0.13,0.22) if goalie else Vector3(0.17,0.11,0.19)
+		for x in [-1.0,1.0]:
+			var shoulder_cap:=ellipsoid(shirt,cap,Vector3(x*(0.215 if goalie else 0.19),1.425,-0.01),kit)
+			shoulder_cap.material_override=material(kit,0.86)
 	var jersey_number := Label3D.new()
 	number_label = jersey_number
 	jersey_number.text = number
@@ -300,11 +338,15 @@ func knee_position(hip: Vector3, ankle: Vector3, pole: Vector3, upper: float, lo
 func pose(speed: float, turn: float) -> void:
 	skeleton.clear_bones_global_pose_override()
 	var root_rest: Transform3D = rest["root"]
-	var drop := Vector3(0,(-0.32-butterfly*0.22) if goalie else -0.28,0.035)
+	var drop := Vector3(0,-0.28,0.035)
+	if goalie:
+		# Sit back: hips behind the heels so the shins angle ~25 degrees and the
+		# pads stay upright; in the butterfly the hips come forward over the knees.
+		drop = Vector3(0,lerpf(-0.33,-0.55,butterfly),lerpf(-0.24,-0.04,butterfly))
 	var root_pose := root_rest
 	root_pose.origin += drop
 	override_pose("root",root_pose)
-	bend = Basis(Vector3.RIGHT,(0.34-butterfly*0.12) if goalie else 0.40+minf(speed/55,0.13))
+	bend = Basis(Vector3.RIGHT,lerpf(0.52,0.26,butterfly) if goalie else 0.40+minf(speed/55,0.13))
 	var pivot := root_rest.origin
 	var spine: Transform3D = rest["spine05"]
 	var spine_pose := Transform3D(bend * spine.basis,pivot + drop + bend * (spine.origin-pivot))
@@ -324,14 +366,24 @@ func pose(speed: float, turn: float) -> void:
 		var push := smoothstep(0,0.55,cycle) if cycle < 0.55 else 1-smoothstep(0.55,1,cycle)
 		var lift := sin((cycle-0.55)/0.45*PI)*0.045 if cycle > 0.55 else 0.0
 		var ankle := Vector3(side*(0.24+push*0.22*push_blend),0.115+lift*push_blend,0.06-push*0.30*push_blend)
-		if goalie: ankle = Vector3(side*lerpf(0.34,0.66,butterfly),0.115,lerpf(0.04,-0.10,butterfly))
+		# Goalie ready stance: feet a little wider than the shoulders, knees in.
+		if goalie: ankle = Vector3(side*lerpf(0.27,0.58,butterfly),0.115,lerpf(0.0,0.10,butterfly))
 		feet[i] = ankle
 		var hip: Vector3 = rest["upperleg01"+suffix].origin+drop
-		var knee := knee_position(hip,ankle,Vector3(0,0,1),0.44,0.45)
-		if goalie: knee=knee.lerp(Vector3(side*0.09,0.19,0.28),butterfly)
+		var knee := knee_position(hip,ankle,Vector3(-side*0.12,0,1) if goalie else Vector3(0,0,1),0.44,0.45)
+		# Pads meet edge to edge at the knees rather than crossing.
+		if goalie: knee.x=side*maxf(side*knee.x,Gear.PAD_WIDTH*0.5+0.004)
+		# Butterfly: knees together on the ice, shins flared out behind them.
+		if goalie: knee=knee.lerp(Vector3(side*0.13,0.13,0.24),butterfly)
 		knees[i]=knee
 		align_bone("upperleg01"+suffix,"lowerleg01"+suffix,hip,knee)
 		align_bone("lowerleg01"+suffix,"foot"+suffix,knee,ankle)
+		if pant_legs.size()>i:
+			var fill:=1.18 if goalie else 1.0
+			fit_limb(pant_legs[i],hip+Vector3(side*0.012,0.10,0),hip.lerp(knee,0.94),fill)
+		if socks.size()>i:
+			# Sock and shin-guard knee cap overlap the bottom of the pants.
+			fit_limb(socks[i],knee.lerp(hip,0.12),ankle+Vector3(0,0.12,0.01),1.0)
 		var foot_pose: Transform3D = rest["foot"+suffix]
 		foot_pose.origin = ankle
 		foot_pose.basis = Basis(Vector3.UP,side*push*0.23*push_blend)*foot_pose.basis
@@ -339,27 +391,37 @@ func pose(speed: float, turn: float) -> void:
 		skates[i].position = ankle+Vector3(0,-0.0525,0)
 		skates[i].rotation.y = side*lerpf(0.12,1.1,butterfly) if goalie else side*push*0.23*push_blend
 		if goalie:
+			# The pad rides the shin: +Y up the shin, face (+Z) toward the shooter.
 			var shin:Vector3=(knee-ankle).normalized()
-			var flare:float=atan2(-shin.x,shin.y)
-			pads[i].basis=Basis(Vector3.BACK,flare)*Basis(Vector3.RIGHT,0.12*(1-butterfly))
-			pads[i].position=(ankle+knee)*0.5+Vector3(-side*butterfly*0.055,0.01,0)
-			pads[i].position.z=maxf(ankle.z,knee.z)+0.11
+			var face:Vector3=(Vector3.BACK-shin*shin.dot(Vector3.BACK)).normalized()
+			pads[i].basis=Basis(shin.cross(face),shin,face)
+			pads[i].position=knee-shin*Gear.PAD_KNEE+face*0.085
+			thigh_rises[i].rotation.x=-lerpf(0.12,1.25,butterfly)
 			# Pad lower edges seal against the ice in butterfly.
-			var extent:float=absf(pads[i].basis.x.y)*pad_size.x/2+absf(pads[i].basis.y.y)*pad_size.y/2+absf(pads[i].basis.z.y)*pad_size.z/2
-			pads[i].position.y=maxf(pads[i].position.y,extent+0.012)
+			var box:Array=pad_box()
+			var size_:Vector3=box[1]
+			var box_center:Vector3=pads[i].transform*box[0].origin
+			var extent:float=absf(pads[i].basis.x.y)*size_.x/2+absf(pads[i].basis.y.y)*size_.y/2+absf(pads[i].basis.z.y)*size_.z/2
+			pads[i].position.y+=maxf(0,extent+0.012-box_center.y)
 		# Elbows and wrists stay on a two-hand stick posture, never running arm swings.
 		var shoulder_original: Transform3D = rest["upperarm01"+suffix]
 		var shoulder := pivot+drop+bend*(shoulder_original.origin-pivot)
 		var wrist := stick_grip().lerp(blade_position+Vector3(-stick_blade_length*0.48,0,0),0.26) if i==0 else stick_grip()
 		if referee: wrist=Vector3(side*0.32,0.96,0.03)
 		if goalie:
-			wrist=Vector3(0.40,0.84-butterfly*0.20+goalie_save_height,0.46) if i==0 else stick_grip()
-			goalie_gloves[i].position=wrist+Vector3(0,0,0.025)
-			goalie_gloves[i].rotation=Vector3(-0.15,0,0.15 if i==0 else 0)
+			# Hands out in front of the body: catcher open to the shooter at the hip,
+			# blocker on the stick at the top of the paddle.
+			wrist=Vector3(0.36,0.80-butterfly*0.16+goalie_save_height,0.40) if i==0 else stick_grip()
+			if i==0:
+				goalie_gloves[i].position=wrist+Vector3(0.0,0.03,0.035)
+				goalie_gloves[i].rotation=Vector3(-0.12,0.32,-0.12)
+			else:
+				goalie_gloves[i].position=wrist+Vector3(-0.085,0.06,0.04)
+				goalie_gloves[i].rotation=Vector3(-0.10,-0.28,0.06)
 		else:
 			skater_gloves[i].position=wrist
 			skater_gloves[i].basis=Basis(Quaternion(Vector3.UP,(stick_grip()-blade_position).normalized()))
-		var pole := Vector3(side,0,-0.3)
+		var pole := Vector3(side*0.6,-0.8,-0.1) if goalie else Vector3(side,0,-0.3)
 		var elbow := knee_position(shoulder,wrist,pole,0.28,0.29)
 		update_cloth_sleeve(cloth_sleeves[i],shoulder,elbow,wrist)
 		align_bone("upperarm01"+suffix,"lowerarm01"+suffix,shoulder,elbow)
@@ -373,7 +435,7 @@ func pose(speed: float, turn: float) -> void:
 func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, braking: bool = false) -> void:
 	shot_follow = maxf(0,shot_follow-delta*3)
 	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
-	blade_position=Vector3(-0.05,0.034,0.79) if goalie else Vector3(-(0.20+stick_intent.x*0.55),0.029,0.83-stick_intent.y*0.26)
+	blade_position=Vector3(-0.02+butterfly*0.05,0.042,0.50-butterfly*0.04) if goalie else Vector3(-(0.20+stick_intent.x*0.55),0.029,0.83-stick_intent.y*0.26)
 	var target := clampf(speed/5.0,0,1) if pushing and not braking and not goalie else 0.0
 	push_blend = move_toward(push_blend,target,delta*4)
 	if push_blend > 0.01:
@@ -391,7 +453,7 @@ func set_nameplate(value: String) -> void:
 	if is_instance_valid(nameplate): nameplate.text=value.to_upper()
 
 func stick_grip() -> Vector3:
-	if goalie: return Vector3(-0.30,0.66-butterfly*0.13,0.43)
+	if goalie: return Vector3(lerpf(-0.32,-0.22,butterfly),0.60-butterfly*0.20,0.30)
 	return Vector3(-0.14-stick_intent.x*0.16-shot_follow*0.12,0.93+shot_charge*0.06,0.32-stick_intent.y*0.10-shot_charge*0.18+shot_follow*0.22)
 
 func update_stick() -> void:
@@ -400,10 +462,12 @@ func update_stick() -> void:
 	var axis:=top-bottom
 	stick_shaft.position=(top+bottom)*0.5
 	stick_shaft.basis=Basis(Quaternion(Vector3.UP,axis.normalized()))
-	stick_shaft.scale=Vector3(1,axis.length()+0.11,1)
-	stick_shaft.position+=axis.normalized()*0.055
+	# A goalie's hand sits at the top of the paddle; the shaft runs on past it.
+	var beyond:=0.42 if goalie else 0.11
+	stick_shaft.scale=Vector3(1,axis.length()+beyond,1)
+	stick_shaft.position+=axis.normalized()*beyond*0.5
 	if goalie:
-		var paddle_top:Vector3=bottom.lerp(top,0.88)
+		var paddle_top:Vector3=bottom.lerp(top,0.97)
 		goalie_paddle.position=(bottom+paddle_top)*0.5
 		goalie_paddle.basis=stick_shaft.basis
 		goalie_paddle.scale=Vector3(1,bottom.distance_to(paddle_top),1)
@@ -418,23 +482,18 @@ func get_goalie_gear() -> Dictionary:
 	# Actor-local transforms: the physical and visible gear share one source.
 	var frame:=transform*rig.transform
 	return {
-		"Mask":{"transform":frame*helmet.transform,"size":Vector3(0.23,0.27,0.29),"zone":"mask","bounce":0.30},
+		"Mask":{"transform":frame*helmet.transform,"size":Vector3(0.24,0.30,0.29),"zone":"mask","bounce":0.30},
 		"Torso":{"transform":frame*torso_pose,"size":Vector3(0.56,0.59,0.33),"zone":"body","bounce":0.08},
-		"PadLeft":{"transform":frame*pads[0].transform,"size":pad_size,"zone":"pad","bounce":0.20},
-		"PadRight":{"transform":frame*pads[1].transform,"size":pad_size,"zone":"pad","bounce":0.20},
-		"Catcher":{"transform":frame*goalie_gloves[0].transform,"size":Vector3(0.22,0.24,0.10),"zone":"catcher","bounce":0.02},
-		"Blocker":{"transform":frame*goalie_gloves[1].transform,"size":Vector3(0.17,0.24,0.06),"zone":"blocker","bounce":0.48},
-		"GoalieBlade":{"transform":frame*stick_blade.transform,"size":Vector3(0.36,0.062,0.036),"zone":"stick","bounce":0.40},
-		"Paddle":{"transform":frame*Transform3D(goalie_paddle.basis.orthonormalized(),goalie_paddle.position),"size":Vector3(0.085,goalie_paddle.scale.y,0.024),"zone":"stick","bounce":0.35}
+		"PadLeft":{"transform":frame*pads[0].transform*pad_box()[0],"size":pad_box()[1],"zone":"pad","bounce":0.20},
+		"PadRight":{"transform":frame*pads[1].transform*pad_box()[0],"size":pad_box()[1],"zone":"pad","bounce":0.20},
+		"Catcher":{"transform":frame*goalie_gloves[0].transform,"size":Vector3(0.26,0.40,0.10),"zone":"catcher","bounce":0.02},
+		"Blocker":{"transform":frame*goalie_gloves[1].transform,"size":Vector3(0.205,0.385,0.05),"zone":"blocker","bounce":0.48},
+		"GoalieBlade":{"transform":frame*stick_blade.transform,"size":Vector3(0.39,0.08,0.036),"zone":"stick","bounce":0.40},
+		"Paddle":{"transform":frame*Transform3D(goalie_paddle.basis.orthonormalized(),goalie_paddle.position),"size":Vector3(0.088,goalie_paddle.scale.y,0.026),"zone":"stick","bounce":0.35}
 	}
 
 func build_player_glove(parent: Node3D) -> void:
-	var dark:=Color("#172b38")
-	ellipsoid(parent,Vector3(0.13,0.15,0.12),Vector3.ZERO,dark)
-	block(parent,Vector3(0.145,0.045,0.125),Vector3(0,0.065,0),kit.lightened(0.15))
-	ellipsoid(parent,Vector3(0.052,0.085,0.065),Vector3(0.052,-0.012,0.025),dark)
-	for i in range(4):
-		block(parent,Vector3(0.023,0.048,0.028),Vector3(-0.043+i*0.028,-0.015,0.055),kit.darkened(0.2))
+	add_mesh(parent,Gear.skater_glove(kit))
 
 func update_cloth_sleeve(instance: MeshInstance3D, shoulder: Vector3, elbow: Vector3, wrist: Vector3) -> void:
 	# A continuous curved cloth envelope follows the exact arm IK targets.
@@ -453,6 +512,7 @@ func update_cloth_sleeve(instance: MeshInstance3D, shoulder: Vector3, elbow: Vec
 		if across.length_squared()<0.01:across=axis.cross(Vector3.RIGHT).normalized()
 		var depth:=axis.cross(across).normalized()
 		var radius_:float=lerpf(0.105,0.078,t*2) if t<=0.5 else lerpf(0.078,0.060,(t-0.5)*2)
+		if goalie: radius_*=1.32
 		for column in range(17):
 			var angle:=TAU*column/16
 			var radial:Vector3=across*cos(angle)+depth*sin(angle)
@@ -469,30 +529,3 @@ func update_cloth_sleeve(instance: MeshInstance3D, shoulder: Vector3, elbow: Vec
 	var mesh:ArrayMesh=instance.mesh
 	mesh.clear_surfaces()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
-
-func build_pad_shell(parent: Node3D) -> void:
-	var mesh:=ImmediateMesh.new()
-	mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
-	var outline:Array[Vector2]=[Vector2(-0.112,-0.32),Vector2(0.112,-0.32),Vector2(0.14,-0.27),Vector2(0.14,0.29),Vector2(0.115,0.32),Vector2(-0.115,0.32),Vector2(-0.14,0.29),Vector2(-0.14,-0.27)]
-	for i in range(outline.size()):
-		var a:Vector2=outline[i]
-		var b:Vector2=outline[posmod(i+1,outline.size())]
-		for ring in range(2):
-			var z0:float=-0.085 if ring==0 else 0.073
-			var z1:float=0.073 if ring==0 else 0.085
-			var scale0:float=1
-			var scale1:float=1 if ring==0 else 0.94
-			var normal:=Vector3(b.y-a.y,a.x-b.x,0.3 if ring==1 else 0.0).normalized()
-			for v in [Vector3(a.x*scale0,a.y*scale0,z0),Vector3(b.x*scale0,b.y*scale0,z0),Vector3(b.x*scale1,b.y*scale1,z1),Vector3(a.x*scale0,a.y*scale0,z0),Vector3(b.x*scale1,b.y*scale1,z1),Vector3(a.x*scale1,a.y*scale1,z1)]:
-				mesh.surface_set_normal(normal)
-				mesh.surface_add_vertex(v)
-		for z in [-0.085,0.085]:
-			var scale_:float=0.94 if z>0 else 1
-			for v in [Vector3(0,0,z),Vector3(a.x*scale_,a.y*scale_,z),Vector3(b.x*scale_,b.y*scale_,z)]:
-				mesh.surface_set_normal(Vector3(0,0,signf(z)))
-				mesh.surface_add_vertex(v)
-	mesh.surface_end()
-	var instance:=MeshInstance3D.new()
-	instance.mesh=mesh
-	instance.material_override=material(Color("#dce1e1"),0.62)
-	parent.add_child(instance)

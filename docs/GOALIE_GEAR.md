@@ -1,3 +1,28 @@
+# 0.7 sculpted equipment and active stances
+
+## Research basis
+Shapes and sizes follow published goaltender equipment limits rather than guesses:
+- Leg pads: 28 cm (11 in) maximum face width, about 97 cm (38 in) maximum length, 27 cm maximum depth from face to inner knee; box-style pads with a flat face and square inner edge keep the face upright in the butterfly (IIHF measurement standards; Wikipedia, Ice hockey goaltending equipment).
+- Blocker board: 20.5 x 38.5 cm, with a raised thumb-protection sidewall; the top of the board curves toward the shooter.
+- Catcher: about 114 cm perimeter, 46 cm from the heel to the top of the T-trap, deep pocket with a 60-90 degree break.
+- Goalie stick: blade about 8.9 cm (3.5 in) tall, paddle 64-71 cm long.
+- Ready stance: feet slightly wider than the shoulders, knees bent, hands in front of the body, stick flat on the ice in front of the skates with the hand at the top of the paddle. Butterfly: knees together, pads flared to seal the ice, gloves low and in front (Hockey Alberta goaltender guide).
+
+## What changed
+- New `scripts/gear_builder.gd` models all equipment as lofted, smoothly shaded meshes with painted team graphics: box-style leg pads (flat pillowed face, outer roll, knee and boot breaks, toe bridge over the skate, knee stack, calf wing, straps), a blocker with a curled board, thumb wall, palm and cuff, a catcher with a deep pocket, finger and thumb rolls, T-trap lacing and cuff, a fibreglass goalie mask with a protruding chin and cat-eye cage, skates with holders and steel, rounded player gloves, padded hockey pants and striped socks.
+- Pads ride the shin: +Y follows ankle-to-knee, the face looks at the shooter, and the thigh rise is a separate piece hinged at the break above the knee. In the butterfly it folds back along the thigh, so the two pads meet at the knees instead of overlapping.
+- Pad collision now covers the visible pad: the whole pad when standing and the shin-to-knee section once the thigh rise folds.
+- Goalie stance sits back: hips behind the heels, shins at roughly 25 degrees, knees in so the pads meet edge to edge, chest forward, elbows in. Catcher open at the hip, blocker at the top of the paddle, stick blade flat about half a metre in front of the skates, shaft running past the hand.
+- Goalie sweater and sleeves are bulkier over the chest protector and arm floaters; skaters gain shoulder pads.
+- The base body's shorts and socks are hidden where the new pants and sock shells cover them.
+- `tools/export_gear.gd` writes every piece to `assets/gear/*.glb` for refinement in Blender (File > Import > glTF 2.0; colours are vertex colours).
+- `tools/capture_gear.gd` renders the equipment on its own; `tools/capture_equipment.gd --skater-closeup` renders a skater close-up.
+
+## Still missing
+All equipment is generic and unbranded. It is procedural geometry rather than hand-sculpted, textured production art, so it lacks fabric texture, stitching relief and wear. Animation is still procedural posing, not motion capture. Glove fingers do not articulate, and pads do not deform on impact.
+
+---
+
 # 0.6 stance, sticks and goalie gear
 
 ## Changes

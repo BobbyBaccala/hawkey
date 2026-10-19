@@ -1,6 +1,9 @@
 shader_type spatial;
 render_mode cull_disabled;
 uniform vec4 team_color : source_color = vec4(0.06,0.23,0.36,1.0);
+// Sculpted pant and sock shells replace the base body's leg garments.
+uniform bool hide_pants = false;
+uniform bool hide_socks = false;
 varying float region;
 varying float rest_height;
 varying float rest_x;
@@ -12,6 +15,8 @@ void vertex() {
 void fragment() {
 	if(region>3.5) discard; // Closed equipment gloves replace open bare-hand topology.
 	if(region>0.5 && region<1.5) discard; // Continuous hockey shell and articulated sleeves cover torso/arms.
+	if(hide_pants && region>1.5 && region<2.5) discard;
+	if(hide_socks && region>2.5 && region<3.5) discard;
 	// Retain the continuous skinned undershirt at shoulders/armpits.
 	// Discarding it left visible gaps when the arms moved away from the shell.
 	vec3 navy = vec3(0.018,0.032,0.052);

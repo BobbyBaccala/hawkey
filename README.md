@@ -1,4 +1,4 @@
-# Hawkey — 0.6 active stance and goalie equipment revision
+# Hawkey — 0.7 sculpted equipment revision
 
 Native Godot 4.6 PC hockey exhibition prototype. Uses a CC0 skinned human foundation with original hockey equipment, procedural skating and generated crowd/ice textures. This is an early exhibition prototype, not EA NHL-level photorealism or a complete regulation ruleset.
 
@@ -21,6 +21,15 @@ Godot's native gamepad support is used; no separate plugin is required. Controll
 | D-pad up/down; left/right | Forward line; defence pair |
 | L3; R3; Start | Effort; stop; pause |
 | F2 | Expanded controller help |
+
+## New in 0.7
+- Real-proportion goalie gear built as smooth 3D meshes: box-style pads with outer roll, knee/boot breaks and toe bridge; curled blocker board; deep-pocket catcher with T-trap; fibreglass cat-eye mask.
+- Thigh rise hinges at the knee break and folds back in the butterfly; pad collision follows the visible pad.
+- Goalie ready stance sits back with pads meeting at the knees, hands in front and the stick flat ahead of the skates.
+- Skaters gain padded hockey pants, striped socks, shoulder pads, rounded gloves and new skates.
+- Gear exports to assets/gear/*.glb for Blender via tools/export_gear.gd.
+- Renders: docs/screenshots/goalie-closeup-v07.png, skater-closeup-v07.png, gear-gallery-v07.png, equipment-v07.png, gameplay-v07.png.
+- Details and research sources: docs/GOALIE_GEAR.md.
 
 ## New in 0.6
 - Lower active skater/goalie stances, forward knee flexion and grounded skate blades.
