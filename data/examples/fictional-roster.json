@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "database_metadata_version": 1,
+  "teams": [
+    {
+      "id": "tor",
+      "city": "Toronto",
+      "name": "North Stars",
+      "league_id": "fictional-pro",
+      "season": "2026-27",
+      "players": [
+        {
+          "id": "fictional:laurent",
+          "name": "G. Laurent",
+          "position": "G",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 55.0,
+            "acceleration": 60.0,
+            "agility": 72.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "hand-authored demonstration v1",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:vale",
+          "name": "E. Vale",
+          "position": "C",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 75.0,
+            "acceleration": 76.0,
+            "agility": 77.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "hand-authored demonstration v1",
+            "confidence": "unassessed"
+          }
+        }
+      ]
+    }
+  ]
+}
