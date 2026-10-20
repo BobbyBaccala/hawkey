@@ -358,6 +358,7 @@ func update_camera(delta: float) -> void:
 	var offset := Vector3(0,49,44) if wide_camera else Vector3(0,16,20) * zoom
 	camera.position = camera.position.lerp(camera_target + offset,1 - exp(-delta * 5))
 	camera.look_at(camera_target + Vector3(0,0.3,-2))
+	camera.cull_mask = preload("res://scripts/arena_lighting.gd").camera_cull_mask(camera.position)
 	selection.position = player.position + Vector3(0,0.025,0)
 
 func _physics_process(delta: float) -> void:
