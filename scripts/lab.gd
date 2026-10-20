@@ -115,8 +115,9 @@ func _ready() -> void:
 	ice_marks = preload("res://scripts/ice_marks.gd").new()
 	ice_marks.name = "IceMarks"
 	add_child(ice_marks)
-	arena.ice_surface_material.set_shader_parameter("cut_tex", ice_marks.texture)
+	arena.set_cut_map(ice_marks.texture)   # ice plus painted lines and emblem
 	ice_marks.material = arena.ice_surface_material
+	ice_marks.paint_materials = arena.paint_materials
 	player = make_skater(Vector3(0,0,0),Color("#116c9e"),"17")
 	player_visual = player.get_child(1)
 	teammate = make_skater(Vector3(6,0,-7),Color("#116c9e"),"28")

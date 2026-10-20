@@ -89,6 +89,29 @@ func run() -> void:
 	check(marks_node.image.get_pixel(int(hz.x), int(hz.y)).r == 0.0, "Haze leaves the scratch channel alone")
 	var untouched: Vector2 = marks_node.to_texel(Vector3(0, 0, -20))
 	check(marks_node.image.get_pixel(int(untouched.x), int(untouched.y)).r == 0.0, "Ice elsewhere stays clean")
+	# Cuts run over the paint: every flat marking samples the same cut map
+	# (and flood gloss) by world position, and the emblem has a wear layer.
+	var arena = m.arena
+	check(arena.paint_materials.size() >= 4, "Paint materials exist for red, blue, crease and emblem wear (%d)" % arena.paint_materials.size())
+	for pm in arena.paint_materials:
+		check(pm.get_shader_parameter("cut_tex") == marks_node.texture, "Painted marking samples the cut map")
+		check("MODEL_MATRIX" in pm.shader.code, "Paint maps cuts by world position")
+	check(marks_node.paint_materials == arena.paint_materials, "Flood gloss reaches the paint")
+	var unpainted := 0
+	var painted := 0
+	for n in arena.get_children():
+		if n is MeshInstance3D and n.position.y > 0.005 and n.position.y < 0.03 and absf(n.position.x) < 15.0 and absf(n.position.z) < 30.0:
+			if n.mesh is BoxMesh or n.mesh is ImmediateMesh or n.mesh is CylinderMesh:
+				var mo = n.material_override
+				if n.mesh is ImmediateMesh: mo = n.mesh.surface_get_material(0)
+				if mo is ShaderMaterial and mo in arena.paint_materials: painted += 1
+				elif not (n.mesh is CylinderMesh and n.position.length() < 0.1): unpainted += 1
+	check(unpainted == 0 and painted > 60, "Every line, circle, spot and crease is painted (%d painted, %d not)" % [painted, unpainted])
+	check(arena.emblem_wear != null and arena.emblem_wear.material_override in arena.paint_materials, "Centre emblem carries a wear layer")
+	check(arena.emblem_wear.material_override.render_priority > 0, "Emblem wear draws over the logo text")
+	await process_frame
+	await process_frame
+	check(absf(arena.paint_materials[0].get_shader_parameter("fresh") - marks_node.freshness()) < 0.05, "Paint gloss follows the flood")
 	marks_node.clear()
 	# Live play: let the match run and require cuts to build up from real skating.
 	for i in range(360):

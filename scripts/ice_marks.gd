@@ -20,6 +20,8 @@ const UPLOAD_INTERVAL := 1.0 / 6.0
 const DRY_TIME := 90.0
 ## Ice shader whose `fresh` uniform follows the flood (set by lab.gd).
 var material: ShaderMaterial
+## Painted markings and emblem wear (arena.paint_materials) share the gloss.
+var paint_materials: Array = []
 ## Seconds since the last resurface.
 var since_flood := 0.0
 
@@ -52,6 +54,7 @@ func freshness() -> float:
 func _process(delta: float) -> void:
 	since_flood += delta
 	if material: material.set_shader_parameter("fresh", freshness())
+	for m in paint_materials: m.set_shader_parameter("fresh", freshness())
 	var seen := {}
 	for visual in get_tree().get_nodes_in_group("skater_visuals"):
 		if not is_instance_valid(visual) or not visual.is_inside_tree():
