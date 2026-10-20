@@ -29,6 +29,13 @@ func run() -> void:
 			var q := GoalNet.shelf_point(float(i) / 40, float(j) / 10)
 			if q.z > 0.001 or q.y < 1.15: intrudes += 1
 	check(intrudes == 0, "Netting never crosses into the goal mouth (%d points)" % intrudes)
+	# Inner skirt hangs inside the net, clear of the mouth and off the ice.
+	var stray := 0
+	for i in range(21):
+		for j in range(9):
+			var k := GoalNet.skirt_point(float(i) / 20, float(j) / 8)
+			if k.z > -0.1 or absf(k.x) > GoalNet.POST_X or k.y < 0.3 or k.y > GoalNet.BAR_Y: stray += 1
+	check(stray == 0, "Inner skirt hangs inside the net (%d stray points)" % stray)
 
 	var scene = load("res://practice.tscn").instantiate()
 	root.add_child(scene)
@@ -40,6 +47,19 @@ func run() -> void:
 		check(g.get_node_or_null("UpperBackBar") != null and g.get_node_or_null("BaseFrame") != null, "%s has base frame and back bar" % g.name)
 		check(g.collision_slabs >= 16, "%s netting has collision" % g.name)
 		check(g.net_material.shader.code.contains("ripple_age"), "Net shader ripples")
+		# Realism pass: inner skirt, smooth satin frame, elbows, feet, contact shadow.
+		check(g.get_node_or_null("InnerSkirt") != null and g.skirt_material != null, "%s has an inner skirt" % g.name)
+		check(g.get_node_or_null("NetShadow") != null, "%s has a contact shadow" % g.name)
+		var elbows := 0
+		var feet := 0
+		var smooth := 0
+		for c in g.get_children():
+			if c.name.begins_with("Elbow"): elbows += 1
+			if c.name.begins_with("PostFoot"): feet += 1
+			if c is MeshInstance3D and c.mesh is CylinderMesh and c.name.begins_with("FrameTube") and c.mesh.radial_segments >= 24: smooth += 1
+		check(elbows == 2 and feet == 2, "%s has rounded elbows and post feet" % g.name)
+		check(smooth == 3, "%s posts and crossbar are smooth tubes (%d)" % [g.name, smooth])
+		check(g.net_material.get_shader_parameter("cell") <= 0.05, "Netting is a fine (~2 in) mesh")
 	# Shot into the north net: scores once, stays in, and ripples the net.
 	for goalie in scene.goalkeepers:
 		goalie.collision_layer = 0
@@ -58,6 +78,7 @@ func run() -> void:
 	check(local.z < 0 and local.z > -GoalNet.BASE_DEPTH - 0.05 and absf(local.x) < GoalNet.POST_X + 0.05, "Puck held inside the net (local %s)" % local)
 	check(net.impacts > before, "Puck hitting the netting starts a ripple")
 	check(net.ripple_age < 1.0 and net.ripple_strength > 0.0, "Ripple is live after the hit")
+	check(net.skirt_material.get_shader_parameter("ripple_strength") > 0.0, "Inner skirt ripples with the net")
 	# Ripple decays and stops updating.
 	await create_timer(3.3).timeout
 	check(net.ripple_age >= 3.0, "Ripple settles")
