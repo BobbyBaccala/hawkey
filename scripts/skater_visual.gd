@@ -646,7 +646,7 @@ func pose(speed: float, turn: float) -> void:
 		feet[i] = ankle
 		var knee := knee_position(hip,ankle,Vector3(-side*0.12,0,1) if goalie else Vector3(0,0,1),0.44,0.45)
 		# Pads meet edge to edge at the knees rather than crossing.
-		if goalie: knee.x=side*maxf(side*knee.x,Gear.PAD_WIDTH*0.5+0.024+0.035*shuffle_weight)
+		if goalie: knee.x=side*maxf(side*knee.x,Gear.PAD_WIDTH*0.5+0.036+0.035*shuffle_weight)
 		# Butterfly: knees together on the ice, shins flared out behind them.
 		if goalie:
 			knee=knee.lerp(Vector3(side*0.17,0.13,0.24),butterfly)
