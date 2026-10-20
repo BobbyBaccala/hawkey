@@ -63,6 +63,13 @@ func run()->void:
 	scene.cooldown=0
 	scene.update_possession(1.0/120)
 	check(scene.carrier==null,"Airborne puck cannot auto-attach to stick")
+	var view:=InputEventJoypadButton.new()
+	view.device=0;view.button_index=JOY_BUTTON_BACK;view.pressed=true
+	scene.controller.handle(view);scene.process_controller_edges()
+	check(scene.hud_node.controls_panel.visible,"View/Back opens the advertised controls overlay")
+	view.pressed=false;scene.controller.handle(view)
+	view.pressed=true;scene.controller.handle(view);scene.process_controller_edges()
+	check(not scene.hud_node.controls_panel.visible,"View/Back dismisses controls overlay")
 	scene.on_controller_connection(0,false)
 	check(scene.paused and not scene.controller.trigger_down and scene.controller.left_stick==Vector2.ZERO,"Controller disconnect pauses and clears held input")
 	scene.queue_free()

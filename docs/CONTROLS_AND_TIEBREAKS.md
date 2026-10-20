@@ -28,6 +28,7 @@ Passing and clearances remain directional.
 | Mouse position + left click | Net placement and immediate wrist shot |
 | Alt + left click | Slap shot |
 | RB / R1 or right click | Pass |
+| View / Back | Toggle controls overlay |
 
 Wrist/slap profiles use the player's estimated `shot_power` value, with bounded
 launch speeds and a ballistic height solution for the selected net point. The old

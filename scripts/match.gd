@@ -956,6 +956,9 @@ func update_officials(delta: float) -> void:
 		official.animate(move.length(),delta,0,move.length()>0.2)
 
 func process_controller_edges() -> void:
+	if controller.controls_pressed:
+		hud_node.set_controls_text(true)
+		hud_node.controls_panel.visible=not hud_node.controls_panel.visible
 	if controller.pause_pressed and not in_menu:
 		set_paused(not paused)
 	if not controller.active:

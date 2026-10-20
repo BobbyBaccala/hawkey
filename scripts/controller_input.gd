@@ -21,6 +21,7 @@ var switch_pressed := false
 var check_pressed := false
 var poke_pressed := false
 var pause_pressed := false
+var controls_pressed := false
 var line_delta := 0
 var pair_delta := 0
 var effort := false
@@ -74,6 +75,7 @@ func handle(event: InputEvent) -> void:
 			JOY_BUTTON_Y: saucer_pressed=true
 			JOY_BUTTON_RIGHT_SHOULDER: pass_pressed=true
 			JOY_BUTTON_START: pause_pressed=true
+			JOY_BUTTON_BACK: controls_pressed=true
 			JOY_BUTTON_DPAD_UP: line_delta=1
 			JOY_BUTTON_DPAD_DOWN: line_delta=-1
 			JOY_BUTTON_DPAD_LEFT: pair_delta=-1
@@ -107,5 +109,6 @@ func clear_edges() -> void:
 	check_pressed=false
 	poke_pressed=false
 	pause_pressed=false
+	controls_pressed=false
 	line_delta=0
 	pair_delta=0

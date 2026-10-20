@@ -321,5 +321,11 @@
       "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nOvertime/shootout: 75 checks; 0 failures"
     }
   ],
-  "resolved_integration_failure": "New net regression initially assumed facing-based centre shot and then exposed energy adding on a higher net-directed trajectory. Fixture now requests explicit centre placement without removing assertions; absorbent net material subtracts puck restitution. Final containment/ripple, shot and OT/SO rechecks exit zero."
+  "resolved_integration_failure": "New net regression initially assumed facing-based centre shot and then exposed energy adding on a higher net-directed trajectory. Fixture now requests explicit centre placement without removing assertions; absorbent net material subtracts puck restitution. Final containment/ripple, shot and OT/SO rechecks exit zero.",
+  "controller_overlay_recheck": {
+    "test": "tests/test_controller.gd",
+    "exit": 0,
+    "output": "Controller failures: 0 (synthetic events; hardware untested)",
+    "note": "Final added checks verify the advertised View/Back controls overlay opens and closes; disconnect clearing also passes."
+  }
 }
