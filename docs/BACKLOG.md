@@ -15,11 +15,16 @@ Rules for every run:
 - Keep a change reversible and focused; if an item is too big, split it here.
 - If an item needs the owner (filming, scanning, buying assets), skip it and
   note why in the log.
+- Another agent (Codex/ChatGPT) works on game modes hourly at about :45,
+  on its own branches (e.g. `codex/game-modes`). Always fetch before starting
+  and before pushing; rebase rather than overwrite, and keep changes to shared
+  files (match.gd, lab.gd) small and well-described.
 
 ## Presentation and environment
 - [x] Arena lighting pass: per-zone overhead spot/omni lights so the ice has soft pools of light and players get rim light; check gameplay-camera readability.
 - [x] Ice detail (slice 1): skate cuts carved behind every skater that build up over the period, fresh sheet at each period start; brighter broadcast-white ice.
 - [x] Ice detail (slice 2): faint reflections of boards/glass in the ice and a glossier just-resurfaced look in the first minutes of a period.
+- [ ] Ice detail: skate cuts and wear also over painted lines, dots and the centre logo (they are separate meshes above the ice today).
 - [x] Rink markings to NHL proportions: goal lines 11 ft from the end boards (goals moved with them), blue lines 25 ft from centre, end-zone spots 20 ft out, hash marks and L marks on end-zone circles, goaltender trapezoid.
 - [ ] Rink width: the shell is 60 x 30 m (international width); an NHL sheet is 26 m (85 ft) wide with 28 ft corners. Narrowing touches board collision, AI clamps, cameras and the seating bowl, so do it as its own change with test_boards re-run.
 - [ ] Goal nets: proper mesh netting with a back-bar shape, white padding at the base, and net ripple when the puck goes in.
@@ -52,3 +57,4 @@ Rules for every run:
 - 2026-10-20 — Arena lighting pass: 8 shadowless overhead spot pools (scripts/arena_lighting.gd) replace the near-zero omnis; ambient/sun lowered so pools read; two low side rim lights masked off the arena layer (light players only). New tests/test_lighting.gd. Screenshot: docs/screenshots/arena-lighting-auto-20261020-1456.png
 - 2026-10-20 — Owner feedback pass: rink markings to NHL proportions (goal lines 11 ft from boards with goals moved, blue lines 25 ft, end spots 20 ft out, hash + L marks, trapezoid; gameplay reads Arena.GOAL_LINE), brighter broadcast-white ice, skate cuts carved behind every skater and cleared each period (scripts/ice_marks.gd), --capture-time=<s> capture option. Boards/glass and scoreboard left as they are; test_boards passes. New tests/test_ice.gd. Screenshot: docs/screenshots/rink-markings-ice-auto-20261020-1548.png
 - 2026-10-20 — Ice detail slice 2: ice shader adds a faint mirrored band of the dashers and a soft blue-grey smear of glass/stands near the boards (fades where the ice is cut up); ice_marks.gd tracks time since flood and drives a `fresh` gloss (glossier, slightly darker, more specular) that dries over 90 s after each period's resurface. A parallel duplicate of slice 1 from this run was dropped in favour of ice_marks.gd. tests/test_ice.gd extended. Screenshot: docs/screenshots/ice-reflection-auto-20261020-1600.png
+- 2026-10-20 — Skate cuts rebuilt (merged on top of slice 2: reflections and flood gloss kept) after owner said they looked rough: anti-aliased sub-texel strokes (no beads or stair steps) at 2.8 cm/texel, mipmapped so distant cuts read as soft wear, plus a separate wear-haze channel for high-traffic areas; ice base exposure lowered so it no longer clips to pure white and cuts and light pools stay visible. New tools/capture_ice.gd (fast-forwards live play, renders close + wide). Screenshots: docs/screenshots/skate-cuts-close-auto-20261020-1606.png, docs/screenshots/skate-cuts-wide-auto-20261020-1606.png

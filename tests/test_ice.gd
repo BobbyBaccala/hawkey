@@ -66,8 +66,27 @@ func run() -> void:
 	var b := Vector3(3, 0.06, 5)
 	marks_node.score(a, b, 1.0)
 	check(marks_node.cut_texels >= 6 * marks_node.PX_PER_M, "A 6 m stride scores a continuous line (%d texels)" % marks_node.cut_texels)
-	var mid: Vector2 = marks_node.to_texel(Vector3(0, 0, 5))
-	check(marks_node.image.get_pixel(int(mid.x), int(mid.y)).r > 0.2, "Cut visible at the stride midpoint")
+	# The stroke is anti-aliased across neighbouring rows: sum a column through it.
+	var column := func(x_m: float) -> float:
+		var c: Vector2 = marks_node.to_texel(Vector3(x_m, 0, 5))
+		var total := 0.0
+		for dy in range(-2, 3):
+			total += marks_node.image.get_pixel(int(c.x), int(c.y) + dy).r
+		return total
+	check(column.call(0.0) > 0.2, "Cut visible at the stride midpoint (%.2f)" % column.call(0.0))
+	# Smooth, continuous stroke: no beads (bright joints) or gaps along it.
+	var lo := INF
+	var hi := 0.0
+	for i in range(-80, 81):
+		var v: float = column.call(i * 0.03)
+		lo = minf(lo, v)
+		hi = maxf(hi, v)
+	check(lo > 0.0 and hi / lo < 1.35, "Stroke intensity is even along its length (min %.3f max %.3f)" % [lo, hi])
+	# Wear haze builds where skaters pass.
+	marks_node.haze(Vector3(0, 0, -10), 1.0)
+	var hz: Vector2 = marks_node.to_texel(Vector3(0, 0, -10))
+	check(marks_node.image.get_pixel(int(hz.x), int(hz.y)).g > 0.02, "Haze splat lands in the wear channel")
+	check(marks_node.image.get_pixel(int(hz.x), int(hz.y)).r == 0.0, "Haze leaves the scratch channel alone")
 	var untouched: Vector2 = marks_node.to_texel(Vector3(0, 0, -20))
 	check(marks_node.image.get_pixel(int(untouched.x), int(untouched.y)).r == 0.0, "Ice elsewhere stays clean")
 	marks_node.clear()
