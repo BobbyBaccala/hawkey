@@ -14,7 +14,8 @@ Godot 4.6 standard/GDScript was selected because its editor and headless runtime
 - scripts/match_state.gd: authoritative match clock, phase, score and penalty eligibility.
 - practice.tscn: earlier isolated laboratory entry point.
 - scripts/lab.gd: character/puck simulation, practice partner, goalkeeper tracking, cameras, input, HUD and finite event sounds.
-- scripts/arena.gd: rounded rink, markings, two goals, netting, glass and seating.
+- scripts/arena.gd: rounded rink, markings, two goals, glass and seating.
+- scripts/goal_net.gd: NHL-style goal (rounded base frame, upper back bar, white base padding), diamond-mesh netting shader with impact ripple, netting collision slabs. The arena calls impact() when the puck's velocity changes sharply in or against a net.
 - scripts/arena_lighting.gd: per-zone overhead spot pools and player rim lights (arena meshes sit on visual layer 2, which rim lights skip).
 - scripts/ice_marks.gd: skate-cut map (one texel ~4 cm) scored by every blade on the ice and sampled by the ice shader and by the paint shader on every marking/emblem (arena.gd paint(), set_cut_map()); cleared at each period.
 - Rink size is NHL: arena.gd HALF_WIDTH (85 ft sheet), HALF_LENGTH (60 m), CORNER_RADIUS (28 ft); everything that depends on the rink width reads these rather than literals. Overhead rigging is on arena_lighting.gd RIGGING_LAYER, hidden by the full-rink camera.
