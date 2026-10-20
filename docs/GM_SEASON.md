@@ -82,7 +82,8 @@ under ignored build output, never the user's real season/settings.
 
 The default cloud Mesa llvmpipe renderer crashed with SIGILL before capturing both
 the arena and a standalone 2D page. The supported alternate Mesa `softpipe` driver
-rendered these mode pages successfully using OpenGL compatibility; no 3D render or
+rendered these mode pages successfully using OpenGL compatibility. A separate
+3D title capture hit its 180-second limit without producing an image; no 3D render or
 hardware performance claim is made from this run. Reproduce with `DISPLAY=:9
 GALLIUM_DRIVER=softpipe ... godot --rendering-method gl_compatibility --audio-driver
 Dummy --script tools/capture_gm.gd`, plus the writable XDG paths in setup guidance.
@@ -110,3 +111,9 @@ selection/focus and actual dashboard navigation are covered by 3,274 native chec
 
 - [Club roster and player card](screenshots/gm-rosters-20261020.png)
 - [Eligible draft candidates](screenshots/gm-prospects-20261020.png)
+
+
+Final integrated verification: **30 engine suites passed**, optional mocap playback
+skipped; **21 Python tests passed**. Save/recovery: 25 checks; season: 3,088;
+GM navigation/retry: 22; roster browser: 3,274. A final controller regression also
+passed after separating trigger activation from the saved stick dead zone.

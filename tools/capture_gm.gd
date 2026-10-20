@@ -10,6 +10,10 @@ func capture(name_: String) -> void:
 func run() -> void:
 	DirAccess.make_dir_recursive_absolute("res://build")
 	Session.slot_path="res://build/capture-gm.json";Settings.path="res://build/capture-preferences.json"
+	if "--title-only" in OS.get_cmdline_user_args():
+		load("res://scripts/match.gd").return_to_title=true
+		change_scene_to_file("res://main.tscn");await capture("title")
+		current_scene.queue_free();await process_frame;quit();return
 	if "--browser-only" in OS.get_cmdline_user_args():
 		if not Session.resume(): quit(1);return
 	else:

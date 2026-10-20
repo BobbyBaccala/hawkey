@@ -40,7 +40,8 @@ func handle(event: InputEvent) -> void:
 	if event is InputEventJoypadMotion:
 		device_id=event.device
 		connected=true
-		if absf(event.axis_value)>deadzone:
+		var activation_zone: float=0.08 if event.axis in [JOY_AXIS_TRIGGER_LEFT,JOY_AXIS_TRIGGER_RIGHT] else deadzone
+		if absf(event.axis_value)>activation_zone:
 			active=true
 		match event.axis:
 			JOY_AXIS_LEFT_X: left_raw.x=event.axis_value

@@ -1,17 +1,233 @@
 {
-  "status": "Focused core tests passed; broader regression and final failed-save UI recheck in progress",
-  "engine": "Godot 4.6.3 Linux headless",
-  "focused": {
-    "save_store": "25 checks; 0 failures",
-    "gm_season": "3088 checks; 0 failures",
-    "gm_navigation_initial": "21 checks; 0 failures"
+  "status": "30 engine suites passed; optional mocap skipped; final controller threshold recheck passed",
+  "engine": "Godot 4.6.3.stable.official Linux; headless fixed-fps 120",
+  "reviewed_prototype": "3c324a454135ca2863b8b1d3e55d7492d65a0f9d",
+  "tested_integrated_source": "3a05b54e1da501f0e90ad6a125cfa412df66b918 plus final trigger activation fix",
+  "python": {
+    "tests": 21,
+    "exit": 0
   },
-  "python": "21 tests passed",
+  "engine_suites": [
+    {
+      "test": "tests/test_animation.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nAnimation integration failures: 0"
+    },
+    {
+      "test": "tests/test_boards.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nBoard failures: 0"
+    },
+    {
+      "test": "tests/test_clipping.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nClipping failures: 0"
+    },
+    {
+      "test": "tests/test_controller.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nController failures: 0 (synthetic events; hardware untested)"
+    },
+    {
+      "test": "tests/test_controls.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nControl integration failures: 0"
+    },
+    {
+      "test": "tests/test_gear_graphics.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGear graphic failures: 0"
+    },
+    {
+      "test": "tests/test_gm_navigation.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nERROR: Could not create directory: '/proc/hawkey-no-write'.\n   at: make_dir_recursive (core/io/dir_access.cpp:178)\n   GDScript backtrace (most recent call first):\n       [0] save_file (res://scripts/save_store.gd:68)\n       [1] save (res://scripts/gm_session.gd:14)\n       [2] finish_match (res://scripts/gm_session.gd:74)\n       [3] update_match_hud (res://scripts/match.gd:933)\n       [4] run (res://tests/test_gm_navigation.gd:52)\n       [5] settle (res://tests/test_gm_navigation.gd:14)\nERROR: Could not create directory: '/proc/hawkey-no-write'.\n   at: make_dir_recursive (core/io/dir_access.cpp:178)\n   GDScript backtrace (most recent call first):\n       [0] save_file (res://scripts/save_store.gd:68)\n       [1] save (res://scripts/gm_session.gd:14)\n       [2] advance_day (res://scripts/gm_session.gd:56)\n       [3] run (res://tests/test_gm_navigation.gd:67)\n       [4] settle (res://tests/test_gm_navigation.gd:14)\nGM navigation: 22 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_gm_rosters.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGM roster browser: 3274 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_gm_season.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGM season: 3088 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_goal_celebration.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoal celebration failures: 0"
+    },
+    {
+      "test": "tests/test_goal_net.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoal net failures: 0"
+    },
+    {
+      "test": "tests/test_goalie_gear.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoalie gear failures: 0"
+    },
+    {
+      "test": "tests/test_goalie_saves.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoalie save failures: 0"
+    },
+    {
+      "test": "tests/test_hockey_stop.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nHockey stop failures: 0"
+    },
+    {
+      "test": "tests/test_ice.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nIce failures: 0"
+    },
+    {
+      "test": "tests/test_lab.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nIntegration failures: 0"
+    },
+    {
+      "test": "tests/test_lighting.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nLighting failures: 0"
+    },
+    {
+      "test": "tests/test_match.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nMatch integration failures: 0"
+    },
+    {
+      "test": "tests/test_match_loop.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\n20-second match-loop failures: 0 \u2022 score [0, 1] \u2022 clock 19:01"
+    },
+    {
+      "test": "tests/test_match_state.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nMatch-state failures: 0"
+    },
+    {
+      "test": "tests/test_mocap.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nMocap failures: 0 (skipped: clips not installed in assets/mixamo/)"
+    },
+    {
+      "test": "tests/test_net_shooting.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nNet shooting: 135 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_overtime_shootout.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nOvertime/shootout: 75 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_play_now.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPlay Now: 47 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_puck_flight.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPuck flight failures: 0"
+    },
+    {
+      "test": "tests/test_roster_database.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nNative roster: 44 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_save_store.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nSave/recovery: 25 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_simulation.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPASS: rating acceleration, deceleration, front-mouth goal, back entry, wide and high misses"
+    },
+    {
+      "test": "tests/test_skate_stick.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nSkate/stick failures: 0"
+    },
+    {
+      "test": "tests/test_stride.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nStride failures: 0"
+    },
+    {
+      "test": "tests/test_world_database.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nWorld database: 4586 checks; 0 failures; 3256 draft candidates"
+    }
+  ],
+  "final_controller_recheck": {
+    "exit": 0,
+    "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nController failures: 0 (synthetic events; hardware untested)",
+    "change": "Stick dead-zone preference must not suppress trigger activation"
+  },
+  "initial_integration_failures": [
+    {
+      "test": "tests/test_goal_celebration.gd",
+      "exit": 1,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nERROR: Jumbotron shows the updated score ('HAR  0     SUM  1')\n   at: push_error (core/variant/variant_utility.cpp:1024)\n   GDScript backtrace (most recent call first):\n       [0] check (res://tests/test_goal_celebration.gd:11)\n       [1] run (res://tests/test_goal_celebration.gd:84)\nGoal celebration failures: 1"
+    }
+  ],
+  "post_initial_merge_rechecks": [
+    {
+      "test": "tests/test_gm_navigation.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nERROR: Could not create directory: '/proc/hawkey-no-write'.\n   at: make_dir_recursive (core/io/dir_access.cpp:178)\n   GDScript backtrace (most recent call first):\n       [0] save_file (res://scripts/save_store.gd:68)\n       [1] save (res://scripts/gm_session.gd:14)\n       [2] finish_match (res://scripts/gm_session.gd:74)\n       [3] update_match_hud (res://scripts/match.gd:933)\n       [4] run (res://tests/test_gm_navigation.gd:52)\n       [5] settle (res://tests/test_gm_navigation.gd:14)\nERROR: Could not create directory: '/proc/hawkey-no-write'.\n   at: make_dir_recursive (core/io/dir_access.cpp:178)\n   GDScript backtrace (most recent call first):\n       [0] save_file (res://scripts/save_store.gd:68)\n       [1] save (res://scripts/gm_session.gd:14)\n       [2] advance_day (res://scripts/gm_session.gd:56)\n       [3] run (res://tests/test_gm_navigation.gd:67)\n       [4] settle (res://tests/test_gm_navigation.gd:14)\nGM navigation: 22 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_goal_celebration.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoal celebration failures: 0"
+    },
+    {
+      "test": "tests/test_lighting.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nLighting failures: 0"
+    },
+    {
+      "test": "tests/test_controller.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nController failures: 0 (synthetic events; hardware untested)"
+    },
+    {
+      "test": "tests/test_overtime_shootout.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nOvertime/shootout: 75 checks; 0 failures"
+    }
+  ],
+  "initial_development_findings": [
+    "Save staging initially rejected JSON-parsed float versions using strict array membership; replaced with numeric equality and reran save checks.",
+    "Fault-injection fixture initially intercepted backup replacement before final replacement; corrected fault target without removing preservation assertions.",
+    "Celebration fixture expected TOR; strengthened it to exact selected-club codes and both scores.",
+    "Browser menu link had an extra closing parenthesis; corrected and reran actual GM navigation/browser tests and capture."
+  ],
+  "expected_diagnostics": "GM navigation deliberately writes to an unwritable /proc path twice to verify failed-final UI/retry and day rollback; expected directory errors are not failed assertions.",
   "capture": {
-    "renderer": "OpenGL compatibility, Mesa softpipe",
+    "renderer": "OpenGL 3.3 compatibility; Mesa softpipe",
     "resolution": "1440x900",
-    "scope": "Real native GM setup/dashboard/preferences; 13 simulated days staged",
-    "default_renderer_failure": "Mesa llvmpipe SIGILL on arena and standalone UI; alternate driver succeeded"
+    "files": [
+      "gm-setup-20261020.png",
+      "gm-opening-20261020.png",
+      "gm-standings-20261020.png",
+      "gm-rosters-20261020.png",
+      "gm-prospects-20261020.png",
+      "gm-preferences-20261020.png"
+    ],
+    "scope": "Real native UI; dashboard staged by simulating 13 days; isolated build/capture save/preferences paths",
+    "default_renderer_failure": "Default Mesa llvmpipe SIGILL for arena and standalone UI; no photos from failed attempts",
+    "arena_softpipe_attempt": "New title-only 3D capture exceeded 180-second limit, exit 124; no image produced or claimed"
   },
-  "hardware_tested": false
+  "limits": [
+    "Physical controller and Windows/Deck not tested",
+    "Career, transactions, executed draft picks, development simulation, playoffs and multi-season rollover unimplemented",
+    "Single local slot; synchronous whole-world snapshots; no save-latency or release-performance claim"
+  ]
 }

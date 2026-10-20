@@ -126,3 +126,13 @@ candidates, league/team/name/position search, paginated rows and full player car
 Youth data remains browse-only; no drafting/development/transaction claims.
 Native browser checks: 3,274, including byte-equivalent season preservation,
 page/focus recovery and real dashboard round trips. Captures and scope: GM_SEASON.md.
+
+
+Final integrated checkpoint — Preserved prototype 3c97c3e overhead-camera fixes
+and 3c324a4 skate/stick improvements as well as ed82395 celebration/net/stops.
+Thirty engine suites passed; optional mocap skipped; 21 Python tests passed.
+Final controller recheck passed after separating stick dead zone from trigger
+activation. Evidence and intentional failed-write diagnostics are recorded in
+verification/gm-season-20261020.json. Roster/prospect pages were rendered and
+inspected; a full 3D softpipe title capture timed out without a usable image.
+No 3D quality/performance or hardware-controller approval is implied.

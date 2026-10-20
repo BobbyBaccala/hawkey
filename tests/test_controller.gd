@@ -14,6 +14,10 @@ func run()->void:
 	var input:=Adapter.new()
 	check(Adapter.radial(Vector2(0.1,0.1),0.18)==Vector2.ZERO,"Radial deadzone rejects drift")
 	check(is_equal_approx(Adapter.radial(Vector2(0.59,0),0.18).x,0.5),"Analog travel must scale continuously")
+	var high_zone:=Adapter.new()
+	high_zone.deadzone=0.4
+	axis(high_zone,JOY_AXIS_TRIGGER_RIGHT,0.2)
+	check(high_zone.active and high_zone.trigger_pressed,"Stick dead zone does not suppress trigger activation")
 	axis(input,JOY_AXIS_TRIGGER_RIGHT,0.2)
 	check(input.trigger_pressed and not input.shoot_pressed and input.trigger_down,"Trigger press edge")
 	input.clear_edges()
