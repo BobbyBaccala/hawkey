@@ -36,7 +36,7 @@ func run()->void:
 	var time:float=(-scene.Arena.GOAL_LINE-scene.puck.position.z)/velocity.z
 	var at:Vector3=scene.puck.position+velocity*time+Vector3.DOWN*4.9*time*time
 	check(at.distance_to(Net.target(-1,scene.controller.left_stick))<0.001,"Controller corners target net rather than facing")
-	# Both actual trigger press and mouse click use immediate shots; release never fires.
+	# Both right-stick flick and mouse click use immediate shots; release never fires.
 	scene.cooldown=0;scene.puck.position=scene.player.position+Vector3(0,0.03,-0.6)
 	var click:=InputEventMouseButton.new();click.button_index=MOUSE_BUTTON_LEFT;click.pressed=true
 	var before:int=scene.shots
@@ -68,16 +68,36 @@ func run()->void:
 	root.add_child(practice);await physics_frame
 	practice.set_physics_process(false)
 	practice.puck.position=practice.player.position+Vector3(0,0.03,-0.6)
+	practice.puck.position.y=0.03
 	practice.cooldown=0
 	var e:=InputEventJoypadMotion.new()
 	e.device=7;e.axis=JOY_AXIS_LEFT_Y;e.axis_value=-1
 	practice._unhandled_input(e)
-	e=InputEventJoypadMotion.new();e.device=7;e.axis=JOY_AXIS_TRIGGER_RIGHT;e.axis_value=1
+	e=InputEventJoypadMotion.new();e.device=7;e.axis=JOY_AXIS_RIGHT_Y;e.axis_value=-1
 	practice._unhandled_input(e)
 	practice._physics_process(1.0/120)
 	check(practice.shots==1 and practice.puck.linear_velocity.z < -10,"Practice controller uses same net-targeted quick shot")
 	for i in range(10):practice._physics_process(1.0/120)
-	check(practice.shots==1 and practice.charge==0,"Practice trigger hold never charges or repeats")
+	check(practice.shots==1 and practice.charge==0,"Practice right-stick hold never charges or repeats")
+	# Possession-dependent Practice passes use R2 release and R1 saucer loft.
+	practice.cooldown=0;practice.pickup_owner=true
+	practice.puck.linear_velocity=Vector3.ZERO
+	practice.puck.position=practice.player.position+Vector3(0,0.03,-0.6)
+	practice.puck.position.y=0.03
+	e=InputEventJoypadMotion.new();e.device=7;e.axis=JOY_AXIS_TRIGGER_RIGHT;e.axis_value=1
+	practice._unhandled_input(e);practice._physics_process(1.0/120)
+	check(practice.passes==0,"Practice R2 press does not fire a pass or shot")
+	practice.practice_input.advance(0.8)
+	e.axis_value=0;practice._unhandled_input(e);practice._physics_process(1.0/120)
+	check(practice.passes==1 and practice.shots==1,"Practice R2 release passes without shooting")
+	practice.cooldown=0;practice.pickup_owner=true
+	practice.puck.linear_velocity=Vector3.ZERO
+	practice.puck.position=practice.player.position+Vector3(0,0.03,-0.6)
+	practice.puck.position.y=0.03
+	var bumper:=InputEventJoypadButton.new();bumper.device=7;bumper.button_index=JOY_BUTTON_RIGHT_SHOULDER;bumper.pressed=true
+	practice._unhandled_input(bumper);practice._physics_process(1.0/120)
+	check(practice.passes==2 and practice.puck.linear_velocity.y>2,"Practice R1 produces a lifted saucer pass")
+
 	practice.on_practice_connection(7,false)
 	check(practice.paused and not practice.practice_input.trigger_down,"Practice disconnect pauses and clears shot input")
 	practice.queue_free();await process_frame

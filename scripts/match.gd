@@ -28,6 +28,7 @@ var skaters: Array[CharacterBody3D] = []
 var rosters: Array = [[],[]]
 var active_lines: Array[int] = [0,0]
 var defense_pairs: Array[int] = [0,0]
+var controller_pass_actor: CharacterBody3D
 var carrier: CharacterBody3D
 var penalties_label: Label
 var previous_phase := MatchState.Phase.FACEOFF
@@ -192,6 +193,7 @@ func build_hud() -> void:
 	hud_node.practice_requested.connect(func(): get_tree().change_scene_to_file("res://practice.tscn"))
 
 func set_paused(on: bool) -> void:
+	if on: controller_pass_actor=null
 	paused = on
 	charge = 0
 	hud_node.show_pause(on, CAMERA_NAMES[camera_mode])
@@ -513,6 +515,7 @@ func _physics_process(delta: float) -> void:
 		for actor in skaters + goalkeepers:
 			actor.get_child(1).animate(0, delta, 0, false)
 		return
+	if not paused: controller.advance(delta)
 	process_controller_edges()
 	puck.freeze=paused or match_state.phase!=MatchState.Phase.PLAY
 	if paused:
@@ -967,24 +970,32 @@ func process_controller_edges() -> void:
 	if controller.left_stick.length()>0.05:
 		aim=screen_to_rink(Vector3(controller.left_stick.x,0,controller.left_stick.y)).normalized()
 	if not paused and not in_menu:
-		if controller.switch_pressed and not match_state.is_shootout(): switch_player()
+		var possession := carrier==player
+		if controller.trigger_pressed:
+			controller_pass_actor=player if possession and match_state.phase==MatchState.Phase.PLAY else null
+			if not possession and match_state.phase==MatchState.Phase.PLAY: switch_player()
 		if controller.line_delta!=0: request_line(0,active_lines[0]+controller.line_delta)
 		if controller.pair_delta!=0: request_line(0,defense_pairs[0]+controller.pair_delta,true)
-		if controller.check_pressed: defensive_action(true)
-		if controller.poke_pressed: defensive_action(false)
+		if not possession:
+			if controller.check_pressed and carrier!=null: defensive_action(true)
+			if controller.poke_pressed: defensive_action(false)
 		if match_state.phase in [MatchState.Phase.PLAY, MatchState.Phase.SHOOTOUT_ATTEMPT]:
-			if controller.shoot_pressed:
+			if controller.shoot_pressed and (possession or carrier==null):
 				take_shot(controller.slap_requested)
-			if match_state.phase == MatchState.Phase.PLAY and (controller.pass_pressed or controller.saucer_pressed):
+			var release_pass: bool=controller.trigger_released and controller_pass_actor==player and possession
+			if match_state.phase == MatchState.Phase.PLAY and (release_pass or (controller.saucer_pressed and possession)):
 				var target:=pass_target(player,aim)
 				if target!=null:
 					var direction:=target.position+target.velocity*0.25-puck.position
 					direction.y=0
-					if strike(direction.normalized(),16,true,0.18 if controller.saucer_pressed else 0): passes+=1
+					if strike(direction.normalized(),controller.pass_speed() if release_pass else 16.0,true,0.18 if controller.saucer_pressed else 0): passes+=1
+	if controller.trigger_released or paused or in_menu or carrier!=player:
+		controller_pass_actor=null
 	controller.clear_edges()
 
 func on_controller_connection(device: int, is_connected: bool) -> void:
 	if not is_connected and controller.disconnected(device):
+		controller_pass_actor=null
 		set_paused(true)
 		status.text="CONTROLLER DISCONNECTED — reconnect, then Start / Options"
 	elif is_connected:

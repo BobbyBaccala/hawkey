@@ -1,0 +1,78 @@
+{
+  "runtime": "Godot 4.6.3 Linux headless fixed-fps 120",
+  "reference": "Seven owner-supplied in-game Skill Stick screenshots; linked EA page could not be fetched",
+  "hardware_tested": false,
+  "tests": [
+    {
+      "suite": "controller",
+      "exit_code": 0,
+      "summary": [
+        "Controller failures: 0 (synthetic events; hardware untested)"
+      ]
+    },
+    {
+      "suite": "net_shooting",
+      "exit_code": 0,
+      "summary": [
+        "Net shooting: 135 checks; 0 failures"
+      ],
+      "rerun": "After grounded fixture correction and final Practice help text change"
+    },
+    {
+      "suite": "overtime_shootout",
+      "exit_code": 0,
+      "summary": [
+        "Overtime/shootout: 75 checks; 0 failures"
+      ]
+    },
+    {
+      "suite": "match",
+      "exit_code": 0,
+      "summary": [
+        "Match integration failures: 0"
+      ]
+    },
+    {
+      "suite": "match_loop",
+      "exit_code": 0,
+      "summary": [
+        "20-second match-loop failures: 0 \u2022 score [1, 0] \u2022 clock 19:01"
+      ]
+    },
+    {
+      "suite": "play_now",
+      "exit_code": 0,
+      "summary": [
+        "Play Now: 47 checks; 0 failures"
+      ]
+    },
+    {
+      "suite": "lab",
+      "exit_code": 0,
+      "summary": [
+        "Integration failures: 0"
+      ]
+    },
+    {
+      "suite": "goal_net",
+      "exit_code": 0,
+      "summary": [
+        "Goal net failures: 0"
+      ]
+    }
+  ],
+  "initial_attempts": [
+    "Controller switch fixture initially left current player closest; corrected fixture positions, no switch assertion removed.",
+    "Nonexistent test_navigation.gd invocation failed to load; actual navigation suite test_play_now.gd executed instead.",
+    "Expanded Practice pass fixture initially placed puck at skater-origin height + 0.03 (> ground reach); reset puck velocity and explicitly set ice-level y=0.03, retaining pass and loft assertions."
+  ],
+  "initial_net_shooting": {
+    "suite": "net_shooting",
+    "exit_code": 2,
+    "summary": [
+      "ERROR: Practice R2 release passes without shooting",
+      "ERROR: Practice R1 produces a lifted saucer pass",
+      "Net shooting: 135 checks; 2 failures"
+    ]
+  }
+}

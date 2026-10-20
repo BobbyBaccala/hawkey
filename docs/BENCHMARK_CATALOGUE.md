@@ -67,3 +67,18 @@ requirements saved to environment draft; runtime access still requires settings
 activation. See CONTROLS_AND_TIEBREAKS.md for the original implemented controls,
 explicit tie-break policy, tests and remaining research. Do not treat these mappings
 or prototype rules as an independently verified replica of EA NHL.
+
+
+### Owner-supplied Skill Stick reference — 2026-10-20
+
+Seven owner-supplied controls screenshots (two batches) were read directly. They
+establish the visible LS shot/pass aim, RS shot/deke/body-check and contextual
+R2 pass/switch, R1 saucer/poke mappings, with pass hold strength and separate
+faceoff/advanced moves. The associated URL is
+https://www.ea.com/able/resources/nhl/nhl-23/ps4/controls ; the web page remains
+unread because runtime CONNECT was denied (403). The URL names NHL 23/PS4;
+the screenshot edition itself is not independently established. Implemented subset
+and explicit remaining gaps: [CONTROLS_AND_TIEBREAKS.md](CONTROLS_AND_TIEBREAKS.md).
+Acceptance: R2 never shoots, possession determines pass versus switch, held pass
+strength is bounded, release cannot pass after a defensive switch or pause,
+R1 chooses saucer/poke, and defensive RS cannot launch a net-targeted shot.

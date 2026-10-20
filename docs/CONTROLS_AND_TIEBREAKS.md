@@ -21,18 +21,23 @@ Passing and clearances remain directional.
 |---|---|
 | Left stick | Skate; on a shot, horizontal selects shooter's left/right and up selects high |
 | Neutral left stick | Centre of the net |
-| RT / R2 press | Immediate wrist shot; holding does not add power or auto-repeat |
+| RT / R2, with possession | Hold for pass strength; release to pass (12–24 m/s bounded profile) |
+| RT / R2, without possession | Switch player on press; release cannot turn into a pass |
 | Right stick flick up | Wrist shot |
 | Right stick down, then flick up | Fixed slap-shot profile |
 | Right stick sideways | Existing stickhandling |
 | Mouse position + left click | Net placement and immediate wrist shot |
 | Alt + left click | Slap shot |
-| RB / R1 or right click | Pass |
+| RB / R1 | Saucer pass with possession; poke check without possession |
+| Right-stick flick, opponent possession | Body check; does not shoot |
+| B / ○; X / □ | Forward line; defence pair |
+| L3 | Hustle |
+| Right click | Keyboard/mouse pass |
 | View / Back | Toggle controls overlay |
 
 Wrist/slap profiles use the player's estimated `shot_power` value, with bounded
 launch speeds and a ballistic height solution for the selected net point. The old
-charge-to-power curve is removed. Other newly authored hockey ratings remain future
+shot charge-to-power curve is removed; only passes gain strength while held. Other newly authored hockey ratings remain future
 simulation data unless separately connected. There is no claim of calibrated shot
 realism, production slap-shot animation, or tested physical-controller feel.
 Practice shares the same shot solver and controller adapter, including trigger
@@ -72,6 +77,29 @@ https://help.ea.com/en/articles/nhl/nhl-26/controls/ . The current runtime proxy
 the CONNECT request (HTTP 403) before the page could be read; the URL/page contents
 and edition-specific controls were not verified. The existing benchmark catalogue
 records older research separately.
+
+The owner supplied the NHL 23 PS4 controls URL:
+https://www.ea.com/able/resources/nhl/nhl-23/ps4/controls . The direct fetch was
+blocked (CONNECT HTTP 403). The owner then provided seven readable in-game controls
+screenshots (2026-10-20 15:23–15:25 filenames, two batches), which are the actual
+visual reference reviewed for the mapping correction. Their Skill Stick tables
+show LS movement/shot/pass aim, RS shooting/dekes, R2 passing/defensive switching,
+R1 saucer/poke, L3 hustle, circle/square line changes, L2 vision control, L1 modifiers,
+and contextual faceoff/defensive/advanced deke actions. The screenshots do not
+independently establish the edition of the depicted build; NHL 23 PS4 identifies
+the supplied URL. No page content was fetched or claimed verified.
+
+The implemented subset above replaces the earlier R2-shot/R1-pass layout in both
+Play Now and Practice. Resting at neutral for 150 ms cancels a right-stick backstroke; passing through
+neutral during a continuous slap gesture preserves it. Pause, loss of
+possession and disconnect cancel armed match passes. Practice uses the same bounded
+pass strength and saucer loft. D-pad line controls remain a prototype extension.
+The shown advanced dekes, protection/bracing, vision control, stick lifts, blocks,
+manual directional switching, faceoff grip/timing/gestures, desperation double taps
+and detailed line-selection menus remain unimplemented. R3 stopping was removed
+from the controller mapping to avoid conflicting with the reference; keyboard
+braking remains available. These screenshots guide original mechanics, not a claim
+of complete EA feature or controller-feel parity.
 
 Saved additive environment allowlist requirements: `help.ea.com`, `www.ea.com`,
 `media.contentapi.ea.com`. Saving the draft does not activate runtime access. Review
@@ -118,3 +146,12 @@ The goal-net test now explicitly selects neutral/centre aim to isolate back-net
 containment/ripple under the new shot controls. All original containment, scoring,
 ripple and decay assertions are retained. Initial integration failure and focused
 rechecks are recorded separately in the verification JSON.
+
+
+## Screenshot-guided control validation
+
+Eight focused engine suites passed after the control correction: controller, net
+shooting (135 checks), overtime/shootout (75), match, match loop, Play Now (47),
+Practice and goal net. Initial fixture failures and final rechecks are recorded in
+[verification/skill-stick-20261020.json](verification/skill-stick-20261020.json).
+These are synthetic/headless checks; physical-controller feel remains untested.

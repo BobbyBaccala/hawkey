@@ -80,3 +80,22 @@ The current snapshot expands to 32 HL clubs, 64 farm clubs, 218 junior clubs, 16
 ## Interface/shooting/tie-break checkpoint — 2026-10-20
 
 Shared HL exhibition OT/shootout and net-targeted wrist/slap controls implemented and tested. Menu/HUD and arena fonts bundled; interface corners, focus, selectors and matchup preview revised and genuinely rendered. UI/presentation remains Partial against production goals. Physical-controller feel, full shootout skating violations, whistle-based OT normalization, league-specific rules, human evaluation and release gates remain open. Exact tests/captures and blocked EA source verification: CONTROLS_AND_TIEBREAKS.md.
+
+
+## 2026-10-20 — owner-supplied Skill Stick correction
+
+Owner: Codex, codex/game-modes / PR #2. Read both batches of seven owner-supplied
+controls screenshots; web URL remains proxy-blocked. Integrated Claude prototype
+e457c43 (backlog-only changes), preserving all existing presentation work.
+R2 now arms/releases a bounded-strength pass with possession and switches without
+possession. R1 selects saucer/poke; RS shoots with possession or a reachable loose
+puck and checks with another carrier. Circle/square change forward lines/defence
+pairs; L3 hustle retained. Controller R3 brake removed to avoid reference conflict.
+Practice uses the same pass strength, real saucer loft and RS shooting. Pending
+match passes cancel on pause, possession loss and disconnect. Brief neutral crossing
+preserves slap gestures; neutral rest cancels windup. HUD help updated.
+Implemented subset only: advanced dekes, vision/protection/blocks, stick lifts,
+manual switching and faceoff gesture systems remain open, not advertised as working.
+Executed evidence: verification/skill-stick-20261020.json; physical hardware untested.
+No release/PR merge. Next: human controller feel and remaining contextual mechanics,
+then persistent saves/GM season dependencies from the ordered backlog.

@@ -1,4 +1,5 @@
 extends Node3D
+var practice_pass_actor: CharacterBody3D
 var practice_input := preload("res://scripts/controller_input.gd").new()
 const NetShooting = preload("res://scripts/net_shooting.gd")
 const Skating = preload("res://scripts/skating.gd")
@@ -323,11 +324,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			if strike(direction.normalized(),17,true):
 				passes += 1
 
-func strike(direction: Vector3, speed: float, is_pass: bool = false) -> bool:
+func strike(direction: Vector3, speed: float, is_pass: bool = false, loft: float = 0.0) -> bool:
 	if paused or player.position.distance_to(puck.position) > 1.8 or cooldown > 0 or puck.position.y>0.22:
 		return false
 	direction.y = 0
 	puck.linear_velocity = direction.normalized() * speed + velocity * 0.25 if is_pass else NetShooting.launch(puck.position,-1,practice_input.left_stick if practice_input.active else mouse_net_placement(-1),75,practice_input.slap_requested if practice_input.active else Input.is_physical_key_pressed(KEY_ALT))
+	if is_pass: puck.linear_velocity.y=speed*loft
 	pickup_owner = false
 	cooldown = 0.42
 	if not is_pass: shots += 1
@@ -358,9 +360,13 @@ func update_camera(delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	if practice_input.pause_pressed: paused=not paused
 	if practice_input.active and not paused:
+		practice_input.advance(delta)
+		if practice_input.trigger_pressed:
+			practice_pass_actor=player if pickup_owner else null
+			if not pickup_owner: practice_input.switch_pressed=true
 		if practice_input.shoot_pressed: strike(aim,28)
-		if practice_input.pass_pressed or practice_input.saucer_pressed:
-			if strike(teammate.position+teammate.velocity*0.25-puck.position,17,true): passes+=1
+		if (practice_input.trigger_released and practice_pass_actor==player and pickup_owner) or (practice_input.saucer_pressed and pickup_owner):
+			if strike(teammate.position+teammate.velocity*0.25-puck.position,practice_input.pass_speed() if practice_input.trigger_released else 17.0,true,0.18 if practice_input.saucer_pressed else 0): passes+=1
 		if practice_input.switch_pressed:
 			var old := player
 			player=teammate
@@ -368,6 +374,7 @@ func _physics_process(delta: float) -> void:
 			player_visual=player.get_child(1)
 			teammate_visual=teammate.get_child(1)
 			pickup_owner=false
+	if practice_input.trigger_released or paused or not pickup_owner: practice_pass_actor=null
 	practice_input.clear_edges()
 	puck.freeze = paused
 	if paused:
@@ -435,6 +442,8 @@ func _physics_process(delta: float) -> void:
 	power.value = charge
 	power.visible = charge > 0
 	help.text = "WASD Skate    Shift Effort    Ctrl Stop    Mouse Aim    Click LMB Wrist · Alt + click Slap    RMB Pass\nSpace Switch skater    R Reset    C Broadcast / full rink    Wheel Zoom    Esc Pause    F1 Diagnostics"
+	if practice_input.active:
+		help.text = "LS Skate + aim    RS Up Wrist / Down-Up Slap    R2 Hold/release Pass · Without puck Switch\nR1 Saucer    L3 Hustle    Start Pause    Shots: fixed power; passes: hold for strength"
 	if debug:
 		help.text = "Speed %.1f m/s   Puck %.1f m/s   Shots %d   Passes %d   Pad contacts %d   Rating %d\n1 / 2 Compare ratings    Fixed physics 120 Hz    C Camera    F1 Close diagnostics" % [velocity.length(),puck.linear_velocity.length(),shots,passes,saves,rating]
 
@@ -575,5 +584,6 @@ func mouse_net_placement(end_: float) -> Vector2:
 
 func on_practice_connection(device: int, connected: bool) -> void:
 	if not connected and practice_input.disconnected(device):
+		practice_pass_actor=null
 		paused=true
 		charge=0

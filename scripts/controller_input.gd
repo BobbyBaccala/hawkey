@@ -9,12 +9,16 @@ var right_raw := Vector2.ZERO
 var left_stick := Vector2.ZERO
 var right_stick := Vector2.ZERO
 var lift := 0.0
-var shoot_trigger := 0.0
+var pass_trigger := 0.0
 var trigger_down := false
 var slap_requested := false
 var backstroke := false
+var neutral_time := 0.0
 var shoot_pressed := false
-var shoot_released := false
+var trigger_pressed := false
+var trigger_released := false
+var pass_held := 0.0
+var deke_modifier := false
 var pass_pressed := false
 var saucer_pressed := false
 var switch_pressed := false
@@ -41,24 +45,30 @@ func handle(event: InputEvent) -> void:
 		match event.axis:
 			JOY_AXIS_LEFT_X: left_raw.x=event.axis_value
 			JOY_AXIS_LEFT_Y: left_raw.y=event.axis_value
-			JOY_AXIS_RIGHT_X: right_raw.x=event.axis_value
+			JOY_AXIS_RIGHT_X:
+				if absf(event.axis_value)>0.65 and absf(right_raw.x)<=0.65: check_pressed=true
+				right_raw.x=event.axis_value
 			JOY_AXIS_RIGHT_Y:
 				var previous := right_raw.y
 				right_raw.y=event.axis_value
-				if right_raw.y > 0.6: backstroke=true
+				if absf(right_raw.y)>0.65 and absf(previous)<=0.65: check_pressed=true
+				if right_raw.y > 0.6:
+					backstroke=true
+					neutral_time=0
 				if right_raw.y < -0.65 and previous >= -0.65:
 					shoot_pressed=true
 					slap_requested=backstroke
 					backstroke=false
 			JOY_AXIS_TRIGGER_LEFT: lift=clampf(event.axis_value,0,1)
 			JOY_AXIS_TRIGGER_RIGHT:
-				shoot_trigger=clampf(event.axis_value,0,1)
-				if not trigger_down and shoot_trigger>0.18:
+				pass_trigger=clampf(event.axis_value,0,1)
+				if not trigger_down and pass_trigger>0.18:
 					trigger_down=true
-					shoot_pressed=true
-				elif trigger_down and shoot_trigger<0.08:
+					pass_held=0
+					trigger_pressed=true
+				elif trigger_down and pass_trigger<0.08:
 					trigger_down=false
-					shoot_released=true
+					trigger_released=true
 		left_stick=radial(left_raw,deadzone)
 		right_stick=radial(right_raw,deadzone)
 	elif event is InputEventJoypadButton:
@@ -66,14 +76,12 @@ func handle(event: InputEvent) -> void:
 		connected=true
 		active=true
 		if event.button_index==JOY_BUTTON_LEFT_STICK: effort=event.pressed
-		if event.button_index==JOY_BUTTON_RIGHT_STICK: stop=event.pressed
+		if event.button_index==JOY_BUTTON_LEFT_SHOULDER: deke_modifier=event.pressed
 		if not event.pressed: return
 		match event.button_index:
-			JOY_BUTTON_A: switch_pressed=true
-			JOY_BUTTON_B: check_pressed=true
-			JOY_BUTTON_X: poke_pressed=true
-			JOY_BUTTON_Y: saucer_pressed=true
-			JOY_BUTTON_RIGHT_SHOULDER: pass_pressed=true
+			JOY_BUTTON_B: line_delta=1
+			JOY_BUTTON_X: pair_delta=1
+			JOY_BUTTON_RIGHT_SHOULDER: saucer_pressed=true;poke_pressed=true
 			JOY_BUTTON_START: pause_pressed=true
 			JOY_BUTTON_BACK: controls_pressed=true
 			JOY_BUTTON_DPAD_UP: line_delta=1
@@ -89,9 +97,11 @@ func disconnected(id_: int) -> bool:
 	left_stick=Vector2.ZERO
 	right_stick=Vector2.ZERO
 	lift=0
-	shoot_trigger=0
+	pass_trigger=0
 	trigger_down=false
 	backstroke=false
+	pass_held=0
+	deke_modifier=false
 	effort=false
 	stop=false
 	active=false
@@ -102,7 +112,8 @@ func disconnected(id_: int) -> bool:
 func clear_edges() -> void:
 	slap_requested=false
 	shoot_pressed=false
-	shoot_released=false
+	trigger_pressed=false
+	trigger_released=false
 	pass_pressed=false
 	saucer_pressed=false
 	switch_pressed=false
@@ -112,3 +123,13 @@ func clear_edges() -> void:
 	controls_pressed=false
 	line_delta=0
 	pair_delta=0
+
+func advance(delta: float) -> void:
+	if backstroke and absf(right_raw.y)<0.18:
+		neutral_time+=delta
+		if neutral_time>0.15: backstroke=false
+	else: neutral_time=0
+	if trigger_down: pass_held=minf(pass_held+delta,1.0)
+
+func pass_speed() -> float:
+	return lerpf(12.0,24.0,pass_held)
