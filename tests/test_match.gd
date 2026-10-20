@@ -54,6 +54,16 @@ func run()->void:
 	for i in range(2):await physics_frame
 	check(scene.match_state.period==2,"Intermission must advance period")
 	check(scene.goalkeepers[0].position.z*north_keeper<0,"Goalkeepers must switch ends")
+	# Every camera: "up" on the stick skates toward the end Toronto attacks,
+	# before and after the teams switch ends.
+	for period_ in [2,1]:
+		scene.match_state.period=period_
+		for mode in range(4):
+			scene.camera_mode=mode
+			scene.update_camera(1)
+			# Broadcast (2) is a side view: Toronto attacks to the right.
+			var dir:Vector3=scene.screen_to_rink(Vector3(1,0,0) if mode==2 else Vector3(0,0,-1))
+			check(dir.z*scene.attack_direction(0)>0.7,"Camera %d, period %d: attack direction on screen" % [mode,period_])
 	scene.queue_free()
 	await process_frame
 	print("Match integration failures: ",failures)

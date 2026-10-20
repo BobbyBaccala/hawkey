@@ -2,6 +2,19 @@ extends "res://scripts/lab.gd"
 const MatchState = preload("res://scripts/match_state.gd")
 const ControllerInput = preload("res://scripts/controller_input.gd")
 const PuckPhysics = preload("res://scripts/puck.gd")
+const BroadcastHud = preload("res://scripts/broadcast_hud.gd")
+const CAMERA_NAMES := ["DYNAMIC", "OVERHEAD", "BROADCAST", "FULL RINK"]
+## Restarting from the pause menu skips the title screen.
+static var skip_title := false
+var hud_node: CanvasLayer
+var hud_layer: CanvasLayer
+var camera_mode := 0
+var camera_side := 1.0
+var in_menu := false
+var menu_time := 0.0
+var team_shots: Array[int] = [0, 0]
+var last_event := ""
+var last_phase := -1
 var match_state := MatchState.new()
 var skaters: Array[CharacterBody3D] = []
 var rosters: Array = [[],[]]
@@ -27,6 +40,9 @@ var shot_lift := 0.0
 var next_faceoff := Vector3.ZERO
 var puck_shadow: MeshInstance3D
 var controller_help := false
+
+func _init() -> void:
+	arena_title = "HAWKEY ARENA"
 
 func _ready() -> void:
 	super._ready()
@@ -57,7 +73,7 @@ func _ready() -> void:
 			rosters[team].append({"name":names[(i+team*7)%18],"number":numbers[i],"stamina":1.0,"speed":88-i%5*3,"goals":0,"shots":0})
 		for slot in range(5):
 			var roster_id := slot if slot<3 else 12+slot-3
-			var actor := make_skater(Vector3.ZERO,team_color(team),str(rosters[team][roster_id].number))
+			var actor := make_skater(Vector3.ZERO,team_color(team),str(rosters[team][roster_id].number),false,team_accent(team))
 			actor.name = ("TOR_" if team==0 else "MTL_")+str(slot)
 			actor.set_meta("team",team)
 			actor.set_meta("slot",slot)
@@ -89,9 +105,22 @@ func _ready() -> void:
 	if "--capture" in OS.get_cmdline_user_args():
 		# Normal live match, no staged image substitution.
 		match_state.phase_timer = 0.3
+	# The title screen shows in a real window only: headless tests and captures
+	# go straight to the game (--title forces it for screenshots).
+	var args := OS.get_cmdline_user_args()
+	in_menu = ("--title" in args) or (DisplayServer.get_name() != "headless" and not skip_title and not "--capture" in args)
+	skip_title = false
+	for arg in args:
+		if arg.begins_with("--camera="): camera_mode = clampi(int(arg.substr(9)), 0, 3)
+	hud_node.show_title(in_menu)
+	hud_node.set_controls_text(controller.active)
 
 func team_color(team: int) -> Color:
-	return Color("#185c73") if team==0 else Color("#d5dcdf")
+	# Toronto at home in blue; Montreal in road whites.
+	return Color("#164a9a") if team==0 else Color("#e9edf0")
+
+func team_accent(team: int) -> Color:
+	return Color("#e8eef5") if team==0 else Color("#b3162c")
 
 func attack_direction(team: int) -> float:
 	var direction := -1.0 if team==0 else 1.0
@@ -104,73 +133,42 @@ func roster(body: CharacterBody3D) -> Dictionary:
 	return rosters[body_team(body)][int(body.get_meta("roster_id",0))]
 
 func build_hud() -> void:
-	var canvas := CanvasLayer.new()
-	add_child(canvas)
-	var top := PanelContainer.new()
-	top.position = Vector2(32,24)
-	top.size = Vector2(325,58)
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.025,0.045,0.075,0.98)
-	style.border_color = Color("#6994af")
-	style.border_width_bottom = 3
-	style.content_margin_left = 22
-	style.content_margin_top = 10
-	style.content_margin_right = 22
-	style.content_margin_bottom = 10
-	top.add_theme_stylebox_override("panel",style)
-	canvas.add_child(top)
-	hud = Label.new()
-	hud.add_theme_font_size_override("font_size",18)
-	top.add_child(hud)
-	var status_panel := PanelContainer.new()
-	status_panel.position = Vector2(32,94)
-	var ss := StyleBoxFlat.new()
-	ss.bg_color = Color(0.025,0.045,0.075,0.90)
-	ss.content_margin_left = 12
-	ss.content_margin_right = 12
-	ss.content_margin_top = 7
-	ss.content_margin_bottom = 7
-	status_panel.add_theme_stylebox_override("panel",ss)
-	canvas.add_child(status_panel)
-	status = Label.new()
-	status.add_theme_font_size_override("font_size",12)
-	status_panel.add_child(status)
-	var right := PanelContainer.new()
-	right.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	right.offset_left = -340
-	right.offset_right = -24
-	right.offset_top = 24
-	var rs := ss.duplicate()
-	right.add_theme_stylebox_override("panel",rs)
-	canvas.add_child(right)
-	penalties_label = Label.new()
-	penalties_label.add_theme_font_size_override("font_size",14)
-	right.add_child(penalties_label)
-	var line_box := PanelContainer.new()
-	line_box.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-	line_box.offset_left = 32
-	line_box.offset_top = -156
-	line_box.offset_bottom = -60
-	line_box.add_theme_stylebox_override("panel",ss.duplicate())
-	canvas.add_child(line_box)
+	hud_node = BroadcastHud.new()
+	hud_node.team_colors.assign([Color("#164a9a"), Color("#b3162c")])
+	hud_layer = hud_node
+	add_child(hud_node)
+	hud = hud_node.clock_label
+	status = hud_node.status_label
+	help = hud_node.hint_label
+	power = hud_node.power
+	penalties_label = hud_node.penalties_label
 	team_panel = Label.new()
-	team_panel.add_theme_font_size_override("font_size",14)
-	line_box.add_child(team_panel)
-	var bottom := PanelContainer.new()
-	bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	bottom.offset_top = -48
-	bottom.add_theme_stylebox_override("panel",ss.duplicate())
-	canvas.add_child(bottom)
-	help = Label.new()
-	help.add_theme_font_size_override("font_size",15)
-	help.text = "WASD Skate  •  Mouse Aim  •  LMB Shoot  •  RMB Pass  •  Space Switch  •  1–4 Forward lines  •  Q Defence  •  E Poke  •  F Check  •  Esc Pause"
-	bottom.add_child(help)
-	power = ProgressBar.new()
-	power.position = Vector2(32,157)
-	power.size = Vector2(180,9)
-	power.show_percentage = false
-	power.max_value = 1
-	canvas.add_child(power)
+	hud_node.resume_requested.connect(func(): set_paused(false))
+	hud_node.camera_requested.connect(cycle_camera)
+	hud_node.restart_requested.connect(func():
+		skip_title = true
+		get_tree().reload_current_scene())
+	hud_node.quit_requested.connect(func(): get_tree().quit())
+	hud_node.play_requested.connect(start_from_title)
+	hud_node.practice_requested.connect(func(): get_tree().change_scene_to_file("res://practice.tscn"))
+
+func set_paused(on: bool) -> void:
+	paused = on
+	charge = 0
+	hud_node.show_pause(on, CAMERA_NAMES[camera_mode])
+	hud_node.set_controls_text(controller.active)
+
+func cycle_camera() -> void:
+	camera_mode = (camera_mode + 1) % CAMERA_NAMES.size()
+	wide_camera = camera_mode == 3
+	if paused: hud_node.show_pause(true, CAMERA_NAMES[camera_mode])
+	else: hud_node.show_banner(CAMERA_NAMES[camera_mode] + " CAMERA", "C or the pause menu to change", Color("#93a3b3"), 0.8)
+
+func start_from_title() -> void:
+	in_menu = false
+	hud_node.show_title(false)
+	camera_side = 0.0
+	hud_node.show_banner("TORONTO  vs  MONTREAL", "1ST PERIOD", hud_node.team_colors[0], 1.6)
 
 func setup_faceoff() -> void:
 	for actor in skaters: actor.get_child(1).stop_mocap()
@@ -294,13 +292,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
 		if event.physical_keycode in [KEY_W,KEY_A,KEY_S,KEY_D]:
 			controller.active=false
-		if event.keycode==KEY_F2: controller_help=not controller_help
+		if event.keycode==KEY_F2:
+			hud_node.set_controls_text(controller.active)
+			hud_node.controls_panel.visible=not hud_node.controls_panel.visible
 	if event is InputEventKey and event.pressed and not event.echo:
+		if in_menu: return
 		if event.keycode==KEY_ESCAPE:
-			paused=not paused
-			charge=0
+			set_paused(not paused)
 		if event.keycode==KEY_F1: debug=not debug
-		if event.keycode==KEY_C: wide_camera=not wide_camera
+		if event.keycode==KEY_C: cycle_camera()
 		if paused: return
 		match event.keycode:
 			KEY_SPACE: switch_player()
@@ -402,6 +402,7 @@ func _on_puck_contact(body: Node) -> void:
 	if actor is CharacterBody3D and actor in goalkeepers and goalie_contact_timer<=0:
 		goalie_contact_timer=0.25
 		saves+=1
+		if absf(last_puck_velocity.z)>6: team_shots[0 if attack_direction(0)==signf(actor.position.z) else 1]+=1
 		cooldown=0.2
 		carrier=null
 		# Engine contact normals/materials resolve rebound direction and vertical speed.
@@ -424,10 +425,19 @@ func _on_puck_contact(body: Node) -> void:
 
 func _physics_process(delta: float) -> void:
 	if skaters.is_empty(): return
+	if in_menu:
+		# Slow orbit over the arena behind the title screen.
+		menu_time += delta
+		var angle := menu_time * 0.08
+		camera.position = Vector3(sin(angle) * 22.0, 11.0, cos(angle) * 30.0)
+		camera.look_at(Vector3(0, 0.5, 0), Vector3.UP)
+		for actor in skaters + goalkeepers:
+			actor.get_child(1).animate(0, delta, 0, false)
+		return
 	process_controller_edges()
 	puck.freeze=paused or match_state.phase!=MatchState.Phase.PLAY
 	if paused:
-		status.text="PAUSED  •  Escape to resume"
+		if not hud_node.pause_panel.visible: set_paused(true)
 		return
 	elapsed+=delta
 	cooldown=maxf(0,cooldown-delta)
@@ -460,6 +470,10 @@ func _physics_process(delta: float) -> void:
 			if Skating.goal_crossing_end(previous_puck,puck.position,end_):
 				var scoring_team:=0 if attack_direction(0)==end_ else 1
 				match_state.goal(scoring_team)
+				team_shots[scoring_team]+=1
+				var scorer_name:=""
+				if carrier!=null and body_team(carrier)==scoring_team: scorer_name=str(roster(carrier).name).to_upper()
+				hud_node.show_banner("GOAL", (hud_node.team_names[scoring_team]+("  ·  "+scorer_name if scorer_name!="" else "")), hud_node.team_colors[scoring_team], 2.4)
 				# Scorers celebrate with captured motion, sticks raised.
 				for actor in skaters:
 					if body_team(actor)==scoring_team:
@@ -493,7 +507,7 @@ func control_player(delta: float) -> void:
 	var effort:=false
 	var braking:=false
 	if controller.active:
-		intent=Vector3(controller.left_stick.x,0,controller.left_stick.y)
+		intent=screen_to_rink(Vector3(controller.left_stick.x,0,controller.left_stick.y))
 		if intent.length()>0.05: aim=intent.normalized()
 		effort=controller.effort
 		braking=controller.stop
@@ -502,7 +516,7 @@ func control_player(delta: float) -> void:
 		if controller.trigger_down:
 			charge=minf(1,charge+delta*lerpf(0.6,1.3,controller.shoot_trigger))
 	else:
-		intent=Vector3(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),0,float(Input.is_physical_key_pressed(KEY_S))-float(Input.is_physical_key_pressed(KEY_W)))
+		intent=screen_to_rink(Vector3(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),0,float(Input.is_physical_key_pressed(KEY_S))-float(Input.is_physical_key_pressed(KEY_W))))
 		var m=Plane(Vector3.UP,0).intersects_ray(camera.project_ray_origin(get_viewport().get_mouse_position()),camera.project_ray_normal(get_viewport().get_mouse_position()))
 		if m!=null:
 			var d:Vector3=m-player.position
@@ -692,45 +706,107 @@ func update_goalkeepers(delta: float) -> void:
 			carrier=null
 
 func update_camera(delta: float) -> void:
-	# No lateral offset, yaw or roll: rink markings remain horizontally aligned.
-	var focus:=Vector3(puck.position.x*0.55,0,clampf(puck.position.z,-20,20))
-	if wide_camera: focus=Vector3.ZERO
-	camera_target=camera_target.lerp(focus,1-exp(-delta*3.5))
-	var offset:=Vector3(0,51,27) if wide_camera else Vector3(0,25,15)*zoom
-	camera.position=camera.position.lerp(camera_target+offset,1-exp(-delta*5))
-	camera.position.x=camera_target.x
-	camera.look_at(camera_target+Vector3(0,0.4,-3),Vector3.UP)
+	# The user's team always attacks up the screen, as in EA's default cameras:
+	# the camera sits behind the end Toronto defends and flips between periods.
+	var side:=-signf(attack_direction(0))
+	if side==0: side=1.0
+	var snap:=side!=camera_side
+	camera_side=side
+	var lead:=-side*2.5
+	var focus:=Vector3(clampf(puck.position.x*0.35,-6,6),0,clampf(puck.position.z+lead,-22,22))
+	if camera_mode==3: focus=Vector3.ZERO
+	camera_target=focus if snap else camera_target.lerp(focus,1-exp(-delta*3.2))
+	var desired:Vector3
+	var look:Vector3
+	match camera_mode:
+		0: # Dynamic: low and close behind the play, like a chase broadcast cam.
+			desired=camera_target+Vector3(0,9.5,side*12.5)*zoom/0.8
+			look=camera_target+Vector3(0,0.2,-side*5.0)
+		1: # Overhead: high above the ice, attacking up.
+			desired=camera_target+Vector3(0,25,side*15)*zoom
+			look=camera_target+Vector3(0,0.4,-side*3.0)
+		2: # Broadcast: press-box side view; the camera changes sides between
+			# periods so Toronto always attacks to the right, as on TV.
+			desired=Vector3(side*21.5*zoom/0.8,12.0,camera_target.z*0.85)
+			look=Vector3(camera_target.x*0.4,0,camera_target.z)
+		_: # Full rink.
+			desired=Vector3(0,51,side*27)
+			look=Vector3(0,0.4,-side*3.0)
+	camera.position=desired if snap else camera.position.lerp(desired,1-exp(-delta*5))
+	if camera_mode!=2: camera.position.x=camera_target.x
+	camera.look_at(look,Vector3.UP)
 	camera.rotation.z=0
 	selection.position=player.position+Vector3(0,0.025,0)
 	selection.visible=match_state.phase!=MatchState.Phase.FINAL
 
+## Converts stick or WASD input (x right, z down the screen) into rink space
+## using the camera's facing, so up on the stick is always up the screen.
+func screen_to_rink(input: Vector3) -> Vector3:
+	var b:=camera.global_basis
+	var right:=Vector3(b.x.x,0,b.x.z).normalized()
+	var forward:=-Vector3(b.z.x,0,b.z.z).normalized()
+	if forward.length_squared()<0.5: forward=Vector3(0,0,-1)
+	return right*input.x+forward*(-input.z)
+
 func update_match_hud() -> void:
-	var strength:="%d ON %d"%[match_state.count(0),match_state.count(1)]
-	hud.text="TOR  %d     |     MTL  %d\n%s  •  %s  •  %s"%[match_state.score[0],match_state.score[1],str(match_state.period)+"st" if match_state.period==1 else str(match_state.period)+("nd" if match_state.period==2 else "rd"),match_state.clock_text(),strength]
-	status.text=match_state.event if match_state.phase!=MatchState.Phase.PLAY else ("TORONTO POSSESSION" if carrier!=null and body_team(carrier)==0 else ("MONTREAL POSSESSION" if carrier!=null else "LOOSE PUCK"))
+	var pp:=""
+	for team in range(2):
+		var advantage:=match_state.count(team)-match_state.count(1-team)
+		if advantage>0:
+			var remaining:=999.0
+			for p in match_state.active_penalties(1-team): remaining=minf(remaining,p.remaining)
+			var seconds:=int(ceil(remaining))
+			pp="%s POWER PLAY   %d:%02d   %d ON %d"%[hud_node.team_codes[team],seconds/60,seconds%60,match_state.count(team),match_state.count(1-team)]
+	hud_node.update_bug(match_state.score,match_state.period,match_state.clock_text(),[match_state.count(0),match_state.count(1)],pp,team_shots)
+	# Centre-hung scoreboard mirrors the score bug (rebuilt only when it changes).
+	var board_line:="TOR  %d     MTL  %d"%[match_state.score[0],match_state.score[1]]
+	var board_sub:="%s   %s"%[["1ST","2ND","3RD"][clampi(match_state.period-1,0,2)],match_state.clock_text()]
+	if board_line+board_sub!=str(get_meta("board_text","")):
+		set_meta("board_text",board_line+board_sub)
+		var dressing:=arena.get_node_or_null("Dressing")
+		if dressing: dressing.set_scoreboard(board_line,board_sub)
+	# Event banners for the moments a broadcast would mark.
+	if match_state.event!=last_event:
+		var e:=match_state.event
+		if e.begins_with("END OF PERIOD"):
+			hud_node.show_banner("END OF "+["1ST","2ND","3RD"][clampi(match_state.period-1,0,2)], "TOR %d   –   %d MTL"%[match_state.score[0],match_state.score[1]], Color("#93a3b3"), 3.5)
+		elif e.begins_with("Period "):
+			hud_node.show_banner(["1ST","2ND","3RD"][clampi(match_state.period-1,0,2)]+" PERIOD", "Ends switched", Color("#93a3b3"), 1.6)
+		elif e.begins_with("FINAL"):
+			hud_node.show_banner("FINAL", "TOR %d   –   %d MTL"%[match_state.score[0],match_state.score[1]], hud_node.ACCENT, 600.0)
+		elif " — " in e and (e.begins_with("TOR") or e.begins_with("MTL")):
+			var team:=0 if e.begins_with("TOR") else 1
+			hud_node.show_banner("PENALTY", e.substr(6).to_upper(), hud_node.team_colors[team], 2.0)
+		last_event=e
+	var stopped:=match_state.phase!=MatchState.Phase.PLAY
+	var quiet_events:=["Play","Centre faceoff","Opening faceoff"]
+	status.text=("" if not stopped or match_state.event in quiet_events or match_state.event.ends_with("GOAL") else match_state.event.to_upper())
+	if debug:
+		status.text+="  FPS %d  ·  puck %.1f m/s  ·  height %.2f m  ·  %s"%[Engine.get_frames_per_second(),puck.linear_velocity.length(),puck.position.y,("TOR POSSESSION" if carrier!=null and body_team(carrier)==0 else ("MTL POSSESSION" if carrier!=null else "LOOSE PUCK"))]
+	hud_node.status_panel.visible=not status.text.strip_edges().is_empty()
 	var penalty_text:=match_state.penalty_text()
-	penalties_label.get_parent().visible=not penalty_text.is_empty() or debug
-	penalties_label.text="PENALTIES\n"+(penalty_text if not penalty_text.is_empty() else "None  •  Even strength")
-	var line_text:="TORONTO  •  LINE %d   /   D PAIR %d"%[active_lines[0]+1,defense_pairs[0]+1]
+	hud_node.penalties_panel.visible=not penalty_text.is_empty()
+	penalties_label.text="PENALTIES\n"+penalty_text
+	var players:=[]
 	for actor in skaters:
 		if body_team(actor)==0 and int(actor.get_meta("slot"))<3:
-			line_text+="\n#%d  %s    %d%%%s"%[roster(actor).number,roster(actor).name,float(roster(actor).stamina)*100,"  → BENCH" if bool(actor.get_meta("changing")) else ""]
-	team_panel.text=line_text
+			players.append({"number":roster(actor).number,"name":str(roster(actor).name).split(" ")[-1],"stamina":float(roster(actor).stamina),"changing":bool(actor.get_meta("changing"))})
+	hud_node.update_line(active_lines[0],defense_pairs[0],players)
 	power.visible=charge>0
 	power.value=charge
-	if controller.active:
-		help.text="LS Skate / aim   •   RS Stickhandle   •   RT/R2 Shoot   •   LT/L2 Elevation   •   RB/R1 Pass   •   Y/△ Saucer   •   A/× Switch   •   F2 Controls"
-	else:
-		help.text="WASD Skate  •  Mouse Aim  •  LMB Shoot  •  Alt Lift  •  RMB Pass  •  Shift+RMB Saucer  •  Space Switch  •  1–4 Lines  •  E Poke  •  F Check"
-	if controller_help:
-		status.text="LS Move + shot direction  |  RS Stickhandle  |  RT/R2 Charge / release  |  LT/L2 Lift  |  RB/R1 Pass  |  L3 Effort  |  R3 Stop  |  D-pad Lines  |  Deadzone %.2f"%controller.deadzone
-	if debug: status.text+="  |  FPS %d  •  puck %.1f m/s  •  height %.2f m"%[Engine.get_frames_per_second(),puck.linear_velocity.length(),puck.position.y]
+	help.text=("START  PAUSE   ·   VIEW  CONTROLS" if controller.active else "ESC  PAUSE   ·   F2  CONTROLS   ·   C  CAMERA")
 
 func capture_preview() -> void:
 	await get_tree().create_timer(capture_time).timeout
 	for frame in range(600):
 		if match_state.phase==MatchState.Phase.PLAY: break
 		await get_tree().physics_frame
+	if "--paused" in OS.get_cmdline_user_args():
+		set_paused(true)
+		await get_tree().process_frame
+	if "--goal-banner" in OS.get_cmdline_user_args():
+		hud_node.show_banner("GOAL", "TORONTO  ·  VALE", hud_node.team_colors[0], 5.0)
+		for i in range(20): await get_tree().process_frame
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png("/tmp/hawkey-match-preview.png")
 	get_tree().quit()
@@ -752,15 +828,14 @@ func update_officials(delta: float) -> void:
 		official.animate(move.length(),delta,0,move.length()>0.2)
 
 func process_controller_edges() -> void:
-	if controller.pause_pressed:
-		paused=not paused
-		charge=0
+	if controller.pause_pressed and not in_menu:
+		set_paused(not paused)
 	if not controller.active:
 		controller.clear_edges()
 		return
 	if controller.left_stick.length()>0.05:
-		aim=Vector3(controller.left_stick.x,0,controller.left_stick.y).normalized()
-	if not paused:
+		aim=screen_to_rink(Vector3(controller.left_stick.x,0,controller.left_stick.y)).normalized()
+	if not paused and not in_menu:
 		if controller.switch_pressed: switch_player()
 		if controller.line_delta!=0: request_line(0,active_lines[0]+controller.line_delta)
 		if controller.pair_delta!=0: request_line(0,defense_pairs[0]+controller.pair_delta,true)
@@ -780,8 +855,7 @@ func process_controller_edges() -> void:
 
 func on_controller_connection(device: int, is_connected: bool) -> void:
 	if not is_connected and controller.disconnected(device):
-		paused=true
-		charge=0
+		set_paused(true)
 		status.text="CONTROLLER DISCONNECTED — reconnect, then Start / Options"
 	elif is_connected:
 		controller.connected=true

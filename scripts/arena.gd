@@ -208,7 +208,7 @@ func _ready() -> void:
 	var surface_instance := MeshInstance3D.new()
 	surface_instance.mesh = surface
 	var ice_shader := Shader.new()
-	ice_shader.code = "shader_type spatial; render_mode cull_disabled; uniform sampler2D ice_tex:source_color,repeat_enable,filter_linear_mipmap; void fragment(){vec3 tex=texture(ice_tex,UV*vec2(3.0,6.0)).rgb;float grain=dot(tex,vec3(0.3,0.59,0.11));ALBEDO=vec3(0.43,0.45,0.46)+(grain-0.4)*0.035;ROUGHNESS=0.48;SPECULAR=0.3;}"
+	ice_shader.code = "shader_type spatial; render_mode cull_disabled; uniform sampler2D ice_tex:source_color,repeat_enable,filter_linear_mipmap; void fragment(){vec3 tex=texture(ice_tex,UV*vec2(3.0,6.0)).rgb;float grain=dot(tex,vec3(0.3,0.59,0.11));ALBEDO=vec3(0.53,0.575,0.615)+(grain-0.4)*0.05;ROUGHNESS=0.26;SPECULAR=0.5;}"
 	var ice_shader_material := ShaderMaterial.new()
 	ice_shader_material.shader = ice_shader
 	ice_shader_material.set_shader_parameter("ice_tex",preload("res://assets/ice-surface-v1.png"))
@@ -252,27 +252,22 @@ func _ready() -> void:
 		add_child(crease)
 		ring(center + Vector3(0,0.004,0),1.8,0.075,RED,from,from + PI)
 		goal(sign_)
+	# Centre-ice emblem.
+	disc(Vector3(0,0.016,0), 2.35, Color("#0d2a52"))
+	disc(Vector3(0,0.018,0), 2.1, Color("#eef3f7"))
+	disc(Vector3(0,0.020,0), 1.95, Color("#164a9a"))
 	var logo := Label3D.new()
-	logo.text = "H / H"
-	logo.font_size = 160
-	logo.pixel_size = 0.018
-	logo.modulate = Color("#173b58")
+	logo.text = "HAWKEY"
+	logo.font_size = 96
+	logo.pixel_size = 0.0068
+	logo.outline_size = 0
+	logo.modulate = Color("#f4f7fa")
 	logo.rotation_degrees.x = -90
-	logo.position = Vector3(0, 0.022, 0)
+	logo.position = Vector3(0, 0.024, 0)
 	add_child(logo)
-	# Occupied seating bowl: dark structural steps behind photographic crowd cards.
-	for side in [-1.0,1.0]:
-		for row in range(10):
-			block(self, Vector3(1.0,0.45 + row * 0.5,61),Vector3(side * (16.5 + row * 0.9),row * 0.25,0),Color("#0f1a27"))
-		block(self,Vector3(0.2,1.2,64),Vector3(side * 25.6,5.5,0),Color("#101c2c"))
-		block(self,Vector3(0.1,0.20,62),Vector3(side * 25.4,5.9,0),Color("#1d7d99"))
-	add_child(preload("res://scripts/crowd.gd").new())
-	for side in [-1.0,1.0]:
-		block(self, Vector3(30,1.5,2), Vector3(0,0.75,side * 33), Color("#152a40"))
-		var banner := Label3D.new()
-		banner.text = "H A W K E Y     /     P R A C T I C E   C E N T R E"
-		banner.font_size = 72
-		banner.pixel_size = 0.015
-		banner.position = Vector3(0,1.5,side * 32)
-		if side > 0: banner.rotation.y = PI
-		add_child(banner)
+	var dressing := preload("res://scripts/arena_dressing.gd").new()
+	var title = get_parent().get("arena_title") if get_parent() else null
+	if title != null: dressing.arena_name = title
+	dressing.name = "Dressing"
+	add_child(dressing)
+	dressing.add_board_ads(points)

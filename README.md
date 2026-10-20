@@ -1,4 +1,4 @@
-# Hawkey — 0.9 motion capture revision
+# Hawkey — 0.10 game-night presentation
 
 Native Godot 4.6 PC hockey exhibition prototype. Uses a CC0 skinned human foundation with original hockey equipment, procedural skating and generated crowd/ice textures. This is an early exhibition prototype, not EA NHL-level photorealism or a complete regulation ruleset.
 
@@ -21,6 +21,15 @@ Godot's native gamepad support is used; no separate plugin is required. Controll
 | D-pad up/down; left/right | Forward line; defence pair |
 | L3; R3; Start | Effort; stop; pause |
 | F2 | Expanded controller help |
+
+## New in 0.10
+- EA-style cameras: Dynamic (default, low chase cam), Overhead, Broadcast (press-box side view) and Full rink. Your team always attacks up the screen (or right, in Broadcast); controls are screen-relative. C cycles cameras, mouse wheel zooms.
+- Weightier skating: gradual acceleration (about 6.5 m/s after one second), longer glides, wider turns at speed.
+- Game-night arena: full seating bowl with crowd on all four sides, invented sponsor boards, LED fascia, overhead light rigs, centre-hung scoreboard showing the live score, centre-ice emblem, brighter broadcast ice and overhead lighting with bloom.
+- Broadcast presentation: score bug with shots on goal and power-play strip, goal/penalty/period banners, line panel with stamina bars, title screen, pause menu (camera, controls, restart, quit). Toronto in blue, Montreal in road whites.
+- Renderer: Forward+ (reflections, bounce light, ambient occlusion) with automatic fallback to OpenGL on PCs without Vulkan.
+- tests/test_match.gd checks every camera keeps the attack direction in both periods.
+- Renders: docs/screenshots/gameplay-v10.png, broadcast-v10.png, title-v10.png, pause-v10.png.
 
 ## New in 0.9
 - Mixamo motion capture retargeted onto the players: captured goalie idle, lateral shuffle footwork, body-block save reactions and goal celebrations with sticks raised.

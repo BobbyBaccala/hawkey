@@ -29,6 +29,7 @@ var debug := false
 var paused := false
 var rating := 85.0
 var zoom := 0.8
+var arena_title := "HAWKEY PRACTICE CENTRE"
 var wide_camera := false
 var goal_timer := 0.0
 var elapsed := 0.0
@@ -37,7 +38,7 @@ var pickup_owner := false
 var audio: AudioStreamPlayer
 var selection: MeshInstance3D
 
-func make_skater(pos: Vector3, color: Color, jersey: String, is_goalie: bool = false) -> CharacterBody3D:
+func make_skater(pos: Vector3, color: Color, jersey: String, is_goalie: bool = false, accent: Color = Color(0,0,0,0)) -> CharacterBody3D:
 	var body := CharacterBody3D.new()
 	add_child(body)
 	body.position = pos
@@ -59,6 +60,7 @@ func make_skater(pos: Vector3, color: Color, jersey: String, is_goalie: bool = f
 	body.add_child(collision)
 	var visual := Skater.new()
 	visual.kit = color
+	visual.accent = accent
 	visual.number = jersey
 	visual.goalie = is_goalie
 	body.add_child(visual)
@@ -75,11 +77,30 @@ func _ready() -> void:
 	world.environment.ambient_light_color = Color("#cbdfee")
 	world.environment.ambient_light_energy = 0.48
 	world.environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	world.environment.background_color = Color("#04070b")
+	# Bloom on arena lights, scoreboard and LED ribbons; contact shading under
+	# skates. Reflections and indirect light apply under the Forward+ renderer.
+	world.environment.glow_enabled = true
+	world.environment.glow_intensity = 0.55
+	world.environment.glow_bloom = 0.04
+	world.environment.glow_hdr_threshold = 1.1
+	world.environment.ssao_enabled = true
+	world.environment.ssao_radius = 0.6
+	world.environment.ssao_intensity = 1.4
+	world.environment.ssr_enabled = true
+	world.environment.ssr_max_steps = 48
+	world.environment.ssr_fade_in = 0.2
+	world.environment.ssil_enabled = true
+	world.environment.adjustment_enabled = true
+	world.environment.adjustment_contrast = 1.06
+	world.environment.adjustment_saturation = 1.05
 	add_child(world)
 	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-68,-28,0)
-	sun.light_energy = 0.55
-	sun.shadow_opacity=0.55
+	# Arena lighting comes from overhead rigs: a steep key with soft shadows.
+	sun.rotation_degrees = Vector3(-80,-20,0)
+	sun.light_energy = 0.62
+	sun.shadow_opacity=0.45
+	sun.shadow_blur=1.5
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 100
 	add_child(sun)
@@ -97,7 +118,7 @@ func _ready() -> void:
 	teammate = make_skater(Vector3(6,0,-7),Color("#116c9e"),"28")
 	teammate_visual = teammate.get_child(1)
 	for end_ in [-1.0,1.0]:
-		var goalie := make_skater(Vector3(0,0,end_ * 24),Color("#b62c49") if end_ < 0 else Color("#116c9e"),"31",true)
+		var goalie := make_skater(Vector3(0,0,end_ * 24),Color("#b3162c") if end_ < 0 else Color("#164a9a"),"31",true,Color("#1b2a4a") if end_ < 0 else Color("#e8eef5"))
 		goalie.rotation.y = PI if end_ < 0 else 0
 		goalkeepers.append(goalie)
 		goalie_visuals.append(goalie.get_child(1))

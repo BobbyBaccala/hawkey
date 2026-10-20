@@ -299,10 +299,11 @@ func build_jersey() -> void:
 	var instance := MeshInstance3D.new()
 	instance.mesh = mesh
 	var shader := Shader.new()
-	shader.code = "shader_type spatial; render_mode cull_disabled; uniform vec4 kit:source_color; void fragment(){float stripe=(step(1.005,UV.y)-step(1.035,UV.y))+(step(1.05,UV.y)-step(1.064,UV.y));float weave=sin(UV.x*700.0)*sin(UV.y*700.0)*0.003;ALBEDO=mix(kit.rgb,vec3(0.68),stripe)+weave;ROUGHNESS=0.86;SPECULAR=0.18;}"
+	shader.code = "shader_type spatial; render_mode cull_disabled; uniform vec4 kit:source_color; uniform vec4 stripe_color:source_color=vec4(0.68,0.68,0.68,1.0); void fragment(){float stripe=(step(1.005,UV.y)-step(1.035,UV.y))+(step(1.05,UV.y)-step(1.064,UV.y));float weave=sin(UV.x*700.0)*sin(UV.y*700.0)*0.003;ALBEDO=mix(kit.rgb,stripe_color.rgb,stripe)+weave;ROUGHNESS=0.86;SPECULAR=0.18;}"
 	var m := ShaderMaterial.new()
 	m.shader = shader
 	m.set_shader_parameter("kit",kit)
+	m.set_shader_parameter("stripe_color",accent)
 	if referee:
 		var ref_shader:=Shader.new()
 		ref_shader.code="shader_type spatial; render_mode cull_disabled; void fragment(){float stripe=step(0.0,sin(UV.x*62.83));ALBEDO=mix(vec3(0.015),vec3(0.7),stripe);ROUGHNESS=0.8;}"
