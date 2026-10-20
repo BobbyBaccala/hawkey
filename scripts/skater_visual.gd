@@ -78,6 +78,7 @@ var thigh_rises: Array[Node3D] = []
 var pant_legs: Array[MeshInstance3D] = []
 var socks: Array[MeshInstance3D] = []
 var push_blend := 0.0
+var push_rate := 0.0
 var posed_head := Vector3.ZERO
 var bend := Basis.IDENTITY
 ## Per-leg stride state from stride_foot(): ankle (rig space), skate yaw/edge
@@ -100,6 +101,33 @@ const SKATE_DROP := 0.0525                    # ankle to skate origin
 const RUNNER_TOE := 0.225                     # runner tip ahead of skate origin
 const RUNNER_HEEL := 0.085                    # runner heel behind skate origin
 const MAX_EDGE := 0.75                        # deepest edge roll (radians)                       # max hip-to-ankle (thigh 0.44 + shin 0.45)
+## Hockey stop (skaters only). A hard deceleration from speed - the brake
+## button, or the AI reversing - turns the hips ~80 degrees across the line of
+## travel; both blades scrape sideways (lead foot on its inside edge, trail foot
+## on its outside edge), knees bend, the hips drop and sit back away from the
+## travel, the stick reaches out front, and snow sprays off the blades. Detected
+## here from the speed passed to animate(), so lab.gd and match.gd need no
+## extra calls.
+const SnowSpray = preload("res://scripts/snow_spray.gd")
+const STOP_MIN_SPEED := 4.0      # m/s needed to start a stop
+const STOP_DECEL := 7.0          # m/s^2 (smoothed) that counts as a hard stop
+const STOP_ANGLE := 1.38         # hips turned this far from the travel (~79 deg)
+var stopping := false
+## 0..1 blend of the skid pose (eased in pose()).
+var stop_weight := 0.0
+## +1: travel runs toward the skater's right (rig -x); -1: toward the left.
+var stop_side := 1.0
+## Rig yaw (relative to this node) the stop turns the hips to.
+var stop_yaw := 0.0
+var stop_timer := 0.0
+## Smoothed deceleration (m/s^2, + = slowing) and the speed it came from.
+var decel := 0.0
+var last_speed := -1.0
+## World-space velocity of this node, smoothed (while in the tree).
+var travel := Vector3.ZERO
+## Smoothed low-speed brake turn of both skates (the old Ctrl brake look).
+var brake_turn := 0.0
+var sprays: Array = []
 
 func material(color: Color, roughness: float = 0.7) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -202,6 +230,10 @@ func _ready() -> void:
 			rig.add_child(glove)
 			build_player_glove(glove)
 			skater_gloves.append(glove)
+			if not referee:
+				var spray := SnowSpray.new()
+				add_child(spray)
+				sprays.append(spray)
 	blade_position=Vector3(-0.02,0.042,0.60) if goalie else Vector3(-0.20,0.029,0.83)
 	if referee: sticks.visible=false
 	pose(0,0)
@@ -581,6 +613,27 @@ func pose(speed: float, turn: float) -> void:
 		# Shoulders open toward wherever the blade is being carried, so the
 		# bottom arm reaches out in front instead of across the chest.
 		shoulder_turn = push_side*0.07-stick_intent.x*0.30
+	# Hockey stop: blend the stride toward the skid stance (see STOP_ANGLE).
+	var stop_w := stop_blend()
+	if stop_w > 0.0:
+		var s := stop_side
+		for i in range(2):
+			var side := 1.0 if i==0 else -1.0
+			var lead := side == -s
+			# Lead blade (on the travel side) wide and a touch ahead; trail blade
+			# tucked in under the hip so both shins lean back away from travel.
+			var skid := Vector3(side*(0.36 if lead else 0.10),0.115,0.07 if lead else -0.08)
+			var f: Dictionary = stride[i]
+			f.ankle = (f.ankle as Vector3).lerp(skid,stop_w)
+			f.yaw = lerpf(f.yaw,side*0.04,stop_w)
+			f.pitch = f.pitch*(1.0-stop_w)
+			f.edge = lerpf(f.edge,1.0,stop_w)
+			f.ext = f.ext*(1.0-stop_w)
+			f.lift = f.lift*(1.0-stop_w)
+		# Hips drop low and sit back away from the travel; shoulders stay
+		# turned a little toward where the skater was going.
+		drop = drop.lerp(Vector3(s*0.13,-0.30,-0.05),stop_w)
+		shoulder_turn = lerpf(shoulder_turn,-s*0.22,stop_w)
 	var cap := {}
 	if mocap_weight>0 and not mocap.is_empty():
 		cap = Mocap.sample(mocap,mocap_time,mocap_loop)
@@ -597,6 +650,8 @@ func pose(speed: float, turn: float) -> void:
 	override_pose("root",root_pose)
 	bend = Basis(Vector3.RIGHT,lerpf(0.52,0.26,butterfly) if goalie else 0.50+minf(speed/40,0.18))
 	if shoulder_turn != 0.0: bend = Basis(Vector3.UP,shoulder_turn)*bend
+	# Stop: the upper body leans back against the skid.
+	if stop_w > 0.0: bend = Basis(Vector3.BACK,-stop_side*0.24*stop_w)*bend
 	if goalie:
 		var reach_lean: float = save_weights.glove*clampf(save_target.x-0.45,0.0,0.5)-save_weights.blocker*clampf(-save_target.x-0.45,0.0,0.5)
 		var pad_lean: float = save_weights.pad_left-save_weights.pad_right
@@ -687,7 +742,7 @@ func pose(speed: float, turn: float) -> void:
 			var yaw: float = stride[i].yaw
 			var shin_local := Basis(Vector3.UP,yaw).inverse()*(knee-ankle)
 			var roll := clampf(atan2(-shin_local.x,shin_local.y),-MAX_EDGE,MAX_EDGE)*float(stride[i].edge)
-			boot = Vector3(stride[i].pitch,yaw,roll)
+			boot = Vector3(stride[i].pitch,lerpf(yaw,0.7,brake_turn*(1.0-stop_w)),roll)
 		foot_pose.basis = Basis.from_euler(boot)*foot_pose.basis
 		override_pose("foot"+suffix,foot_pose)
 		skates[i].position = ankle+Vector3(0,-0.0525,0)
@@ -769,6 +824,8 @@ func pose(speed: float, turn: float) -> void:
 		override_pose("wrist"+suffix,wrist_pose)
 	if goalie: separate_thigh_rises()
 	rig.rotation.z = clampf(turn,-0.13,0.13)
+	# Stop: hips (and the whole rig) turn across the line of travel.
+	rig.rotation.y = PI+stop_yaw*stop_w
 	update_stick()
 
 ## Rolls the two thigh rises outward until their inner edges clear each other,
@@ -814,6 +871,10 @@ func update_layers(delta: float) -> void:
 		if last_world!=Vector3.INF and delta>0:
 			var local_velocity:Vector3=rig.global_basis.orthonormalized().inverse()*((world-last_world)/delta)
 			lateral=lerpf(lateral,local_velocity.x,1-exp(-10*delta))
+			# Direction of travel for hockey stops (ignores teleports).
+			var moved:=(world-last_world)/delta
+			moved.y=0
+			if moved.length()<30: travel=travel.lerp(moved,1-exp(-15*delta))
 		last_world=world
 	if not mocap.is_empty():
 		mocap_time+=delta*mocap_rate
@@ -835,17 +896,82 @@ func update_layers(delta: float) -> void:
 
 func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, braking: bool = false) -> void:
 	update_layers(delta)
+	update_stop(speed,delta,braking)
+	brake_turn = move_toward(brake_turn,1.0 if braking and not goalie else 0.0,delta*6)
 	shot_follow = maxf(0,shot_follow-delta*3)
 	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
 	blade_position=Vector3(-0.02+butterfly*0.05,0.042,0.60-butterfly*0.04+0.035*sin(PI*butterfly)) if goalie else Vector3(-(0.20+stick_intent.x*0.55),0.029,0.83-stick_intent.y*0.26)
+	# Stop: the stick reaches out in front for balance.
+	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
 	var target := clampf(speed/5.0,0,1) if pushing and not braking and not goalie else 0.0
-	push_blend = move_toward(push_blend,target,delta*4)
+	# Critically damped spring (not a linear ramp) so starting or easing off a
+	# push - including into a hockey stop - never kinks the foot path.
+	var substeps := clampi(ceili(delta*120.0),1,24)
+	var h := delta/substeps
+	for k in range(substeps):
+		push_rate += (81.0*(target-push_blend)-18.0*push_rate)*h
+		push_blend = clampf(push_blend+push_rate*h,0.0,1.0)
 	if push_blend > 0.01:
 		phase += delta * TAU * lerpf(0.7,1.25,clampf(speed/10,0,1))
 	pose(speed,turn)
-	if braking:
-		skates[0].rotation.y = 0.7
-		skates[1].rotation.y = 0.7
+	update_spray(speed)
+
+## Eased 0..1 weight of the hockey-stop pose (smootherstep: no velocity or
+## acceleration jump as the blend starts or ends).
+func stop_blend() -> float:
+	if goalie: return 0.0
+	var x := clampf(stop_weight,0.0,1.0)
+	return x*x*x*(x*(x*6.0-15.0)+10.0)
+
+## Heading of the direction of travel relative to this node's facing
+## (radians, 0 = skating forward); 0 when not moving or not in the tree.
+func travel_heading() -> float:
+	if travel.length() < 0.5 or not is_inside_tree(): return 0.0
+	var local:Vector3=global_basis.orthonormalized().inverse()*travel
+	return atan2(-local.x,-local.z)
+
+## Starts a hockey stop on a hard deceleration from speed and ends it once the
+## skater has (nearly) stopped or eased off; the pose blends in fast and out
+## more slowly so the recovery to the normal stance has no pop.
+func update_stop(speed: float, delta: float, braking: bool) -> void:
+	if delta <= 0.0: return
+	var raw := 0.0
+	# Clamped so a one-frame impact (boards, a hit) doesn't read as a stop.
+	if last_speed >= 0.0: raw = clampf((last_speed-speed)/delta,-30.0,30.0)
+	last_speed = speed
+	decel = lerpf(decel,raw,1.0-exp(-20.0*delta))
+	if goalie or referee:
+		stopping = false
+		stop_weight = 0.0
+		return
+	var heading := travel_heading()
+	if not stopping and speed > STOP_MIN_SPEED and (braking or decel > STOP_DECEL):
+		stopping = true
+		stop_timer = 0.0
+		# Turn whichever way is shorter from where the body faces now.
+		stop_side = 1.0 if absf(wrapf(heading+STOP_ANGLE,-PI,PI)) <= absf(wrapf(heading-STOP_ANGLE,-PI,PI)) else -1.0
+		if stop_weight < 0.05: stop_yaw = wrapf(heading+stop_side*STOP_ANGLE,-PI,PI)
+	if stopping:
+		stop_timer += delta
+		stop_yaw = lerp_angle(stop_yaw,heading+stop_side*STOP_ANGLE,1.0-exp(-8.0*delta))
+		if speed < 0.6 or (stop_timer > 0.3 and not braking and decel < 2.5):
+			stopping = false
+	stop_weight = move_toward(stop_weight,1.0 if stopping else 0.0,delta*(3.5 if stopping else 2.5))
+
+## Snow spray off both blades while a stop is scraping, thrown along the
+## direction of travel; the lead (travel-side) blade throws the most.
+func update_spray(speed: float) -> void:
+	if sprays.is_empty() or not is_inside_tree(): return
+	var on := stopping and stop_weight > 0.35 and speed > 1.5
+	var dir := travel if travel.length() > 0.5 else -global_basis.z
+	dir.y = 0
+	if dir.length_squared() < 0.0001: dir = Vector3.FORWARD
+	dir = dir.normalized()
+	var amount := clampf((speed-1.5)/7.0,0.0,1.0)
+	for i in range(sprays.size()):
+		var lead := (1.0 if i==0 else -1.0) == -stop_side
+		sprays[i].global_transform = Transform3D(Basis.looking_at(dir,Vector3.UP),skates[i].global_position+Vector3(0,0.012,0)+dir*0.05)
+		sprays[i].spray(on,amount*(1.0 if lead else 0.55),speed)
 
 func set_number(value: String) -> void:
 	number=value
@@ -866,6 +992,8 @@ func stick_grip() -> Vector3:
 			grip = grip.lerp(reach(shoulder_of(1),aim),block_w)
 		return grip
 	var grip := Vector3(0.06-stick_intent.x*0.16-shot_follow*0.12,0.93+shot_charge*0.06,0.32-stick_intent.y*0.06-shot_charge*0.18+shot_follow*0.22)
+	# Stop: hands come down with the hips and push the stick out front.
+	grip += Vector3(0,-0.10,0.06)*stop_blend()
 	# The top hand holds the stick in front of the jersey, never inside it.
 	return clear_hand(grip,0.075)
 

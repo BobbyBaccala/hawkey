@@ -23,6 +23,13 @@ const ROW_RISE := 0.46
 
 var helper: Arena
 var jumbotron_labels: Array[Label3D] = []
+## Jumbotron screen faces and LED fascia ribbons, for goal_celebration.gd.
+var jumbotron_screens: Array[MeshInstance3D] = []
+var led_ribbons: Array[MeshInstance3D] = []
+## While a goal celebration owns the jumbotron, score updates are stored in
+## scoreboard_text and shown again when it hands the board back.
+var scoreboard_hold := false
+var scoreboard_text: Array[String] = ["TOR  0     MTL  0", "1ST   20:00"]
 var arena_name := "HAWKEY ARENA"
 
 func _ready() -> void:
@@ -167,8 +174,10 @@ func build_fascia() -> void:
 	for side in [-1.0, 1.0]:
 		var ribbon := box(Vector3(0.2, 1.1, out_z * 2 + 1), Vector3(side * (out_x + 0.1), top, 0), blue)
 		ribbon.material_override = emissive(blue.lightened(0.05), 1.2)
+		led_ribbons.append(ribbon)
 		var end_ribbon := box(Vector3(out_x * 2 + 1, 1.1, 0.2), Vector3(0, top, side * (out_z + 0.1)), blue)
 		end_ribbon.material_override = emissive(blue.lightened(0.05), 1.2)
+		led_ribbons.append(end_ribbon)
 		for z in [-18.0, 0.0, 18.0]:
 			text(arena_name, Vector3(side * out_x, top, z), Vector3(-side, 0, 0), 0.62, Color(1, 1, 1))
 		text(arena_name, Vector3(0, top, side * out_z), Vector3(0, 0, -side), 0.62, Color(1, 1, 1))
@@ -227,6 +236,7 @@ func build_jumbotron() -> void:
 		screen.basis = Basis(right, Vector3.UP, facing)
 		screen.position = facing * 3.21
 		core.add_child(screen)
+		jumbotron_screens.append(screen)
 		var l := text("TOR  0     MTL  0", facing * 3.23 + Vector3(0, 0.45, 0), facing, 0.9, Color(1, 1, 1), core)
 		jumbotron_labels.append(l)
 		var sub := text("1ST   20:00", facing * 3.23 + Vector3(0, -0.75, 0), facing, 0.6, Color("#e8b83a"), core)
@@ -239,5 +249,8 @@ func build_jumbotron() -> void:
 		g.set_meta("rigging", true)
 
 func set_scoreboard(line: String, sub: String) -> void:
+	scoreboard_text.assign([line, sub])
+	if scoreboard_hold:
+		return
 	for i in range(jumbotron_labels.size()):
 		jumbotron_labels[i].text = line if i % 2 == 0 else sub

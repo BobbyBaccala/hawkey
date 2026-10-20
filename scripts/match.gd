@@ -9,6 +9,7 @@ static var return_to_title := false
 var database := RosterDatabase.new()
 var selected_teams: Array = []
 
+const GoalCelebration = preload("res://scripts/goal_celebration.gd")
 const CAMERA_NAMES := ["DYNAMIC", "OVERHEAD", "BROADCAST", "FULL RINK"]
 ## Bench gate (changing skaters head here) just inside the west side boards.
 const BENCH_X := -(Arena.HALF_WIDTH - 1.3)
@@ -24,6 +25,8 @@ var team_shots: Array[int] = [0, 0]
 var last_event := ""
 var last_phase := -1
 var match_state := MatchState.new()
+## Goal light, arena light flash and jumbotron GOAL (scripts/goal_celebration.gd).
+var celebration: Node3D
 var skaters: Array[CharacterBody3D] = []
 var rosters: Array = [[],[]]
 var active_lines: Array[int] = [0,0]
@@ -74,6 +77,8 @@ func _ready() -> void:
 	selected_teams = [home, away[0] if not away.is_empty() else same_league[0]]
 	selected_team_ids.assign([selected_teams[0].id, selected_teams[1].id])
 	super._ready()
+	celebration=GoalCelebration.new()
+	add_child(celebration)
 	Input.joy_connection_changed.connect(on_controller_connection)
 	var devices:=Input.get_connected_joypads()
 	if not devices.is_empty():
@@ -565,6 +570,8 @@ func _physics_process(delta: float) -> void:
 				team_shots[scoring_team]+=1
 				var scorer_name:=""
 				if carrier!=null and body_team(carrier)==scoring_team: scorer_name=str(roster(carrier).name).to_upper()
+				# Red goal light behind this net, arena light pulse, jumbotron GOAL.
+				celebration.celebrate(end_, hud_node.team_colors[scoring_team], hud_node.team_names[scoring_team])
 				hud_node.show_banner("GOAL", (hud_node.team_names[scoring_team]+("  ·  "+scorer_name if scorer_name!="" else "")), hud_node.team_colors[scoring_team], 2.4)
 				# Scorers celebrate with captured motion, sticks raised.
 				for actor in skaters:

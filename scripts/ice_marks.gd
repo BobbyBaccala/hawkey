@@ -72,11 +72,14 @@ func _process(delta: float) -> void:
 			if step > 1.0 or delta <= 0 or step / delta < MIN_SPEED:
 				continue
 			var strength := clampf(step / delta / 7.0, 0.35, 1.0)
-			score(before, now, strength)
+			# Hockey stops scrape harder: a deeper cut and a dense snowy haze.
+			var stop: float = visual.stop_weight if "stop_weight" in visual else 0.0
+			score(before, now, strength * (1.0 + 1.6 * stop))
 			var travelled: float = haze_travel.get(id, 0.0) + step
-			if travelled >= HAZE_SPACING:
-				travelled = fmod(travelled, HAZE_SPACING)
-				haze(now, strength)
+			var spacing := HAZE_SPACING * lerpf(1.0, 0.25, stop)
+			if travelled >= spacing:
+				travelled = fmod(travelled, spacing)
+				haze(now, strength * (1.0 + 1.5 * stop))
 			haze_travel[id] = travelled
 	for id in last_blade.keys():
 		if not seen.has(id):
