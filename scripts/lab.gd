@@ -73,6 +73,9 @@ func make_skater(pos: Vector3, color: Color, jersey: String, is_goalie: bool = f
 	return body
 
 func _ready() -> void:
+	var preferences=preload("res://scripts/game_settings.gd").new()
+	preferences.load_settings()
+	practice_input.deadzone=preferences.values.deadzone
 	if get_script().resource_path == "res://scripts/lab.gd": Input.joy_connection_changed.connect(on_practice_connection)
 	var world := WorldEnvironment.new()
 	world.environment = Environment.new()

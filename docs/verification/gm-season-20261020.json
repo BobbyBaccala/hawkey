@@ -1,0 +1,17 @@
+{
+  "status": "Focused core tests passed; broader regression and final failed-save UI recheck in progress",
+  "engine": "Godot 4.6.3 Linux headless",
+  "focused": {
+    "save_store": "25 checks; 0 failures",
+    "gm_season": "3088 checks; 0 failures",
+    "gm_navigation_initial": "21 checks; 0 failures"
+  },
+  "python": "21 tests passed",
+  "capture": {
+    "renderer": "OpenGL compatibility, Mesa softpipe",
+    "resolution": "1440x900",
+    "scope": "Real native GM setup/dashboard/preferences; 13 simulated days staged",
+    "default_renderer_failure": "Mesa llvmpipe SIGILL on arena and standalone UI; alternate driver succeeded"
+  },
+  "hardware_tested": false
+}

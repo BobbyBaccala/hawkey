@@ -3,6 +3,9 @@ const MatchState = preload("res://scripts/match_state.gd")
 const ControllerInput = preload("res://scripts/controller_input.gd")
 const PuckPhysics = preload("res://scripts/puck.gd")
 const BroadcastHud = preload("res://scripts/broadcast_hud.gd")
+const GMSession=preload("res://scripts/gm_session.gd")
+const Preferences=preload("res://scripts/game_settings.gd")
+var is_gm_match:=false
 const RosterDatabase = preload("res://scripts/roster_database.gd")
 static var selected_team_ids: Array[String] = ["har", "sum"]
 static var return_to_title := false
@@ -60,7 +63,13 @@ func _init() -> void:
 	arena_title = "HAWKEY ARENA"
 
 func _ready() -> void:
-	if not database.load_file():
+	is_gm_match=GMSession.season!=null and not GMSession.fixture_id.is_empty()
+	var preferences:=Preferences.new()
+	preferences.load_settings()
+	camera_mode=int(preferences.values.camera)
+	controller.deadzone=preferences.values.deadzone
+	var roster_ok: bool=database.load_text(JSON.stringify(GMSession.season.state.world)) if is_gm_match else database.load_file()
+	if not roster_ok:
 		push_error(database.error)
 		var failure := Label.new()
 		failure.text = "Roster unavailable: " + database.error
@@ -171,6 +180,7 @@ func roster(body: CharacterBody3D) -> Dictionary:
 
 func build_hud() -> void:
 	hud_node = BroadcastHud.new()
+	hud_node.gm_context=is_gm_match
 	hud_node.team_colors.assign([Color("#164a9a"), Color("#b3162c")])
 	hud_layer = hud_node
 	for i in range(2):
@@ -181,6 +191,9 @@ func build_hud() -> void:
 	add_child(hud_node)
 	hud_node.configure_teams(database.teams, selected_team_ids, database.leagues)
 	hud_node.menu_requested.connect(func():
+		if is_gm_match:
+			get_tree().change_scene_to_file("res://gm.tscn")
+			return
 		return_to_title = true
 		get_tree().reload_current_scene())
 	hud = hud_node.clock_label
@@ -191,10 +204,19 @@ func build_hud() -> void:
 	hud_node.resume_requested.connect(func(): set_paused(false))
 	hud_node.camera_requested.connect(cycle_camera)
 	hud_node.restart_requested.connect(func():
+		if is_gm_match and match_state.phase==MatchState.Phase.FINAL:
+			get_tree().change_scene_to_file("res://gm.tscn")
+			return
 		skip_title = true
 		get_tree().reload_current_scene())
 	hud_node.quit_requested.connect(func(): get_tree().quit())
 	hud_node.play_requested.connect(start_from_title)
+	hud_node.gm_requested.connect(func():
+		return_to_title=true
+		get_tree().change_scene_to_file("res://gm.tscn"))
+	hud_node.settings_requested.connect(func():
+		return_to_title=true
+		get_tree().change_scene_to_file("res://settings.tscn"))
 	hud_node.practice_requested.connect(func(): get_tree().change_scene_to_file("res://practice.tscn"))
 
 func set_paused(on: bool) -> void:
@@ -904,7 +926,12 @@ func update_match_hud() -> void:
 		elif e.begins_with("Period "):
 			hud_node.show_banner(["1ST","2ND","3RD"][clampi(match_state.period-1,0,2)]+" PERIOD", "Ends switched", Color("#93a3b3"), 1.6)
 		elif e.begins_with("FINAL"):
+			var gm_saved:=true
+			if is_gm_match and not GMSession.fixture_id.is_empty():
+				gm_saved=GMSession.finish_match(match_state.score,match_state.decision)
 			hud_node.show_results(match_state.score, team_shots, match_state.decision, match_state.shootout_score)
+			if is_gm_match:
+				hud_node.results_text.text+="\nGM result saved." if gm_saved else "\nRESULT NOT SAVED — return to GM to retry."
 		elif " — " in e and (e.begins_with(hud_node.team_codes[0] + " — ") or e.begins_with(hud_node.team_codes[1] + " — ")):
 			var team:=0 if e.begins_with(hud_node.team_codes[0] + " — ") else 1
 			hud_node.show_banner("PENALTY", e.get_slice(" — ",1).to_upper(), hud_node.team_colors[team], 2.0)

@@ -30,8 +30,8 @@ Definitions: Missing = no implementation identified; Placeholder = stand-in; Par
 | Roster data/import | Validated (original league-world data/exhibition slice) | Version-2 HL world: 33 leagues, 643 teams, 14,745 players; complete rosters and reference/age/rights validation; league-filtered Play Now. Version-1 fixture retained; see HL_WORLD.md for final checks | Native validation and complete fixture | Stable IDs and tagged identities/estimates reach match without broken references | Invalid imports plus native end-to-end roster selection |
 | Real professional/junior data | Missing | No reviewed licensed dataset shipped | Permission/provenance/identity ledger | Reviewed adapters, as-of/season/source and documented rating estimation | Identity reconciliation and source/version audit |
 | Editors | Missing | No in-game player/team editor identified | Validation, undo and snapshot saves | Edit players/teams/lines/equipment safely and persist changes | Invalid reference, undo, import/export and old-save cases |
-| Save/settings persistence | Missing | No versioned game-save system identified | Schema/migrations and session state | Atomic writes, backup/recovery, validation, independent settings | Interrupt/corrupt/migrate/restore tests |
-| GM season loop | Missing | No persistent league/schedule/standings mode identified | Rosters and saves | New league -> play/sim -> standings -> advance -> save/resume | Seeded complete season with resumed state equivalence |
+| Save/settings persistence | Partial (defined GM persistence slice tested) | Atomic validated versioned slot, backups/recovery, envelope migration; independent camera/dead-zone preferences; see GM_SEASON.md | Schema/migrations and session state | Atomic writes, backup/recovery, validation, independent settings | Interrupt/corrupt/migrate/restore tests |
+| GM season loop | Functional (single HL regular-season alpha) | New 32-team league, 62-game balanced schedule, deterministic sim/play, standings, advance and save/resume; see GM_SEASON.md | Rosters and saves | New league -> play/sim -> standings -> advance -> save/resume | Seeded complete season with resumed state equivalence |
 | GM transactions/finance | Missing | No contracts/trade/free-agent economy identified | Season loop and league rules | Legal budget/cap/roster transactions; AI values needs/window/replacements | Illegal transaction rejection and trade-exploit cases |
 | GM scouting/draft/development | Missing | No prospect/draft/development simulation identified | Player histories and eligibility | Uncertain scouting; non-linear age/usage/health/context progression | Multi-season roster, scoring, prospect and finance invariants |
 | GM playoffs/history/legacy | Missing | No persistent playoffs/awards/records identified | Schedules and event/stat ledger | Valid postseason and durable awards/records/retirement | Multi-season bracket and record reconciliation |
@@ -99,3 +99,21 @@ manual switching and faceoff gesture systems remain open, not advertised as work
 Executed evidence: verification/skill-stick-20261020.json; physical hardware untested.
 No release/PR merge. Next: human controller feel and remaining contextual mechanics,
 then persistent saves/GM season dependencies from the ordered backlog.
+
+
+## 2026-10-20 — persistent HL GM regular-season slice
+
+Codex, codex/game-modes / PR #2. Preserved prototype ed82395 (Claude's goal-net
+realism, goal celebrations and hockey stops) via history merge 0bc173b, resolving
+script conflicts by retaining both goalie blade clearance and stop reach, and both
+roster and celebration imports. New game-mode/persistence scripts, native settings
+and GM scenes, match handoff/results and title entries; no new art/animation work.
+Implemented a 32-club/62-game season with deterministic fixture simulation,
+standings, played-game recording, full-world save snapshots and independent camera/
+dead-zone preferences. Save staging/backup/recovery/migration and failure rollback
+are exercised; unsupported saves protected. Full scope/gaps: GM_SEASON.md.
+Current tests/captures: verification/gm-season-20261020.json. Native mode renders use
+Mesa softpipe after default llvmpipe SIGILL; arena graphics are not validated by
+these captures. No PR merge/release/public availability change.
+Next: physical-controller/human feel, save latency and cross-platform durability,
+then richer calendar/playoffs/transactions/draft/development/multi-season rules.

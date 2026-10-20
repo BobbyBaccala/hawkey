@@ -18,10 +18,12 @@ Never merge automatically. Reconcile new prototype commits before integration.
   match consumes stable IDs instead of hard-coded identities; regression tests.
 - [x] Menu roster selection and return-to-menu flow for Play Now/Practice using
   existing title UI; no empty GM/Career buttons advertised as playable.
-- [ ] Versioned GM/Career save envelope with validation, backup, migration and
-  interrupted-write tests, plus settings persistence independent of career saves.
-- [ ] GM vertical slice: new league, schedule, simulate/play game, standings,
-  advance day, save and resume. Deterministic seeds and recorded results.
+- [x] Versioned GM save envelope with validation, backup, migration and
+  interrupted-write tests; camera/dead-zone preferences saved independently.
+- [ ] Career-specific save schema/migrations; full remapping/accessibility settings.
+- [x] HL GM regular-season slice: new league, 62-game schedule, simulate/play game,
+  standings, advance day, save/resume; deterministic seeds and recorded results.
+- [ ] GM playoffs, multi-season rollover, calendar/rest/travel and richer simulation.
 - [ ] GM contracts/free agents/trades with budgets and eligibility rules; then
   scouting uncertainty, draft, development, staff and owner objectives.
 - [ ] Career vertical slice: generated minor player, practice objective, game,
@@ -103,3 +105,21 @@ manual switching and faceoff gesture systems remain open, not advertised as work
 Executed evidence: verification/skill-stick-20261020.json; physical hardware untested.
 No release/PR merge. Next: human controller feel and remaining contextual mechanics,
 then persistent saves/GM season dependencies from the ordered backlog.
+
+
+## 2026-10-20 — persistent HL GM regular-season slice
+
+Codex, codex/game-modes / PR #2. Preserved prototype ed82395 (Claude's goal-net
+realism, goal celebrations and hockey stops) via history merge 0bc173b, resolving
+script conflicts by retaining both goalie blade clearance and stop reach, and both
+roster and celebration imports. New game-mode/persistence scripts, native settings
+and GM scenes, match handoff/results and title entries; no new art/animation work.
+Implemented a 32-club/62-game season with deterministic fixture simulation,
+standings, played-game recording, full-world save snapshots and independent camera/
+dead-zone preferences. Save staging/backup/recovery/migration and failure rollback
+are exercised; unsupported saves protected. Full scope/gaps: GM_SEASON.md.
+Current tests/captures: verification/gm-season-20261020.json. Native mode renders use
+Mesa softpipe after default llvmpipe SIGILL; arena graphics are not validated by
+these captures. No PR merge/release/public availability change.
+Next: physical-controller/human feel, save latency and cross-platform durability,
+then richer calendar/playoffs/transactions/draft/development/multi-season rules.
