@@ -86,3 +86,27 @@ rendered these mode pages successfully using OpenGL compatibility; no 3D render 
 hardware performance claim is made from this run. Reproduce with `DISPLAY=:9
 GALLIUM_DRIVER=softpipe ... godot --rendering-method gl_compatibility --audio-driver
 Dummy --script tools/capture_gm.gd`, plus the writable XDG paths in setup guidance.
+
+
+## Roster room and draft candidate browsing
+
+**Roster room** opens from the season dashboard. Browse all 33 leagues and 643
+clubs in the saved world, including youth data, or filter **My organization** to
+the managed club, explicitly affiliated clubs and players with its HL rights.
+**Draft candidates** uses the snapshot's existing age/rights eligibility query
+on its stated draft date (2027-09-15), yielding 3,256 players in this initial world.
+The AGE column uses the world as-of date (2026-09-15); draft eligibility uses the
+separately displayed future date. Search names, clubs and positions; lists page
+25 players at a time. Player cards show position, age/birthday, handedness, size,
+nationality, rights, estimated potential, every position-specific rating and
+explicit league development routes. Goalies have no shot-accuracy value in the
+skater SHT column; their goalie skills appear on their card.
+
+All browsing is read-only. It cannot advance the season, assign/trade/develop
+players or execute draft picks. Ratings/potential remain generated uncalibrated
+estimates, not verified scouting accuracy or guaranteed progression. Youth remains
+excluded from Play Now. Snapshot identity/state preservation, filtering, pagination,
+selection/focus and actual dashboard navigation are covered by 3,274 native checks.
+
+- [Club roster and player card](screenshots/gm-rosters-20261020.png)
+- [Eligible draft candidates](screenshots/gm-prospects-20261020.png)

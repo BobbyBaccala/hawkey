@@ -1,10 +1,10 @@
 # Production coordination
 
-Updated 2026-10-20 14:02 America/Toronto. Assignments are not completion evidence.
+Updated 2026-10-20. Assignments are not completion evidence.
 
 | Owner | Active task | Branch | Affected systems | Dependencies | Integration | Last verified build |
 |---|---|---|---|---|---|---|
-| Codex | Interface polish, net-targeted controller shots, playable OT/shootout | codex/game-modes | HUD/fonts, match/Practice/input, match state, tests and captures | Native Godot 4.6.3 verified; EA lookup blocked pending network settings | Tested and locally integrated; PR #2 pending review; no merge/release | 21 Python tests; 23 engine suites; OT/SO 75 checks; shots 132; navigation 47; genuine renders |
+| Codex | Persistent HL GM season, independent preferences, roster/prospect browser | codex/game-modes | Mode scenes, save store, season/snapshot model, match handoff/results, tests/captures | Godot 4.6.3; native validated world; Mesa softpipe capture fallback | Functional single-season alpha; tested and locally integrated; PR #2 review pending | GM_SEASON.md and verification/gm-season-20261020.json; no release claim |
 | Claude/separate presentation agent (owner-reported) | Graphics/lighting/models/gear/animation | prototype/skating-puck-lab observed; confirm ownership before edits | presentation assets, skater visuals, arena lighting, HUD styling | Shared scene and match interfaces | Prototype observed at 28fb10b; runtime not inspected here | Unknown in this session; do not infer from assignment |
 
 ## Coordination protocol
@@ -118,3 +118,11 @@ Mesa softpipe after default llvmpipe SIGILL; arena graphics are not validated by
 these captures. No PR merge/release/public availability change.
 Next: physical-controller/human feel, save latency and cross-platform durability,
 then richer calendar/playoffs/transactions/draft/development/multi-season rules.
+
+
+2026-10-20 continuation — Added saved-world Roster room: all 643 clubs/14,745
+players, organization affiliation/rights filter, 3,256 age/rights-eligible draft
+candidates, league/team/name/position search, paginated rows and full player cards.
+Youth data remains browse-only; no drafting/development/transaction claims.
+Native browser checks: 3,274, including byte-equivalent season preservation,
+page/focus recovery and real dashboard round trips. Captures and scope: GM_SEASON.md.

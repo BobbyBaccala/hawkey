@@ -77,6 +77,7 @@ func build_dashboard() -> void:
 	play_button.disabled=complete or fixture.is_empty() or not fixture.result.is_empty() or not Session.pending_result.is_empty()
 	sim_button=UI.button("Simulate rest of day" if not fixture.is_empty() and not fixture.result.is_empty() else "Simulate league day",advance_day);actions.add_child(sim_button)
 	sim_button.disabled=complete or not Session.pending_result.is_empty()
+	actions.add_child(UI.button("Roster room",func(): get_tree().change_scene_to_file("res://gm_rosters.tscn")))
 	actions.add_child(UI.button("Save & return to menu",save_exit))
 	var columns:=HBoxContainer.new();columns.add_theme_constant_override("separation",20);columns.size_flags_vertical=Control.SIZE_EXPAND_FILL;box.add_child(columns)
 	var table:=UI.card(columns)

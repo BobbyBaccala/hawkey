@@ -117,3 +117,11 @@ Mesa softpipe after default llvmpipe SIGILL; arena graphics are not validated by
 these captures. No PR merge/release/public availability change.
 Next: physical-controller/human feel, save latency and cross-platform durability,
 then richer calendar/playoffs/transactions/draft/development/multi-season rules.
+
+
+2026-10-20 continuation — Added saved-world Roster room: all 643 clubs/14,745
+players, organization affiliation/rights filter, 3,256 age/rights-eligible draft
+candidates, league/team/name/position search, paginated rows and full player cards.
+Youth data remains browse-only; no drafting/development/transaction claims.
+Native browser checks: 3,274, including byte-equivalent season preservation,
+page/focus recovery and real dashboard round trips. Captures and scope: GM_SEASON.md.
