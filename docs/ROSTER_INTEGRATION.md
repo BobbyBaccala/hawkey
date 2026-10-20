@@ -1,5 +1,7 @@
 # Fictional roster / Play Now checkpoint
 
+Historical two-team checkpoint. Current expanded world: [HL_WORLD.md](HL_WORLD.md).
+
 2026-10-20, America/Toronto. Alpha; no release-readiness claim.
 
 ## Implemented scope

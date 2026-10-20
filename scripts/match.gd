@@ -60,9 +60,14 @@ func _ready() -> void:
 		set_physics_process(false)
 		set_process_unhandled_input(false)
 		return
-	for id_ in selected_team_ids:
-		var matches: Array = database.teams.filter(func(t): return t.id == id_)
-		selected_teams.append(matches[0] if not matches.is_empty() else database.teams[selected_teams.size()])
+	var playable_leagues: Array = database.leagues.filter(func(l): return l.play_now).map(func(l): return l.id)
+	var playable_teams: Array = database.teams.filter(func(t): return t.league_id in playable_leagues)
+	var requested: Array = playable_teams.filter(func(t): return t.id == selected_team_ids[0])
+	var home: Dictionary = requested[0] if not requested.is_empty() else playable_teams[0]
+	var same_league: Array = playable_teams.filter(func(t): return t.league_id == home.league_id and t.id != home.id)
+	var away: Array = same_league.filter(func(t): return t.id == selected_team_ids[1])
+	selected_teams = [home, away[0] if not away.is_empty() else same_league[0]]
+	selected_team_ids.assign([selected_teams[0].id, selected_teams[1].id])
 	super._ready()
 	Input.joy_connection_changed.connect(on_controller_connection)
 	var devices:=Input.get_connected_joypads()
@@ -158,12 +163,12 @@ func build_hud() -> void:
 	hud_node.team_colors.assign([Color("#164a9a"), Color("#b3162c")])
 	hud_layer = hud_node
 	for i in range(2):
-		hud_node.team_codes[i] = str(selected_teams[i].id).to_upper()
+		hud_node.team_codes[i] = str(selected_teams[i].get("code", selected_teams[i].id)).to_upper()
 		hud_node.team_names[i] = str(selected_teams[i].city).to_upper()
 	match_state.team_codes = hud_node.team_codes.duplicate()
 	match_state.team_names = hud_node.team_names.duplicate()
 	add_child(hud_node)
-	hud_node.configure_teams(database.teams, selected_team_ids)
+	hud_node.configure_teams(database.teams, selected_team_ids, database.leagues)
 	hud_node.menu_requested.connect(func():
 		return_to_title = true
 		get_tree().reload_current_scene())

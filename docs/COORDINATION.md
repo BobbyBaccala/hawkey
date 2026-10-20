@@ -45,3 +45,19 @@ Last verified build: current integrated source under Godot 4.6.3, 11 Python test
 in ROSTER_INTEGRATION.md. Headless checks do not validate human feel or hardware.
 Next checkpoint: versioned atomic saves/settings with recovery and roster snapshots;
 broader Play Now setup and human/controller testing remain open.
+
+## 2026-10-20 — full fictional world checkpoint
+
+Owner: Codex. Branch codex/game-modes, existing PR #2. Task expanded by owner (2026-10-20 14:25 America/Toronto):
+32 HL rosters plus professional farm, youth, North American junior and European coverage.
+Affected: data/world manifest/snapshot/schema, generator, native roster loader,
+match selection guard, title league filter, native/Python/navigation tests and mode docs.
+Claude presentation files unchanged. Remote heads checked before edits; inherited
+prototype b2e58d7 and goalie-gear 796fe0f are retained.
+Integration: complete league-filtered exhibition data; no new GM mode advertised.
+Verification: 21 Python tests, 20 engine suites passed; optional mocap skipped.
+4,586 native world checks and 47 navigation checks passed. Exact outputs in
+verification/hl-world-20261020.json;
+rendered title inspected. Future GM needs persistent world snapshots, draft/rights
+transactions, schedules, progression, injuries, contracts and new yearly prospects.
+Youth competitions are currently data-only. No PR merge, release or publication.

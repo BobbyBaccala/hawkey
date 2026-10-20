@@ -50,6 +50,9 @@ var pause_panel: Control
 var pause_camera_button: Button
 var team_choices: Array[OptionButton] = []
 var choice_ids: Array[String] = []
+var league_choice: OptionButton
+var league_choice_ids: Array[String] = []
+var available_teams: Array = []
 var selection_error: Label
 var results_panel: PanelContainer
 var results_text: Label
@@ -422,7 +425,7 @@ func build_title() -> void:
 	box.offset_left = 96
 	box.offset_top = -370
 	box.offset_bottom = 250
-	box.add_theme_constant_override("separation", 12)
+	box.add_theme_constant_override("separation", 8)
 	title_screen.add_child(box)
 	var mark := label("HAWKEY", 96, INK, 700)
 	box.add_child(mark)
@@ -438,6 +441,11 @@ func build_title() -> void:
 	var gap2 := Control.new()
 	gap2.custom_minimum_size.y = 4
 	box.add_child(gap2)
+	box.add_child(label("League", 16, MUTED, 500))
+	league_choice = OptionButton.new()
+	league_choice.custom_minimum_size = Vector2(360, 34)
+	league_choice.item_selected.connect(select_league)
+	box.add_child(league_choice)
 	for side_name in ["Home", "Away"]:
 		box.add_child(label(side_name, 16, MUTED, 500))
 		var choice := OptionButton.new()
@@ -458,15 +466,38 @@ func show_title(on: bool) -> void:
 	else:
 		controls_panel.visible = false
 
-func configure_teams(teams: Array, selected: Array[String]) -> void:
-	choice_ids.clear()
-	for choice in team_choices: choice.clear()
+func configure_teams(teams: Array, selected: Array[String], leagues: Array = []) -> void:
+	available_teams = teams
+	league_choice.clear()
+	league_choice_ids.clear()
+	for league in leagues:
+		if league.get("play_now", true):
+			league_choice_ids.append(league.id)
+			league_choice.add_item(league.name)
+	if leagues.is_empty():
+		league_choice_ids.append(str(teams[0].league_id))
+		league_choice.add_item("Fictional exhibition")
+	var selected_league: String = str(teams[0].league_id)
 	for team in teams:
-		choice_ids.append(team.id)
-		for choice in team_choices:
-			choice.add_item(team.city + " " + team.name)
+		if team.id == selected[0]: selected_league = team.league_id
+	var league_index := maxi(0, league_choice_ids.find(selected_league))
+	league_choice.select(league_index)
+	select_league(league_index)
 	for i in range(2):
 		team_choices[i].select(maxi(0, choice_ids.find(selected[i])))
+
+func select_league(index: int) -> void:
+	choice_ids.clear()
+	for choice in team_choices: choice.clear()
+	for team in available_teams:
+		if team.league_id != league_choice_ids[index]: continue
+		choice_ids.append(team.id)
+		for choice in team_choices: choice.add_item(team.city + " " + team.name)
+	if choice_ids.size() >= 2:
+		team_choices[0].select(0)
+		team_choices[1].select(1)
+	if is_instance_valid(selection_error):
+		selection_error.text = "Original players · estimated ratings\n3 × 20:00 · fixed exhibition rules"
 
 func selected_ids() -> Array[String]:
 	return [choice_ids[team_choices[0].selected], choice_ids[team_choices[1].selected]]

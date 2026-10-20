@@ -28,8 +28,9 @@ Never merge automatically. Reconcile new prototype commits before integration.
   development review and persistent season stats; then junior/pro advancement,
   contract opportunities, NHL milestones and historical records.
 - [ ] Player/team editor with validation and undo; per-save roster snapshots.
-- [ ] Fictional professional/junior coverage first; real source adapters only for explicitly licensed datasets, with identity ledger;
-  methodology/calibration for estimated ratings; no fabricated verified ratings.
+- [x] Fictional HL (32 clubs), professional/junior/European/youth roster coverage.
+- [ ] Calibrate estimated ratings and progression; no fabricated verified ratings.
+- [ ] Real source adapters only for explicitly licensed datasets, with identity ledger.
 - [ ] Baseline profiling of frame time and season simulation; optimize measured
   bottlenecks and compare identical workloads before/after.
 
@@ -69,3 +70,5 @@ a complete two-team fixture, with Godot checks when a runtime is available.
 2026-10-20 12:50 America/Toronto — Execution remains unavailable (no usable execution environment). Read branches/PRs/directive/coordination/backlog/audit, compared latest Claude commits, confirmed choose_save/set_save source integration and preserved ownership. Added current NHL 27 benchmark catalogue with original acceptance scenarios and historical NHL 25 distinctions. No code/tests/build/screenshots produced. Next unchanged: restore execution, reconcile prototype 4c9ab2a or newer, complete fictional fixture and native roster loader, run relevant engine checks before integration. Research can continue independently; task not fully blocked.
 
 2026-10-20 14:02 America/Toronto — Execution restored on Godot 4.6.3; reconciled prototype b2e58d7 and Claude goalie-gear 796fe0f without discarding either history. Implemented complete 40-player fictional fixture, strict failure-safe native loading, stable actor identities, team selection, dynamic team labels, results/rematch and Practice/menu round trip. Native 44 checks and navigation 27 checks passed; 11 Python tests passed. See ROSTER_INTEGRATION.md for broader engine evidence, captures and limitations. Work stage: Tested/locally Integrated; PR review pending. Next: atomic versioned saves/settings, then GM loop.
+
+2026-10-20 — Expanded to 33 original leagues, 643 complete clubs, 14,745 players; 32-team HL, two professional farm tiers, 12 North American junior circuits, 13 European leagues and U9/U11/U13/U15/U18. Added complete skill/development profiles, farm links, birthday-based draft pool and explicit youth routes. Native version-2 validation and league-filtered Play Now implemented; youth remains data-only pending age-appropriate mechanics. See HL_WORLD.md and verification/hl-world-20261020.json. GM seasons, rights transactions, progression, save snapshots and annual prospect replenishment remain open.

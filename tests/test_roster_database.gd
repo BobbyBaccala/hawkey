@@ -9,8 +9,8 @@ func check(ok: bool, message: String) -> void:
 		failures += 1
 func _initialize() -> void:
 	var db := Database.new()
-	check(db.load_file(), "Complete original fixture loads: " + db.error)
-	var original: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(Database.DEFAULT_PATH))
+	check(db.load_file(Database.LEGACY_PATH), "Complete original fixture loads: " + db.error)
+	var original: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(Database.LEGACY_PATH))
 	for team in db.teams:
 		var roster := db.match_roster(team)
 		check(roster.size() == 20, "20 dressed players")

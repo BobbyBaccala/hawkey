@@ -27,7 +27,7 @@ Definitions: Missing = no implementation identified; Placeholder = stand-in; Par
 | Team tactics/difficulty | Partial | Primary pursuer, support lanes and simple pass/shot choices | Tactical state and debug intentions | Distinct forecheck/breakout/coverage/PP/PK decisions within fair physics | Formation scenarios, assignments, difficulty comparisons |
 | Player ratings/tendencies | Placeholder | Loaded fictional speed estimates drive skating; acceleration/agility and goalie model integration/calibration remain open | Roster loader and rating model | Attributes affect measured outcomes; uncertainty transparent | Attribute isolation and held-out calibration tests |
 | Signature abilities | Missing | No original trait system identified | Ratings/event hooks | Explicit trigger/effect/limits/counterplay/UI; no guaranteed outcomes | Trigger boundaries, counterplay and balance tests |
-| Roster data/import | Validated (fictional Play Now slice) | Version-1 native validated loader, complete two-team original fixture, stable IDs and Play Now integration; 44 native and 27 navigation checks passed | Native validation and complete fixture | Stable IDs and tagged identities/estimates reach match without broken references | Invalid imports plus native end-to-end roster selection |
+| Roster data/import | Validated (original league-world data/exhibition slice) | Version-2 HL world: 33 leagues, 643 teams, 14,745 players; complete rosters and reference/age/rights validation; league-filtered Play Now. Version-1 fixture retained; see HL_WORLD.md for final checks | Native validation and complete fixture | Stable IDs and tagged identities/estimates reach match without broken references | Invalid imports plus native end-to-end roster selection |
 | Real professional/junior data | Missing | No reviewed licensed dataset shipped | Permission/provenance/identity ledger | Reviewed adapters, as-of/season/source and documented rating estimation | Identity reconciliation and source/version audit |
 | Editors | Missing | No in-game player/team editor identified | Validation, undo and snapshot saves | Edit players/teams/lines/equipment safely and persist changes | Invalid reference, undo, import/export and old-save cases |
 | Save/settings persistence | Missing | No versioned game-save system identified | Schema/migrations and session state | Atomic writes, backup/recovery, validation, independent settings | Interrupt/corrupt/migrate/restore tests |
@@ -72,3 +72,7 @@ Play Now and navigation remain Partial against the full production target; nativ
 fictional roster loading alone is Validated for its defined acceptance slice.
 The previous no-runtime blockers above are historical. Next dependency is atomic
 versioned saves/settings and snapshot preservation before persistent GM/Career work.
+
+## HL world expansion — 2026-10-20
+
+The current snapshot expands to 32 HL clubs, 64 farm clubs, 218 junior clubs, 169 European clubs and 160 youth clubs. Player development profiles and draft-pool queries are implemented data; multi-season GM/Career, player development/scouting simulation and draft transactions remain Missing. Youth match gameplay remains unimplemented and hidden from Play Now. Full scope and evidence: HL_WORLD.md.

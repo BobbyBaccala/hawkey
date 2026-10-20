@@ -68,6 +68,25 @@ func run() -> void:
 		menu.pressed.emit()
 		await settle()
 		check(current_scene.in_menu, "Practice returns to title")
+	scene = current_scene
+	check(scene.hud_node.team_choices[0].item_count == 32, "All HL clubs selectable")
+	check("y-u18" not in scene.hud_node.league_choice_ids, "Youth not advertised with adult rules")
+	for target in [["hda",32,23], ["eu-se",14,23], ["j-west",24,25]]:
+		var index: int = scene.hud_node.league_choice_ids.find(target[0])
+		check(index >= 0, "League is selectable: " + target[0])
+		scene.hud_node.league_choice.select(index)
+		scene.hud_node.league_choice.item_selected.emit(index)
+		check(scene.hud_node.team_choices[0].item_count == target[1], "Complete filtered team list")
+		scene.hud_node.play_requested.emit()
+		await settle()
+		scene = current_scene
+		check(not scene.in_menu and scene.selected_teams[0].league_id == target[0], "Selected league reaches match")
+		check(scene.rosters[0].size() == target[2], "Reserves survive match snapshot")
+		check(scene.rosters[0][18].position == "G", "Starting goalie slot preserved")
+		scene.hud_node.menu_requested.emit()
+		await settle()
+		scene = current_scene
+		check(scene.hud_node.league_choice_ids[scene.hud_node.league_choice.selected] == target[0], "League selection retained on return")
 	current_scene.queue_free()
 	await settle()
 	print("Play Now: %d checks; %d failures" % [checks, failures])

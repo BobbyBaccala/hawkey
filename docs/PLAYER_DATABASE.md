@@ -1,15 +1,19 @@
 # Shared player database foundation
 
-Status: offline importer plus native validated fictional Play Now loading. The
-example contains two complete 20-player fictional teams, consumed by the match.
-No real professional/junior database or calibrated ratings are shipped. See
-[ROSTER_INTEGRATION.md](ROSTER_INTEGRATION.md) for executed checks and limits.
+Status: native version-2 HL world loading, with 32 HL clubs and complete farm,
+North American junior, European and youth rosters: 643 teams / 14,745 original
+players. See [HL_WORLD.md](HL_WORLD.md) for the exact manifest, roster sizes,
+development/draft metadata, executed validation and remaining GM work. The
+version-1 two-team example remains supported as a regression fixture.
 
 ## Run
 
 Requires Python 3.10+; no extra packages or network requests.
 
 ```sh
+python3 tools/generate_world.py --output /tmp/hl-world.json
+cmp data/world/fictional-world.json /tmp/hl-world.json
+# Legacy CSV authoring example:
 python3 tools/import_roster.py data/examples/fictional-roster.csv /tmp/hawkey-roster.json
 python3 -m unittest discover -s tests -p 'test_roster_import.py' -v
 ```
