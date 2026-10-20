@@ -69,6 +69,22 @@ var socks: Array[MeshInstance3D] = []
 var push_blend := 0.0
 var posed_head := Vector3.ZERO
 var bend := Basis.IDENTITY
+## Per-leg stride state from stride_foot(): ankle (rig space), skate yaw/edge
+## roll, and push extension 0..1. Filled each pose() for skaters.
+var stride: Array = [{},{}]
+## Jersey cross-sections (half-width, height, half-depth) in shirt space: the
+## torso volume arms and hands are kept outside of.
+var jersey_sections: Array = []
+## Hip offset applied this pose (stance drop, weight shift).
+var posed_drop := Vector3.ZERO
+## Skating stride (one leg at a time): each leg spends STANCE of its cycle on
+## the ice (glide, then a push out to the side and back) and the rest lifting
+## and swinging back under the body. Legs are half a cycle apart.
+const STANCE := 0.62
+const PLANT := Vector3(0.10, 0.115, 0.14)     # touch-down: under the hip, ahead
+const TOE_OFF := Vector3(0.56, 0.115, -0.24)  # full extension: out and back
+const GLIDE_FEET := [Vector3(0.15, 0.115, 0.10), Vector3(-0.15, 0.115, -0.12)]
+const LEG_REACH := 0.86                       # max hip-to-ankle (thigh 0.44 + shin 0.45)
 
 func material(color: Color, roughness: float = 0.7) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -286,6 +302,7 @@ func build_jersey() -> void:
 	if goalie:
 		# Oversized sweater over a chest protector with shoulder floaters.
 		sections = [Vector3(0.255,0.95,0.17),Vector3(0.25,1.10,0.185),Vector3(0.28,1.30,0.20),Vector3(0.30,1.44,0.17),Vector3(0.13,1.53,0.10)]
+	jersey_sections = sections
 	mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
 	for row in range(sections.size()-1):
 		for column in range(32):
@@ -360,6 +377,119 @@ func knee_position(hip: Vector3, ankle: Vector3, pole: Vector3, upper: float, lo
 	var perpendicular := (pole-axis*pole.dot(axis)).normalized()
 	return hip+axis*along+perpendicular*height
 
+## Where one skater foot is at this point of the stride. Returns the ankle
+## (rig space, before the hip-reach clamp), skate yaw/roll and push extension.
+func stride_foot(i: int, speed: float) -> Dictionary:
+	var side := 1.0 if i==0 else -1.0
+	var amount := push_blend*clampf(0.55+speed/14.0,0.55,1.0)
+	var cycle := fposmod(phase/TAU+float(i)*0.5,1.0)
+	var foot: Vector3
+	var ext := 0.0
+	var lift := 0.0
+	if cycle < STANCE:
+		# Glide on the plant foot, then drive it out to the side and back.
+		var u := cycle/STANCE
+		ext = smoothstep(0.25,1.0,u)
+		foot = PLANT.lerp(TOE_OFF,ext)
+		foot.z = lerpf(PLANT.z,TOE_OFF.z,u*0.35+ext*0.65)
+	else:
+		# Recovery: heel lifts behind, the foot swings back in under the hip and
+		# reaches forward to plant again.
+		var u := (cycle-STANCE)/(1.0-STANCE)
+		var back := smoothstep(0.0,0.8,u)
+		foot = TOE_OFF.lerp(PLANT,back)
+		foot.z = lerpf(TOE_OFF.z,PLANT.z,smoothstep(0.15,1.0,u))
+		lift = sin(PI*pow(u,0.75))*0.05
+		ext = 1.0-back
+	foot.x *= side
+	foot.y += lift
+	var glide: Vector3 = GLIDE_FEET[i]
+	var ankle := glide.lerp(foot,amount)
+	return {
+		"ankle": ankle,
+		"ext": ext*amount if cycle < STANCE else 0.0,
+		"lift": lift*amount,
+		# Toe turns out and the blade rolls onto its inside edge as it pushes.
+		"yaw": side*(0.06+0.42*ext)*amount,
+		"roll": -side*0.32*ext*amount if cycle < STANCE else 0.0,
+	}
+
+## Signed distance (metres, + outside) from a rig-space point to the torso
+## surface, measured horizontally in shirt space; INF above/below the torso.
+## Also returns the outward direction (rig space) via `out`.
+func torso_clearance(p: Vector3, out: Array = []) -> float:
+	if jersey_sections.is_empty(): return INF
+	var local := shirt.transform.affine_inverse()*p
+	var first: Vector3 = jersey_sections[0]
+	var last: Vector3 = jersey_sections[jersey_sections.size()-1]
+	# The padded pants carry the torso shape down over the hips.
+	if local.y < first.y-0.22 or local.y > last.y: return INF
+	var size := Vector2(first.x,first.z)
+	for k in range(jersey_sections.size()-1):
+		var a: Vector3 = jersey_sections[k]
+		var b: Vector3 = jersey_sections[k+1]
+		if local.y >= a.y and local.y <= b.y:
+			var t := (local.y-a.y)/(b.y-a.y)
+			size = Vector2(lerpf(a.x,b.x,t),lerpf(a.z,b.z,t))
+			break
+	var radial := Vector2(local.x,local.z+0.02)
+	var r := radial.length()
+	if r < 0.0001: return -minf(size.x,size.y)
+	var n := sqrt(pow(radial.x/size.x,2)+pow(radial.y/size.y,2))
+	out.clear()
+	out.append(shirt.transform.basis*Vector3(radial.x/r,0,radial.y/r))
+	return r*(1.0-1.0/n)
+
+## Total depth by which a sleeve (shoulder -> elbow -> wrist, the same curve
+## update_cloth_sleeve() builds) sinks into the torso, past the shoulder joint.
+func sleeve_penetration(shoulder: Vector3, elbow: Vector3, wrist: Vector3) -> float:
+	var control := elbow*2-(shoulder+wrist)*0.5
+	var total := 0.0
+	for k in range(4,11):
+		var t := float(k)/10.0
+		var c: Vector3 = (1-t)*(1-t)*shoulder+2*(1-t)*t*control+t*t*wrist
+		var radius := lerpf(0.105,0.078,t*2) if t<=0.5 else lerpf(0.078,0.060,(t-0.5)*2)
+		var d := torso_clearance(c)
+		if d < radius: total += radius-d
+	return total
+
+## Elbow on the arm's IK circle that keeps the sleeve out of the torso,
+## preferring the natural elbow (from `pole`) when it is already clear.
+func clear_elbow(shoulder: Vector3, wrist: Vector3, pole: Vector3) -> Vector3:
+	var natural := knee_position(shoulder,wrist,pole,0.28,0.29)
+	var worst := sleeve_penetration(shoulder,natural,wrist)
+	if worst <= 0.0: return natural
+	var axis := (wrist-shoulder).normalized()
+	var mid := knee_position(shoulder,wrist,pole,0.28,0.29)
+	var foot := shoulder+axis*axis.dot(mid-shoulder)
+	var arm := mid-foot
+	var best := natural
+	var best_score := worst
+	for k in range(1,16):
+		var angle := TAU*k/16.0
+		var candidate := foot+arm.rotated(axis,angle if angle<=PI else angle-TAU)
+		# Elbows don't fold up over the shoulder.
+		if candidate.y > shoulder.y+0.05: continue
+		var score := sleeve_penetration(shoulder,candidate,wrist)+absf(angle if angle<=PI else angle-TAU)*0.01
+		if score < best_score:
+			best_score = score
+			best = candidate
+	return best
+
+## Shoulder joint (rig space) of arm i for the current torso pose.
+func shoulder_of(i: int) -> Vector3:
+	var original: Transform3D = rest["upperarm01"+(".L" if i==0 else ".R")]
+	var pivot: Vector3 = rest["root"].origin
+	return pivot+posed_drop+bend*(original.origin-pivot)
+
+## Moves a hand target out of the torso so the glove sits on its surface.
+func clear_hand(p: Vector3, margin: float) -> Vector3:
+	var out := []
+	var d := torso_clearance(p,out)
+	if d < margin and not out.is_empty():
+		p += out[0]*(margin-d)
+	return p
+
 func pose(speed: float, turn: float) -> void:
 	skeleton.clear_bones_global_pose_override()
 	var root_rest: Transform3D = rest["root"]
@@ -369,6 +499,16 @@ func pose(speed: float, turn: float) -> void:
 		# Sit back: hips behind the heels so the shins angle ~25 degrees and the
 		# pads stay upright; in the butterfly the hips come forward over the knees.
 		drop = Vector3(0,lerpf(-0.33,-0.55,butterfly),lerpf(-0.24,-0.04,butterfly))
+	var shoulder_turn := 0.0
+	if not goalie:
+		stride=[stride_foot(0,speed),stride_foot(1,speed)]
+		# Weight rides over the gliding leg (away from the pushing one); the
+		# hips sink as a leg drives out, and the shoulders counter-turn a touch.
+		var push_side: float = stride[0].ext-stride[1].ext
+		drop += Vector3(-push_side*0.075,-0.035*push_blend-0.03*maxf(stride[0].ext,stride[1].ext),0)
+		# Shoulders open toward wherever the blade is being carried, so the
+		# bottom arm reaches out in front instead of across the chest.
+		shoulder_turn = push_side*0.07-stick_intent.x*0.30
 	var cap := {}
 	if mocap_weight>0 and not mocap.is_empty():
 		cap = Mocap.sample(mocap,mocap_time,mocap_loop)
@@ -379,10 +519,12 @@ func pose(speed: float, turn: float) -> void:
 		var shift:Vector3=(idle.points.Hips-idle_data.mean.points.Hips)*MOCAP_HIP_HEIGHT*(1.0-butterfly)
 		drop += Vector3(shift.x*0.25,shift.y*0.8,0)
 	var capture_weight := mocap_weight*mocap_strength
+	posed_drop = drop
 	var root_pose := root_rest
 	root_pose.origin += drop
 	override_pose("root",root_pose)
 	bend = Basis(Vector3.RIGHT,lerpf(0.52,0.26,butterfly) if goalie else 0.50+minf(speed/40,0.18))
+	if shoulder_turn != 0.0: bend = Basis(Vector3.UP,shoulder_turn)*bend
 	if not idle.is_empty():
 		var sway:=Quaternion(idle_data.mean.dirs.spine,idle.dirs.spine)
 		bend = Basis(Quaternion.IDENTITY.slerp(sway,0.7*(1.0-butterfly)))*bend
@@ -403,10 +545,15 @@ func pose(speed: float, turn: float) -> void:
 	for i in range(2):
 		var side := 1.0 if i==0 else -1.0
 		var suffix := ".L" if i==0 else ".R"
-		var cycle := fposmod(phase+float(i)*PI,TAU)/TAU
-		var push := smoothstep(0,0.55,cycle) if cycle < 0.55 else 1-smoothstep(0.55,1,cycle)
-		var lift := sin((cycle-0.55)/0.45*PI)*0.045 if cycle > 0.55 else 0.0
-		var ankle := Vector3(side*(0.24+push*0.22*push_blend),0.115+lift*push_blend,0.06-push*0.30*push_blend)
+		var ankle := Vector3(side*0.24,0.115,0.06)
+		var hip: Vector3 = rest["upperleg01"+suffix].origin+drop
+		if not goalie:
+			ankle = stride[i].ankle
+			# Keep the foot within the leg's reach (no stretched shins).
+			var reach := ankle-hip
+			if reach.length() > LEG_REACH:
+				ankle = hip+reach.normalized()*LEG_REACH
+				ankle.y = maxf(ankle.y,0.115)
 		# Goalie ready stance: feet a little wider than the shoulders, knees in.
 		if goalie: ankle = Vector3(side*lerpf(0.27,0.58,butterfly),0.115,lerpf(0.0,0.10,butterfly))
 		if goalie and shuffle_weight>0.01:
@@ -420,7 +567,6 @@ func pose(speed: float, turn: float) -> void:
 				# Goalies shuffle without bringing the feet together.
 				ankle.x=side*clampf(side*ankle.x,0.25,0.33)
 		feet[i] = ankle
-		var hip: Vector3 = rest["upperleg01"+suffix].origin+drop
 		var knee := knee_position(hip,ankle,Vector3(-side*0.12,0,1) if goalie else Vector3(0,0,1),0.44,0.45)
 		# Pads meet edge to edge at the knees rather than crossing.
 		if goalie: knee.x=side*maxf(side*knee.x,Gear.PAD_WIDTH*0.5+0.024+0.035*shuffle_weight)
@@ -442,11 +588,13 @@ func pose(speed: float, turn: float) -> void:
 			fit_limb(socks[i],knee.lerp(hip,0.12),ankle+Vector3(0,0.12,0.01),1.0)
 		var foot_pose: Transform3D = rest["foot"+suffix]
 		foot_pose.origin = ankle
-		foot_pose.basis = Basis(Vector3.UP,side*push*0.23*push_blend)*foot_pose.basis
+		var skate_yaw: float = 0.0 if goalie else stride[i].yaw
+		var skate_roll: float = 0.0 if goalie else stride[i].roll
+		foot_pose.basis = Basis(Vector3.UP,skate_yaw)*Basis(Vector3.BACK,skate_roll)*foot_pose.basis
 		override_pose("foot"+suffix,foot_pose)
 		skates[i].position = ankle+Vector3(0,-0.0525,0)
 		# Butterfly: skates turn out flat so the toes clear the pad backs.
-		skates[i].rotation.y = side*lerpf(0.12,1.45,smoothstep(0.0,0.4,butterfly)) if goalie else side*push*0.23*push_blend
+		skates[i].rotation = Vector3(0,side*lerpf(0.12,1.45,smoothstep(0.0,0.4,butterfly)),0) if goalie else Vector3(0,skate_yaw,skate_roll)
 		if goalie:
 			# The pad rides the shin: +Y up the shin, face (+Z) toward the shooter.
 			var shin:Vector3=(knee-ankle).normalized()
@@ -475,10 +623,11 @@ func pose(speed: float, turn: float) -> void:
 			var extent:float=absf(pads[i].basis.x.y)*size_.x/2+absf(pads[i].basis.y.y)*size_.y/2+absf(pads[i].basis.z.y)*size_.z/2
 			pads[i].position.y+=maxf(0,extent+0.012-box_center.y)
 		# Elbows and wrists stay on a two-hand stick posture, never running arm swings.
-		var shoulder_original: Transform3D = rest["upperarm01"+suffix]
-		var shoulder := pivot+drop+bend*(shoulder_original.origin-pivot)
-		# Bottom hand rides the shaft, kept clear of the pants.
-		var wrist := stick_grip().lerp(blade_position+Vector3(-stick_blade_length*0.48,0,0),0.26)+Vector3(0,0.02,0.05*maxf(0,stick_intent.y)) if i==0 else stick_grip()
+		var shoulder := shoulder_of(i)
+		# Right-handed shot: the blade is on the skater's right (-x), so the right
+		# hand (i==1) is the bottom hand riding the shaft and the left hand holds
+		# the knob in front of the body. Neither arm has to reach across the chest.
+		var wrist := stick_grip().lerp(blade_position+Vector3(-stick_blade_length*0.48,0,0),0.30)+Vector3(0,0.02,0.05*maxf(0,stick_intent.y)) if i==1 else stick_grip()
 		if referee: wrist=Vector3(side*0.32,0.96,0.03)
 		var captured_elbow := Vector3.ZERO
 		if not cap.is_empty() and "arms" in mocap_mask and not goalie:
@@ -503,7 +652,9 @@ func pose(speed: float, turn: float) -> void:
 		var pole := Vector3(side*0.6,-0.8,-0.1) if goalie else Vector3(side,0,-0.3)
 		if captured_elbow != Vector3.ZERO:
 			pole = pole.lerp((captured_elbow-(shoulder+wrist)*0.5).normalized(),capture_weight)
-		var elbow := knee_position(shoulder,wrist,pole,0.28,0.29)
+		# Bottom hand and glove stay on the outside of the jersey.
+		if not goalie and not referee and captured_elbow == Vector3.ZERO: wrist = clear_hand(wrist,0.075)
+		var elbow := clear_elbow(shoulder,wrist,pole)
 		posed_wrists[i]=wrist
 		posed_elbows[i]=elbow
 		update_cloth_sleeve(cloth_sleeves[i],shoulder,elbow,wrist)
@@ -601,7 +752,9 @@ func set_nameplate(value: String) -> void:
 
 func stick_grip() -> Vector3:
 	if goalie: return Vector3(lerpf(-0.36,-0.24,butterfly),0.60-butterfly*0.12,0.49)
-	return Vector3(-0.14-stick_intent.x*0.16-shot_follow*0.12,0.93+shot_charge*0.06,0.32-stick_intent.y*0.06-shot_charge*0.18+shot_follow*0.22)
+	var grip := Vector3(0.06-stick_intent.x*0.16-shot_follow*0.12,0.93+shot_charge*0.06,0.32-stick_intent.y*0.06-shot_charge*0.18+shot_follow*0.22)
+	# The top hand holds the stick in front of the jersey, never inside it.
+	return clear_hand(grip,0.075)
 
 func update_stick() -> void:
 	var top:=stick_grip()
