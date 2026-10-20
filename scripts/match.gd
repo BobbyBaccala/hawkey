@@ -30,7 +30,7 @@ var referee_nodes: Array[Node3D] = []
 var decision_clock := 0.0
 var action_cooldown := 0.0
 var auto_lines := true
-var goalie_targets: Array[Vector3] = [Vector3(0,0,-24),Vector3(0,0,24)]
+var goalie_targets: Array[Vector3] = [Vector3(0,0,-(Arena.GOAL_LINE-1.0)),Vector3(0,0,Arena.GOAL_LINE-1.0)]
 var goalie_reaction := 0.0
 var goalie_contact_timer := 0.0
 var capture_time := 3.0
@@ -416,7 +416,7 @@ func _on_puck_contact(body: Node) -> void:
 			match_state.phase=MatchState.Phase.STOPPAGE
 			match_state.phase_timer=2
 			match_state.event="Goalkeeper catch"
-			next_faceoff=Vector3(-6.5 if puck.position.x<0 else 6.5,0,signf(actor.position.z)*20)
+			next_faceoff=Vector3(-Arena.DOT_X if puck.position.x<0 else Arena.DOT_X,0,signf(actor.position.z)*Arena.END_DOT_Z)
 			puck.linear_velocity=Vector3.ZERO
 			puck.freeze=true
 		beep(115)
@@ -447,6 +447,8 @@ func _physics_process(delta: float) -> void:
 	match_state.advance(delta)
 	if match_state.period!=known_period:
 		known_period=match_state.period
+		# New period, freshly resurfaced ice.
+		if ice_marks: ice_marks.clear()
 		for keeper in goalkeepers:
 			keeper.position.z *= -1
 			keeper.rotation.y += PI
@@ -580,8 +582,8 @@ func update_team_ai(delta: float) -> void:
 				change_identity(actor,int(actor.get_meta("pending_id")))
 				if actor==player: switch_player()
 		elif actor==carrier:
-			target=Vector3(clampf(actor.position.x*0.6,-5,5),0,attack*22)
-			var distance_to_goal:=actor.position.distance_to(Vector3(0,0,attack*25))
+			target=Vector3(clampf(actor.position.x*0.6,-5,5),0,attack*(Arena.GOAL_LINE-3.0))
+			var distance_to_goal:=actor.position.distance_to(Vector3(0,0,attack*Arena.GOAL_LINE))
 			var timer:=float(actor.get_meta("decision"))-delta
 			if timer<=0 and cooldown<=0:
 				actor.set_meta("decision",0.4)
@@ -589,7 +591,7 @@ func update_team_ai(delta: float) -> void:
 				if distance_to_goal<16 and distance_to_goal>3:
 					var goalie:=goalkeeper_at_end(attack)
 					var target_x:float= -0.65 if goalie.position.x>=0 else 0.65
-					var shot_dir:Vector3=Vector3(target_x,0.1,attack*25)-puck.position
+					var shot_dir:Vector3=Vector3(target_x,0.1,attack*Arena.GOAL_LINE)-puck.position
 					var distance_:float=Vector2(shot_dir.x,shot_dir.z).length()
 					var elevation_:float=PuckPhysics.solve_elevation(distance_,29,0.85,puck.position.y)
 					release_puck(actor,shot_dir,29,elevation_)
@@ -605,11 +607,11 @@ func update_team_ai(delta: float) -> void:
 			var x_slots: Array[float]=[0,-6,6,-5,5]
 			var z_offset: Array[float]=[3,1,1,-8,-8]
 			if possession:
-				target=Vector3(clampf(puck.position.x*0.25+x_slots[slot],-12,12),0,clampf(puck.position.z+attack*z_offset[slot],-23,23))
+				target=Vector3(clampf(puck.position.x*0.25+x_slots[slot],-12,12),0,clampf(puck.position.z+attack*z_offset[slot],-(Arena.GOAL_LINE-2.0),Arena.GOAL_LINE-2.0))
 			else:
-				var own_goal:float= -attack*25
+				var own_goal:float= -attack*Arena.GOAL_LINE
 				var defended_z:float=lerpf(puck.position.z,own_goal,0.35 if slot>=3 else 0.1)
-				target=Vector3(clampf(puck.position.x*0.3+x_slots[slot],-11,11),0,clampf(defended_z,-23,23))
+				target=Vector3(clampf(puck.position.x*0.3+x_slots[slot],-11,11),0,clampf(defended_z,-(Arena.GOAL_LINE-2.0),Arena.GOAL_LINE-2.0))
 		var to_target:=target-actor.position
 		var intent:=to_target.limit_length(1)
 		if to_target.length()<0.6: intent=Vector3.ZERO
@@ -621,7 +623,7 @@ func update_team_ai(delta: float) -> void:
 		actor.move_and_slide()
 		var visual:=actor.get_child(1)
 		var face:=intent if intent.length()>0.1 else (puck.position-actor.position).normalized()
-		if actor==carrier: face=(Vector3(0,0,attack*25)-actor.position).normalized()
+		if actor==carrier: face=(Vector3(0,0,attack*Arena.GOAL_LINE)-actor.position).normalized()
 		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-face.x,-face.z),4.8*delta)
 		visual.animate(actor.velocity.length(),delta,0,intent.length_squared()>0.01)
 		sync_skater_contacts(actor)
@@ -667,7 +669,7 @@ func update_goalkeepers(delta: float) -> void:
 		for i in range(2):
 			var keeper:=goalkeepers[i]
 			var end_:=signf(keeper.position.z)
-			var goal_center:=Vector3(0,0,end_*25)
+			var goal_center:=Vector3(0,0,end_*Arena.GOAL_LINE)
 			var sight:=Vector3(puck.position.x,0,puck.position.z)-goal_center
 			var depth:=clampf(sight.length()*0.065,0.35,1.6)
 			var incoming:=puck.linear_velocity.z*end_>3
@@ -676,7 +678,7 @@ func update_goalkeepers(delta: float) -> void:
 			var ray:Vector3=(predicted-goal_center).normalized()
 			goalie_targets[i]=goal_center+ray*depth
 			goalie_targets[i].x=clampf(goalie_targets[i].x,-0.78,0.78)
-			goalie_targets[i].z=clampf(goalie_targets[i].z,23.4,24.65) if end_>0 else clampf(goalie_targets[i].z,-24.65,-23.4)
+			goalie_targets[i].z=clampf(goalie_targets[i].z,Arena.GOAL_LINE-1.6,Arena.GOAL_LINE-0.35) if end_>0 else clampf(goalie_targets[i].z,-(Arena.GOAL_LINE-0.35),-(Arena.GOAL_LINE-1.6))
 	for i in range(2):
 		var keeper:=goalkeepers[i]
 		var visual:=keeper.get_child(1)
@@ -700,7 +702,7 @@ func update_goalkeepers(delta: float) -> void:
 			match_state.phase=MatchState.Phase.STOPPAGE
 			match_state.phase_timer=2
 			match_state.event="Goalkeeper cover"
-			next_faceoff=Vector3(-6.5 if puck.position.x<0 else 6.5,0,end_*20)
+			next_faceoff=Vector3(-Arena.DOT_X if puck.position.x<0 else Arena.DOT_X,0,end_*Arena.END_DOT_Z)
 			puck.freeze=true
 			puck.linear_velocity=Vector3.ZERO
 			carrier=null
@@ -713,7 +715,7 @@ func update_camera(delta: float) -> void:
 	var snap:=side!=camera_side
 	camera_side=side
 	var lead:=-side*2.5
-	var focus:=Vector3(clampf(puck.position.x*0.35,-6,6),0,clampf(puck.position.z+lead,-22,22))
+	var focus:=Vector3(clampf(puck.position.x*0.35,-6,6),0,clampf(puck.position.z+lead,-(Arena.GOAL_LINE-3.0),Arena.GOAL_LINE-3.0))
 	if camera_mode==3: focus=Vector3.ZERO
 	camera_target=focus if snap else camera_target.lerp(focus,1-exp(-delta*3.2))
 	var desired:Vector3
@@ -797,6 +799,9 @@ func update_match_hud() -> void:
 	help.text=("START  PAUSE   ·   VIEW  CONTROLS" if controller.active else "ESC  PAUSE   ·   F2  CONTROLS   ·   C  CAMERA")
 
 func capture_preview() -> void:
+	# --capture-time=<seconds> lets wear such as skate cuts build up first.
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--capture-time="): capture_time = clampf(float(arg.substr(15)), 0.5, 120.0)
 	await get_tree().create_timer(capture_time).timeout
 	for frame in range(600):
 		if match_state.phase==MatchState.Phase.PLAY: break
@@ -820,7 +825,7 @@ func goalkeeper_at_end(end_sign: float) -> CharacterBody3D:
 func update_officials(delta: float) -> void:
 	for i in range(referee_nodes.size()):
 		var official:=referee_nodes[i]
-		var target:=Vector3(-11 if i==0 else 11,0,clampf(puck.position.z+(-9 if i==0 else 9),-24,24))
+		var target:=Vector3(-11 if i==0 else 11,0,clampf(puck.position.z+(-9 if i==0 else 9),-(Arena.GOAL_LINE-1.0),Arena.GOAL_LINE-1.0))
 		var move:Vector3=(target-official.position).limit_length(1)*4
 		official.position+=move*delta
 		if move.length()>0.2:

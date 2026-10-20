@@ -21,8 +21,8 @@ func run() -> void:
 		goalie.collision_layer = 0
 		scene.set_puck_contacts_enabled(goalie,false)
 	scene.cooldown = 0
-	scene.player.position = Vector3(0, 0, -23.8)
-	scene.puck.position = Vector3(0, 0.15, -24.6)
+	scene.player.position = Vector3(0, 0, -25.45)
+	scene.puck.position = Vector3(0, 0.15, -26.25)
 	scene.previous_puck = scene.puck.position
 	scene.strike(Vector3.FORWARD, 34)
 	for i in range(30):
@@ -52,10 +52,10 @@ func run() -> void:
 	for goalie in scene.goalkeepers:
 		goalie.collision_layer = 2
 		scene.set_puck_contacts_enabled(goalie,true)
-	scene.goalkeepers[0].position = Vector3(0,0,-24)
+	scene.goalkeepers[0].position = Vector3(0,0,-25.65)
 	scene.goalkeepers[0].velocity = Vector3.ZERO
-	scene.player.position = Vector3(4,0,-20)
-	scene.puck.position = Vector3(0,0.12,-21)
+	scene.player.position = Vector3(4,0,-21.65)
+	scene.puck.position = Vector3(0,0.12,-22.65)
 	scene.puck.linear_velocity = Vector3(0,0,-25)
 	scene.previous_puck = scene.puck.position
 	for i in range(45):

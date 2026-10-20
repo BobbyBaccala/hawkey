@@ -15,6 +15,9 @@ Godot 4.6 standard/GDScript was selected because its editor and headless runtime
 - practice.tscn: earlier isolated laboratory entry point.
 - scripts/lab.gd: character/puck simulation, practice partner, goalkeeper tracking, cameras, input, HUD and finite event sounds.
 - scripts/arena.gd: rounded rink, markings, two goals, netting, glass and seating.
+- scripts/arena_lighting.gd: per-zone overhead spot pools and player rim lights (arena meshes sit on visual layer 2, which rim lights skip).
+- scripts/ice_marks.gd: skate-cut map (one texel ~4 cm) scored by every blade on the ice and sampled by the ice shader; cleared at each period.
+- Rink markings use NHL proportions from constants in arena.gd (GOAL_LINE, BLUE_LINE, END_DOT_Z, DOT_X...); gameplay code reads Arena.GOAL_LINE rather than literal distances.
 - scripts/skater_visual.gd: CC0 skinned human foundation, original kit and two-bone lateral push/glide posing.
 - scripts/crowd.gd: alpha-cutout generated crowd artwork in seating rows.
 - assets/: shipped human mesh, generated crowd/ice textures and uniform shader; provenance in docs/ASSETS.md.

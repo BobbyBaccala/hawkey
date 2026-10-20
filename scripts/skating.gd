@@ -29,7 +29,7 @@ static func goal_crossing(previous: Vector3, current: Vector3) -> bool:
 static func goal_crossing_end(previous: Vector3, current: Vector3, end_sign: float) -> bool:
 	var before := previous.z * end_sign
 	var after := current.z * end_sign
-	var whole_puck_plane:=25.0381
+	var whole_puck_plane:=preload("res://scripts/arena.gd").GOAL_LINE+0.0381
 	if before >= whole_puck_plane or after < whole_puck_plane: return false
 	var t := (whole_puck_plane - before) / (after - before)
 	var crossing := previous.lerp(current,t)

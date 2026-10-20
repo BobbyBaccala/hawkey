@@ -11,7 +11,7 @@ const POOL_X := [-7.0, 7.0]
 const POOL_Z := [-21.0, -7.0, 7.0, 21.0]
 const RIG_HEIGHT := 19.0
 const POOL_ANGLE := 24.0
-const POOL_ENERGY := 1.1
+const POOL_ENERGY := 0.85
 const POOL_COLOR := Color("#fff6e8")
 const RIM_ENERGY := 0.45
 ## Visual layer bit given to the arena (ice, boards, bowl, crowd). Rim lights

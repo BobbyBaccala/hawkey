@@ -3,8 +3,22 @@ extends Node3D
 const RED = Color("#8f1631")
 const BLUE = Color("#174b8c")
 const WHITE = Color("#f0f5fa")
+## Rink markings to NHL Rule 1 proportions on the 60 m rink (z is the long
+## axis, centre ice at 0). Feet converted at 0.3048 m.
+const FT := 0.3048
+const GOAL_LINE := 30.0 - 11.0 * FT      # 11 ft from the end boards
+const BLUE_LINE := 25.0 * FT             # 25 ft either side of centre
+const LINE_WIDTH := 12.0 * 0.0254        # red and blue lines: 12 in
+const GOAL_LINE_WIDTH := 2.0 * 0.0254    # goal lines and circles: 2 in
+const CIRCLE_RADIUS := 15.0 * FT
+const DOT_X := 22.0 * FT                 # faceoff spots 44 ft apart
+const END_DOT_Z := GOAL_LINE - 20.0 * FT # end-zone spots 20 ft out from the goal line
+const NEUTRAL_DOT_Z := BLUE_LINE - 5.0 * FT  # neutral-zone spots 5 ft inside the blue line
+const CREASE_RADIUS := 6.0 * FT
 var board_count := 0
 var goals: Array[Node3D] = []
+## Ice surface shader; `cut_tex` receives the skate-cut map (ice_marks.gd).
+var ice_surface_material: ShaderMaterial
 
 func mat(color: Color, roughness: float = 0.5) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -142,11 +156,47 @@ func board_segment(a: Vector3, b: Vector3) -> void:
 	tube(root, Vector3(-length_ / 2, 1.1, 0), Vector3(-length_ / 2, 2.66, 0), 0.025, Color("#8a9fac"))
 	board_count += 1
 
+## Half-width of the rink (to the board face) at distance `z` from centre.
+static func corner_half_width(z: float) -> float:
+	if z <= 22.0: return 15.0
+	return 7.0 + sqrt(maxf(0.0, 64.0 - (z - 22.0) * (z - 22.0)))
+
+## End-zone faceoff circle: 15 ft ring, 2 ft spot, two pairs of 2 ft hash
+## marks on the outside of the ring (5 ft 7 in apart) and the four L marks
+## around the spot.
+func end_zone_circle(c: Vector3) -> void:
+	ring(Vector3(c.x, 0.013, c.z), CIRCLE_RADIUS, GOAL_LINE_WIDTH, RED)
+	disc(Vector3(c.x, 0.015, c.z), 1.0 * FT, RED)
+	var hash_gap := (5.0 * FT + 7.0 * 0.0254) * 0.5
+	var hash_len := 2.0 * FT
+	for side in [-1.0, 1.0]:
+		for dz in [-hash_gap, hash_gap]:
+			# Start on the ring and run outward, parallel to the goal line.
+			var on_ring := sqrt(CIRCLE_RADIUS * CIRCLE_RADIUS - dz * dz)
+			block(self, Vector3(hash_len, 0.006, GOAL_LINE_WIDTH), Vector3(c.x + side * (on_ring + hash_len * 0.5), 0.014, c.z + dz), RED)
+	# L marks: 4 ft legs parallel to the goal line, 3 ft legs toward the ends,
+	# corners 2 ft either side of the spot and 9 in above/below it.
+	var lx := 2.0 * FT
+	var lz := 0.75 * FT
+	for side in [-1.0, 1.0]:
+		for dir in [-1.0, 1.0]:
+			block(self, Vector3(4.0 * FT, 0.006, GOAL_LINE_WIDTH), Vector3(c.x + side * (lx + 2.0 * FT), 0.014, c.z + dir * lz), RED)
+			block(self, Vector3(GOAL_LINE_WIDTH, 0.006, 3.0 * FT), Vector3(c.x + side * lx, 0.014, c.z + dir * (lz + 1.5 * FT)), RED)
+
+## Goaltender trapezoid behind each net: 22 ft wide at the goal line,
+## 28 ft at the end boards.
+func trapezoid(end_sign: float) -> void:
+	for side in [-1.0, 1.0]:
+		var a := Vector3(side * 11.0 * FT, 0.012, end_sign * GOAL_LINE)
+		var b := Vector3(side * 14.0 * FT, 0.012, end_sign * 29.92)
+		var seg := block(self, Vector3(GOAL_LINE_WIDTH, 0.006, a.distance_to(b)), (a + b) * 0.5, RED)
+		seg.rotation.y = atan2(b.x - a.x, b.z - a.z)
+
 func goal(end_sign: float) -> void:
 	var root := Node3D.new()
 	root.name = "NorthGoal" if end_sign < 0 else "SouthGoal"
 	add_child(root)
-	root.position.z = end_sign * 25
+	root.position.z = end_sign * GOAL_LINE
 	if end_sign > 0:
 		root.rotation.y = PI
 	goals.append(root)
@@ -208,49 +258,53 @@ func _ready() -> void:
 	var surface_instance := MeshInstance3D.new()
 	surface_instance.mesh = surface
 	var ice_shader := Shader.new()
-	ice_shader.code = "shader_type spatial; render_mode cull_disabled; uniform sampler2D ice_tex:source_color,repeat_enable,filter_linear_mipmap; void fragment(){vec3 tex=texture(ice_tex,UV*vec2(3.0,6.0)).rgb;float grain=dot(tex,vec3(0.3,0.59,0.11));ALBEDO=vec3(0.53,0.575,0.615)+(grain-0.4)*0.05;ROUGHNESS=0.26;SPECULAR=0.5;}"
+	# Bright, freshly flooded sheet; skate cuts (cut_tex, 0 = clean) grey and
+	# roughen it. UV spans -0.5..0.5 across the rink, so UV + 0.5 maps the cut map.
+	ice_shader.code = "shader_type spatial; render_mode cull_disabled; uniform sampler2D ice_tex:source_color,repeat_enable,filter_linear_mipmap; uniform sampler2D cut_tex:filter_linear,repeat_disable,hint_default_black; void fragment(){vec3 tex=texture(ice_tex,UV*vec2(3.0,6.0)).rgb;float grain=dot(tex,vec3(0.3,0.59,0.11));float cut=clamp(texture(cut_tex,UV+0.5).r*1.3,0.0,1.0);vec3 base=vec3(0.75,0.785,0.815)+(grain-0.4)*0.05;ALBEDO=mix(base,base*vec3(0.62,0.68,0.74),cut);ROUGHNESS=mix(0.24,0.62,cut);SPECULAR=0.5;}"
 	var ice_shader_material := ShaderMaterial.new()
 	ice_shader_material.shader = ice_shader
 	ice_shader_material.set_shader_parameter("ice_tex",preload("res://assets/ice-surface-v1.png"))
 	surface_instance.material_override = ice_shader_material
+	ice_surface_material = ice_shader_material
 	add_child(surface_instance)
 	for i in range(points.size()):
 		board_segment(points[i], points[(i + 1) % points.size()])
 	# All markings are flush at one elevation; intended widths are explicit.
-	for z in [-10.0, 10.0]:
-		block(self, Vector3(29.65, 0.006, 0.30), Vector3(0, 0.008, z), BLUE)
-	block(self, Vector3(29.65, 0.006, 0.30), Vector3(0, 0.008, 0), RED)
-	for z in [-25.0, 25.0]:
-		block(self, Vector3(28.0, 0.006, 0.05), Vector3(0, 0.008, z), RED)
-	ring(Vector3(0,0.013,0), 4.5, 0.075, BLUE)
-	disc(Vector3(0,0.014,0), 0.18, BLUE)
-	for z in [-20.0, 20.0]:
-		for x in [-6.5, 6.5]:
-			ring(Vector3(x,0.013,z), 4.5, 0.075, RED)
-			disc(Vector3(x,0.015,z), 0.22, RED)
-			for side in [-1.0,1.0]:
-				for offset in [-0.7,0.7]:
-					block(self, Vector3(0.6,0.006,0.05), Vector3(x + side * 0.7,0.014,z + offset), RED)
-	for z in [-7.0,7.0]:
-		for x in [-6.5,6.5]:
-			disc(Vector3(x,0.014,z),0.18,RED)
+	for z in [-BLUE_LINE, BLUE_LINE]:
+		block(self, Vector3(29.65, 0.006, LINE_WIDTH), Vector3(0, 0.008, z), BLUE)
+	block(self, Vector3(29.65, 0.006, LINE_WIDTH), Vector3(0, 0.008, 0), RED)
+	# Centre red line is broken by the faceoff circle's blue ring only visually.
+	for z in [-GOAL_LINE, GOAL_LINE]:
+		# Goal line runs board to board: chord of the corner arc at this depth.
+		var half := corner_half_width(absf(z)) - 0.05
+		block(self, Vector3(half * 2.0, 0.006, GOAL_LINE_WIDTH), Vector3(0, 0.008, z), RED)
+	ring(Vector3(0,0.013,0), CIRCLE_RADIUS, GOAL_LINE_WIDTH, BLUE)
+	disc(Vector3(0,0.014,0), 0.5 * FT, BLUE)
+	for z in [-END_DOT_Z, END_DOT_Z]:
+		for x in [-DOT_X, DOT_X]:
+			end_zone_circle(Vector3(x, 0.0, z))
+	for z in [-NEUTRAL_DOT_Z, NEUTRAL_DOT_Z]:
+		for x in [-DOT_X, DOT_X]:
+			disc(Vector3(x,0.014,z), 1.0 * FT, RED)
+	for sign_ in [-1.0, 1.0]:
+		trapezoid(sign_)
 	for sign_ in [-1.0, 1.0]:
 		# Half-disc crease faces the play, with the goal mouth on its straight edge.
 		var crease_mesh := ImmediateMesh.new()
 		crease_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES,mat(Color("#618fa9")))
 		var from := 0.0 if sign_ < 0 else PI
-		var center := Vector3(0,0.012,sign_ * 25)
+		var center := Vector3(0,0.012,sign_ * GOAL_LINE)
 		for i in range(48):
 			var a := from + float(i) / 48 * PI
 			var b := from + float(i + 1) / 48 * PI
-			for v in [center, center + Vector3(cos(a),0,sin(a)) * 1.8, center + Vector3(cos(b),0,sin(b)) * 1.8]:
+			for v in [center, center + Vector3(cos(a),0,sin(a)) * CREASE_RADIUS, center + Vector3(cos(b),0,sin(b)) * CREASE_RADIUS]:
 				crease_mesh.surface_set_normal(Vector3.UP)
 				crease_mesh.surface_add_vertex(v)
 		crease_mesh.surface_end()
 		var crease := MeshInstance3D.new()
 		crease.mesh = crease_mesh
 		add_child(crease)
-		ring(center + Vector3(0,0.004,0),1.8,0.075,RED,from,from + PI)
+		ring(center + Vector3(0,0.004,0),CREASE_RADIUS,GOAL_LINE_WIDTH,RED,from,from + PI)
 		goal(sign_)
 	# Centre-ice emblem.
 	disc(Vector3(0,0.016,0), 2.35, Color("#0d2a52"))

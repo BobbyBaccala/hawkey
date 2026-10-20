@@ -103,6 +103,7 @@ func segment(parent: Node3D, a: Vector3, b: Vector3, radius: float, color: Color
 	helper.free()
 
 func _ready() -> void:
+	add_to_group("skater_visuals")
 	if accent.a == 0: accent = kit.darkened(0.45)
 	rig = Node3D.new()
 	rig.rotation.y = PI # Imported human faces +Z; game-facing direction is -Z.
