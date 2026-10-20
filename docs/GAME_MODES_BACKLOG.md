@@ -28,7 +28,7 @@ Never merge automatically. Reconcile new prototype commits before integration.
   development review and persistent season stats; then junior/pro advancement,
   contract opportunities, NHL milestones and historical records.
 - [ ] Player/team editor with validation and undo; per-save roster snapshots.
-- [ ] Reviewed real professional/junior source adapters and identity ledger;
+- [ ] Fictional professional/junior coverage first; real source adapters only for explicitly licensed datasets, with identity ledger;
   methodology/calibration for estimated ratings; no fabricated verified ratings.
 - [ ] Baseline profiling of frame time and season simulation; optimize measured
   bottlenecks and compare identical workloads before/after.
@@ -63,3 +63,5 @@ engine regression suites and runtime consumption remain unverified. The
 presentation backlog's full-engine-test gate is unmet: keep this work draft and
 require engine validation before integration. Next: native roster loading and
 a complete two-team fixture, with Godot checks when a runtime is available.
+
+2026-10-20 12:28 America/Toronto — Adopted owner's alpha-to-AAA production directive; added 38-category source audit and coordination table. Scheduled task instructions updated. Inspected latest prototype 28fb10b, which is newer than this branch base. Execution workspace is unavailable: no new gameplay code, tests, render or build claimed. Keep prior importer test evidence distinct. Next: restore execution, reconcile prototype, implement native roster loading and complete fictional fixture. See MASTER_PRODUCTION_DIRECTIVE.md, ALPHA_FEATURE_AUDIT.md and COORDINATION.md.
