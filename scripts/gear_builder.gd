@@ -863,19 +863,69 @@ static func skater_glove(kit: Color) -> ArrayMesh:
 
 # ---------------------------------------------------------------- skates
 ## Boot, tendon guard, plastic holder and steel runner; +Z toward the toe.
-static func skate(goalie: bool) -> ArrayMesh:
+## Origin 5 cm below the ankle joint. With with_cuff false only the foot part
+## is built (sole, toe box, heel cup, holder, runner): skaters get the ankle
+## cuff as a separate mesh (skate_cuff) that follows the shin, so the leg
+## always goes down into the boot instead of leaning out of a rigid box.
+static func skate(goalie: bool, with_cuff := true) -> ArrayMesh:
 	var b := MeshBuilder.new()
 	var boot := Color("#12191f")
-	b.add_rounded_box(Vector3(0, 0.035, 0.07), Vector3(0.10, 0.075, 0.28), 0.035, boot)
-	b.add_rounded_box(Vector3(0, 0.12, 0.0), Vector3(0.105, 0.17, 0.14), 0.04, boot)
-	b.add_rounded_box(Vector3(0, 0.19, -0.065), Vector3(0.05, 0.10, 0.03), 0.013, Color("#2a333a"))
-	b.add_rounded_box(Vector3(0, 0.11, 0.07), Vector3(0.07, 0.11, 0.07), 0.025, Color("#d4d9dc"))
+	var quarter := Color("#1c252d")
+	# Toe box and forefoot, low and rounded.
+	b.add_rounded_box(Vector3(0, 0.032, 0.085), Vector3(0.096, 0.068, 0.25), 0.033, boot)
+	b.add_rounded_box(Vector3(0, 0.026, 0.19), Vector3(0.088, 0.054, 0.07), 0.026, quarter)
+	# Heel cup and quarter panels up to the ankle; the cuff sits on top of it.
+	b.add_rounded_box(Vector3(0, 0.058, -0.005), Vector3(0.104, 0.096, 0.15), 0.04, boot)
+	# Outsole edge where the boot meets the holder.
+	b.add_rounded_box(Vector3(0, -0.002, 0.07), Vector3(0.094, 0.012, 0.29), 0.005, Color("#3a434b"))
+	if with_cuff:
+		b.add_rounded_box(Vector3(0, 0.12, 0.0), Vector3(0.105, 0.17, 0.14), 0.04, boot)
+		b.add_rounded_box(Vector3(0, 0.19, -0.065), Vector3(0.05, 0.10, 0.03), 0.013, Color("#2a333a"))
+		b.add_rounded_box(Vector3(0, 0.11, 0.07), Vector3(0.07, 0.11, 0.07), 0.025, Color("#d4d9dc"))
 	if goalie:
 		b.add_rounded_box(Vector3(0, -0.015, 0.07), Vector3(0.06, 0.035, 0.30), 0.012, Color("#d9dee1"))
 	else:
-		b.add_rounded_box(Vector3(0, -0.015, 0.07), Vector3(0.035, 0.035, 0.27), 0.010, Color("#d9dee1"))
+		# Holder: two towers joined by a bridge, as on a real skate.
+		var holder := Color("#d9dee1")
+		b.add_rounded_box(Vector3(0, -0.013, -0.04), Vector3(0.034, 0.03, 0.07), 0.010, holder)
+		b.add_rounded_box(Vector3(0, -0.013, 0.17), Vector3(0.034, 0.03, 0.08), 0.010, holder)
+		b.add_rounded_box(Vector3(0, -0.026, 0.065), Vector3(0.022, 0.012, 0.27), 0.005, holder)
 	b.add_rounded_box(Vector3(0, -0.045, 0.07), Vector3(0.006, 0.03, 0.31), 0.002, METAL.lightened(0.2))
 	return b.to_mesh(0.4)
+
+## Ankle cuff of a player skate. Origin at the ankle joint, +Y up the shin,
+## +Z forward (toe side). Overlaps down into the heel cup of skate(false).
+static func skate_cuff() -> ArrayMesh:
+	var b := MeshBuilder.new()
+	var boot := Color("#12191f")
+	# Shell: one smooth rounded-square tube from the heel up the lower shin
+	# (top to bottom, like _limb), slightly fuller at the ankle bones.
+	var rings := []
+	var cols := []
+	var levels := [[0.140, 0.060, 0.066, -0.012], [0.120, 0.061, 0.069, -0.010], [0.08, 0.060, 0.072, -0.006],
+		[0.03, 0.060, 0.075, 0.002], [-0.015, 0.057, 0.074, 0.008], [-0.03, 0.053, 0.068, 0.012]]
+	for k in range(levels.size()):
+		var l: Array = levels[k]
+		var ring := PackedVector3Array()
+		var c := PackedColorArray()
+		for j in range(24):
+			var a := TAU * j / 24
+			# Superellipse: square-ish sides with rounded corners.
+			var cx := signf(cos(a)) * pow(absf(cos(a)), 0.7)
+			var sz := signf(sin(a)) * pow(absf(sin(a)), 0.7)
+			ring.append(Vector3(cx * l[1], l[0], sz * l[2] + l[3]))
+			c.append(Color("#252e36") if k == 0 else boot)
+		rings.append(ring)
+		cols.append(c)
+	b.add_loft(rings, cols, false, true)
+	# Tendon guard rising from the back, following the calf.
+	b.add_rounded_box(Vector3(0, 0.15, -0.074), Vector3(0.046, 0.07, 0.018), 0.008, Color("#20282f"), Basis(Vector3.RIGHT, -0.15))
+	# Felt tongue: a thin flap rising out of the laces, tipped forward.
+	b.add_rounded_box(Vector3(0, 0.15, 0.058), Vector3(0.07, 0.07, 0.012), 0.006, Color("#b9c0c5"), Basis(Vector3.RIGHT, 0.28))
+	# Laces across the front of the shell.
+	for k in range(5):
+		b.add_rounded_box(Vector3(0, -0.02 + k * 0.028, 0.066), Vector3(0.062, 0.006, 0.012), 0.003, Color("#e6e9eb"))
+	return b.to_mesh(0.45)
 
 # ---------------------------------------------------------------- limb shells
 ## Unit-length shells built along +Y (0 at the top joint, 1 at the bottom joint);

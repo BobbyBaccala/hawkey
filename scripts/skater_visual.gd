@@ -70,6 +70,8 @@ var skeleton: Skeleton3D
 var rest: Dictionary = {}
 var feet: Array[Vector3] = [Vector3.ZERO,Vector3.ZERO]
 var skates: Array[Node3D] = []
+## Player skate ankle cuffs (children of skates[i]), aligned to the shin.
+var skate_cuffs: Array[MeshInstance3D] = []
 var helmet: Node3D
 var shirt: Node3D
 var sticks: Node3D
@@ -245,7 +247,13 @@ func add_mesh(parent: Node3D, mesh: Mesh) -> MeshInstance3D:
 	return instance
 
 func build_skate(parent: Node3D) -> void:
-	add_mesh(parent,Gear.skate(goalie))
+	add_mesh(parent,Gear.skate(goalie,goalie))
+	if not goalie:
+		# Ankle cuff follows the shin (posed in pose()), so the leg always
+		# enters the boot.
+		var cuff := add_mesh(parent,Gear.skate_cuff())
+		cuff.name = "Cuff"
+		skate_cuffs.append(cuff)
 
 func build_pad(parent: Node3D, side: float) -> void:
 	# Sculpted box-style pad: flat face, outer roll, knee/boot breaks, toe bridge.
@@ -302,7 +310,7 @@ func build_blade() -> MeshInstance3D:
 
 func blade_section(t: float, length_: float, height_: float, thickness: float) -> Array[Vector3]:
 	var x:float=(t-0.5)*length_
-	var curve:float=t*t*0.023
+	var curve:float=-t*t*0.023
 	var toe:float=smoothstep(0.82,1,t)*0.012
 	var top:float=height_*(1.0-smoothstep(0.91,1,t)*0.22)
 	return [Vector3(x,toe-height_*0.5,curve-thickness*0.5),Vector3(x,top-height_*0.5,curve-thickness*0.5),Vector3(x,top-height_*0.5,curve+thickness*0.5),Vector3(x,toe-height_*0.5,curve+thickness*0.5)]
@@ -729,9 +737,6 @@ func pose(speed: float, turn: float) -> void:
 			var fill:=1.06 if goalie else 0.96
 			var reach:=lerpf(0.68,0.52,butterfly) if goalie else 0.94
 			fit_limb(pant_legs[i],hip+Vector3(side*(0.03+butterfly*0.02),0.10,0),hip.lerp(knee,reach),fill)
-		if socks.size()>i:
-			# Sock and shin-guard knee cap overlap the bottom of the pants.
-			fit_limb(socks[i],knee.lerp(hip,0.12),ankle+Vector3(0,0.12,0.01),1.0)
 		var foot_pose: Transform3D = rest["foot"+suffix]
 		foot_pose.origin = ankle
 		var boot := Vector3.ZERO
@@ -748,6 +753,17 @@ func pose(speed: float, turn: float) -> void:
 		skates[i].position = ankle+Vector3(0,-0.0525,0)
 		# Butterfly: skates turn out flat so the toes clear the pad backs.
 		skates[i].rotation = Vector3(0,side*lerpf(0.12,1.45,smoothstep(0.0,0.4,butterfly)),0) if goalie else boot
+		if socks.size()>i:
+			# Sock and shin-guard knee cap overlap the bottom of the pants.
+			# The sock runs down the shin into the skate cuff (cuff top ~0.15 m).
+			fit_limb(socks[i],knee.lerp(hip,0.12),ankle+cuff_axis(i,knee,ankle)*0.09,1.0)
+		if skate_cuffs.size()>i:
+			# Cuff: +Y up the shin, +Z toward the toe, pivoting at the ankle.
+			var up_:=cuff_axis(i,knee,ankle)
+			var toe_:Vector3=skates[i].basis.z
+			var fwd_:=(toe_-up_*up_.dot(toe_)).normalized()
+			var cuff_pose:=Transform3D(Basis(up_.cross(fwd_),up_,fwd_),ankle)
+			skate_cuffs[i].transform=skates[i].transform.affine_inverse()*cuff_pose
 		if goalie:
 			# The pad rides the shin: +Y up the shin, face (+Z) toward the shooter.
 			var shin:Vector3=(knee-ankle).normalized()
@@ -999,7 +1015,13 @@ func stick_grip() -> Vector3:
 
 func update_stick() -> void:
 	var top:=stick_grip()
-	var bottom:=blade_position+Vector3(-stick_blade_length*0.48,0,0)
+	# The blade lies flat on the ice in the shaft's plane: it runs on from the
+	# heel in the direction the shaft leans (away from the hands), as on a
+	# real stick, instead of folding back under the shaft. blade_position (the
+	# puck pocket, used by gameplay) stays mid-blade.
+	var toe_dir:=stick_toe_dir(top,blade_position)
+	toe_dir=stick_toe_dir(top,blade_position-toe_dir*stick_blade_length*0.48)
+	var bottom:=blade_position-toe_dir*stick_blade_length*0.48
 	if goalie:
 		# The stick is rigid: a blocker punched up lifts the paddle off the ice
 		# instead of stretching the shaft.
@@ -1022,10 +1044,33 @@ func update_stick() -> void:
 		goalie_paddle.position=(bottom+paddle_top)*0.5
 		goalie_paddle.basis=stick_shaft.basis
 		goalie_paddle.scale=Vector3(1,bottom.distance_to(paddle_top),1)
-	stick_blade.basis=Basis.IDENTITY.slerp(stick_shaft.basis.orthonormalized(),raised_stick)
+	var flat:=Basis(toe_dir,Vector3.UP,toe_dir.cross(Vector3.UP))
+	stick_blade.basis=flat.slerp(stick_shaft.basis.orthonormalized(),raised_stick)
 	stick_blade.position=bottom+stick_blade.basis*Vector3(stick_blade_length*0.48,0,0)
 	grip_tape.position=top
 	grip_tape.basis=stick_shaft.basis
+
+## Axis of a skate's ankle cuff: the shin direction, but a stiff boot only
+## flexes so far from the foot's own up axis (CUFF_FLEX), like a real skate.
+const CUFF_FLEX := 0.52
+func cuff_axis(i: int, knee: Vector3, ankle: Vector3) -> Vector3:
+	var shin:=(knee-ankle).normalized()
+	if skates.size()<=i: return shin
+	var foot_up:Vector3=Basis.from_euler(skates[i].rotation).y
+	var angle:=foot_up.angle_to(shin)
+	if angle<=CUFF_FLEX: return shin
+	return foot_up.slerp(shin,CUFF_FLEX/angle).normalized()
+
+## Horizontal direction from the shaft's heel to the toe: the shaft's lean,
+## projected on the ice. Falls back to the player's side if the shaft is upright.
+func stick_toe_dir(top: Vector3, heel: Vector3) -> Vector3:
+	# A goalie's stick lies across the crease in front of the skates.
+	if goalie: return Vector3.RIGHT
+	var d:=heel-top
+	d.y=0
+	if d.length()<0.05:
+		d=Vector3(-1,0,0.4)
+	return d.normalized()
 
 func get_blade_world() -> Vector3:
 	return rig.to_global(blade_position)
