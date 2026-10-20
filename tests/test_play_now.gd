@@ -43,6 +43,7 @@ func run() -> void:
 	scene.match_state.advance(0.1)
 	scene.update_match_hud()
 	check(is_instance_valid(scene.hud_node.results_panel), "Final results show")
+	check(scene.hud_node.results_panel.is_visible_in_tree(), "Results panel is visible")
 	check("SUMMIT 3" in scene.hud_node.results_text.text, "Final uses selected team and score")
 	scene.hud_node.restart_requested.emit()
 	await settle()

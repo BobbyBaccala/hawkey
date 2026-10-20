@@ -14,9 +14,9 @@ Never merge automatically. Reconcile new prototype commits before integration.
 
 - [x] Offline CSV import with stable IDs, explicit identity/provenance, estimated
   rating labels, deterministic JSON and failure-safe writes.
-- [ ] Complete fictional two-team roster fixture; native validated JSON loader;
+- [x] Complete fictional two-team roster fixture; native validated JSON loader;
   match consumes stable IDs instead of hard-coded identities; regression tests.
-- [ ] Menu roster selection and return-to-menu flow for Play Now/Practice using
+- [x] Menu roster selection and return-to-menu flow for Play Now/Practice using
   existing title UI; no empty GM/Career buttons advertised as playable.
 - [ ] Versioned GM/Career save envelope with validation, backup, migration and
   interrupted-write tests, plus settings persistence independent of career saves.
@@ -67,3 +67,5 @@ a complete two-team fixture, with Godot checks when a runtime is available.
 2026-10-20 12:28 America/Toronto — Adopted owner's alpha-to-AAA production directive; added 38-category source audit and coordination table. Scheduled task instructions updated. Inspected latest prototype 28fb10b, which is newer than this branch base. Execution workspace is unavailable: no new gameplay code, tests, render or build claimed. Keep prior importer test evidence distinct. Next: restore execution, reconcile prototype, implement native roster loading and complete fictional fixture. See MASTER_PRODUCTION_DIRECTIVE.md, ALPHA_FEATURE_AUDIT.md and COORDINATION.md.
 
 2026-10-20 12:50 America/Toronto — Execution remains unavailable (no usable execution environment). Read branches/PRs/directive/coordination/backlog/audit, compared latest Claude commits, confirmed choose_save/set_save source integration and preserved ownership. Added current NHL 27 benchmark catalogue with original acceptance scenarios and historical NHL 25 distinctions. No code/tests/build/screenshots produced. Next unchanged: restore execution, reconcile prototype 4c9ab2a or newer, complete fictional fixture and native roster loader, run relevant engine checks before integration. Research can continue independently; task not fully blocked.
+
+2026-10-20 14:02 America/Toronto — Execution restored on Godot 4.6.3; reconciled prototype b2e58d7 and Claude goalie-gear 796fe0f without discarding either history. Implemented complete 40-player fictional fixture, strict failure-safe native loading, stable actor identities, team selection, dynamic team labels, results/rematch and Practice/menu round trip. Native 44 checks and navigation 27 checks passed; 11 Python tests passed. See ROSTER_INTEGRATION.md for broader engine evidence, captures and limitations. Work stage: Tested/locally Integrated; PR review pending. Next: atomic versioned saves/settings, then GM loop.

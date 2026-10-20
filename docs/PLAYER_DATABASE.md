@@ -1,8 +1,9 @@
 # Shared player database foundation
 
-Status: offline import tooling only. The current match still builds hard-coded
-rosters. No real professional/junior database or calibrated ratings are shipped.
-The example is fictional, incomplete and not a match-ready lineup.
+Status: offline importer plus native validated fictional Play Now loading. The
+example contains two complete 20-player fictional teams, consumed by the match.
+No real professional/junior database or calibrated ratings are shipped. See
+[ROSTER_INTEGRATION.md](ROSTER_INTEGRATION.md) for executed checks and limits.
 
 ## Run
 
@@ -13,11 +14,11 @@ python3 tools/import_roster.py data/examples/fictional-roster.csv /tmp/hawkey-ro
 python3 -m unittest discover -s tests -p 'test_roster_import.py' -v
 ```
 
-Output retains the required fields of `data/roster.schema.json` version 1 and
-adds database metadata version 1, league/season, explicit identity kind,
-provenance and rating metadata. Godot can read the JSON with its standard JSON
-parser; runtime validation and integration are the next increment. Do not
-replace match rosters with the two-player example.
+Output carries schema version 1 and database metadata version 1, league/season,
+identity kind, provenance and estimate metadata. The offline importer permits
+partial datasets for authoring; `data/roster.schema.json` and the native loader
+define the stricter complete fictional Play Now contract. Partial or real-identity
+imports are not automatically eligible for native match loading.
 
 ## CSV contract
 
@@ -51,11 +52,11 @@ sorted by IDs, UTF-8 and reproducible. Writes use a temporary file, flush/fsync
 and replace in the destination directory, preserving the old file on failure.
 This is not yet a versioned career-save system or concurrent-writer lock.
 
-## Acceptance before runtime use
+## Runtime acceptance and remaining work
 
-- Validate loaded JSON and references, reject unsupported metadata versions.
-- Resolve active lineups/goalies by ID; never rely on array order.
-- Keep mutable career/GM state separate from an immutable roster snapshot.
-- Save the roster version and edits with the career/GM save.
-- Test roster selection through Play Now and save/reload before exposing imports
-  in the main menu. Add a complete fictional league fixture for that test.
+- [x] Validate loaded JSON and references, reject unsupported metadata versions.
+- [x] Resolve stable player/goalie identities; build explicit position-based local line slots.
+- [ ] Keep future mutable career/GM state separate from an immutable roster snapshot.
+- [ ] Save the roster version and edits with the career/GM save.
+- [x] Test fictional team selection through Play Now, rematch and menu/practice round trips.
+- [ ] Add save/reload acceptance before exposing external imports in the main menu.

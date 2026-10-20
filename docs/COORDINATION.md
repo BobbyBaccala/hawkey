@@ -1,10 +1,10 @@
 # Production coordination
 
-Updated 2026-10-20 12:28 America/Toronto. Assignments are not completion evidence.
+Updated 2026-10-20 14:02 America/Toronto. Assignments are not completion evidence.
 
 | Owner | Active task | Branch | Affected systems | Dependencies | Integration | Last verified build |
 |---|---|---|---|---|---|---|
-| Codex | Adopt production directive; provisional source audit; next native roster loading | codex/game-modes | docs/MASTER_PRODUCTION_DIRECTIVE.md, docs/ALPHA_FEATURE_AUDIT.md, docs/GAME_MODES_BACKLOG.md, docs/COORDINATION.md; importer/data/tests from prior commit | Working execution environment, Godot runtime, current prototype reconciliation | Draft PR #2; no merge/deploy | No engine build verified this session; prior 11 Python importer tests at ea38194 |
+| Codex | Complete fictional rosters, native loading and Play Now navigation | codex/game-modes | Roster data/loader, match state, match/HUD, Practice return, tests and mode docs | Godot 4.6.3 and writable XDG paths verified; both presentation heads reconciled | Locally integrated; draft PR #2; no PR merge/deploy | 19 engine suites passed, optional mocap skipped; 11 Python tests; actual Linux software-render captures |
 | Claude/separate presentation agent (owner-reported) | Graphics/lighting/models/gear/animation | prototype/skating-puck-lab observed; confirm ownership before edits | presentation assets, skater visuals, arena lighting, HUD styling | Shared scene and match interfaces | Prototype observed at 28fb10b; runtime not inspected here | Unknown in this session; do not infer from assignment |
 
 ## Coordination protocol
@@ -17,7 +17,7 @@ interfaces with presentation. Branch progression must use expected-head leases.
 No automatic merge or release. Keep implementation, testing and integration
 states distinct. Update this file with an actual build/commit when verified.
 
-## Execution checkpoint
+## Historical execution checkpoint (superseded below)
 
 Current blocker: local executor reports no usable execution environment. GitHub
 reads/writes work, so source audit/documents can be preserved. No new gameplay
@@ -28,3 +28,20 @@ rosters and native validated loading. Do not fabricate a build or screenshot.
 ## 2026-10-20 12:50 refresh
 
 Presentation prototype now 4c9ab2a, with source-visible stride and goalie save selection changes. Do not overwrite match.gd when adding roster loading. Codex task this session: current-edition benchmark research, audit corrections, precise acceptance requirements; affected docs/BENCHMARK_CATALOGUE.md, ALPHA_FEATURE_AUDIT.md, GAME_MODES_BACKLOG.md and COORDINATION.md. Dependencies: execution workspace + Godot, reconciliation of newer prototype. Integration remains draft PR #2. Last engine-verified build remains unknown in this session. No tests rerun and no build artifact created.
+
+## 2026-10-20 14:02 America/Toronto — executed roster/Play Now checkpoint
+
+Owner: Codex. Branch: codex/game-modes / existing draft PR #2.
+Task: complete original rosters, native validation, Play Now selection/results/rematch/navigation.
+Affected systems: data/examples, roster schema, scripts/roster_database.gd, match.gd,
+match_state.gd, broadcast_hud.gd, lab.gd (Practice return only), tests, capture tool and mode docs.
+Dependencies: Godot 4.6.3 and writable XDG paths now verified; no application secrets required.
+Integration: preserved prototype b2e58d7 and separate Claude goalie-gear 796fe0f through
+history merges (471cb7e and f3dc54b); mode implementation 2ab6020 plus final checkpoint changes.
+Both ownership streams retained; Claude continues to own graphics/lighting/models/gear/animation.
+No PR merge or release. GitHub API metadata access denied; Git refs accessible.
+Last verified build: current integrated source under Godot 4.6.3, 11 Python tests,
+44 native roster checks, 27 navigation checks; full engine result and rendered evidence
+in ROSTER_INTEGRATION.md. Headless checks do not validate human feel or hardware.
+Next checkpoint: versioned atomic saves/settings with recovery and roster snapshots;
+broader Play Now setup and human/controller testing remain open.

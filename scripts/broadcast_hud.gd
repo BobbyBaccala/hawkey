@@ -473,8 +473,14 @@ func selected_ids() -> Array[String]:
 
 func show_results(scores: Array[int], shots: Array[int]) -> void:
 	if is_instance_valid(results_panel): return
+	if banner_tween: banner_tween.kill()
+	banner.visible = false
 	results_panel = PanelContainer.new()
 	results_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	results_panel.offset_left = -320
+	results_panel.offset_right = 320
+	results_panel.offset_top = -130
+	results_panel.offset_bottom = 130
 	results_panel.add_theme_stylebox_override("panel", panel_style(SLATE, 8, Vector4(30, 24, 30, 24)))
 	root_ui.add_child(results_panel)
 	var box := VBoxContainer.new()
