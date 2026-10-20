@@ -49,6 +49,19 @@ func run() -> void:
 	check(m.arena.ice_surface_material.get_shader_parameter("cut_tex") == marks_node.texture, "Ice shader samples the cut map")
 	marks_node.clear()
 	check(marks_node.cut_texels == 0, "Clear resurfaces the sheet")
+	# Slice 2: fresh flood gloss that dries off, and board reflections.
+	check(marks_node.freshness() > 0.99, "Resurfaced sheet starts glossy")
+	check(marks_node.material == m.arena.ice_surface_material, "Flood sheen drives the ice shader")
+	marks_node.since_flood = marks_node.DRY_TIME + 1.0
+	await process_frame
+	await process_frame
+	check(marks_node.freshness() == 0.0, "Flood gloss dries off")
+	check(m.arena.ice_surface_material.get_shader_parameter("fresh") is float and m.arena.ice_surface_material.get_shader_parameter("fresh") == 0.0, "Dry sheet reaches the shader")
+	marks_node.clear()
+	await process_frame
+	await process_frame
+	check(m.arena.ice_surface_material.get_shader_parameter("fresh") > 0.99, "New period's flood reaches the shader")
+	check("board_distance" in m.arena.ice_surface_material.shader.code, "Ice shader mirrors the boards near the edge")
 	var a := Vector3(-3, 0.06, 5)
 	var b := Vector3(3, 0.06, 5)
 	marks_node.score(a, b, 1.0)

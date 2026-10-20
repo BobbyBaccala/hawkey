@@ -116,6 +116,7 @@ func _ready() -> void:
 	ice_marks.name = "IceMarks"
 	add_child(ice_marks)
 	arena.ice_surface_material.set_shader_parameter("cut_tex", ice_marks.texture)
+	ice_marks.material = arena.ice_surface_material
 	player = make_skater(Vector3(0,0,0),Color("#116c9e"),"17")
 	player_visual = player.get_child(1)
 	teammate = make_skater(Vector3(6,0,-7),Color("#116c9e"),"28")

@@ -9,6 +9,12 @@ const PX_PER_M := 24.0                   # ~4 cm per texel
 const ON_ICE_HEIGHT := 0.11              # skate origin above this = foot lifted
 const MIN_SPEED := 0.6                   # m/s blade speed before it cuts
 const UPLOAD_INTERVAL := 1.0 / 15.0
+## Seconds for a freshly flooded sheet's wet gloss to dry off.
+const DRY_TIME := 90.0
+## Ice shader whose `fresh` uniform follows the flood (set by lab.gd).
+var material: ShaderMaterial
+## Seconds since the last resurface.
+var since_flood := 0.0
 
 var image: Image
 var texture: ImageTexture
@@ -25,7 +31,13 @@ func _ready() -> void:
 func to_texel(p: Vector3) -> Vector2:
 	return Vector2((p.x / RINK_SIZE.x + 0.5) * image.get_width(), (p.z / RINK_SIZE.y + 0.5) * image.get_height())
 
+## 1 straight after a flood, falling to 0 as the sheet dries.
+func freshness() -> float:
+	return clampf(1.0 - since_flood / DRY_TIME, 0.0, 1.0)
+
 func _process(delta: float) -> void:
+	since_flood += delta
+	if material: material.set_shader_parameter("fresh", freshness())
 	var seen := {}
 	for visual in get_tree().get_nodes_in_group("skater_visuals"):
 		if not is_instance_valid(visual) or not visual.is_inside_tree():
@@ -83,4 +95,5 @@ func clear() -> void:
 	image.fill(Color(0, 0, 0))
 	cut_texels = 0
 	last_blade.clear()
+	since_flood = 0.0
 	flush()

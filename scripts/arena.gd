@@ -260,7 +260,31 @@ func _ready() -> void:
 	var ice_shader := Shader.new()
 	# Bright, freshly flooded sheet; skate cuts (cut_tex, 0 = clean) grey and
 	# roughen it. UV spans -0.5..0.5 across the rink, so UV + 0.5 maps the cut map.
-	ice_shader.code = "shader_type spatial; render_mode cull_disabled; uniform sampler2D ice_tex:source_color,repeat_enable,filter_linear_mipmap; uniform sampler2D cut_tex:filter_linear,repeat_disable,hint_default_black; void fragment(){vec3 tex=texture(ice_tex,UV*vec2(3.0,6.0)).rgb;float grain=dot(tex,vec3(0.3,0.59,0.11));float cut=clamp(texture(cut_tex,UV+0.5).r*1.3,0.0,1.0);vec3 base=vec3(0.75,0.785,0.815)+(grain-0.4)*0.05;ALBEDO=mix(base,base*vec3(0.62,0.68,0.74),cut);ROUGHNESS=mix(0.24,0.62,cut);SPECULAR=0.5;}"
+	# Board reflection: a faint mirrored band of the kick plate/dashers right at
+	# the boards, then a softer blue-grey smear of glass and stands. `fresh`
+	# (1 just after a flood, drying to 0; set by ice_marks.gd) makes the sheet
+	# glossier and a touch darker. Reflections fade where the ice is cut up.
+	ice_shader.code = """shader_type spatial; render_mode cull_disabled;
+uniform sampler2D ice_tex:source_color,repeat_enable,filter_linear_mipmap;
+uniform sampler2D cut_tex:filter_linear,repeat_disable,hint_default_black;
+uniform float fresh = 0.0;
+uniform vec2 half_size = vec2(15.0, 30.0);
+uniform float corner_radius = 8.0;
+float board_distance(vec2 p){vec2 inner=half_size-vec2(corner_radius);vec2 d=abs(p)-inner;return corner_radius-(length(max(d,vec2(0.0)))+min(max(d.x,d.y),0.0));}
+void fragment(){
+	vec3 tex=texture(ice_tex,UV*vec2(3.0,6.0)).rgb;float grain=dot(tex,vec3(0.3,0.59,0.11));
+	float cut=clamp(texture(cut_tex,UV+0.5).r*1.3,0.0,1.0);
+	vec3 base=vec3(0.75,0.785,0.815)+(grain-0.4)*0.05;
+	vec3 albedo=mix(base,base*vec3(0.62,0.68,0.74),cut);
+	float d=max(board_distance(UV*vec2(30.0,60.0)),0.0);
+	float dasher=exp(-d/0.35);float stands=exp(-d/1.6)-dasher;
+	float mirror=(1.0-0.7*cut)*(0.75+0.25*fresh);
+	albedo=mix(albedo,vec3(0.78,0.74,0.55),dasher*0.32*mirror);
+	albedo=mix(albedo,vec3(0.30,0.35,0.46),stands*0.30*mirror);
+	ALBEDO=albedo*(1.0-0.06*fresh);
+	ROUGHNESS=clamp(mix(0.24,0.62,cut)-0.17*fresh,0.05,1.0);
+	SPECULAR=0.5+0.25*fresh;
+}"""
 	var ice_shader_material := ShaderMaterial.new()
 	ice_shader_material.shader = ice_shader
 	ice_shader_material.set_shader_parameter("ice_tex",preload("res://assets/ice-surface-v1.png"))

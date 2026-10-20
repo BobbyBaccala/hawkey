@@ -19,7 +19,7 @@ Rules for every run:
 ## Presentation and environment
 - [x] Arena lighting pass: per-zone overhead spot/omni lights so the ice has soft pools of light and players get rim light; check gameplay-camera readability.
 - [x] Ice detail (slice 1): skate cuts carved behind every skater that build up over the period, fresh sheet at each period start; brighter broadcast-white ice.
-- [ ] Ice detail (slice 2): faint reflections of boards/glass in the ice and a glossier just-resurfaced look in the first minutes of a period.
+- [x] Ice detail (slice 2): faint reflections of boards/glass in the ice and a glossier just-resurfaced look in the first minutes of a period.
 - [x] Rink markings to NHL proportions: goal lines 11 ft from the end boards (goals moved with them), blue lines 25 ft from centre, end-zone spots 20 ft out, hash marks and L marks on end-zone circles, goaltender trapezoid.
 - [ ] Rink width: the shell is 60 x 30 m (international width); an NHL sheet is 26 m (85 ft) wide with 28 ft corners. Narrowing touches board collision, AI clamps, cameras and the seating bowl, so do it as its own change with test_boards re-run.
 - [ ] Goal nets: proper mesh netting with a back-bar shape, white padding at the base, and net ripple when the puck goes in.
@@ -51,3 +51,4 @@ Rules for every run:
 - 2026-10-20 — Backlog created after v0.10 (cameras, arena, broadcast UI).
 - 2026-10-20 — Arena lighting pass: 8 shadowless overhead spot pools (scripts/arena_lighting.gd) replace the near-zero omnis; ambient/sun lowered so pools read; two low side rim lights masked off the arena layer (light players only). New tests/test_lighting.gd. Screenshot: docs/screenshots/arena-lighting-auto-20261020-1456.png
 - 2026-10-20 — Owner feedback pass: rink markings to NHL proportions (goal lines 11 ft from boards with goals moved, blue lines 25 ft, end spots 20 ft out, hash + L marks, trapezoid; gameplay reads Arena.GOAL_LINE), brighter broadcast-white ice, skate cuts carved behind every skater and cleared each period (scripts/ice_marks.gd), --capture-time=<s> capture option. Boards/glass and scoreboard left as they are; test_boards passes. New tests/test_ice.gd. Screenshot: docs/screenshots/rink-markings-ice-auto-20261020-1548.png
+- 2026-10-20 — Ice detail slice 2: ice shader adds a faint mirrored band of the dashers and a soft blue-grey smear of glass/stands near the boards (fades where the ice is cut up); ice_marks.gd tracks time since flood and drives a `fresh` gloss (glossier, slightly darker, more specular) that dries over 90 s after each period's resurface. A parallel duplicate of slice 1 from this run was dropped in favour of ice_marks.gd. tests/test_ice.gd extended. Screenshot: docs/screenshots/ice-reflection-auto-20261020-1600.png
