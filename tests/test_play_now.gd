@@ -32,7 +32,7 @@ func run() -> void:
 	check(scene.hud_node.team_codes == ["SUM", "HAR"], "HUD follows selection")
 	for actor in scene.skaters:
 		check(actor.get_meta("player_id") == scene.roster(actor).id, "Actor references stable identity")
-	check(scene.goalkeepers[0].get_meta("player_id") == scene.rosters[0][18].id, "Goalie uses roster identity")
+	check(scene.goalkeepers[0].get_meta("player_id") == scene.rosters[1][18].id, "Goalie uses roster identity")
 	scene.match_state.phase = scene.MatchState.Phase.STOPPAGE
 	scene.request_line(0, 1)
 	check(scene.skaters[0].get_meta("player_id") == scene.rosters[0][3].id, "Line change updates stable identity")

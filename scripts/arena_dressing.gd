@@ -51,6 +51,8 @@ func box(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
 
 func text(words: String, pos: Vector3, facing: Vector3, height: float, color: Color, parent: Node3D = self) -> Label3D:
 	var l := Label3D.new()
+	l.font = preload("res://scripts/interface_font.gd").get_font(true)
+	l.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	l.text = words
 	l.font_size = 96
 	l.pixel_size = height / 96.0

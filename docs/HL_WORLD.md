@@ -102,7 +102,7 @@ The HL is the original **Hockey League**, with 32 complete 23-player clubs. The 
 
 ## Player-visible integration
 
-Play Now now filters teams by competition. All 32 HL clubs and every represented pro/euro/junior club can be selected for the existing exhibition rules. League/team selection survives rematch and Practice/menu round trips within the process. Shared exhibition rules do not establish accurate league-specific rules. The current skating code consumes speed; the added hockey attributes/potential are data for future simulation, not claims that all corresponding mechanics now use them.
+Play Now now filters teams by competition. All 32 HL clubs and every represented pro/euro/junior club can be selected for the existing exhibition rules. League/team selection survives rematch and Practice/menu round trips within the process. Shared exhibition rules do not establish accurate league-specific rules. Skating consumes speed; the net-shot solver now consumes shot_power. The remaining authored attributes and potential are data for future simulation. Current shared OT/shootout and controls are documented in CONTROLS_AND_TIEBREAKS.md.
 
 ## Reproduce and verify
 

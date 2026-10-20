@@ -57,3 +57,13 @@ The following are proposed measurable acceptance tests, not claims about EA inte
 Current NHL 27 official sources are now distinct from historical NHL 25 and earlier 2K26 research. Still needed: official current control/accessibility documentation, equipment/customization details, practice modes, detailed statistics and platform requirements. Confirm patch-specific changes separately; no exhaustive current-feature parity claim is made. Revisit NBA 2K's current edition before treating 2K26 as current. No gameplay footage was evaluated during this run.
 
 Engineering checkpoint remains native roster loading and a full fictional two-team fixture. Career feedback, transaction legality and tactical coverage requirements become tests when their dependent systems exist; do not add empty screens to suggest completion.
+
+## Control-reference follow-up — 2026-10-20
+
+Owner requested left-stick net placement and separate wrist/slap actions. Attempted
+official EA Help controls page; runtime egress proxy denied CONNECT with HTTP 403.
+No page content or current-edition control mapping was verified. Additive EA domain
+requirements saved to environment draft; runtime access still requires settings
+activation. See CONTROLS_AND_TIEBREAKS.md for the original implemented controls,
+explicit tie-break policy, tests and remaining research. Do not treat these mappings
+or prototype rules as an independently verified replica of EA NHL.

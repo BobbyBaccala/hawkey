@@ -15,6 +15,7 @@ func run() -> void:
 	root.get_texture().get_image().save_png("res://build/play-now-match.png")
 	current_scene.match_state.phase = current_scene.MatchState.Phase.PLAY
 	current_scene.match_state.period = 3
+	current_scene.match_state.score.assign([1,0])
 	current_scene.match_state.clock = 0.01
 	current_scene.match_state.advance(0.1)
 	current_scene.update_match_hud()

@@ -11,6 +11,8 @@ var right_stick := Vector2.ZERO
 var lift := 0.0
 var shoot_trigger := 0.0
 var trigger_down := false
+var slap_requested := false
+var backstroke := false
 var shoot_pressed := false
 var shoot_released := false
 var pass_pressed := false
@@ -39,7 +41,14 @@ func handle(event: InputEvent) -> void:
 			JOY_AXIS_LEFT_X: left_raw.x=event.axis_value
 			JOY_AXIS_LEFT_Y: left_raw.y=event.axis_value
 			JOY_AXIS_RIGHT_X: right_raw.x=event.axis_value
-			JOY_AXIS_RIGHT_Y: right_raw.y=event.axis_value
+			JOY_AXIS_RIGHT_Y:
+				var previous := right_raw.y
+				right_raw.y=event.axis_value
+				if right_raw.y > 0.6: backstroke=true
+				if right_raw.y < -0.65 and previous >= -0.65:
+					shoot_pressed=true
+					slap_requested=backstroke
+					backstroke=false
 			JOY_AXIS_TRIGGER_LEFT: lift=clampf(event.axis_value,0,1)
 			JOY_AXIS_TRIGGER_RIGHT:
 				shoot_trigger=clampf(event.axis_value,0,1)
@@ -80,6 +89,7 @@ func disconnected(id_: int) -> bool:
 	lift=0
 	shoot_trigger=0
 	trigger_down=false
+	backstroke=false
 	effort=false
 	stop=false
 	active=false
@@ -88,6 +98,7 @@ func disconnected(id_: int) -> bool:
 	return was_active
 
 func clear_edges() -> void:
+	slap_requested=false
 	shoot_pressed=false
 	shoot_released=false
 	pass_pressed=false

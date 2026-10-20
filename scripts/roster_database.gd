@@ -115,7 +115,7 @@ func match_roster(team: Dictionary) -> Array:
 	for p in team.players:
 		if not dressed.has(p.id): result.append(p.duplicate(true))
 	for i in range(result.size()):
-		result[i].merge({"number":result[i].get("jersey_number", i+1),"stamina":1.0,"speed":result[i].ratings.speed,"goals":0,"shots":0})
+		result[i].merge({"number":int(result[i].get("jersey_number", i+1)),"stamina":1.0,"speed":result[i].ratings.speed,"goals":0,"shots":0})
 	return result
 
 func integer_between(value: Variant, low: int, high: int) -> bool:

@@ -44,3 +44,11 @@ Python preparation tools are development-only dependencies; obtain their licence
 - Sponsor names on the boards (Northline, Glacier Cola, Ironwood Bank, Polar Air, Summit Tire, Bluewater, Maplefield, Rinkside) are invented and do not depict real companies.
 - Team identities use city names and generic colours only; no NHL or club logos.
 - Camera layouts and presentation were modelled on how EA's NHL games present hockey (camera families, score bug, banners) from public descriptions; no EA code, art or assets were used.
+
+## Bundled interface typography — 2026-10-20
+
+`assets/fonts/Interface-Regular.ttf` and `Interface-Bold.ttf` are unmodified DejaVu
+Sans regular/bold from the environment's Debian fonts-dejavu-core package. Original
+font copyright, public-domain DejaVu changes and distribution permission are in
+`assets/fonts/LICENSE.txt`. Shared runtime loader: scripts/interface_font.gd.
+Used for HUD/menu and arena text. No EA font, logo or other publisher asset imported.

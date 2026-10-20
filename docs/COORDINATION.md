@@ -4,7 +4,7 @@ Updated 2026-10-20 14:02 America/Toronto. Assignments are not completion evidenc
 
 | Owner | Active task | Branch | Affected systems | Dependencies | Integration | Last verified build |
 |---|---|---|---|---|---|---|
-| Codex | Complete fictional rosters, native loading and Play Now navigation | codex/game-modes | Roster data/loader, match state, match/HUD, Practice return, tests and mode docs | Godot 4.6.3 and writable XDG paths verified; both presentation heads reconciled | Locally integrated; draft PR #2; no PR merge/deploy | 19 engine suites passed, optional mocap skipped; 11 Python tests; actual Linux software-render captures |
+| Codex | Interface polish, net-targeted controller shots, playable OT/shootout | codex/game-modes | HUD/fonts, match/Practice/input, match state, tests and captures | Native Godot 4.6.3 verified; EA lookup blocked pending network settings | Tested and locally integrated; PR #2 pending review; no merge/release | 21 Python tests; 22 engine suites; OT/SO 75 checks; shots 132; navigation 47; genuine renders |
 | Claude/separate presentation agent (owner-reported) | Graphics/lighting/models/gear/animation | prototype/skating-puck-lab observed; confirm ownership before edits | presentation assets, skater visuals, arena lighting, HUD styling | Shared scene and match interfaces | Prototype observed at 28fb10b; runtime not inspected here | Unknown in this session; do not infer from assignment |
 
 ## Coordination protocol
@@ -61,3 +61,17 @@ verification/hl-world-20261020.json;
 rendered title inspected. Future GM needs persistent world snapshots, draft/rights
 transactions, schedules, progression, injuries, contracts and new yearly prospects.
 Youth competitions are currently data-only. No PR merge, release or publication.
+
+## 2026-10-20 — interface / shooting / tie-break checkpoint
+
+Owner: Codex, by explicit owner request to polish fonts/corners and add OT/shootout
+and net-targeted controller shooting. Branch codex/game-modes, existing PR #2.
+Affected systems: match state, net shot solver, controller adapter, match/Practice
+integration, HUD/menu theme, bundled licensed fonts, arena_dressing.gd text font/filter
+(two lines only), regression suites, captures and mode documentation.
+Claude's models, gear, lighting and animation implementation retained; remote heads
+checked before edits (prototype b2e58d7, goalie branch 796fe0f unchanged).
+Actual final test/build evidence: verification/polish-shooting-tiebreaks-20261020.json.
+No PR merge/release. EA reference lookup blocked by current egress; additive required
+domains saved but not activated. Next: official control verification after access,
+human/controller feel pass, complete rule exceptions, then saves/GM season loop.

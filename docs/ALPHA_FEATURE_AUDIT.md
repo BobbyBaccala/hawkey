@@ -21,7 +21,7 @@ Definitions: Missing = no implementation identified; Placeholder = stand-in; Par
 | Faceoffs | Partial | Timed reset positions; no full contest | Rules and input contest | Legal location/participants and skill-driven drop outcome | All restart types and input timing scenarios |
 | Penalties/special teams | Partial | Timed/queued minors and power-play release | Configurable rules and tactical AI | Delayed/coincidental/major rules, legal manpower and appropriate tactics | Penalty chronology and strength transition fixtures |
 | Offside/icing | Missing | Not implemented per inspected match and status | Rink line references, rules event interface | Whistle/exemption/location correct at high puck speeds | Boundary sweeps and exemption scenarios |
-| Overtime/shootout | Missing | MatchState explicitly ends tied third period as draw | Rules/phase flow/HUD | League-specific tie resolution and final result exactly once | Tied regulation, sudden death, shootout, playoff variants |
+| Overtime/shootout | Validated (shared HL prototype preset) | Sudden-death 3v3 OT, playable three-round/paired sudden-death shootout; see CONTROLS_AND_TIEBREAKS.md | Rules/phase flow/HUD | League-specific tie resolution and final result exactly once | Tied regulation, sudden death, shootout, playoff variants |
 | Empty net/timeouts/late tactics | Missing | No management flow identified | Goalie substitution and coach policy | Legal pull/return, timeout limits, score/time-aware risk | Late-game and delayed-penalty cases |
 | Match statistics/results | Partial | Score, shots and simple event displays | Event ledger and player IDs | Accurate player/team stats, period summary, final report/rematch | Reconcile event ledger, score and displayed totals |
 | Team tactics/difficulty | Partial | Primary pursuer, support lanes and simple pass/shot choices | Tactical state and debug intentions | Distinct forecheck/breakout/coverage/PP/PK decisions within fair physics | Formation scenarios, assignments, difficulty comparisons |
@@ -76,3 +76,7 @@ versioned saves/settings and snapshot preservation before persistent GM/Career w
 ## HL world expansion — 2026-10-20
 
 The current snapshot expands to 32 HL clubs, 64 farm clubs, 218 junior clubs, 169 European clubs and 160 youth clubs. Player development profiles and draft-pool queries are implemented data; multi-season GM/Career, player development/scouting simulation and draft transactions remain Missing. Youth match gameplay remains unimplemented and hidden from Play Now. Full scope and evidence: HL_WORLD.md.
+
+## Interface/shooting/tie-break checkpoint — 2026-10-20
+
+Shared HL exhibition OT/shootout and net-targeted wrist/slap controls implemented and tested. Menu/HUD and arena fonts bundled; interface corners, focus, selectors and matchup preview revised and genuinely rendered. UI/presentation remains Partial against production goals. Physical-controller feel, full shootout skating violations, whistle-based OT normalization, league-specific rules, human evaluation and release gates remain open. Exact tests/captures and blocked EA source verification: CONTROLS_AND_TIEBREAKS.md.

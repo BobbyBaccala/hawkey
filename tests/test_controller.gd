@@ -33,16 +33,31 @@ func run()->void:
 	for i in range(25):scene.control_player(1.0/120)
 	check(scene.player.velocity.z< -1 and scene.aim.z< -0.99,"Left stick moves and aims skater")
 	check(scene.player_visual.get_blade_world().distance_to(blade)>0.2,"Right stick moves physical control target and visible blade")
-	axis(scene.controller,JOY_AXIS_TRIGGER_LEFT,1)
-	axis(scene.controller,JOY_AXIS_TRIGGER_RIGHT,1)
-	for i in range(60):scene.control_player(1.0/120)
-	check(scene.charge>0.5,"Held trigger charges shot")
+	# Immediate shot on press; duration held never adds power or repeats.
 	scene.puck.position=scene.player_visual.get_blade_world()
+	scene.cooldown=0
+	axis(scene.controller,JOY_AXIS_TRIGGER_RIGHT,1)
+	scene.process_controller_edges()
+	var first_velocity:Vector3=scene.puck.linear_velocity
+	check(first_velocity.z < -10 and first_velocity.y > 0,"Trigger press creates a net-targeted airborne shot")
+	var shots_before:int=scene.shots
+	for i in range(60):
+		scene.control_player(1.0/120)
+		scene.process_controller_edges()
+	check(scene.charge==0 and scene.shots==shots_before,"Held trigger neither charges nor repeats")
 	scene.cooldown=0
 	axis(scene.controller,JOY_AXIS_TRIGGER_RIGHT,0)
 	scene.process_controller_edges()
-	check(scene.puck.linear_velocity.y>5,"LT elevation plus RT release creates airborne shot")
-	check(scene.puck.linear_velocity.z< -10,"Left stick aims shot")
+	check(scene.shots==shots_before,"Trigger release does not fire")
+	input.clear_edges()
+	axis(input,JOY_AXIS_RIGHT_Y,0.9)
+	axis(input,JOY_AXIS_RIGHT_Y,-0.9)
+	check(input.shoot_pressed and input.slap_requested,"Right-stick down/up requests a slap shot")
+	input.clear_edges()
+	axis(input,JOY_AXIS_RIGHT_Y,0)
+	axis(input,JOY_AXIS_RIGHT_Y,-0.9)
+	check(input.shoot_pressed and not input.slap_requested,"Forward flick without backstroke requests wrist shot")
+
 	scene.carrier=scene.player
 	scene.puck.position=scene.player.position+Vector3(0,0.5,-0.5)
 	scene.cooldown=0

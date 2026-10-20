@@ -40,6 +40,7 @@ func _initialize()->void:
 	m.advance(6)
 	check(m.period==2 and m.clock==1200,"Next period resets clock")
 	m.period=3
+	m.score[0]=1
 	m.phase=Match.Phase.PLAY
 	m.clock=1
 	m.advance(1)

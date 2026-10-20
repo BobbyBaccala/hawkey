@@ -72,3 +72,13 @@ a complete two-team fixture, with Godot checks when a runtime is available.
 2026-10-20 14:02 America/Toronto — Execution restored on Godot 4.6.3; reconciled prototype b2e58d7 and Claude goalie-gear 796fe0f without discarding either history. Implemented complete 40-player fictional fixture, strict failure-safe native loading, stable actor identities, team selection, dynamic team labels, results/rematch and Practice/menu round trip. Native 44 checks and navigation 27 checks passed; 11 Python tests passed. See ROSTER_INTEGRATION.md for broader engine evidence, captures and limitations. Work stage: Tested/locally Integrated; PR review pending. Next: atomic versioned saves/settings, then GM loop.
 
 2026-10-20 — Expanded to 33 original leagues, 643 complete clubs, 14,745 players; 32-team HL, two professional farm tiers, 12 North American junior circuits, 13 European leagues and U9/U11/U13/U15/U18. Added complete skill/development profiles, farm links, birthday-based draft pool and explicit youth routes. Native version-2 validation and league-filtered Play Now implemented; youth remains data-only pending age-appropriate mechanics. See HL_WORLD.md and verification/hl-world-20261020.json. GM seasons, rights transactions, progression, save snapshots and annual prospect replenishment remain open.
+
+2026-10-20 — Owner-requested polish, shooting and tie-break increment: bundled
+licensed typography, consistent menu/HUD surfaces and previews, net-targeted shots
+with left-stick placement and separate fixed wrist/slap profiles; Practice shares
+the shooting/controller path. Added sudden-death 3v3 overtime and a playable
+three-round/sudden-death shootout with stable attempt IDs and separated statistics.
+Rules remain the explicit shared HL exhibition preset. See CONTROLS_AND_TIEBREAKS.md
+and final verification evidence. Full referee/CBA exceptions, hardware feel, annual
+GM simulation and persistent saves remain open. Official EA lookup blocked by runtime
+network policy; exact EA control parity is not claimed.

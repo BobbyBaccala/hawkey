@@ -1,4 +1,6 @@
 extends Node3D
+var practice_input := preload("res://scripts/controller_input.gd").new()
+const NetShooting = preload("res://scripts/net_shooting.gd")
 const Skating = preload("res://scripts/skating.gd")
 const Arena = preload("res://scripts/arena.gd")
 const Skater = preload("res://scripts/skater_visual.gd")
@@ -70,6 +72,7 @@ func make_skater(pos: Vector3, color: Color, jersey: String, is_goalie: bool = f
 	return body
 
 func _ready() -> void:
+	if get_script().resource_path == "res://scripts/lab.gd": Input.joy_connection_changed.connect(on_practice_connection)
 	var world := WorldEnvironment.new()
 	world.environment = Environment.new()
 	world.environment.background_mode = Environment.BG_COLOR
@@ -245,6 +248,8 @@ func build_hud() -> void:
 		load("res://scripts/match.gd").return_to_title = true
 		get_tree().change_scene_to_file("res://main.tscn"))
 	canvas.add_child(menu)
+	for item in [hud,status,help,menu]: item.add_theme_font_override("font",preload("res://scripts/interface_font.gd").get_font(false))
+	menu.add_theme_font_size_override("font_size",16)
 
 func capture_preview() -> void:
 	await get_tree().create_timer(2).timeout
@@ -277,6 +282,10 @@ func reset_puck() -> void:
 	cooldown = 0.15
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventJoypadMotion or event is InputEventJoypadButton:
+		practice_input.handle(event)
+		return
+	if event is InputEventMouseButton or event is InputEventKey: practice_input.active=false
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
 			KEY_ESCAPE:
@@ -304,8 +313,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			zoom = clampf(zoom - 0.08,0.65,1.7)
 		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
 			zoom = clampf(zoom + 0.08,0.65,1.7)
-		if event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
-			strike(aim,lerpf(14,36,charge))
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			strike(aim,28)
 			charge = 0
 		if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 			var direction := (teammate.position + teammate.velocity * 0.25 - puck.position)
@@ -314,10 +323,10 @@ func _unhandled_input(event: InputEvent) -> void:
 				passes += 1
 
 func strike(direction: Vector3, speed: float, is_pass: bool = false) -> bool:
-	if player.position.distance_to(puck.position) > 1.8 or cooldown > 0:
+	if paused or player.position.distance_to(puck.position) > 1.8 or cooldown > 0 or puck.position.y>0.22:
 		return false
 	direction.y = 0
-	puck.linear_velocity = direction.normalized() * speed + velocity * 0.25
+	puck.linear_velocity = direction.normalized() * speed + velocity * 0.25 if is_pass else NetShooting.launch(puck.position,-1,practice_input.left_stick if practice_input.active else mouse_net_placement(-1),75,practice_input.slap_requested if practice_input.active else Input.is_physical_key_pressed(KEY_ALT))
 	pickup_owner = false
 	cooldown = 0.42
 	if not is_pass: shots += 1
@@ -346,6 +355,19 @@ func update_camera(delta: float) -> void:
 	selection.position = player.position + Vector3(0,0.025,0)
 
 func _physics_process(delta: float) -> void:
+	if practice_input.pause_pressed: paused=not paused
+	if practice_input.active and not paused:
+		if practice_input.shoot_pressed: strike(aim,28)
+		if practice_input.pass_pressed or practice_input.saucer_pressed:
+			if strike(teammate.position+teammate.velocity*0.25-puck.position,17,true): passes+=1
+		if practice_input.switch_pressed:
+			var old := player
+			player=teammate
+			teammate=old
+			player_visual=player.get_child(1)
+			teammate_visual=teammate.get_child(1)
+			pickup_owner=false
+	practice_input.clear_edges()
 	puck.freeze = paused
 	if paused:
 		status.text = "PAUSED  /  Escape to resume"
@@ -354,14 +376,19 @@ func _physics_process(delta: float) -> void:
 	cooldown = maxf(0,cooldown - delta)
 	goal_timer = maxf(0,goal_timer - delta)
 	var intent := Vector3(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),0,float(Input.is_physical_key_pressed(KEY_S))-float(Input.is_physical_key_pressed(KEY_W)))
-	velocity = Skating.step(velocity,intent,rating,Input.is_physical_key_pressed(KEY_SHIFT),delta)
-	if Input.is_physical_key_pressed(KEY_CTRL):
+	if practice_input.active: intent=Vector3(practice_input.left_stick.x,0,practice_input.left_stick.y)
+	velocity = Skating.step(velocity,intent,rating,practice_input.effort if practice_input.active else Input.is_physical_key_pressed(KEY_SHIFT),delta)
+	if (practice_input.active and practice_input.stop) or Input.is_physical_key_pressed(KEY_CTRL):
 		velocity = velocity.move_toward(Vector3.ZERO,22 * delta)
 	player.velocity = velocity
 	player.move_and_slide()
 	velocity = player.velocity
 	var intersection = Plane(Vector3.UP,0).intersects_ray(camera.project_ray_origin(get_viewport().get_mouse_position()),camera.project_ray_normal(get_viewport().get_mouse_position()))
-	if intersection != null:
+	if practice_input.active:
+		if intent.length()>0.05: aim=intent.normalized()
+		player_visual.desired_stick=practice_input.right_stick
+	elif intersection != null:
+		player_visual.desired_stick=Vector2.ZERO
 		var dir: Vector3 = intersection - player.position
 		dir.y = 0
 		if dir.length_squared() > 0.2: aim = dir.normalized()
@@ -370,8 +397,7 @@ func _physics_process(delta: float) -> void:
 	player_visual.rotation.y = rotate_toward(old_rotation,target_rotation,7.5 * delta)
 	player_visual.animate(velocity.length(),delta,angle_difference(old_rotation,target_rotation) * velocity.length() * 0.02,intent.length_squared()>0.01,Input.is_physical_key_pressed(KEY_CTRL))
 	sync_skater_contacts(player)
-	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-		charge = minf(1,charge + delta * 1.3)
+	charge = 0
 	# Stable critically damped stick spring with speed and reach limits.
 	var puck_flat := puck.position
 	puck_flat.y = 0
@@ -404,7 +430,7 @@ func _physics_process(delta: float) -> void:
 		reset_puck()
 	update_camera(delta)
 	hud.text = "HAWKEY   /   OPEN PRACTICE\nTOR   %02d     —     %02d   MTL      •      %02d:%02d" % [goals,away_goals,int(elapsed)/60,int(elapsed)%60]
-	status.text = "GOAL  /  R to restart" if goal_timer > 0 else ("PUCK CONTROL  •  Hold left mouse to load shot" if pickup_owner else "FREE PUCK  •  Skate into reach to collect")
+	status.text = "GOAL  /  R to restart" if goal_timer > 0 else ("PUCK CONTROL  •  Click to shoot at the net · Alt + click slap shot" if pickup_owner else "FREE PUCK  •  Skate into reach to collect")
 	power.value = charge
 	power.visible = charge > 0
 	help.text = "WASD Skate    Shift Effort    Ctrl Stop    Mouse Aim    Hold / release LMB Shoot    RMB Pass\nSpace Switch skater    R Reset    C Broadcast / full rink    Wheel Zoom    Esc Pause    F1 Diagnostics"
@@ -539,3 +565,14 @@ func sync_skater_contacts(actor: CharacterBody3D) -> void:
 	for i in range(2):
 		var name_:String="LeftSkate" if i==0 else "RightSkate"
 		contact.get_node(name_).transform=frame*visual.skates[i].transform*Transform3D(Basis.IDENTITY,Vector3(0,-0.0025,0.06))
+
+func mouse_net_placement(end_: float) -> Vector2:
+	var cursor := get_viewport().get_mouse_position()
+	var hit: Variant = Plane(Vector3(0,0,1),end_*Arena.GOAL_LINE).intersects_ray(camera.project_ray_origin(cursor),camera.project_ray_normal(cursor))
+	if hit == null: return Vector2.ZERO
+	return Vector2(hit.x/(-end_*0.78),(0.59-hit.y)/0.47).clamp(Vector2(-1,-1),Vector2(1,1))
+
+func on_practice_connection(device: int, connected: bool) -> void:
+	if not connected and practice_input.disconnected(device):
+		paused=true
+		charge=0
