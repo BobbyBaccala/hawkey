@@ -3,6 +3,12 @@ const MatchState = preload("res://scripts/match_state.gd")
 const ControllerInput = preload("res://scripts/controller_input.gd")
 const PuckPhysics = preload("res://scripts/puck.gd")
 const BroadcastHud = preload("res://scripts/broadcast_hud.gd")
+const RosterDatabase = preload("res://scripts/roster_database.gd")
+static var selected_team_ids: Array[String] = ["har", "sum"]
+static var return_to_title := false
+var database := RosterDatabase.new()
+var selected_teams: Array = []
+
 const CAMERA_NAMES := ["DYNAMIC", "OVERHEAD", "BROADCAST", "FULL RINK"]
 ## Bench gate (changing skaters head here) just inside the west side boards.
 const BENCH_X := -(Arena.HALF_WIDTH - 1.3)
@@ -23,7 +29,6 @@ var rosters: Array = [[],[]]
 var active_lines: Array[int] = [0,0]
 var defense_pairs: Array[int] = [0,0]
 var carrier: CharacterBody3D
-var team_panel: Label
 var penalties_label: Label
 var previous_phase := MatchState.Phase.FACEOFF
 var last_faceoff_serial := 0
@@ -47,6 +52,17 @@ func _init() -> void:
 	arena_title = "HAWKEY ARENA"
 
 func _ready() -> void:
+	if not database.load_file():
+		push_error(database.error)
+		var failure := Label.new()
+		failure.text = "Roster unavailable: " + database.error
+		add_child(failure)
+		set_physics_process(false)
+		set_process_unhandled_input(false)
+		return
+	for id_ in selected_team_ids:
+		var matches: Array = database.teams.filter(func(t): return t.id == id_)
+		selected_teams.append(matches[0] if not matches.is_empty() else database.teams[selected_teams.size()])
 	super._ready()
 	Input.joy_connection_changed.connect(on_controller_connection)
 	var devices:=Input.get_connected_joypads()
@@ -68,18 +84,16 @@ func _ready() -> void:
 	player.queue_free()
 	teammate.queue_free()
 	rosters = [[],[]]
-	var numbers := [17,28,9,22,13,48,36,8,62,44,19,53,5,24,72,4,39,67]
-	var names := ["E. Vale","N. March","A. Renaud","M. Holt","L. Voss","J. Belisle","D. Mercer","O. Lind","T. Keene","I. Caron","S. Adler","P. Kent","R. Cole","V. Baird","G. Laurent","K. Stone","F. Noel","B. Arvid"]
 	for team in range(2):
-		for i in range(18):
-			rosters[team].append({"name":names[(i+team*7)%18],"number":numbers[i],"stamina":1.0,"speed":88-i%5*3,"goals":0,"shots":0})
+		rosters[team] = database.match_roster(selected_teams[team])
 		for slot in range(5):
 			var roster_id := slot if slot<3 else 12+slot-3
 			var actor := make_skater(Vector3.ZERO,team_color(team),str(rosters[team][roster_id].number),false,team_accent(team))
-			actor.name = ("TOR_" if team==0 else "MTL_")+str(slot)
+			actor.name = str(selected_teams[team].id) + "_"+str(slot)
 			actor.set_meta("team",team)
 			actor.set_meta("slot",slot)
 			actor.set_meta("roster_id",roster_id)
+			actor.set_meta("player_id",rosters[team][roster_id].id)
 			actor.set_meta("changing",false)
 			actor.set_meta("pending_id",-1)
 			actor.set_meta("eligible",true)
@@ -91,8 +105,12 @@ func _ready() -> void:
 	teammate = skaters[1]
 	player_visual = player.get_child(1)
 	teammate_visual = teammate.get_child(1)
-	for goalie in goalkeepers:
+	for i in range(goalkeepers.size()):
+		var goalie := goalkeepers[i]
 		goalie.set_meta("last_contact",-1.0)
+		goalie.set_meta("player_id",rosters[i][18].id)
+		goalie.get_child(1).set_number(str(rosters[i][18].number))
+		goalie.get_child(1).set_nameplate(str(rosters[i][18].name).split(" ")[-1])
 	for i in range(2):
 		var official:=Skater.new()
 		official.referee=true
@@ -110,15 +128,16 @@ func _ready() -> void:
 	# The title screen shows in a real window only: headless tests and captures
 	# go straight to the game (--title forces it for screenshots).
 	var args := OS.get_cmdline_user_args()
-	in_menu = ("--title" in args) or (DisplayServer.get_name() != "headless" and not skip_title and not "--capture" in args)
+	in_menu = return_to_title or (not skip_title and (("--title" in args) or (DisplayServer.get_name() != "headless" and not "--capture" in args)))
 	skip_title = false
+	return_to_title = false
 	for arg in args:
 		if arg.begins_with("--camera="): camera_mode = clampi(int(arg.substr(9)), 0, 3)
 	hud_node.show_title(in_menu)
 	hud_node.set_controls_text(controller.active)
 
 func team_color(team: int) -> Color:
-	# Toronto at home in blue; Montreal in road whites.
+	# Fictional home and away palette; presentation remains owned by Claude.
 	return Color("#164a9a") if team==0 else Color("#e9edf0")
 
 func team_accent(team: int) -> Color:
@@ -138,13 +157,21 @@ func build_hud() -> void:
 	hud_node = BroadcastHud.new()
 	hud_node.team_colors.assign([Color("#164a9a"), Color("#b3162c")])
 	hud_layer = hud_node
+	for i in range(2):
+		hud_node.team_codes[i] = str(selected_teams[i].id).to_upper()
+		hud_node.team_names[i] = str(selected_teams[i].city).to_upper()
+	match_state.team_codes = hud_node.team_codes.duplicate()
+	match_state.team_names = hud_node.team_names.duplicate()
 	add_child(hud_node)
+	hud_node.configure_teams(database.teams, selected_team_ids)
+	hud_node.menu_requested.connect(func():
+		return_to_title = true
+		get_tree().reload_current_scene())
 	hud = hud_node.clock_label
 	status = hud_node.status_label
 	help = hud_node.hint_label
 	power = hud_node.power
 	penalties_label = hud_node.penalties_label
-	team_panel = Label.new()
 	hud_node.resume_requested.connect(func(): set_paused(false))
 	hud_node.camera_requested.connect(cycle_camera)
 	hud_node.restart_requested.connect(func():
@@ -167,10 +194,19 @@ func cycle_camera() -> void:
 	else: hud_node.show_banner(CAMERA_NAMES[camera_mode] + " CAMERA", "C or the pause menu to change", Color("#93a3b3"), 0.8)
 
 func start_from_title() -> void:
+	var choices: Array[String] = hud_node.selected_ids()
+	if choices[0] == choices[1]:
+		hud_node.selection_error.text = "Choose two different teams."
+		return
+	if choices != selected_team_ids:
+		selected_team_ids = choices
+		skip_title = true
+		get_tree().reload_current_scene()
+		return
 	in_menu = false
 	hud_node.show_title(false)
 	camera_side = 0.0
-	hud_node.show_banner("TORONTO  vs  MONTREAL", "1ST PERIOD", hud_node.team_colors[0], 1.6)
+	hud_node.show_banner(hud_node.team_names[0] + "  vs  " + hud_node.team_names[1], "1ST PERIOD", hud_node.team_colors[0], 1.6)
 
 func setup_faceoff() -> void:
 	for actor in skaters: actor.get_child(1).stop_mocap()
@@ -242,6 +278,7 @@ func roster_on_ice(team: int, roster_id: int) -> bool:
 
 func change_identity(actor: CharacterBody3D, id_: int) -> void:
 	actor.set_meta("roster_id",id_)
+	actor.set_meta("player_id",rosters[body_team(actor)][id_].id)
 	var visual := actor.get_child(1)
 	visual.set_number(str(rosters[body_team(actor)][id_].number))
 	visual.set_nameplate(str(rosters[body_team(actor)][id_].name).split(" ")[-1])
@@ -777,7 +814,7 @@ func update_match_hud() -> void:
 			pp="%s POWER PLAY   %d:%02d   %d ON %d"%[hud_node.team_codes[team],seconds/60,seconds%60,match_state.count(team),match_state.count(1-team)]
 	hud_node.update_bug(match_state.score,match_state.period,match_state.clock_text(),[match_state.count(0),match_state.count(1)],pp,team_shots)
 	# Centre-hung scoreboard mirrors the score bug (rebuilt only when it changes).
-	var board_line:="TOR  %d     MTL  %d"%[match_state.score[0],match_state.score[1]]
+	var board_line:="%s  %d     %s  %d"%[hud_node.team_codes[0],match_state.score[0],hud_node.team_codes[1],match_state.score[1]]
 	var board_sub:="%s   %s"%[["1ST","2ND","3RD"][clampi(match_state.period-1,0,2)],match_state.clock_text()]
 	if board_line+board_sub!=str(get_meta("board_text","")):
 		set_meta("board_text",board_line+board_sub)
@@ -787,20 +824,20 @@ func update_match_hud() -> void:
 	if match_state.event!=last_event:
 		var e:=match_state.event
 		if e.begins_with("END OF PERIOD"):
-			hud_node.show_banner("END OF "+["1ST","2ND","3RD"][clampi(match_state.period-1,0,2)], "TOR %d   –   %d MTL"%[match_state.score[0],match_state.score[1]], Color("#93a3b3"), 3.5)
+			hud_node.show_banner("END OF "+["1ST","2ND","3RD"][clampi(match_state.period-1,0,2)], board_line, Color("#93a3b3"), 3.5)
 		elif e.begins_with("Period "):
 			hud_node.show_banner(["1ST","2ND","3RD"][clampi(match_state.period-1,0,2)]+" PERIOD", "Ends switched", Color("#93a3b3"), 1.6)
 		elif e.begins_with("FINAL"):
-			hud_node.show_banner("FINAL", "TOR %d   –   %d MTL"%[match_state.score[0],match_state.score[1]], hud_node.ACCENT, 600.0)
-		elif " — " in e and (e.begins_with("TOR") or e.begins_with("MTL")):
-			var team:=0 if e.begins_with("TOR") else 1
-			hud_node.show_banner("PENALTY", e.substr(6).to_upper(), hud_node.team_colors[team], 2.0)
+			hud_node.show_results(match_state.score, team_shots)
+		elif " — " in e and (e.begins_with(hud_node.team_codes[0] + " — ") or e.begins_with(hud_node.team_codes[1] + " — ")):
+			var team:=0 if e.begins_with(hud_node.team_codes[0] + " — ") else 1
+			hud_node.show_banner("PENALTY", e.get_slice(" — ",1).to_upper(), hud_node.team_colors[team], 2.0)
 		last_event=e
 	var stopped:=match_state.phase!=MatchState.Phase.PLAY
 	var quiet_events:=["Play","Centre faceoff","Opening faceoff"]
 	status.text=("" if not stopped or match_state.event in quiet_events or match_state.event.ends_with("GOAL") else match_state.event.to_upper())
 	if debug:
-		status.text+="  FPS %d  ·  puck %.1f m/s  ·  height %.2f m  ·  %s"%[Engine.get_frames_per_second(),puck.linear_velocity.length(),puck.position.y,("TOR POSSESSION" if carrier!=null and body_team(carrier)==0 else ("MTL POSSESSION" if carrier!=null else "LOOSE PUCK"))]
+		status.text+="  FPS %d  ·  puck %.1f m/s  ·  height %.2f m  ·  %s"%[Engine.get_frames_per_second(),puck.linear_velocity.length(),puck.position.y,(hud_node.team_codes[0]+" POSSESSION" if carrier!=null and body_team(carrier)==0 else (hud_node.team_codes[1]+" POSSESSION" if carrier!=null else "LOOSE PUCK"))]
 	hud_node.status_panel.visible=not status.text.strip_edges().is_empty()
 	var penalty_text:=match_state.penalty_text()
 	hud_node.penalties_panel.visible=not penalty_text.is_empty()
@@ -826,7 +863,7 @@ func capture_preview() -> void:
 		set_paused(true)
 		await get_tree().process_frame
 	if "--goal-banner" in OS.get_cmdline_user_args():
-		hud_node.show_banner("GOAL", "TORONTO  ·  VALE", hud_node.team_colors[0], 5.0)
+		hud_node.show_banner("GOAL", hud_node.team_names[0]+"  ·  "+str(roster(player).name), hud_node.team_colors[0], 5.0)
 		for i in range(20): await get_tree().process_frame
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png("/tmp/hawkey-match-preview.png")

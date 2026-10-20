@@ -8,6 +8,7 @@ signal camera_requested
 signal restart_requested
 signal quit_requested
 signal play_requested
+signal menu_requested
 signal practice_requested
 
 const INK := Color("#f2f5f8")
@@ -17,8 +18,8 @@ const SLATE_2 := Color("#16212c")
 const ACCENT := Color("#e8b83a")
 
 var team_colors: Array[Color] = [Color("#1f5fbf"), Color("#b3162c")]
-var team_codes: Array[String] = ["TOR", "MTL"]
-var team_names: Array[String] = ["TORONTO", "MONTREAL"]
+var team_codes: Array[String] = ["HOME", "AWAY"]
+var team_names: Array[String] = ["HOME", "AWAY"]
 
 var root_ui: Control
 var bug: PanelContainer
@@ -47,6 +48,11 @@ var controls_panel: PanelContainer
 var controls_label: Label
 var pause_panel: Control
 var pause_camera_button: Button
+var team_choices: Array[OptionButton] = []
+var choice_ids: Array[String] = []
+var selection_error: Label
+var results_panel: PanelContainer
+var results_text: Label
 var title_screen: Control
 
 func font(weight := 600) -> Font:
@@ -384,6 +390,7 @@ func build_pause() -> void:
 	box.add_child(pause_camera_button)
 	box.add_child(menu_button("Controls", func(): controls_panel.visible = not controls_panel.visible))
 	box.add_child(menu_button("Restart game", func(): restart_requested.emit()))
+	box.add_child(menu_button("Return to menu", func(): menu_requested.emit()))
 	box.add_child(menu_button("Quit", func(): quit_requested.emit()))
 	pause_panel.visible = false
 	root_ui.add_child(pause_panel)
@@ -413,7 +420,7 @@ func build_title() -> void:
 	var box := VBoxContainer.new()
 	box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
 	box.offset_left = 96
-	box.offset_top = -250
+	box.offset_top = -370
 	box.offset_bottom = 250
 	box.add_theme_constant_override("separation", 12)
 	title_screen.add_child(box)
@@ -421,17 +428,24 @@ func build_title() -> void:
 	box.add_child(mark)
 	box.add_child(label("SIMULATION HOCKEY", 20, ACCENT, 600))
 	var gap := Control.new()
-	gap.custom_minimum_size.y = 28
+	gap.custom_minimum_size.y = 10
 	box.add_child(gap)
-	var play := menu_button("Play exhibition", func(): play_requested.emit())
+	var play := menu_button("Play Now", func(): play_requested.emit())
 	box.add_child(play)
 	box.add_child(menu_button("Practice", func(): practice_requested.emit()))
 	box.add_child(menu_button("Controls", func(): controls_panel.visible = not controls_panel.visible))
 	box.add_child(menu_button("Quit", func(): quit_requested.emit()))
 	var gap2 := Control.new()
-	gap2.custom_minimum_size.y = 20
+	gap2.custom_minimum_size.y = 4
 	box.add_child(gap2)
-	box.add_child(label("TORONTO  vs  MONTREAL   ·   3 × 20:00", 16, MUTED, 500))
+	for side_name in ["Home", "Away"]:
+		box.add_child(label(side_name, 16, MUTED, 500))
+		var choice := OptionButton.new()
+		choice.custom_minimum_size = Vector2(360, 34)
+		box.add_child(choice)
+		team_choices.append(choice)
+	selection_error = label("Fictional identities · estimated ratings\n3 × 20:00 · fixed prototype rules", 14, MUTED, 500)
+	box.add_child(selection_error)
 	title_screen.visible = false
 	root_ui.add_child(title_screen)
 
@@ -443,3 +457,34 @@ func show_title(on: bool) -> void:
 		(title_screen.get_child(2).get_child(3) as Button).grab_focus()
 	else:
 		controls_panel.visible = false
+
+func configure_teams(teams: Array, selected: Array[String]) -> void:
+	choice_ids.clear()
+	for choice in team_choices: choice.clear()
+	for team in teams:
+		choice_ids.append(team.id)
+		for choice in team_choices:
+			choice.add_item(team.city + " " + team.name)
+	for i in range(2):
+		team_choices[i].select(maxi(0, choice_ids.find(selected[i])))
+
+func selected_ids() -> Array[String]:
+	return [choice_ids[team_choices[0].selected], choice_ids[team_choices[1].selected]]
+
+func show_results(scores: Array[int], shots: Array[int]) -> void:
+	if is_instance_valid(results_panel): return
+	results_panel = PanelContainer.new()
+	results_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	results_panel.add_theme_stylebox_override("panel", panel_style(SLATE, 8, Vector4(30, 24, 30, 24)))
+	root_ui.add_child(results_panel)
+	var box := VBoxContainer.new()
+	results_panel.add_child(box)
+	box.add_child(label("FINAL", 32, INK, 700))
+	results_text = label("%s %d – %d %s\nShots: %d – %d" % [team_names[0], scores[0], scores[1], team_names[1], shots[0], shots[1]], 22)
+	box.add_child(results_text)
+	if scores[0] == scores[1]:
+		box.add_child(label("Draw · overtime/shootout not implemented", 16, MUTED))
+	var rematch := menu_button("Rematch", func(): restart_requested.emit())
+	box.add_child(rematch)
+	box.add_child(menu_button("Return to menu", func(): menu_requested.emit()))
+	rematch.grab_focus()

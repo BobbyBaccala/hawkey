@@ -9,6 +9,8 @@ var clock_rate := 4.0
 var phase_timer := 2.0
 var score: Array[int] = [0,0]
 var penalties: Array[Dictionary] = []
+var team_codes: Array[String] = ["HOME", "AWAY"]
+var team_names: Array[String] = ["HOME", "AWAY"]
 var event := "Opening faceoff"
 var ended_period := false
 var faceoff_serial := 0
@@ -31,7 +33,7 @@ func minor(team: int, roster_id: int, reason: String, duration: float = 120.0) -
 	if phase == Phase.FINAL or penalized(team,roster_id): return false
 	var starts := active_penalties(team).size() < 2
 	penalties.append({"team":team,"roster_id":roster_id,"reason":reason,"remaining":duration,"active":starts})
-	event = ("TOR" if team == 0 else "MTL")+" — "+reason+"  2:00"
+	event = team_codes[team]+" — "+reason+"  2:00"
 	phase = Phase.STOPPAGE
 	phase_timer = 2.2
 	return true
@@ -47,7 +49,7 @@ func goal(team: int) -> void:
 				break
 		activate_queued()
 	score[team] += 1
-	event = ("TORONTO" if team == 0 else "MONTREAL")+" GOAL"
+	event = team_names[team]+" GOAL"
 	phase = Phase.STOPPAGE
 	phase_timer = 3.0
 
@@ -104,5 +106,5 @@ func penalty_text() -> String:
 	var result := ""
 	for p in penalties:
 		var seconds := int(ceil(p.remaining))
-		result += "%s  %s  %d:%02d%s\n" % ["TOR" if p.team==0 else "MTL",p.reason,seconds/60,seconds%60," Q" if not p.active else ""]
+		result += "%s  %s  %d:%02d%s\n" % [team_codes[p.team],p.reason,seconds/60,seconds%60," Q" if not p.active else ""]
 	return result.strip_edges()

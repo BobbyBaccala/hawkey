@@ -238,6 +238,13 @@ func build_hud() -> void:
 	power.show_percentage = false
 	power.max_value = 1
 	canvas.add_child(power)
+	var menu := Button.new()
+	menu.text = "Return to menu"
+	menu.position = Vector2(32, 175)
+	menu.pressed.connect(func():
+		load("res://scripts/match.gd").return_to_title = true
+		get_tree().change_scene_to_file("res://main.tscn"))
+	canvas.add_child(menu)
 
 func capture_preview() -> void:
 	await get_tree().create_timer(2).timeout
