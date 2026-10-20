@@ -24,3 +24,7 @@ reads/writes work, so source audit/documents can be preserved. No new gameplay
 code or tests executed in this session. First follow-up: restore execution,
 reconcile latest prototype, run relevant baseline checks, then complete fictional
 rosters and native validated loading. Do not fabricate a build or screenshot.
+
+## 2026-10-20 12:50 refresh
+
+Presentation prototype now 4c9ab2a, with source-visible stride and goalie save selection changes. Do not overwrite match.gd when adding roster loading. Codex task this session: current-edition benchmark research, audit corrections, precise acceptance requirements; affected docs/BENCHMARK_CATALOGUE.md, ALPHA_FEATURE_AUDIT.md, GAME_MODES_BACKLOG.md and COORDINATION.md. Dependencies: execution workspace + Godot, reconciliation of newer prototype. Integration remains draft PR #2. Last engine-verified build remains unknown in this session. No tests rerun and no build artifact created.
