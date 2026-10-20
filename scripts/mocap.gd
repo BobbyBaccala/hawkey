@@ -21,12 +21,28 @@ const POINTS := ["Hips", "LeftFoot", "RightFoot"]
 
 static var _cache := {}
 
+## Mixamo names downloads several ways ("Left Strafe.fbx", "Left Strafe (2).fbx",
+## "Left_Strafe_2.fbx"); any copy of a clip is accepted. Exact names win.
+static func normalized(file_name: String) -> String:
+	var n := file_name.get_basename().to_lower().strip_edges()
+	var paren := RegEx.create_from_string("\\s*\\(\\d+\\)$")
+	n = paren.sub(n, "")
+	n = n.replace(" ", "_")
+	var numbered := RegEx.create_from_string("_\\d+$")
+	return numbered.sub(n, "")
+
 static func path_for(clip_name: String) -> String:
-	var spaced := clip_name.replace("_", " ")
-	for candidate in [clip_name + ".fbx", clip_name + "_1.fbx", spaced + ".fbx", spaced + " (1).fbx"]:
-		if ResourceLoader.exists(FOLDER + candidate):
-			return FOLDER + candidate
-	return ""
+	var dir := DirAccess.open(FOLDER)
+	if dir == null:
+		return ""
+	var want := normalized(clip_name)
+	var best := ""
+	for file_name in dir.get_files():
+		if not file_name.to_lower().ends_with(".fbx"):
+			continue
+		if normalized(file_name) == want and (best == "" or file_name.length() < best.length()):
+			best = file_name
+	return FOLDER + best if best != "" else ""
 
 static func available(clip_name: String) -> bool:
 	return _cache.has(clip_name) or path_for(clip_name) != ""

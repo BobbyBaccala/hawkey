@@ -567,8 +567,8 @@ func update_layers(delta: float) -> void:
 	if goalie and is_inside_tree():
 		if idle_data.is_empty() and Mocap.available("Goalkeeper_Idle"): idle_data=Mocap.clip("Goalkeeper_Idle",self)
 		idle_time+=delta
-		if shuffle_data[0].is_empty() and Mocap.available("Left_Strafe_2"):
-			shuffle_data=[Mocap.clip("Left_Strafe_2",self),Mocap.clip("Right_Strafe",self)]
+		if shuffle_data[0].is_empty() and Mocap.available("Left_Strafe"):
+			shuffle_data=[Mocap.clip("Left_Strafe",self),Mocap.clip("Right_Strafe",self)]
 		shuffle_weight=move_toward(shuffle_weight,clampf((absf(lateral)-0.25)/1.5,0,1)*(1.0-butterfly),delta*5)
 		var data:Dictionary=shuffle_data[0 if lateral>0 else 1]
 		if not data.is_empty():

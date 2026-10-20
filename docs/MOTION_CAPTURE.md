@@ -5,11 +5,11 @@ Mixamo's terms allow its animations inside games but forbid redistributing the r
 | File (Mixamo name) | Used for |
 | --- | --- |
 | `Goalkeeper Idle.fbx` | Goalie breathing, bounce and weight shift in the ready stance |
-| `Left Strafe.fbx`, `Right Strafe.fbx` (the 2.4 m clips; the game looks for `Left_Strafe_2` and `Right_Strafe`) | Goalie lateral shuffle footwork, timed to the slide distance |
+| `Left Strafe.fbx`, `Right Strafe.fbx` | Goalie lateral shuffle footwork, timed to the slide distance |
 | `Goalkeeper Body Block.fbx` | Torso reaction to hard shots off the pads or body |
 | `Standing Cheering.fbx` | Goal celebration for the scoring team, stick raised |
 
-Download settings: FBX Binary, 30 fps, no keyframe reduction; "With Skin" or "Without Skin" both work. Underscored or spaced file names are both accepted.
+Download settings: FBX Binary, 30 fps, no keyframe reduction; "With Skin" or "Without Skin" both work. Mixamo's own names are accepted as downloaded, including duplicates like `Left Strafe (2).fbx`. Extra files are ignored.
 
 `scripts/mocap.gd` samples each clip once at 30 fps into skeleton-independent data: unit directions for the spine and limb segments, and hip and foot positions scaled by hip height. Root travel is removed so clips play in place. `scripts/skater_visual.gd` blends these into the procedural pose, so pads, gloves, sticks and collision keep working.
 

@@ -188,7 +188,7 @@ func run() -> void:
 		await process_frame
 		check_pose(keeper, "goalie butterfly=%.1f save=%.2f" % pose)
 	var Mocap = load("res://scripts/mocap.gd")
-	if Mocap.available("Left_Strafe_2"):
+	if Mocap.available("Left_Strafe"):
 		# Captured lateral shuffle, both directions, sampled through the stride.
 		keeper.butterfly = 0.0
 		keeper.goalie_save_height = 0.0
