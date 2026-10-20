@@ -837,7 +837,7 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	update_layers(delta)
 	shot_follow = maxf(0,shot_follow-delta*3)
 	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
-	blade_position=Vector3(-0.02+butterfly*0.05,0.042,0.60-butterfly*0.04) if goalie else Vector3(-(0.20+stick_intent.x*0.55),0.029,0.83-stick_intent.y*0.26)
+	blade_position=Vector3(-0.02+butterfly*0.05,0.042,0.60-butterfly*0.04+0.035*sin(PI*butterfly)) if goalie else Vector3(-(0.20+stick_intent.x*0.55),0.029,0.83-stick_intent.y*0.26)
 	var target := clampf(speed/5.0,0,1) if pushing and not braking and not goalie else 0.0
 	push_blend = move_toward(push_blend,target,delta*4)
 	if push_blend > 0.01:
@@ -856,7 +856,8 @@ func set_nameplate(value: String) -> void:
 
 func stick_grip() -> Vector3:
 	if goalie:
-		var grip := Vector3(lerpf(-0.36,-0.24,butterfly)+posed_drop.x,0.60-butterfly*0.12,0.49)
+		# Mid-drop the stick is pushed out ahead of the closing pads.
+		var grip := Vector3(lerpf(-0.36,-0.24,butterfly)+posed_drop.x,0.60-butterfly*0.12,0.49+0.035*sin(PI*butterfly))
 		var block_w: float = save_weights.blocker
 		if block_w > 0.0:
 			# Blocker save: the stick hand punches out to the puck's line and the
