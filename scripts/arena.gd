@@ -99,10 +99,46 @@ func board_segment(a: Vector3, b: Vector3) -> void:
 	root.position = (a + b) * 0.5
 	root.rotation.y = atan2(-(b - a).z, (b - a).x)
 	var length_ := a.distance_to(b) + 0.03
-	block(root, Vector3(length_, 1.05, 0.24), Vector3(0, 0.525, 0), WHITE, true)
+	block(root, Vector3(length_, 1.05, 0.24), Vector3(0, 0.525, 0), WHITE)
+	# Board-and-glass collider: same inner face, from 0.5 m below the ice to the
+	# top of the glass with no gap between board and glass, and
+	# 1 m deep behind the face. A puck rests a few millimetres into the ice; with a
+	# collider ending at ice level the shortest way out of a board hit was DOWN,
+	# so sliding pucks were pushed under the boards and out of the rink. The
+	# depth behind the face also stops fast shots from passing through.
+	var wall := StaticBody3D.new()
+	var wall_shape := CollisionShape3D.new()
+	var wall_box := BoxShape3D.new()
+	wall_box.size = Vector3(length_, 3.16, 1.0)
+	wall_shape.shape = wall_box
+	var board_outward := 1.0 if root.basis.z.dot(root.position) > 0 else -1.0
+	wall_shape.position = Vector3(0, 1.08, 0.38 * board_outward)
+	wall.add_child(wall_shape)
+	var wall_material := PhysicsMaterial.new()
+	wall_material.friction = 0.03
+	wall_material.bounce = 0.55
+	wall.physics_material_override = wall_material
+	root.add_child(wall)
+	# Protective netting above the end and corner glass, as in NHL arenas:
+	# a lifted puck drops back into play instead of leaving the rink.
+	if absf(root.position.z) > 21.0:
+		var net := StaticBody3D.new()
+		var net_shape := CollisionShape3D.new()
+		var net_box := BoxShape3D.new()
+		net_box.size = Vector3(length_, 7.0, 0.6)
+		net_shape.shape = net_box
+		net_shape.position = Vector3(0, 2.66 + 3.5, (0.12 + 0.3) * board_outward)
+		net.add_child(net_shape)
+		var net_material := PhysicsMaterial.new()
+		net_material.friction = 0.8
+		net_material.bounce = 0.05
+		net.physics_material_override = net_material
+		root.add_child(net)
+		var mesh := block(root, Vector3(length_, 7.0, 0.01), Vector3(0, 2.66 + 3.5, 0.12 * board_outward), Color(0.05, 0.07, 0.09, 0.18))
+		mesh.material_override.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	block(root, Vector3(length_, 0.18, 0.27), Vector3(0, 0.09, 0), Color("#e8ba37"))
 	block(root, Vector3(length_, 0.08, 0.29), Vector3(0, 1.07, 0), Color("#19364f"))
-	block(root, Vector3(length_, 1.55, 0.045), Vector3(0, 1.88, 0), Color(0.58, 0.8, 0.87, 0.12),true,0.35)
+	block(root, Vector3(length_, 1.55, 0.045), Vector3(0, 1.88, 0), Color(0.58, 0.8, 0.87, 0.12))
 	tube(root, Vector3(-length_ / 2, 1.1, 0), Vector3(-length_ / 2, 2.66, 0), 0.025, Color("#8a9fac"))
 	board_count += 1
 
@@ -143,6 +179,11 @@ func _ready() -> void:
 	block(self, Vector3(85, 0.5, 100), Vector3(0, -0.65, 0), Color("#101e31"))
 	var ice := block(self, Vector3(30, 0.3, 60), Vector3(0, -0.15, 0), Color("#e4edf2"), true, 0.02)
 	ice.get_child(0).physics_material_override.friction=0.0
+	# The ice is on its own layer (5). Skaters stand on it; the puck does not
+	# collide with it, because puck.gd supports the puck on the ice plane itself.
+	# Jolt's continuous collision otherwise caught the ice under a resting puck
+	# and stopped every sliding pass and shot dead.
+	ice.get_child(0).collision_layer = 16
 	ice.visible = false
 	var ice_material := mat(Color("#afc0cc"),0.38)
 	ice.material_override = ice_material
