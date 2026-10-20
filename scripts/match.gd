@@ -688,9 +688,21 @@ func update_goalkeepers(delta: float) -> void:
 		if incoming: intercept_time=clampf((keeper.position.z-puck.position.z)/puck.linear_velocity.z,0,1)
 		var intercept_height:=PuckPhysics.ballistic_height(puck.position.y,puck.linear_velocity.y,intercept_time)
 		var threat:=incoming and absf(puck.position.z-keeper.position.z)<12
-		var low_shot:=threat and intercept_height<0.60
-		visual.butterfly=move_toward(visual.butterfly,1.0 if low_shot else 0.0,delta*(6 if low_shot else 2))
-		var desired_height:=clampf(intercept_height-0.7,0,0.40) if threat else 0.0
+		# Save selection from where the puck will cross the goalie: butterfly or a
+		# pad extension low, glove or blocker high to either side, body block in
+		# the middle. Each save blends in fast and recovers slowly, and a new
+		# read interrupts the old one.
+		var kind:=""
+		var crossing:=Vector2.ZERO
+		if threat:
+			var at:Vector3=puck.position+puck.linear_velocity*intercept_time
+			var local:Vector3=visual.rig.global_transform.affine_inverse()*Vector3(at.x,intercept_height,at.z)
+			crossing=Vector2(local.x,intercept_height)
+			kind=visual.choose_save(local.x,intercept_height)
+		var drop_down:bool=kind in ["butterfly","pad_left","pad_right"]
+		visual.butterfly=move_toward(visual.butterfly,1.0 if drop_down else 0.0,delta*(6 if drop_down else 2))
+		visual.set_save(kind,crossing if threat else visual.save_target,delta)
+		var desired_height:=clampf(intercept_height-0.7,0,0.40) if threat and kind=="body" else 0.0
 		visual.goalie_save_height=move_toward(visual.goalie_save_height,desired_height,delta*2.8)
 		keeper.velocity=(goalie_targets[i]-keeper.position).limit_length(1)*3.8
 		keeper.move_and_slide()

@@ -187,6 +187,19 @@ func run() -> void:
 		keeper.animate(0, 1)
 		await process_frame
 		check_pose(keeper, "goalie butterfly=%.1f save=%.2f" % pose)
+	# Save poses: glove, blocker and both pad extensions.
+	for save in [["glove", Vector2(0.8, 1.35)], ["blocker", Vector2(-0.7, 0.95)], ["pad_left", Vector2(0.95, 0.1)], ["pad_right", Vector2(-0.95, 0.1)]]:
+		var down: bool = save[0].begins_with("pad")
+		for f in range(60):
+			keeper.butterfly = move_toward(keeper.butterfly, 1.0 if down else 0.0, 0.1)
+			keeper.set_save(save[0], save[1], 1.0 / 60)
+			keeper.animate(0, 1.0 / 60)
+		await process_frame
+		check_pose(keeper, "goalie %s save" % save[0])
+	for f in range(90):
+		keeper.butterfly = move_toward(keeper.butterfly, 0.0, 0.1)
+		keeper.set_save("", Vector2(0, 0.8), 1.0 / 60)
+		keeper.animate(0, 1.0 / 60)
 	var Mocap = load("res://scripts/mocap.gd")
 	if Mocap.available("Left_Strafe"):
 		# Captured lateral shuffle, both directions, sampled through the stride.

@@ -75,6 +75,31 @@ func run() -> void:
 	check(both_lifted == 0, "Never both feet off the ice (%d frames)" % both_lifted)
 	check(max_spread[0] > 0.40 and max_spread[1] > 0.40, "Each push drives the foot out to the side (%.2f / %.2f m)" % max_spread)
 	check(pushing_side_changes >= 2, "Pushes alternate leg to leg (%d changes)" % pushing_side_changes)
+	# Smoothness: no pops in the foot path or hip sway (second difference of
+	# position per 120 Hz frame), and the boot follows the shin onto its edge.
+	var prev := [[], []]
+	var hips := []
+	var max_foot_jerk := 0.0
+	var max_hip_jerk := 0.0
+	var max_edge := 0.0
+	var max_pitch := 0.0
+	for f in range(360):
+		v.animate(8.0, 1.0 / 120)
+		for i in range(2):
+			prev[i].append(v.feet[i])
+			if prev[i].size() >= 3:
+				var n: int = prev[i].size()
+				max_foot_jerk = maxf(max_foot_jerk, (prev[i][n - 1] - 2.0 * prev[i][n - 2] + prev[i][n - 3]).length())
+			max_edge = maxf(max_edge, absf(v.skates[i].rotation.z))
+			max_pitch = maxf(max_pitch, v.skates[i].rotation.x)
+		hips.append(v.posed_drop)
+		if hips.size() >= 3:
+			var m: int = hips.size()
+			max_hip_jerk = maxf(max_hip_jerk, (hips[m - 1] - 2.0 * hips[m - 2] + hips[m - 3]).length())
+	check(max_foot_jerk < 0.003, "Foot path is smooth (a 0.36 m/s velocity pop would read 0.003) (max second difference %.4f m)" % max_foot_jerk)
+	check(max_hip_jerk < 0.0008, "Hip sway is smooth (max second difference %.5f m)" % max_hip_jerk)
+	check(max_edge > 0.30, "Boot rolls onto its edge with the shin during the push (%.2f rad)" % max_edge)
+	check(max_pitch > 0.30, "Toe flicks down at toe-off (%.2f rad)" % max_pitch)
 	# Coasting: no push, feet staggered rather than side by side.
 	for f in range(240):
 		v.animate(6.0, 1.0 / 120, 0, false)
