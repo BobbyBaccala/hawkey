@@ -1,3 +1,12 @@
+# 0.8 clipping pass and proportions
+
+- New `tests/test_clipping.gd` samples the surface of every gear piece and checks whether it lies more than 8 mm inside another piece's closed mesh. It covers seven goalie poses (ready, a save reach, and each quarter of the butterfly drop) and thirteen skater poses (stickhandling extremes and a full stride cycle). Contact is allowed only where it is designed: hands holding the stick inside the gloves, socks tucked into skates and under pants, and the stick's own joints. `--report` lists offending pairs. The pass started at 62 overlaps and now has 0.
+- Pads now rest on the skate with the toe cap and blade showing below them, as real pads do. The boot channel stands off the laces, and the calf wing and straps stay above the boot.
+- Thigh rises lean out toward the hips when standing. In the butterfly they fold along the thighs and compress where they meet, rather than crossing.
+- Mid-drop, the skates turn out early and the knees flare slightly, so the pads never pass through the skates or each other.
+- The stick and blocker sit in front of the pads, and the skater's bottom hand rides the shaft clear of the pants.
+- Skaters stand with hips about 0.80 m high and more forward lean, instead of a deep squat. The goalie sweater is about 0.62 m across the chest protector instead of a barrel.
+
 # 0.7 sculpted equipment and active stances
 
 ## Research basis

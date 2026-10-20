@@ -205,10 +205,12 @@ static func _band(y: float, at: float, half: float) -> float:
 ## Local frame: +Y runs up the shin, +Z is the pad face toward the shooter,
 ## +X*side is the outside of the leg. Origin is the collision-box centre; the
 ## knee sits at y = PAD_KNEE and the ankle at y = PAD_ANKLE.
-const PAD_LENGTH := 0.88
+## Like a real pad, the bottom rests on the skate (toe cap and blade show
+## below it) and the boot channel stands off the laces.
+const PAD_LENGTH := 0.73
 const PAD_WIDTH := 0.275
-const PAD_KNEE := 0.08
-const PAD_ANKLE := -0.35
+const PAD_KNEE := 0.035
+const PAD_ANKLE := -0.395
 ## The thigh-rise section hinges at this break above the knee.
 const PAD_BREAK := PAD_KNEE + 0.115
 
@@ -247,7 +249,7 @@ static func goalie_pad(side: float, kit: Color, accent: Color, y_from := -1.0, y
 		elif yy < bottom + 0.03:
 			round_ = sqrt(maxf(0.04, 1.0 - pow((bottom + 0.03 - yy) / 0.03, 2)))
 		# Boot channel / toe bridge sweeps forward over the skate toe.
-		var toe := pow(maxf(0, PAD_ANKLE - yy) / (PAD_ANKLE - bottom), 1.6) * 0.075
+		var toe := 0.07 * smoothstep(PAD_ANKLE + 0.25, PAD_ANKLE + 0.06, yy) + 0.012 * smoothstep(bottom + 0.05, bottom, yy)
 		var d := (front - back) * round_
 		var mid := (front + back) * 0.5
 		var profile := GearProfiles.rounded_rect(w * lerpf(0.55, 1.0, round_), d, [0.030, 0.008, 0.016, 0.016], 5, 12)
@@ -297,8 +299,9 @@ static func goalie_pad(side: float, kit: Color, accent: Color, y_from := -1.0, y
 		b.add_rounded_box(Vector3(0, PAD_KNEE + 0.17, -0.12), Vector3(0.20, 0.028, 0.012), 0.005, DARK)
 		return b.to_mesh(0.52)
 	b.add_rounded_box(Vector3(-side * 0.055, PAD_KNEE - 0.01, -0.085), Vector3(0.12, 0.17, 0.09), 0.03, OFFWHITE)
-	b.add_rounded_box(Vector3(side * 0.118, (PAD_ANKLE + PAD_KNEE) * 0.5, -0.072), Vector3(0.026, 0.36, 0.07), 0.011, kit)
-	for sy: float in [PAD_ANKLE + 0.03, PAD_KNEE - 0.16]:
+	# Calf wing and straps stay above the skate boot.
+	b.add_rounded_box(Vector3(side * 0.118, (PAD_ANKLE + 0.20 + PAD_KNEE) * 0.5, -0.072), Vector3(0.026, PAD_KNEE - PAD_ANKLE - 0.20, 0.07), 0.011, kit)
+	for sy: float in [PAD_ANKLE + 0.21, PAD_KNEE - 0.12]:
 		b.add_rounded_box(Vector3(0, sy, -0.12), Vector3(0.20, 0.028, 0.012), 0.005, DARK)
 	return b.to_mesh(0.52)
 

@@ -1,4 +1,4 @@
-# Hawkey — 0.7 sculpted equipment revision
+# Hawkey — 0.8 clipping and proportion revision
 
 Native Godot 4.6 PC hockey exhibition prototype. Uses a CC0 skinned human foundation with original hockey equipment, procedural skating and generated crowd/ice textures. This is an early exhibition prototype, not EA NHL-level photorealism or a complete regulation ruleset.
 
@@ -21,6 +21,12 @@ Godot's native gamepad support is used; no separate plugin is required. Controll
 | D-pad up/down; left/right | Forward line; defence pair |
 | L3; R3; Start | Effort; stop; pause |
 | F2 | Expanded controller help |
+
+## New in 0.8
+- Automated equipment clipping test (tests/test_clipping.gd) across 20 goalie and skater poses; 0 overlaps.
+- Pads rest on the skates with toe caps showing; thigh rises fold and compress in the butterfly without crossing.
+- Realistic skater stance height and lean; slimmer goalie torso.
+- Renders: docs/screenshots/goalie-closeup-v08.png, skater-closeup-v08.png, equipment-v08.png.
 
 ## New in 0.7
 - Real-proportion goalie gear built as smooth 3D meshes: box-style pads with outer roll, knee/boot breaks and toe bridge; curled blocker board; deep-pocket catcher with T-trap; fibreglass cat-eye mask.
