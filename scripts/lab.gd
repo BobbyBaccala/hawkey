@@ -75,7 +75,7 @@ func _ready() -> void:
 	world.environment.background_color = Color("#091222")
 	world.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	world.environment.ambient_light_color = Color("#cbdfee")
-	world.environment.ambient_light_energy = 0.48
+	world.environment.ambient_light_energy = 0.34
 	world.environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	world.environment.background_color = Color("#04070b")
 	# Bloom on arena lights, scoreboard and LED ribbons; contact shading under
@@ -98,21 +98,18 @@ func _ready() -> void:
 	var sun := DirectionalLight3D.new()
 	# Arena lighting comes from overhead rigs: a steep key with soft shadows.
 	sun.rotation_degrees = Vector3(-80,-20,0)
-	sun.light_energy = 0.62
+	sun.light_energy = 0.42
 	sun.shadow_opacity=0.45
 	sun.shadow_blur=1.5
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 100
 	add_child(sun)
-	for x in [-10.0,10.0]:
-		for z in [-20.0,0.0,20.0]:
-			var light := OmniLight3D.new()
-			light.position = Vector3(x,12,z)
-			light.omni_range = 25
-			light.light_energy = 0.04
-			add_child(light)
+	# Per-zone overhead pools and side rim lights (scripts/arena_lighting.gd).
+	var lighting = preload("res://scripts/arena_lighting.gd").new()
+	add_child(lighting)
 	arena = Arena.new()
 	add_child(arena)
+	lighting.tag_environment(arena)
 	player = make_skater(Vector3(0,0,0),Color("#116c9e"),"17")
 	player_visual = player.get_child(1)
 	teammate = make_skater(Vector3(6,0,-7),Color("#116c9e"),"28")

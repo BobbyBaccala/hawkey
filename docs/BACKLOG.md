@@ -17,7 +17,7 @@ Rules for every run:
   note why in the log.
 
 ## Presentation and environment
-- [ ] Arena lighting pass: per-zone overhead spot/omni lights so the ice has soft pools of light and players get rim light; check gameplay-camera readability.
+- [x] Arena lighting pass: per-zone overhead spot/omni lights so the ice has soft pools of light and players get rim light; check gameplay-camera readability.
 - [ ] Ice detail: subtle skate-scratch decal/shader that builds up over the period, faint reflections of boards, resurfaced look at period start.
 - [ ] Goal nets: proper mesh netting with a back-bar shape, white padding at the base, and net ripple when the puck goes in.
 - [ ] Benches and penalty boxes on one side with glass, doors and players seated, removing the bare stands there.
@@ -46,3 +46,4 @@ Rules for every run:
 
 ## Run log
 - 2026-10-20 — Backlog created after v0.10 (cameras, arena, broadcast UI).
+- 2026-10-20 — Arena lighting pass: 8 shadowless overhead spot pools (scripts/arena_lighting.gd) replace the near-zero omnis; ambient/sun lowered so pools read; two low side rim lights masked off the arena layer (light players only). New tests/test_lighting.gd. Screenshot: docs/screenshots/arena-lighting-auto-20261020-1456.png
