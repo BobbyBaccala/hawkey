@@ -4,6 +4,29 @@ const Human = preload("res://assets/player-base-v1.glb")
 const Uniform = preload("res://assets/uniform.gdshader")
 const Arena = preload("res://scripts/arena.gd")
 const Gear = preload("res://scripts/gear_builder.gd")
+const Mocap = preload("res://scripts/mocap.gd")
+const MOCAP_HIP_HEIGHT := 0.958
+# Captured clip blended over the procedural pose (celebrations, save reactions).
+var mocap := {}
+var mocap_time := 0.0
+var mocap_weight := 0.0
+var mocap_fade := 0.0
+var mocap_loop := false
+var mocap_mask: Array = []
+var mocap_rate := 1.0
+var mocap_end := 0.0
+var mocap_strength := 1.0
+# Goalie layers: captured idle breathing/weight shift and lateral shuffles.
+var idle_data := {}
+var idle_time := 0.0
+var shuffle_data: Array = [{},{}]
+var shuffle_time := 0.0
+var shuffle_weight := 0.0
+var lateral := 0.0
+var last_world := Vector3.INF
+var raised_stick := 0.0
+var posed_wrists: Array[Vector3] = [Vector3.ZERO,Vector3.ZERO]
+var posed_elbows: Array[Vector3] = [Vector3.ZERO,Vector3.ZERO]
 var kit := Color("#116c9e")
 ## Secondary team colour for pad, glove and mask graphics; derived from kit when unset.
 var accent := Color(0,0,0,0)
@@ -276,7 +299,7 @@ func build_jersey() -> void:
 	var instance := MeshInstance3D.new()
 	instance.mesh = mesh
 	var shader := Shader.new()
-	shader.code = "shader_type spatial; render_mode cull_disabled; uniform vec4 kit:source_color; void fragment(){float stripe=step(UV.y,1.075);float weave=sin(UV.x*700.0)*sin(UV.y*700.0)*0.003;ALBEDO=mix(kit.rgb,vec3(0.68),stripe)+weave;ROUGHNESS=0.86;SPECULAR=0.18;}"
+	shader.code = "shader_type spatial; render_mode cull_disabled; uniform vec4 kit:source_color; void fragment(){float stripe=(step(1.005,UV.y)-step(1.035,UV.y))+(step(1.05,UV.y)-step(1.064,UV.y));float weave=sin(UV.x*700.0)*sin(UV.y*700.0)*0.003;ALBEDO=mix(kit.rgb,vec3(0.68),stripe)+weave;ROUGHNESS=0.86;SPECULAR=0.18;}"
 	var m := ShaderMaterial.new()
 	m.shader = shader
 	m.set_shader_parameter("kit",kit)
@@ -344,10 +367,25 @@ func pose(speed: float, turn: float) -> void:
 		# Sit back: hips behind the heels so the shins angle ~25 degrees and the
 		# pads stay upright; in the butterfly the hips come forward over the knees.
 		drop = Vector3(0,lerpf(-0.33,-0.55,butterfly),lerpf(-0.24,-0.04,butterfly))
+	var cap := {}
+	if mocap_weight>0 and not mocap.is_empty():
+		cap = Mocap.sample(mocap,mocap_time,mocap_loop)
+	var idle := {}
+	if goalie and not idle_data.is_empty():
+		idle = Mocap.sample(idle_data,idle_time)
+		# Captured weight shift and bounce of a keeper set in his stance.
+		var shift:Vector3=(idle.points.Hips-idle_data.mean.points.Hips)*MOCAP_HIP_HEIGHT*(1.0-butterfly)
+		drop += Vector3(shift.x*0.25,shift.y*0.8,0)
+	var capture_weight := mocap_weight*mocap_strength
 	var root_pose := root_rest
 	root_pose.origin += drop
 	override_pose("root",root_pose)
 	bend = Basis(Vector3.RIGHT,lerpf(0.52,0.26,butterfly) if goalie else 0.50+minf(speed/40,0.18))
+	if not idle.is_empty():
+		var sway:=Quaternion(idle_data.mean.dirs.spine,idle.dirs.spine)
+		bend = Basis(Quaternion.IDENTITY.slerp(sway,0.7*(1.0-butterfly)))*bend
+	if not cap.is_empty() and "spine" in mocap_mask:
+		bend = Basis(Quaternion(bend.orthonormalized()).slerp(Quaternion(Vector3.UP,cap.dirs.spine),capture_weight))
 	var pivot := root_rest.origin
 	var spine: Transform3D = rest["spine05"]
 	var spine_pose := Transform3D(bend * spine.basis,pivot + drop + bend * (spine.origin-pivot))
@@ -369,16 +407,26 @@ func pose(speed: float, turn: float) -> void:
 		var ankle := Vector3(side*(0.24+push*0.22*push_blend),0.115+lift*push_blend,0.06-push*0.30*push_blend)
 		# Goalie ready stance: feet a little wider than the shoulders, knees in.
 		if goalie: ankle = Vector3(side*lerpf(0.27,0.58,butterfly),0.115,lerpf(0.0,0.10,butterfly))
+		if goalie and shuffle_weight>0.01:
+			# Lateral shuffle: captured strafe footwork, narrowed to stay in the stance.
+			var data:Dictionary=shuffle_data[0 if lateral>0 else 1]
+			if not data.is_empty():
+				var step:=Mocap.sample(data,shuffle_time)
+				var foot_key:="LeftFoot" if i==0 else "RightFoot"
+				var off:Vector3=(step.points[foot_key]-data.mean.points[foot_key])*MOCAP_HIP_HEIGHT
+				ankle += Vector3(off.x*0.3,maxf(0,off.y)*0.5,off.z*0.15)*shuffle_weight
+				# Goalies shuffle without bringing the feet together.
+				ankle.x=side*clampf(side*ankle.x,0.25,0.33)
 		feet[i] = ankle
 		var hip: Vector3 = rest["upperleg01"+suffix].origin+drop
 		var knee := knee_position(hip,ankle,Vector3(-side*0.12,0,1) if goalie else Vector3(0,0,1),0.44,0.45)
 		# Pads meet edge to edge at the knees rather than crossing.
-		if goalie: knee.x=side*maxf(side*knee.x,Gear.PAD_WIDTH*0.5+0.024)
+		if goalie: knee.x=side*maxf(side*knee.x,Gear.PAD_WIDTH*0.5+0.024+0.035*shuffle_weight)
 		# Butterfly: knees together on the ice, shins flared out behind them.
 		if goalie:
 			knee=knee.lerp(Vector3(side*0.17,0.13,0.24),butterfly)
 			# Shins flare as the knees drop, so the knees stay apart mid-drop.
-			knee.x+=side*0.035*sin(PI*butterfly)
+			knee.x+=side*0.045*sin(PI*butterfly)
 		knees[i]=knee
 		align_bone("upperleg01"+suffix,"lowerleg01"+suffix,hip,knee)
 		align_bone("lowerleg01"+suffix,"foot"+suffix,knee,ankle)
@@ -403,12 +451,13 @@ func pose(speed: float, turn: float) -> void:
 			var face:Vector3=(Vector3.BACK-shin*shin.dot(Vector3.BACK)).normalized()
 			pads[i].basis=Basis(shin.cross(face),shin,face)
 			# Ride a few centimetres up the shin so the skate toe cap shows below.
-			pads[i].position=knee-shin*(Gear.PAD_KNEE-0.065)+face*0.09
+			# Standing, the pad is anchored to the ankle so it always clears the skate.
+			pads[i].position=(ankle+shin*0.48).lerp(knee-shin*(Gear.PAD_KNEE-0.065),butterfly)+face*0.09
 			# The thigh rise follows the thigh: it leans out toward the hip as it
 			# rises in the stance, and folds back along the thigh in the butterfly.
 			var thigh_local:Vector3=pads[i].basis.inverse()*(hip-knee).normalized()
 			var roll:float=clampf(atan2(-thigh_local.x,thigh_local.y),-0.6,0.6)
-			var standing:=Quaternion(Basis(Vector3.BACK,-roll*0.6)*Basis(Vector3.RIGHT,-0.12))
+			var standing:=Quaternion(Basis(Vector3.BACK,-roll*0.6-side*0.08)*Basis(Vector3.RIGHT,-0.12))
 			# Butterfly: the thigh rise folds flat along the thigh and its foam
 			# compresses where the two meet behind the wall of pads.
 			var folded:=Quaternion(Vector3.UP,thigh_local)
@@ -416,6 +465,7 @@ func pose(speed: float, turn: float) -> void:
 			var squash:=smoothstep(0.0,0.3,butterfly)
 			thigh_rises[i].position=Vector3(0,Gear.PAD_BREAK-0.08*squash,-0.04+0.05*squash)
 			thigh_rises[i].basis=Basis(standing.slerp(folded,smoothstep(0.0,0.6,butterfly))).scaled_local(Vector3(lerpf(1.0,0.42,squash),1,lerpf(1.0,0.7,squash)))
+			thigh_rises[i].set_meta("rest_basis",thigh_rises[i].basis)
 			# Pad lower edges seal against the ice in butterfly.
 			var box:Array=pad_box()
 			var size_:Vector3=box[1]
@@ -428,10 +478,17 @@ func pose(speed: float, turn: float) -> void:
 		# Bottom hand rides the shaft, kept clear of the pants.
 		var wrist := stick_grip().lerp(blade_position+Vector3(-stick_blade_length*0.48,0,0),0.26)+Vector3(0,0.02,0.05*maxf(0,stick_intent.y)) if i==0 else stick_grip()
 		if referee: wrist=Vector3(side*0.32,0.96,0.03)
+		var captured_elbow := Vector3.ZERO
+		if not cap.is_empty() and "arms" in mocap_mask and not goalie:
+			# Captured arm directions, scaled to this rig's segment lengths.
+			captured_elbow = shoulder+cap.dirs["upper"+suffix]*0.28
+			wrist = wrist.lerp(captured_elbow+cap.dirs["fore"+suffix]*0.29,capture_weight)
+			# Hands at the sides hang outside the padded pants.
+			if wrist.y<1.05: wrist.x=side*maxf(side*wrist.x,lerpf(0.0,0.38,capture_weight))
 		if goalie:
 			# Hands out in front of the body: catcher open to the shooter at the hip,
 			# blocker on the stick at the top of the paddle.
-			wrist=Vector3(0.38,0.81-butterfly*0.16+goalie_save_height,0.40) if i==0 else stick_grip()
+			wrist=Vector3(0.47,0.83-butterfly*0.16+goalie_save_height,0.42) if i==0 else stick_grip()
 			if i==0:
 				goalie_gloves[i].position=wrist+Vector3(0.0,0.03,0.035)
 				goalie_gloves[i].rotation=Vector3(-0.12,0.32,-0.12)
@@ -442,17 +499,85 @@ func pose(speed: float, turn: float) -> void:
 			skater_gloves[i].position=wrist
 			skater_gloves[i].basis=Basis(Quaternion(Vector3.UP,(stick_grip()-blade_position).normalized()))
 		var pole := Vector3(side*0.6,-0.8,-0.1) if goalie else Vector3(side,0,-0.3)
+		if captured_elbow != Vector3.ZERO:
+			pole = pole.lerp((captured_elbow-(shoulder+wrist)*0.5).normalized(),capture_weight)
 		var elbow := knee_position(shoulder,wrist,pole,0.28,0.29)
+		posed_wrists[i]=wrist
+		posed_elbows[i]=elbow
 		update_cloth_sleeve(cloth_sleeves[i],shoulder,elbow,wrist)
 		align_bone("upperarm01"+suffix,"lowerarm01"+suffix,shoulder,elbow)
 		align_bone("lowerarm01"+suffix,"wrist"+suffix,elbow,wrist)
 		var wrist_pose: Transform3D = rest["wrist"+suffix]
 		wrist_pose.origin = wrist
 		override_pose("wrist"+suffix,wrist_pose)
+	if goalie: separate_thigh_rises()
 	rig.rotation.z = clampf(turn,-0.13,0.13)
 	update_stick()
 
+## Rolls the two thigh rises outward until their inner edges clear each other,
+## whatever the knees, idle sway or shuffle footwork are doing.
+func separate_thigh_rises() -> void:
+	var extra := 0.0
+	for iteration in range(14):
+		var gap := INF
+		var rise:=Gear.PAD_LENGTH*0.5-Gear.PAD_BREAK
+		for height in [rise,rise*0.66,rise*0.33]:
+			for depth in [-0.04,0.04,0.11]:
+				var left_edge:Vector3=pads[0].transform*thigh_rises[0].transform*Vector3(-Gear.PAD_WIDTH*0.5,height,depth)
+				var right_edge:Vector3=pads[1].transform*thigh_rises[1].transform*Vector3(Gear.PAD_WIDTH*0.5,height,depth)
+				gap=minf(gap,left_edge.x-right_edge.x)
+		if gap>=0.045 or butterfly>0.3: return
+		extra+=0.05
+		for i in range(2):
+			var side:=1.0 if i==0 else -1.0
+			var rest_basis:Basis=thigh_rises[i].get_meta("rest_basis")
+			thigh_rises[i].basis=Basis(Vector3.BACK,-side*extra)*rest_basis
+
+## Plays a captured clip over the procedural pose. Mask entries: "spine",
+## "arms", "stick_up". Returns false when the clip file is not installed.
+func play_mocap(clip_name: String, loop := false, mask: Array = ["spine","arms"], rate := 1.0, duration := -1.0, strength := 1.0) -> bool:
+	var data := Mocap.clip(clip_name,self)
+	if data.is_empty(): return false
+	mocap=data
+	mocap_time=0.0
+	mocap_loop=loop
+	mocap_mask=mask
+	mocap_rate=rate
+	mocap_end=duration if duration>0 else float(data.length)
+	mocap_strength=strength
+	mocap_fade=1.0
+	return true
+
+func stop_mocap() -> void:
+	mocap_fade=0.0
+
+func update_layers(delta: float) -> void:
+	if is_inside_tree():
+		var world:=global_position
+		if last_world!=Vector3.INF and delta>0:
+			var local_velocity:Vector3=rig.global_basis.orthonormalized().inverse()*((world-last_world)/delta)
+			lateral=lerpf(lateral,local_velocity.x,1-exp(-10*delta))
+		last_world=world
+	if not mocap.is_empty():
+		mocap_time+=delta*mocap_rate
+		if not mocap_loop and mocap_time>=mocap_end-0.3: mocap_fade=0.0
+		mocap_weight=move_toward(mocap_weight,mocap_fade,delta*4)
+		if mocap_weight<=0 and mocap_fade==0: mocap={}
+	raised_stick=mocap_weight*mocap_strength if "stick_up" in mocap_mask and not mocap.is_empty() else move_toward(raised_stick,0,delta*4)
+	if goalie and is_inside_tree():
+		if idle_data.is_empty() and Mocap.available("Goalkeeper_Idle"): idle_data=Mocap.clip("Goalkeeper_Idle",self)
+		idle_time+=delta
+		if shuffle_data[0].is_empty() and Mocap.available("Left_Strafe_2"):
+			shuffle_data=[Mocap.clip("Left_Strafe_2",self),Mocap.clip("Right_Strafe",self)]
+		shuffle_weight=move_toward(shuffle_weight,clampf((absf(lateral)-0.25)/1.5,0,1)*(1.0-butterfly),delta*5)
+		var data:Dictionary=shuffle_data[0 if lateral>0 else 1]
+		if not data.is_empty():
+			# Advance the footwork by distance covered so steps match the slide.
+			var stride:float=maxf(0.1,data.travel.length()*MOCAP_HIP_HEIGHT/data.length)
+			shuffle_time+=delta*absf(lateral)/stride
+
 func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, braking: bool = false) -> void:
+	update_layers(delta)
 	shot_follow = maxf(0,shot_follow-delta*3)
 	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
 	blade_position=Vector3(-0.02+butterfly*0.05,0.042,0.60-butterfly*0.04) if goalie else Vector3(-(0.20+stick_intent.x*0.55),0.029,0.83-stick_intent.y*0.26)
@@ -479,6 +604,12 @@ func stick_grip() -> Vector3:
 func update_stick() -> void:
 	var top:=stick_grip()
 	var bottom:=blade_position+Vector3(-stick_blade_length*0.48,0,0)
+	if raised_stick>0.01:
+		# Celebration: the stick goes up with the top hand, blade high.
+		var hand:Vector3=posed_wrists[1]
+		var lift:=((hand-posed_elbows[1]).normalized()+Vector3(0,1.6,0)).normalized()
+		top=top.lerp(hand-lift*0.12,raised_stick)
+		bottom=bottom.lerp(hand+lift*1.30,raised_stick)
 	var axis:=top-bottom
 	stick_shaft.position=(top+bottom)*0.5
 	stick_shaft.basis=Basis(Quaternion(Vector3.UP,axis.normalized()))
@@ -491,7 +622,8 @@ func update_stick() -> void:
 		goalie_paddle.position=(bottom+paddle_top)*0.5
 		goalie_paddle.basis=stick_shaft.basis
 		goalie_paddle.scale=Vector3(1,bottom.distance_to(paddle_top),1)
-	stick_blade.position=blade_position
+	stick_blade.basis=Basis.IDENTITY.slerp(stick_shaft.basis.orthonormalized(),raised_stick)
+	stick_blade.position=bottom+stick_blade.basis*Vector3(stick_blade_length*0.48,0,0)
 	grip_tape.position=top
 	grip_tape.basis=stick_shaft.basis
 

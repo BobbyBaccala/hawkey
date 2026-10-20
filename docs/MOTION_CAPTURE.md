@@ -1,3 +1,30 @@
+# Mixamo motion capture (0.9)
+
+Mixamo's terms allow its animations inside games but forbid redistributing the raw files, so they are not in this repository. Put the FBX files in `assets/mixamo/` on your own machine (the folder is git-ignored). Godot imports them on the next editor launch.
+
+| File (Mixamo name) | Used for |
+| --- | --- |
+| `Goalkeeper Idle.fbx` | Goalie breathing, bounce and weight shift in the ready stance |
+| `Left Strafe.fbx`, `Right Strafe.fbx` (the 2.4 m clips; the game looks for `Left_Strafe_2` and `Right_Strafe`) | Goalie lateral shuffle footwork, timed to the slide distance |
+| `Goalkeeper Body Block.fbx` | Torso reaction to hard shots off the pads or body |
+| `Standing Cheering.fbx` | Goal celebration for the scoring team, stick raised |
+
+Download settings: FBX Binary, 30 fps, no keyframe reduction; "With Skin" or "Without Skin" both work. Underscored or spaced file names are both accepted.
+
+`scripts/mocap.gd` samples each clip once at 30 fps into skeleton-independent data: unit directions for the spine and limb segments, and hip and foot positions scaled by hip height. Root travel is removed so clips play in place. `scripts/skater_visual.gd` blends these into the procedural pose, so pads, gloves, sticks and collision keep working.
+
+The captured layers are constrained so they never break hockey posture or clip gear:
+- Idle hip sway is reduced.
+- Shuffle steps stay between 25 and 33 cm from centre.
+- Thigh rises are rolled apart whenever they would touch.
+- Celebrating hands hang outside the pants.
+
+`tests/test_clipping.gd` checks the shuffle and celebration poses, and `tests/test_mocap.gd` checks the live-match triggers. Both skip the captured cases when the clips are absent; the game then falls back to procedural motion.
+
+Skating legs remain procedural, since no free skating capture exists. `tools/capture_mocap.gd` renders a review of the captured poses.
+
+---
+
 # Video-based motion reference — evaluated, not retargeted
 
 A video overlay is a review aid, not a skeletal animation. The pipeline must estimate joints, reject occlusion/low-confidence frames, solve camera/body coordinates, correct foot contact, preserve bone lengths, retarget the hockey rig and blend animation under player input.

@@ -1,4 +1,4 @@
-# Hawkey — 0.8 clipping and proportion revision
+# Hawkey — 0.9 motion capture revision
 
 Native Godot 4.6 PC hockey exhibition prototype. Uses a CC0 skinned human foundation with original hockey equipment, procedural skating and generated crowd/ice textures. This is an early exhibition prototype, not EA NHL-level photorealism or a complete regulation ruleset.
 
@@ -21,6 +21,12 @@ Godot's native gamepad support is used; no separate plugin is required. Controll
 | D-pad up/down; left/right | Forward line; defence pair |
 | L3; R3; Start | Effort; stop; pause |
 | F2 | Expanded controller help |
+
+## New in 0.9
+- Mixamo motion capture retargeted onto the players: captured goalie idle, lateral shuffle footwork, body-block save reactions and goal celebrations with sticks raised.
+- Raw Mixamo files stay out of the repository (Adobe terms). Put them in assets/mixamo/ locally; see docs/MOTION_CAPTURE.md. Without them the game uses procedural motion.
+- Clipping test extended to the captured shuffle and celebration poses; tests/test_mocap.gd covers the live-match triggers.
+- Render: docs/screenshots/mocap-v09.png.
 
 ## New in 0.8
 - Automated equipment clipping test (tests/test_clipping.gd) across 20 goalie and skater poses; 0 overlaps.

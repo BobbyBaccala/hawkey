@@ -173,6 +173,7 @@ func build_hud() -> void:
 	canvas.add_child(power)
 
 func setup_faceoff() -> void:
+	for actor in skaters: actor.get_child(1).stop_mocap()
 	carrier = null
 	pickup_owner = false
 	charge = 0
@@ -406,7 +407,11 @@ func _on_puck_contact(body: Node) -> void:
 		# Engine contact normals/materials resolve rebound direction and vertical speed.
 		var pocket:Vector3=body.to_local(puck.global_position)
 		var front_entry:bool=last_puck_velocity.dot(body.global_basis.z)<-1
-		if str(body.get_meta("zone",""))=="catcher" and last_puck_velocity.length()<32 and front_entry and absf(pocket.x)<0.085 and absf(pocket.y)<0.10:
+		var zone:=str(body.get_meta("zone",""))
+		if zone in ["body","pad"] and last_puck_velocity.length()>10:
+			# Captured body-block reaction through the torso.
+			actor.get_child(1).play_mocap("Goalkeeper_Body_Block",false,["spine"],1.5,0.9,0.45)
+		if zone=="catcher" and last_puck_velocity.length()<32 and front_entry and absf(pocket.x)<0.085 and absf(pocket.y)<0.10:
 			match_state.phase=MatchState.Phase.STOPPAGE
 			match_state.phase_timer=2
 			match_state.event="Goalkeeper catch"
@@ -455,6 +460,10 @@ func _physics_process(delta: float) -> void:
 			if Skating.goal_crossing_end(previous_puck,puck.position,end_):
 				var scoring_team:=0 if attack_direction(0)==end_ else 1
 				match_state.goal(scoring_team)
+				# Scorers celebrate with captured motion, sticks raised.
+				for actor in skaters:
+					if body_team(actor)==scoring_team:
+						actor.get_child(1).play_mocap("Standing_Cheering",false,["spine","arms","stick_up"])
 				next_faceoff=Vector3.ZERO
 				beep(550)
 				carrier=null
@@ -465,7 +474,9 @@ func _physics_process(delta: float) -> void:
 			match_state.phase_timer=1.5
 			match_state.event="Puck out of play"
 	else:
-		for actor in skaters: actor.velocity=Vector3.ZERO
+		for actor in skaters:
+			actor.velocity=Vector3.ZERO
+			actor.get_child(1).animate(0,delta,0,false)
 	last_puck_velocity=puck.linear_velocity
 	goals=match_state.score[0]
 	away_goals=match_state.score[1]

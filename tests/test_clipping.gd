@@ -187,6 +187,18 @@ func run() -> void:
 		keeper.animate(0, 1)
 		await process_frame
 		check_pose(keeper, "goalie butterfly=%.1f save=%.2f" % pose)
+	var Mocap = load("res://scripts/mocap.gd")
+	if Mocap.available("Left_Strafe_2"):
+		# Captured lateral shuffle, both directions, sampled through the stride.
+		keeper.butterfly = 0.0
+		keeper.goalie_save_height = 0.0
+		for direction in [1.0, -1.0]:
+			for f in range(48):
+				keeper.position.x += direction * 2.4 / 60
+				keeper.animate(0, 1.0 / 60)
+				if f % 8 == 7:
+					await process_frame
+					check_pose(keeper, "goalie shuffle %+d frame %d" % [direction, f])
 	keeper.queue_free()
 	var skater = Visual.new()
 	root.add_child(skater)
@@ -202,6 +214,12 @@ func run() -> void:
 			skater.animate(8, 1.0 / 120)
 		await process_frame
 		check_pose(skater, "skater stride %d" % i)
+	if skater.play_mocap("Standing_Cheering", false, ["spine", "arms", "stick_up"]):
+		for f in range(200):
+			skater.animate(0, 1.0 / 60)
+			if f % 25 == 24:
+				await process_frame
+				check_pose(skater, "skater celebration %.1fs" % ((f + 1) / 60.0))
 	skater.queue_free()
 	await process_frame
 	print("Clipping failures: ", failures)
