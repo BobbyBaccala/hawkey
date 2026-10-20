@@ -1,4 +1,5 @@
 extends Node3D
+const GoalNet = preload("res://scripts/goal_net.gd")
 ## Original procedural rink. Units are metres; visual markings share one ice plane.
 const RED = Color("#8f1631")
 const BLUE = Color("#174b8c")
@@ -282,37 +283,32 @@ func trapezoid(end_sign: float) -> void:
 		seg.rotation.y = atan2(b.x - a.x, b.z - a.z)
 
 func goal(end_sign: float) -> void:
-	var root := Node3D.new()
+	var root := GoalNet.new()
 	root.name = "NorthGoal" if end_sign < 0 else "SouthGoal"
 	add_child(root)
 	root.position.z = end_sign * GOAL_LINE
 	if end_sign > 0:
 		root.rotation.y = PI
 	goals.append(root)
-	for x in [-0.96, 0.96]:
-		tube(root, Vector3(x, 0.04, 0), Vector3(x, 1.22, 0), 0.035, RED, true)
-		tube(root, Vector3(x, 1.22, 0), Vector3(x * 0.85, 0.15, -1.1), 0.025, RED)
-		# Collision cage invisible visually; mesh strands remain open and readable.
-		var side := block(root, Vector3(0.06, 1.2, 1.1), Vector3(x, 0.6, -0.55), Color(1,1,1,0), true, 0.12)
-		side.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	tube(root, Vector3(-0.96, 1.22, 0), Vector3(0.96, 1.22, 0), 0.035, RED, true)
-	var back := block(root, Vector3(1.96, 1.2, 0.06), Vector3(0, 0.6, -1.12), Color(1,1,1,0), true, 0.12)
-	back.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var roof:=block(root,Vector3(1.96,0.05,1.1),Vector3(0,1.20,-0.55),Color(1,1,1,0),true,0.12)
-	roof.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	for i in range(21):
-		var x := lerpf(-0.95, 0.95, float(i) / 20)
-		tube(root, Vector3(x, 0.06, -1.08), Vector3(x, 1.15, -1.08), 0.008, WHITE)
-		tube(root, Vector3(x, 1.19, 0), Vector3(x, 1.15, -1.08), 0.008, WHITE)
-	for i in range(12):
-		var y := 0.06 + float(i) * 0.1
-		tube(root, Vector3(-0.96, y, -1.08), Vector3(0.96, y, -1.08), 0.008, WHITE)
-		for x in [-0.96, 0.96]:
-			tube(root, Vector3(x, y, 0), Vector3(x, y, -1.08), 0.008, WHITE)
-	for i in range(12):
-		var z := -float(i) * 0.1
-		for x in [-0.96, 0.96]:
-			tube(root, Vector3(x, 0.06, z), Vector3(x, 1.16, z), 0.008, WHITE)
+	root.build(self)
+
+## Ripples the netting when the puck hits it: a sharp change in the puck's
+## velocity while it is inside (or right against) a net. Set by lab.gd.
+var puck: RigidBody3D
+var _puck_velocity := Vector3.ZERO
+
+func _physics_process(_delta: float) -> void:
+	if puck == null or not is_instance_valid(puck): return
+	var v := puck.linear_velocity
+	var change := (v - _puck_velocity).length()
+	var speed := _puck_velocity.length()
+	if speed > 1.5 and change > maxf(1.5, speed * 0.3):
+		for g in goals:
+			var local: Vector3 = g.to_local(puck.global_position)
+			# Mouth-plane crossings and post/crossbar hits are not net hits.
+			if local.z < -0.08 and GoalNet.near_net(local):
+				g.impact(local, speed)
+	_puck_velocity = v
 
 func _ready() -> void:
 	block(self, Vector3(85, 0.5, 100), Vector3(0, -0.65, 0), Color("#101e31"))

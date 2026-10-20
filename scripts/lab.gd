@@ -141,6 +141,7 @@ func _ready() -> void:
 	puck.axis_lock_angular_x = false
 	puck.axis_lock_angular_z = false
 	puck.collision_layer = 4
+	arena.puck = puck
 	puck.collision_mask = 9
 	puck.contact_monitor = true
 	puck.max_contacts_reported = 4
