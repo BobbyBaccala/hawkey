@@ -1,4 +1,5 @@
 extends Node3D
+const Arena = preload("res://scripts/arena.gd")
 ## Broadcast arena lighting: overhead spot rigs that throw soft pools of light
 ## onto each zone of the ice, plus two low, shadowless side lights that catch
 ## the edges of players (rim light) without flattening the ice.
@@ -21,6 +22,10 @@ const ENVIRONMENT_LAYER := 2
 ## ENVIRONMENT_LAYER: rim lights skip it too, and the full-rink camera hides it so the whole sheet is visible from above.
 const RIGGING_LAYER := 4
 const RIM_COLOR := Color("#cfe2ff")
+## Lowest point of the overhead rigging (jumbotron underside is ~11.25 m),
+## less a margin. A camera above this height and over the sheet would look
+## down through the jumbotron and trusses, so it hides the rigging layer.
+const RIGGING_CLEARANCE := 10.5
 
 var pools: Array[SpotLight3D] = []
 var rims: Array[DirectionalLight3D] = []
@@ -61,6 +66,17 @@ func make_pool(at: Vector3) -> SpotLight3D:
 	spot.shadow_enabled = false
 	add_child(spot)
 	return spot
+
+## True when a camera at `cam_pos` sits up among (or above) the overhead
+## rigging while over the rink, so the jumbotron and trusses would block its
+## view of the ice. Cameras outside the boards (broadcast, press box) keep it.
+static func camera_hides_rigging(cam_pos: Vector3) -> bool:
+	return cam_pos.y > RIGGING_CLEARANCE and absf(cam_pos.x) < Arena.HALF_WIDTH + 1.0
+
+## Camera cull mask for a camera at `cam_pos`: everything, minus the rigging
+## layer when camera_hides_rigging().
+static func camera_cull_mask(cam_pos: Vector3) -> int:
+	return 0xFFFFF & ~RIGGING_LAYER if camera_hides_rigging(cam_pos) else 0xFFFFF
 
 ## Radius of a pool where it meets the ice (metres).
 static func pool_radius() -> float:

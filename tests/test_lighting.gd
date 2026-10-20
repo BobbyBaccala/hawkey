@@ -61,13 +61,43 @@ func run() -> void:
 	check(rigging > 40, "Trusses, lamps and jumbotron are tagged as rigging (%d)" % rigging)
 	for rim in rims:
 		check(rim.light_cull_mask & lighting.RIGGING_LAYER == 0, "%s skips the rigging" % rim.name)
-	for mode in [0, 3]:
-		m.camera_mode = mode
-		await physics_frame
-		await physics_frame
-		var sees_rigging: bool = m.camera.cull_mask & lighting.RIGGING_LAYER != 0
-		check(sees_rigging == (mode != 3), "Camera %d rigging visibility" % mode)
-		check(m.camera.cull_mask & lighting.ENVIRONMENT_LAYER != 0, "Camera %d sees the arena" % mode)
+	# Every camera, at every zoom and puck position: if it renders the rigging,
+	# no rigging mesh may sit between it and the ice it frames (camera 1 used
+	# to look down through the jumbotron). Overhead and Full rink hide it;
+	# the low Dynamic and the press-box Broadcast keep it.
+	var rig_boxes: Array[AABB] = []
+	for g in env_meshes:
+		if g.has_meta("rigging") and g is VisualInstance3D:
+			rig_boxes.append(g.global_transform * g.get_aabb())
+	check(rig_boxes.size() > 40, "Rigging boxes collected (%d)" % rig_boxes.size())
+	var expect_hidden := {0: false, 1: true, 2: false, 3: true}
+	for mode in [0, 1, 2, 3]:
+		for zoom in [0.55, 0.8, 1.5]:
+			for pz in [-24.0, 0.0, 24.0]:
+				m.camera_mode = mode
+				m.zoom = zoom
+				m.puck.position = Vector3(0, 0.05, pz)
+				for i in range(240):
+					m.update_camera(1.0 / 60.0)
+				var cam: Vector3 = m.camera.position
+				var sees_rigging: bool = m.camera.cull_mask & lighting.RIGGING_LAYER != 0
+				check(m.camera.cull_mask & lighting.ENVIRONMENT_LAYER != 0, "Camera %d sees the arena" % mode)
+				if zoom == 0.8:
+					check(sees_rigging != expect_hidden[mode], "Camera %d rigging visibility (y %.1f)" % [mode, cam.y])
+				if not sees_rigging:
+					continue
+				# Rays from the camera to a grid of ice points around its target.
+				var blocked := 0
+				for dx in [-8.0, 0.0, 8.0]:
+					for dz in [-8.0, 0.0, 8.0]:
+						var target: Vector3 = m.camera_target + Vector3(dx, 0, dz)
+						if not m.camera.is_position_in_frustum(target):
+							continue
+						for box in rig_boxes:
+							if box.intersects_segment(cam, target):
+								blocked += 1
+				check(blocked == 0, "Camera %d zoom %.2f puck z %.0f: rigging blocks %d ice rays" % [mode, zoom, pz, blocked])
+	m.zoom = 0.8
 	var player_meshes: Array = m.player.find_children("*", "GeometryInstance3D", true, false)
 	check(player_meshes.size() > 0, "Player has meshes")
 	for g in player_meshes:

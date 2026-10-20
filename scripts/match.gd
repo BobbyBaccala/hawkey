@@ -757,8 +757,10 @@ func update_camera(delta: float) -> void:
 			look=Vector3(0,0.4,-side*3.0)
 	camera.position=desired if snap else camera.position.lerp(desired,1-exp(-delta*5))
 	if camera_mode!=2: camera.position.x=camera_target.x
-	# Full rink looks down past the roof line: hide trusses and the jumbotron.
-	camera.cull_mask=0xFFFFF & ~preload("res://scripts/arena_lighting.gd").RIGGING_LAYER if camera_mode==3 else 0xFFFFF
+	# A camera up among the rigging over the sheet (Overhead, Full rink, a
+	# zoomed-out Dynamic) hides the trusses and jumbotron so they never sit
+	# between it and the ice.
+	camera.cull_mask=preload("res://scripts/arena_lighting.gd").camera_cull_mask(camera.position)
 	camera.look_at(look,Vector3.UP)
 	camera.rotation.z=0
 	selection.position=player.position+Vector3(0,0.025,0)
