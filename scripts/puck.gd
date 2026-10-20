@@ -9,7 +9,7 @@ const HALF_HEIGHT := 0.0127
 const ICE_BOUNCE := 0.12
 ## Inside the rink the ice is an exact plane at y = 0, handled here rather than
 ## by a collider (see arena.gd). Outside the boards there is no ice.
-const RINK_HALF := Vector2(15.2, 30.2)
+const RINK_HALF := Vector2(preload("res://scripts/arena.gd").HALF_WIDTH + 0.2, 30.2)
 
 static func launch(direction: Vector3, speed: float, elevation: float) -> Vector3:
 	var horizontal:=Vector3(direction.x,0,direction.z).normalized()

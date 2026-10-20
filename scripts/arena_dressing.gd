@@ -16,6 +16,8 @@ const SPONSORS := [
 	["RINKSIDE", Color("#ff6a13"), Color("#141414")],
 ]
 const ROWS := 14
+## First seating row sits 1.4 m behind the side boards.
+const SIDE_X := Arena.HALF_WIDTH + 1.4
 const ROW_RUN := 0.85
 const ROW_RISE := 0.46
 
@@ -104,13 +106,13 @@ func build_bowl() -> void:
 		var y := r * ROW_RISE
 		var color: Color = seat[r % 2]
 		for side in [-1.0, 1.0]:
-			box(Vector3(ROW_RUN, 0.45 + y, 62 + r * 2 * ROW_RUN), Vector3(side * (16.4 + r * ROW_RUN), (0.45 + y) * 0.5, 0), color)
-			box(Vector3(32 + r * 2 * ROW_RUN, 0.45 + y, ROW_RUN), Vector3(0, (0.45 + y) * 0.5, side * (31.4 + r * ROW_RUN)), color)
+			box(Vector3(ROW_RUN, 0.45 + y, 62 + r * 2 * ROW_RUN), Vector3(side * (SIDE_X + r * ROW_RUN), (0.45 + y) * 0.5, 0), color)
+			box(Vector3(Arena.HALF_WIDTH * 2.0 + 2.0 + r * 2 * ROW_RUN, 0.45 + y, ROW_RUN), Vector3(0, (0.45 + y) * 0.5, side * (31.4 + r * ROW_RUN)), color)
 	# Aisles: lighter stair strips that break up the rows.
 	for side in [-1.0, 1.0]:
 		for z in [-20.0, -6.0, 6.0, 20.0]:
 			for r in range(ROWS):
-				box(Vector3(ROW_RUN, 0.02, 0.9), Vector3(side * (16.4 + r * ROW_RUN), 0.46 + r * ROW_RISE, z), Color("#2a3746"))
+				box(Vector3(ROW_RUN, 0.02, 0.9), Vector3(side * (SIDE_X + r * ROW_RUN), 0.46 + r * ROW_RISE, z), Color("#2a3746"))
 
 func build_crowd() -> void:
 	var rng := RandomNumberGenerator.new()
@@ -139,12 +141,12 @@ func build_crowd() -> void:
 				card.mesh = quad
 				card.material_override = shared[rng.randi() % shared.size()]
 				card.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-				card.position = Vector3(side * (16.4 + r * ROW_RUN), y, -count * 2.25 + 2.25 + k * 4.5)
+				card.position = Vector3(side * (SIDE_X + r * ROW_RUN), y, -count * 2.25 + 2.25 + k * 4.5)
 				card.rotation.y = -side * PI / 2
 				card.scale.x = -1 if rng.randf() > 0.5 else 1
 				add_child(card)
 			# Ends.
-			var end_count := int((30.0 + r * 2 * ROW_RUN) / 4.5)
+			var end_count := int((Arena.HALF_WIDTH * 2.0 + r * 2 * ROW_RUN) / 4.5)
 			for k in range(end_count):
 				var card := MeshInstance3D.new()
 				card.mesh = quad
@@ -157,7 +159,7 @@ func build_crowd() -> void:
 
 func build_fascia() -> void:
 	var top := ROWS * ROW_RISE + 1.2
-	var out_x := 16.4 + ROWS * ROW_RUN
+	var out_x := SIDE_X + ROWS * ROW_RUN
 	var out_z := 31.4 + ROWS * ROW_RUN
 	var blue := Color("#164a9a")
 	for side in [-1.0, 1.0]:
@@ -177,12 +179,28 @@ func build_lights() -> void:
 	for x in [-9.0, -3.0, 3.0, 9.0]:
 		var truss := box(Vector3(0.25, 0.25, 50), Vector3(x, 19.5, 0), Color("#1a2330"))
 		truss.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		truss.set_meta("rigging", true)
 		for z in range(-22, 23, 4):
 			var lamp := box(Vector3(0.7, 0.12, 0.7), Vector3(x, 19.3, z), Color.WHITE)
 			lamp.material_override = emissive(Color("#f4f7ff"), 3.0)
 			lamp.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var ceiling := box(Vector3(80, 0.5, 100), Vector3(0, 23, 0), Color("#06090e"))
+			lamp.set_meta("rigging", true)
+	# Ceiling: one downward-facing, back-culled plane. It darkens the view up
+	# from low cameras but is invisible from above, so the full-rink camera
+	# (high over the roof line) still sees the ice.
+	var ceiling := MeshInstance3D.new()
+	ceiling.name = "Ceiling"
+	var plane := PlaneMesh.new()
+	plane.size = Vector2(80, 100)
+	plane.flip_faces = true
+	ceiling.mesh = plane
+	var ceiling_mat := StandardMaterial3D.new()
+	ceiling_mat.albedo_color = Color("#06090e")
+	ceiling_mat.cull_mode = BaseMaterial3D.CULL_BACK
+	ceiling.material_override = ceiling_mat
+	ceiling.position = Vector3(0, 23, 0)
 	ceiling.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(ceiling)
 
 func build_jumbotron() -> void:
 	var core := Node3D.new()
@@ -214,6 +232,9 @@ func build_jumbotron() -> void:
 	for x in [-2.0, 2.0]:
 		var cable := box(Vector3(0.05, 4.0, 0.05), Vector3(x * 1.25, 17.4, 0), Color("#2a3440"))
 		cable.rotation.z = -x * 0.12
+		cable.set_meta("rigging", true)
+	for g in core.find_children("*", "GeometryInstance3D", true, false):
+		g.set_meta("rigging", true)
 
 func set_scoreboard(line: String, sub: String) -> void:
 	for i in range(jumbotron_labels.size()):

@@ -41,7 +41,7 @@ func run()->void:
 	for actor in scene.skaters:
 		if scene.body_team(actor)==0 and int(actor.get_meta("slot"))<3:
 			var slot=int(actor.get_meta("slot"))
-			actor.position=Vector3(-13.7,0,(slot-1)*1.6-4)
+			actor.position=Vector3(scene.BENCH_X,0,(slot-1)*1.6-4)
 	scene.update_team_ai(1.0/120)
 	check(int(scene.skaters[0].get_meta("roster_id"))==6,"Bench arrival must swap identity")
 	check(count_team(scene,0)==5,"Bench change must retain five skaters")

@@ -13,8 +13,13 @@ func run() -> void:
 	check(skater.skeleton.get_bone_count() == 163,"Human skeleton must import")
 	for i in range(360):
 		skater.animate(8,1.0/120,0,true,false)
-		for foot in skater.feet:
-			check(foot.y >= 0.11 and foot.y < 0.17,"Skate recovery must stay low over ice")
+		# The runner (toe and heel) never cuts into the ice and skims low in
+		# recovery: the toe may flick and the heel lift, not a running step.
+		for skate in skater.skates:
+			var toe: float = (skate.transform*Vector3(0,-0.06,0.225)).y
+			var heel: float = (skate.transform*Vector3(0,-0.06,-0.085)).y
+			check(toe > -0.004 and toe < 0.10,"Skate toe must skim low over the ice (%.3f m)" % toe)
+			check(heel > -0.004 and heel < 0.20,"Heel lifts at toe-off but no running step (%.3f m)" % heel)
 	check(skater.push_blend > 0.9,"Pushing must activate lateral stride")
 	for i in range(180):
 		skater.animate(8,1.0/120,0,false,false)

@@ -49,10 +49,25 @@ func run() -> void:
 		check(rim.light_cull_mask & 1 != 0, "%s still lights the default (player) layer" % rim.name)
 	var env_meshes: Array = m.arena.find_children("*", "GeometryInstance3D", true, false)
 	check(env_meshes.size() > 20, "Arena has meshes to tag")
+	var rigging := 0
 	for g in env_meshes:
-		if g.layers != lighting.ENVIRONMENT_LAYER:
-			check(false, "Arena mesh %s not on the environment layer" % g.name)
+		var want: int = lighting.RIGGING_LAYER if g.has_meta("rigging") else lighting.ENVIRONMENT_LAYER
+		if g.has_meta("rigging"): rigging += 1
+		if g.layers != want:
+			check(false, "Arena mesh %s not on its layer (%d, want %d)" % [g.name, g.layers, want])
 			break
+	# Overhead rigging (trusses, lamps, jumbotron) is hidden by the full-rink
+	# camera only, so the whole sheet is visible from above.
+	check(rigging > 40, "Trusses, lamps and jumbotron are tagged as rigging (%d)" % rigging)
+	for rim in rims:
+		check(rim.light_cull_mask & lighting.RIGGING_LAYER == 0, "%s skips the rigging" % rim.name)
+	for mode in [0, 3]:
+		m.camera_mode = mode
+		await physics_frame
+		await physics_frame
+		var sees_rigging: bool = m.camera.cull_mask & lighting.RIGGING_LAYER != 0
+		check(sees_rigging == (mode != 3), "Camera %d rigging visibility" % mode)
+		check(m.camera.cull_mask & lighting.ENVIRONMENT_LAYER != 0, "Camera %d sees the arena" % mode)
 	var player_meshes: Array = m.player.find_children("*", "GeometryInstance3D", true, false)
 	check(player_meshes.size() > 0, "Player has meshes")
 	for g in player_meshes:

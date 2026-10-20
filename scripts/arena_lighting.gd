@@ -7,16 +7,19 @@ extends Node3D
 
 ## Pool centres on the ice (x, z). Two columns either side of the centre line
 ## and four rows: both end zones and both halves of the neutral zone.
-const POOL_X := [-7.0, 7.0]
+const POOL_X := [-6.0, 6.0]
 const POOL_Z := [-21.0, -7.0, 7.0, 21.0]
 const RIG_HEIGHT := 19.0
 const POOL_ANGLE := 24.0
-const POOL_ENERGY := 1.1
+const POOL_ENERGY := 0.85
 const POOL_COLOR := Color("#fff6e8")
 const RIM_ENERGY := 0.45
 ## Visual layer bit given to the arena (ice, boards, bowl, crowd). Rim lights
 ## skip it, so they only touch players, officials, sticks and the puck.
 const ENVIRONMENT_LAYER := 2
+## Layer bit for overhead rigging (light trusses, lamps, jumbotron) instead of
+## ENVIRONMENT_LAYER: rim lights skip it too, and the full-rink camera hides it so the whole sheet is visible from above.
+const RIGGING_LAYER := 4
 const RIM_COLOR := Color("#cfe2ff")
 
 var pools: Array[SpotLight3D] = []
@@ -36,7 +39,7 @@ func _ready() -> void:
 		rim.light_energy = RIM_ENERGY
 		rim.light_specular = 1.4
 		rim.shadow_enabled = false
-		rim.light_cull_mask = 0xFFFFF & ~ENVIRONMENT_LAYER
+		rim.light_cull_mask = 0xFFFFF & ~(ENVIRONMENT_LAYER | RIGGING_LAYER)
 		# Aim across the rink, 14 degrees above horizontal.
 		rim.rotation_degrees = Vector3(-14, 90.0 if side < 0 else -90.0, 0)
 		add_child(rim)
@@ -68,6 +71,7 @@ static func pool_radius() -> float:
 static func tag_environment(root: Node) -> int:
 	var tagged := 0
 	for child in root.find_children("*", "GeometryInstance3D", true, false):
-		(child as GeometryInstance3D).layers = ENVIRONMENT_LAYER
+		var rigging := child.has_meta("rigging")
+		(child as GeometryInstance3D).layers = RIGGING_LAYER if rigging else ENVIRONMENT_LAYER
 		tagged += 1
 	return tagged

@@ -2,6 +2,7 @@ extends Node3D
 const Skating = preload("res://scripts/skating.gd")
 const Arena = preload("res://scripts/arena.gd")
 const Skater = preload("res://scripts/skater_visual.gd")
+var ice_marks
 var arena: Node3D
 var player: CharacterBody3D
 var teammate: CharacterBody3D
@@ -110,12 +111,19 @@ func _ready() -> void:
 	arena = Arena.new()
 	add_child(arena)
 	lighting.tag_environment(arena)
+	# Skate cuts carved into the ice behind every skater.
+	ice_marks = preload("res://scripts/ice_marks.gd").new()
+	ice_marks.name = "IceMarks"
+	add_child(ice_marks)
+	arena.set_cut_map(ice_marks.texture)   # ice plus painted lines and emblem
+	ice_marks.material = arena.ice_surface_material
+	ice_marks.paint_materials = arena.paint_materials
 	player = make_skater(Vector3(0,0,0),Color("#116c9e"),"17")
 	player_visual = player.get_child(1)
 	teammate = make_skater(Vector3(6,0,-7),Color("#116c9e"),"28")
 	teammate_visual = teammate.get_child(1)
 	for end_ in [-1.0,1.0]:
-		var goalie := make_skater(Vector3(0,0,end_ * 24),Color("#b3162c") if end_ < 0 else Color("#164a9a"),"31",true,Color("#1b2a4a") if end_ < 0 else Color("#e8eef5"))
+		var goalie := make_skater(Vector3(0,0,end_ * (Arena.GOAL_LINE - 1.0)),Color("#b3162c") if end_ < 0 else Color("#164a9a"),"31",true,Color("#1b2a4a") if end_ < 0 else Color("#e8eef5"))
 		goalie.rotation.y = PI if end_ < 0 else 0
 		goalkeepers.append(goalie)
 		goalie_visuals.append(goalie.get_child(1))
@@ -397,7 +405,7 @@ func _physics_process(delta: float) -> void:
 		help.text = "Speed %.1f m/s   Puck %.1f m/s   Shots %d   Passes %d   Pad contacts %d   Rating %d\n1 / 2 Compare ratings    Fixed physics 120 Hz    C Camera    F1 Close diagnostics" % [velocity.length(),puck.linear_velocity.length(),shots,passes,saves,rating]
 
 func update_partner(delta: float) -> void:
-	var target := Vector3(clampf(player.position.x + (6 if player.position.x < 0 else -6),-11,11),0,clampf(player.position.z - 5,-21,21))
+	var target := Vector3(clampf(player.position.x + (6 if player.position.x < 0 else -6),-(Arena.HALF_WIDTH-2.0),Arena.HALF_WIDTH-2.0),0,clampf(player.position.z - 5,-21,21))
 	# Receiver moves to the pass, otherwise holds a supporting lane.
 	if cooldown > 0.05 and passes > 0 and teammate.position.distance_to(puck.position) < 5:
 		target = Vector3(puck.position.x,0,puck.position.z)
@@ -425,8 +433,8 @@ func update_goalkeepers(delta: float) -> void:
 	for i in range(goalkeepers.size()):
 		var goalie := goalkeepers[i]
 		var end_ := -1.0 if i == 0 else 1.0
-		var depth := clampf(absf(puck.position.z - end_ * 25) * 0.05,0.35,1.4)
-		var target := Vector3(clampf(puck.position.x * 0.13,-0.75,0.75),0,end_ * (25 - depth))
+		var depth := clampf(absf(puck.position.z - end_ * Arena.GOAL_LINE) * 0.05,0.35,1.4)
+		var target := Vector3(clampf(puck.position.x * 0.13,-0.75,0.75),0,end_ * (Arena.GOAL_LINE - depth))
 		goalie.velocity = (target - goalie.position).limit_length(1) * 3.8
 		goalie.move_and_slide()
 		goalie_visuals[i].animate(goalie.velocity.length(),delta)

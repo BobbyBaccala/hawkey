@@ -26,7 +26,7 @@ func _ready() -> void:
 				m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 				card.material_override = m
 				card.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-				card.position = Vector3(side * (16.5 + row * 0.9),1.0 + row * 0.5,-25 + section * 4.5)
+				card.position = Vector3(side * (preload("res://scripts/arena.gd").HALF_WIDTH + 1.5 + row * 0.9),1.0 + row * 0.5,-25 + section * 4.5)
 				card.rotation.y = -side * PI / 2
 				card.scale.x = -1 if rng.randf() > 0.5 else 1
 				add_child(card)

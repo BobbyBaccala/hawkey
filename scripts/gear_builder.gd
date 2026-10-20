@@ -12,21 +12,33 @@ const LINE := Color("#9aa6ad")
 const DARK := Color("#1b232b")
 const LACE := Color("#2a2f33")
 const METAL := Color("#8e979d")
+## UV for untextured geometry: a reserved white strip along the bottom of every
+## graphic texture, so vertex colours alone decide those surfaces.
+const BLANK_UV := Vector2(0.5, 0.993)
+## Face graphics fill v in [0, FACE_V] of a texture; the rest is the white strip.
+const FACE_V := 0.97
 
 class MeshBuilder:
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var colors := PackedColorArray()
+	var uvs := PackedVector2Array()
 	var indices := PackedInt32Array()
 
 	## Joins rings of equal point count into a closed, smoothly shaded surface.
-	func add_loft(rings: Array, ring_colors: Array, cap_start := true, cap_end := true) -> void:
+	## ring_uvs (optional, same shape as rings) maps painted graphics; without
+	## it the piece samples the texture's blank strip.
+	func add_loft(rings: Array, ring_colors: Array, cap_start := true, cap_end := true, ring_uvs: Array = []) -> void:
 		var count: int = rings[0].size()
 		var base := vertices.size()
 		var first_index := indices.size()
 		for r in range(rings.size()):
 			vertices.append_array(rings[r])
 			colors.append_array(ring_colors[r])
+			if ring_uvs.is_empty():
+				for k in range(count): uvs.append(BLANK_UV)
+			else:
+				uvs.append_array(ring_uvs[r])
 		for r in range(rings.size() - 1):
 			for j in range(count):
 				var a := base + r * count + j
@@ -42,6 +54,12 @@ class MeshBuilder:
 			var c := vertices.size()
 			vertices.append(center)
 			colors.append(ring_colors[end_][0])
+			if ring_uvs.is_empty():
+				uvs.append(BLANK_UV)
+			else:
+				var uv_mid := Vector2.ZERO
+				for q: Vector2 in ring_uvs[end_]: uv_mid += q
+				uvs.append(uv_mid / count)
 			for j in range(count):
 				var a := base + end_ * count + j
 				var b := base + end_ * count + (j + 1) % count
@@ -126,18 +144,48 @@ class MeshBuilder:
 			ring_colors.append(cols)
 		add_loft(rings, ring_colors)
 
-	func to_mesh(roughness := 0.6) -> ArrayMesh:
+	## Flat padded panel (a rounded rectangle with bound edges), its front face
+	## mapped to the graphic: size is (width, height), thickness along local Z.
+	## u runs along local +X, v along local +Y.
+	func add_panel(center: Vector3, size: Vector2, thickness: float, radius: float, basis: Basis, face: Color, edge: Color, back: Color) -> void:
+		var profile := GearProfiles.rounded_rect(size.x, size.y, [radius, radius, radius, radius], 6, 10)
+		var rings := []
+		var ring_colors := []
+		var ring_uvs := []
+		var layers := [[-0.5, 0.004, back], [-0.35, 0.0, edge], [0.35, 0.0, edge], [0.5, 0.006, face]]
+		for layer: Array in layers:
+			var ring := PackedVector3Array()
+			var cols := PackedColorArray()
+			var uv_ring := PackedVector2Array()
+			var inset: float = layer[1]
+			for p in profile:
+				var q := p - p.normalized() * inset
+				ring.append(center + basis * Vector3(q.x, q.y, thickness * float(layer[0])))
+				cols.append(layer[2])
+				uv_ring.append(Vector2(clampf(q.x / size.x + 0.5, 0.0, 1.0), (0.5 - clampf(q.y / size.y, -0.5, 0.5)) * FACE_V) if layer[0] == 0.5 else BLANK_UV)
+			rings.append(ring)
+			ring_colors.append(cols)
+			ring_uvs.append(uv_ring)
+		add_loft(rings, ring_colors, true, true, ring_uvs)
+
+	func to_mesh(roughness := 0.6, graphic: Texture2D = null) -> ArrayMesh:
 		var arrays := []
 		arrays.resize(Mesh.ARRAY_MAX)
 		arrays[Mesh.ARRAY_VERTEX] = vertices
 		arrays[Mesh.ARRAY_NORMAL] = normals
 		arrays[Mesh.ARRAY_COLOR] = colors
+		arrays[Mesh.ARRAY_TEX_UV] = uvs
 		arrays[Mesh.ARRAY_INDEX] = indices
 		var mesh := ArrayMesh.new()
 		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 		var m := StandardMaterial3D.new()
 		m.vertex_color_use_as_albedo = true
 		m.vertex_color_is_srgb = true
+		if graphic:
+			# Painted graphics multiply the vertex colours: crisp, anti-aliased
+			# panels and stripes instead of colours stepped across triangles.
+			m.albedo_texture = graphic
+			m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 		m.roughness = roughness
 		m.metallic_specular = 0.35
 		mesh.surface_set_material(0, m)
@@ -198,6 +246,90 @@ class GearProfiles:
 				return lerpf(keys[i][1], keys[i + 1][1], smoothstep(0, 1, t))
 		return keys[-1][1]
 
+## Paints flat-colour equipment graphics (panels, sweeps, pinstripes, stitch
+## lines) into a texture. Shapes are polygons in face space: u 0..1 across
+## (inner edge -> outer edge), v 0..1 up the piece. Drawn at 2x with native
+## span fills, then downsampled, so every edge is anti-aliased.
+class Graphic:
+	const SS := 2
+	var image: Image
+	var width := 0
+	var height := 0
+
+	func _init(w: int, h: int, base: Color) -> void:
+		width = w
+		height = h
+		image = Image.create(w * SS, h * SS, false, Image.FORMAT_RGBA8)
+		image.fill(base)
+		# The blank strip stays white for untextured geometry.
+		image.fill_rect(Rect2i(0, int(FACE_V * h * SS), w * SS, h * SS - int(FACE_V * h * SS)), Color.WHITE)
+
+	func px(p: Vector2) -> Vector2:
+		return Vector2(p.x * width * SS, (1.0 - p.y) * FACE_V * height * SS)
+
+	## Scanline polygon fill (even-odd), spans written with fill_rect.
+	func poly(points: Array, color: Color) -> void:
+		var pts: Array[Vector2] = []
+		var top := INF
+		var bottom := -INF
+		for p: Vector2 in points:
+			var q := px(p)
+			pts.append(q)
+			top = minf(top, q.y)
+			bottom = maxf(bottom, q.y)
+		var limit := int(FACE_V * height * SS)
+		for row in range(maxi(0, int(floor(top))), mini(limit, int(ceil(bottom)))):
+			var y := row + 0.5
+			var xs: Array[float] = []
+			for i in range(pts.size()):
+				var a := pts[i]
+				var b := pts[(i + 1) % pts.size()]
+				if (a.y <= y and b.y > y) or (b.y <= y and a.y > y):
+					xs.append(a.x + (y - a.y) / (b.y - a.y) * (b.x - a.x))
+			xs.sort()
+			for k in range(0, xs.size() - 1, 2):
+				var x0 := clampi(int(round(xs[k])), 0, width * SS)
+				var x1 := clampi(int(round(xs[k + 1])), 0, width * SS)
+				if x1 > x0:
+					image.fill_rect(Rect2i(x0, row, x1 - x0, 1), color)
+
+	func rect(u0: float, v0: float, u1: float, v1: float, color: Color) -> void:
+		poly([Vector2(u0, v0), Vector2(u1, v0), Vector2(u1, v1), Vector2(u0, v1)], color)
+
+	## A band of constant width (in u units) along a polyline.
+	func stripe(path: Array, half_width: float, color: Color) -> void:
+		for i in range(path.size() - 1):
+			var a: Vector2 = path[i]
+			var b: Vector2 = path[i + 1]
+			var d := (b - a).normalized()
+			var n := Vector2(-d.y, d.x) * half_width
+			poly([a + n, b + n, b - n, a - n], color)
+
+	## Dashed stitch line.
+	func stitches(a: Vector2, b: Vector2, half_width: float, color: Color, dashes := 24) -> void:
+		for k in range(dashes):
+			var t0 := float(k) / dashes
+			var t1 := t0 + 0.55 / dashes
+			stripe([a.lerp(b, t0), a.lerp(b, t1)], half_width, color)
+
+	func texture() -> ImageTexture:
+		var out := image.duplicate()
+		out.resize(width, height, Image.INTERPOLATE_LANCZOS)
+		out.generate_mipmaps()
+		return ImageTexture.create_from_image(out)
+
+## One painted texture per piece and colourway, shared by every goalie.
+static var _graphics := {}
+
+static func _cached(key: String, painter: Callable) -> Texture2D:
+	if not _graphics.has(key):
+		_graphics[key] = painter.call()
+	return _graphics[key]
+
+## Face-space (u across, v up, both 0..1) to texture UV.
+static func face_uv(u: float, v: float) -> Vector2:
+	return Vector2(clampf(u, 0.0, 1.0), (1.0 - clampf(v, 0.0, 1.0)) * FACE_V)
+
 static func _band(y: float, at: float, half: float) -> float:
 	return 1.0 - smoothstep(half * 0.5, half, absf(y - at))
 
@@ -220,6 +352,7 @@ static func goalie_pad(side: float, kit: Color, accent: Color, y_from := -1.0, y
 	var b := MeshBuilder.new()
 	var rings := []
 	var ring_colors := []
+	var ring_uvs := []
 	var top := PAD_LENGTH * 0.5
 	var bottom := -PAD_LENGTH * 0.5
 	var ys := []
@@ -227,83 +360,116 @@ static func goalie_pad(side: float, kit: Color, accent: Color, y_from := -1.0, y
 	while y < top:
 		if y >= y_from and y <= y_to:
 			ys.append(y)
-		y += 0.011 if (y < bottom + 0.05 or y > top - 0.05) else 0.014
+		y += 0.008 if (y < bottom + 0.05 or y > top - 0.05) else 0.011
 	ys.append(minf(top, y_to))
 	if y_from > bottom:
 		ys.push_front(y_from)
-	var grooves := [PAD_KNEE + 0.115, PAD_KNEE - 0.055, PAD_ANKLE + 0.06]
+	var grooves := [PAD_KNEE + 0.115, PAD_KNEE - 0.055, PAD_ANKLE + 0.115]
 	for yy: float in ys:
 		var w := PAD_WIDTH
-		w -= smoothstep(top - 0.10, top, yy) * 0.03
-		w -= smoothstep(PAD_ANKLE, bottom, yy) * 0.025
-		var front := 0.058 + 0.009 * exp(-pow((yy - PAD_KNEE) / 0.06, 2))
+		# Thigh rise tapers a little toward its rounded top; the boot end narrows.
+		w -= smoothstep(top - 0.16, top, yy) * 0.035
+		w -= smoothstep(bottom + 0.10, bottom, yy) * 0.02
+		# Face stands proud at the knee (knee roll) and has stitched breaks.
+		var front := 0.058 + 0.010 * exp(-pow((yy - PAD_KNEE) / 0.07, 2))
 		var back := -0.040
 		var groove := 0.0
 		for g: float in grooves:
-			groove = maxf(groove, _band(yy, g, 0.010))
-		front -= groove * 0.007
+			groove = maxf(groove, _band(yy, g, 0.012))
+		front -= groove * 0.011
 		# Rounded top and toe tip.
 		var round_ := 1.0
-		if yy > top - 0.035:
-			round_ = sqrt(maxf(0.04, 1.0 - pow((yy - (top - 0.035)) / 0.035, 2)))
-		elif yy < bottom + 0.03:
-			round_ = sqrt(maxf(0.04, 1.0 - pow((bottom + 0.03 - yy) / 0.03, 2)))
-		# Boot channel / toe bridge sweeps forward over the skate toe.
-		var toe := 0.07 * smoothstep(PAD_ANKLE + 0.25, PAD_ANKLE + 0.06, yy) + 0.012 * smoothstep(bottom + 0.05, bottom, yy)
+		if yy > top - 0.045:
+			round_ = sqrt(maxf(0.04, 1.0 - pow((yy - (top - 0.045)) / 0.045, 2)))
+		elif yy < bottom + 0.035:
+			round_ = sqrt(maxf(0.04, 1.0 - pow((bottom + 0.035 - yy) / 0.035, 2)))
+		# Boot channel / toe bridge: the bottom sweeps forward over the skate toe.
+		var toe := 0.07 * smoothstep(PAD_ANKLE + 0.25, PAD_ANKLE + 0.06, yy) + 0.014 * smoothstep(bottom + 0.05, bottom, yy)
 		var d := (front - back) * round_
 		var mid := (front + back) * 0.5
-		var profile := GearProfiles.rounded_rect(w * lerpf(0.55, 1.0, round_), d, [0.030, 0.008, 0.016, 0.016], 5, 12)
+		var profile := GearProfiles.rounded_rect(w * lerpf(0.55, 1.0, round_), d, [0.026, 0.010, 0.016, 0.016], 5, 12)
 		var ring := PackedVector3Array()
 		var cols := PackedColorArray()
+		var uv_ring := PackedVector2Array()
 		var hw := w * 0.5
 		for p in profile:
 			var outer := p.x  # positive = outside of the leg
 			var z := mid + p.y
-			var is_front := p.y > d * 0.5 - 0.016
+			var is_front := p.y > d * 0.5 - 0.012
 			if is_front:
-				# Raised outer roll along the outside edge of the face.
-				z += 0.013 * smoothstep(hw - 0.055, hw - 0.018, outer) * round_
-				# Foam panels pillow slightly between the edges and the face ridges.
-				z += 0.006 * (1.0 - pow(clampf(outer / (hw - 0.04), -1, 1), 2)) * round_
-				z -= 0.004 * (_band(outer, -0.045, 0.008) + _band(outer, 0.045, 0.008)) * round_
+				# Foam pillows gently between the face's vertical stitch lines and
+				# the face crowns slightly toward the outer roll.
+				z += 0.005 * (1.0 - pow(clampf(outer / (hw - 0.03), -1, 1), 2)) * round_
+				z -= 0.003 * (_band(outer, -hw / 3.0, 0.007) + _band(outer, hw / 3.0, 0.007)) * round_
 			ring.append(Vector3(outer * side, yy, z + toe))
 			var col := WHITE
 			if is_front:
-				var knee_panel := yy > PAD_KNEE - 0.055 and yy < PAD_KNEE + 0.115
-				if outer > hw - 0.05:
-					col = kit
-				elif knee_panel and outer > -0.015:
-					col = kit
-				elif knee_panel:
-					col = accent
-				elif yy < PAD_ANKLE + 0.06:
-					col = kit.lerp(DARK, 0.15)
-				elif absf(outer - 0.02) < 0.012 and yy > PAD_KNEE + 0.115:
-					col = accent
-				if groove > 0.4:
-					col = col.lerp(LINE, 0.65)
-				elif _band(outer, -0.045, 0.006) > 0.5 or _band(outer, 0.045, 0.006) > 0.5:
-					col = col.lerp(LINE, 0.35)
-			elif outer > hw - 0.02:
-				col = kit
-			elif outer < -(hw - 0.02):
-				col = OFFWHITE
+				col = WHITE.lerp(LINE, groove * 0.55)
+				uv_ring.append(face_uv(outer / w + 0.5, (yy - bottom) / PAD_LENGTH))
 			else:
-				col = DARK
+				uv_ring.append(BLANK_UV)
+				if outer > hw - 0.02:
+					col = kit
+				elif outer < -(hw - 0.02):
+					col = OFFWHITE
+				else:
+					col = DARK
 			cols.append(col)
 		rings.append(ring)
 		ring_colors.append(cols)
-	b.add_loft(rings, ring_colors)
+		ring_uvs.append(uv_ring)
+	b.add_loft(rings, ring_colors, true, true, ring_uvs)
+	# Outer roll: the raised tube along the outside edge of the face that seals
+	# against the post and turns pucks away from the five-hole.
+	var roll := PackedVector3Array()
+	var roll_from := maxf(bottom + 0.06, y_from)
+	var roll_to := minf(top - 0.06, y_to)
+	for k in range(13):
+		var ry := lerpf(roll_from, roll_to, k / 12.0)
+		var rw := PAD_WIDTH - smoothstep(top - 0.16, top, ry) * 0.035 - smoothstep(bottom + 0.10, bottom, ry) * 0.02
+		var rtoe := 0.07 * smoothstep(PAD_ANKLE + 0.25, PAD_ANKLE + 0.06, ry)
+		roll.append(Vector3((rw * 0.5 - 0.016) * side, ry, 0.050 + 0.010 * exp(-pow((ry - PAD_KNEE) / 0.07, 2)) + rtoe))
+	b.add_tube(roll, 0.019, kit, 12)
+	var graphic := _cached("pad|%s|%s" % [kit.to_html(), accent.to_html()], func(): return _paint_pad(kit, accent))
 	# Knee stack (inside), calf wing (outside) and leg straps behind the face.
 	if y_from > bottom:
 		b.add_rounded_box(Vector3(0, PAD_KNEE + 0.17, -0.12), Vector3(0.20, 0.028, 0.012), 0.005, DARK)
-		return b.to_mesh(0.52)
+		return b.to_mesh(0.52, graphic)
 	b.add_rounded_box(Vector3(-side * 0.055, PAD_KNEE - 0.01, -0.085), Vector3(0.12, 0.17, 0.09), 0.03, OFFWHITE)
 	# Calf wing and straps stay above the skate boot.
 	b.add_rounded_box(Vector3(side * 0.118, (PAD_ANKLE + 0.20 + PAD_KNEE) * 0.5, -0.072), Vector3(0.026, PAD_KNEE - PAD_ANKLE - 0.20, 0.07), 0.011, kit)
 	for sy: float in [PAD_ANKLE + 0.21, PAD_KNEE - 0.12]:
 		b.add_rounded_box(Vector3(0, sy, -0.12), Vector3(0.20, 0.028, 0.012), 0.005, DARK)
-	return b.to_mesh(0.52)
+	return b.to_mesh(0.52, graphic)
+
+## Pad face graphic, modern pro style: white face, kit outer edge, a kit boot
+## sweep with an accent pinstripe, a knee window, kit thigh-rise cap, accent
+## pinstripe up the face and stitched breaks. Generic, no marks or logos.
+static func _paint_pad(kit: Color, accent: Color) -> Texture2D:
+	var g := Graphic.new(256, 704, WHITE)
+	var v := func(y: float) -> float: return (y + PAD_LENGTH * 0.5) / PAD_LENGTH
+	var vk: float = v.call(PAD_KNEE)
+	var stitch := WHITE.darkened(0.16)
+	# Vertical face stitching (behind the panels).
+	for u in [1.0 / 3.0, 2.0 / 3.0]:
+		g.stitches(Vector2(u, 0.02), Vector2(u, 0.985), 0.004, stitch, 70)
+	# Boot sweep and its pinstripe.
+	g.poly([Vector2(0, 0), Vector2(1, 0), Vector2(1, 0.27), Vector2(0, 0.11)], kit)
+	g.stripe([Vector2(-0.05, 0.135), Vector2(1.05, 0.305)], 0.011, accent)
+	# Knee window with an accent insert on the inside.
+	g.poly([Vector2(0, vk - 0.075), Vector2(1, vk - 0.05), Vector2(1, vk + 0.085), Vector2(0, vk + 0.06)], kit)
+	g.poly([Vector2(0, vk - 0.035), Vector2(0.30, vk - 0.028), Vector2(0.30, vk + 0.048), Vector2(0, vk + 0.042)], accent)
+	# Thigh-rise cap and its pinstripe.
+	g.rect(0, 0.935, 1, 1, kit)
+	g.rect(0, 0.912, 1, 0.922, accent)
+	# Pinstripe up the face from the knee window to the cap.
+	g.rect(0.60, vk + 0.085, 0.625, 0.912, accent)
+	# Outer edge band, behind the outer roll.
+	g.rect(0.88, 0, 1, 1, kit)
+	# Stitched horizontal breaks at the knee and boot.
+	for y in [PAD_KNEE + 0.115, PAD_KNEE - 0.055, PAD_ANKLE + 0.115]:
+		g.rect(0, v.call(y) - 0.003, 1, v.call(y) + 0.003, LINE)
+	return g.texture()
 
 # ---------------------------------------------------------------- blocker
 ## Origin at the board centre; +Z faces the shooter; +X*side is away from the body.
@@ -313,12 +479,13 @@ static func blocker(side: float, kit: Color, accent: Color) -> ArrayMesh:
 	var b := MeshBuilder.new()
 	var rings := []
 	var ring_colors := []
+	var ring_uvs := []
 	var hl := BLOCKER_SIZE.y * 0.5
 	var y := -hl
 	var ys := []
 	while y < hl:
 		ys.append(y)
-		y += 0.009
+		y += 0.008
 	ys.append(hl)
 	for yy: float in ys:
 		var round_ := 1.0
@@ -329,9 +496,10 @@ static func blocker(side: float, kit: Color, accent: Color) -> ArrayMesh:
 		# The top of the board curls toward the shooter to steer deflections.
 		var curl := pow(maxf(0, yy - 0.09) / (hl - 0.09), 2) * 0.034
 		var w := BLOCKER_SIZE.x * lerpf(0.75, 1.0, round_)
-		var profile := GearProfiles.rounded_rect(w, BLOCKER_SIZE.z * round_, [0.012, 0.012, 0.012, 0.012], 4, 8)
+		var profile := GearProfiles.rounded_rect(w, BLOCKER_SIZE.z * round_, [0.012, 0.012, 0.012, 0.012], 5, 12)
 		var ring := PackedVector3Array()
 		var cols := PackedColorArray()
+		var uv_ring := PackedVector2Array()
 		for p in profile:
 			var outer := p.x
 			# Slightly dished face.
@@ -339,27 +507,42 @@ static func blocker(side: float, kit: Color, accent: Color) -> ArrayMesh:
 			ring.append(Vector3(outer * side, yy, p.y - dish + curl))
 			var col := WHITE
 			if p.y > BLOCKER_SIZE.z * 0.5 - 0.006:
-				var border := absf(outer) > w * 0.5 - 0.022 or absf(yy) > hl - 0.024
-				if border:
-					col = kit
-				elif absf(outer * 0.9 - yy * 0.45 + 0.02) < 0.016:
-					col = accent
-				elif absf(outer * 0.9 - yy * 0.45 - 0.035) < 0.008:
-					col = kit
-			elif p.y < 0:
-				col = DARK.lerp(WHITE, 0.15)
+				uv_ring.append(face_uv(outer / BLOCKER_SIZE.x + 0.5, (yy + hl) / BLOCKER_SIZE.y))
 			else:
-				col = kit
+				uv_ring.append(BLANK_UV)
+				col = DARK.lerp(WHITE, 0.15) if p.y < 0 else kit
 			cols.append(col)
 		rings.append(ring)
 		ring_colors.append(cols)
-	b.add_loft(rings, ring_colors)
-	# Raised thumb-protection sidewall on the body side, palm glove and cuff behind the board.
-	b.add_rounded_box(Vector3(-side * 0.095, -0.07, 0.008), Vector3(0.03, 0.18, 0.05), 0.012, kit.lightened(0.1))
+		ring_uvs.append(uv_ring)
+	b.add_loft(rings, ring_colors, true, true, ring_uvs)
+	# Raised finger-protection sidewall along the body side of the board.
+	var wall := PackedVector3Array()
+	for k in range(9):
+		var wy := lerpf(-hl + 0.03, hl - 0.05, k / 8.0)
+		wall.append(Vector3(-side * (BLOCKER_SIZE.x * 0.5 - 0.004), wy, 0.016 + pow(maxf(0, wy - 0.09) / (hl - 0.09), 2) * 0.034))
+	b.add_tube(wall, 0.014, kit.lightened(0.06), 10)
+	# Palm glove and cuff behind the board, hand on the stick.
 	b.add_rounded_box(Vector3(-side * 0.03, -0.03, -0.055), Vector3(0.10, 0.14, 0.075), 0.032, DARK)
 	b.add_rounded_box(Vector3(-side * 0.02, -0.22, -0.035), Vector3(0.12, 0.11, 0.095), 0.035, OFFWHITE)
 	b.add_rounded_box(Vector3(-side * 0.02, -0.17, -0.035), Vector3(0.125, 0.022, 0.10), 0.01, kit)
-	return b.to_mesh(0.55)
+	var graphic := _cached("blocker|%s|%s" % [kit.to_html(), accent.to_html()], func(): return _paint_blocker(kit, accent))
+	return b.to_mesh(0.55, graphic)
+
+## Blocker face: white board with a kit border, a bold diagonal kit sweep with
+## an accent pinstripe and a kit corner block at the top outside.
+static func _paint_blocker(kit: Color, accent: Color) -> Texture2D:
+	var g := Graphic.new(256, 480, WHITE)
+	g.poly([Vector2(0, 0.10), Vector2(1, 0.52), Vector2(1, 0.70), Vector2(0, 0.28)], kit)
+	g.stripe([Vector2(-0.05, 0.315), Vector2(1.05, 0.745)], 0.014, accent)
+	g.stripe([Vector2(-0.05, 0.065), Vector2(1.05, 0.485)], 0.010, accent)
+	g.poly([Vector2(0.62, 1), Vector2(1, 1), Vector2(1, 0.83)], kit)
+	# Border binding all the way round.
+	g.rect(0, 0, 1, 0.045, kit)
+	g.rect(0, 0.955, 1, 1, kit)
+	g.rect(0, 0, 0.07, 1, kit)
+	g.rect(0.93, 0, 1, 1, kit)
+	return g.texture()
 
 # ---------------------------------------------------------------- catcher
 ## Origin at the hand; the pocket opens toward +Z; +X*side is the finger side.
@@ -374,10 +557,12 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 		Vector2(-0.055, 0.238), Vector2(-0.095, 0.22), Vector2(-0.118, 0.165), Vector2(-0.126, 0.085),
 		Vector2(-0.118, 0.0), Vector2(-0.102, -0.08), Vector2(-0.072, -0.15)])
 	outline = GearProfiles.resample(outline, 72)
-	var center := Vector2(0.015, 0.035)
+	# The pocket is a deep well high in the mitt, between the thumb and the
+	# finger roll under the T; the palm below it is a padded, nearly flat face.
+	var center := Vector2(0.012, 0.115)
 	# [scale toward outline, depth] from pocket centre, over the rim, to the back.
-	var sections := [[0.02, -0.050], [0.22, -0.046], [0.42, -0.034], [0.60, -0.012], [0.74, 0.006],
-		[0.85, 0.026], [0.92, 0.041], [0.975, 0.049], [1.0, 0.042], [1.014, 0.024], [1.012, 0.002],
+	var sections := [[0.02, -0.058], [0.14, -0.052], [0.28, -0.030], [0.40, -0.002], [0.52, 0.016],
+		[0.66, 0.026], [0.80, 0.033], [0.92, 0.042], [0.975, 0.049], [1.0, 0.042], [1.014, 0.024],
 		[0.995, -0.022], [0.95, -0.042], [0.82, -0.058], [0.58, -0.067], [0.30, -0.071], [0.02, -0.071]]
 	var rings := []
 	var ring_colors := []
@@ -390,12 +575,12 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 			var q := center + (p - center) * s
 			ring.append(Vector3(q.x * side, q.y, z))
 			var col := WHITE
-			if i <= 5:
-				col = OFFWHITE.darkened(0.10) if s < 0.5 else WHITE.darkened(0.04)
-				if absf(q.x - 0.012) < 0.006 and q.y > 0.02:
-					col = LINE
-				elif s > 0.5 and q.x > 0.05 and fmod(absf(q.y) + 0.5, 0.06) < 0.006:
-					col = LINE
+			if i <= 2:
+				# Pocket leather, darker with use.
+				col = OFFWHITE.darkened(0.16)
+			elif i <= 7:
+				# Padded white palm face around the pocket.
+				col = WHITE
 			elif i <= 11:
 				col = kit
 			else:
@@ -408,24 +593,52 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 		rings.append(ring)
 		ring_colors.append(cols)
 	b.add_loft(rings, ring_colors)
-	# Thick finger roll and thumb sheath around the pocket rim.
-	var finger := PackedVector3Array()
-	for k in range(9):
-		var t := k / 8.0
-		finger.append(Vector3((0.150 - 0.02 * pow(t * 2 - 1, 2)) * side, lerpf(-0.10, 0.20, t), 0.040))
-	b.add_tube(finger, 0.026, kit.lightened(0.05), 12)
-	var thumb := PackedVector3Array()
-	for k in range(7):
-		var t := k / 6.0
-		thumb.append(Vector3((-0.118 + 0.01 * sin(t * PI)) * side, lerpf(-0.06, 0.19, t), 0.036))
-	b.add_tube(thumb, 0.020, WHITE, 12)
-	# T-trap lacing between thumb and fingers.
-	b.add_tube(PackedVector3Array([Vector3(0.012 * side, 0.04, -0.012), Vector3(0.010 * side, 0.15, 0.022), Vector3(0.008 * side, 0.212, 0.040)]), 0.007, LACE, 6)
-	b.add_tube(PackedVector3Array([Vector3(-0.055 * side, 0.214, 0.040), Vector3(0.008 * side, 0.205, 0.044), Vector3(0.07 * side, 0.222, 0.040)]), 0.007, LACE, 6)
-	# Cuff ("cheater") along the wrist on the thumb side.
-	b.add_rounded_box(Vector3(-0.035 * side, -0.215, -0.035), Vector3(0.13, 0.12, 0.07), 0.03, WHITE)
-	b.add_rounded_box(Vector3(-0.035 * side, -0.165, -0.035), Vector3(0.135, 0.02, 0.075), 0.009, kit)
-	return b.to_mesh(0.55)
+	# Finger section: a thick padded roll up the outside of the mitt and over
+	# the top to the T, the silhouette shooters see first.
+	var finger := PackedVector3Array([
+		Vector3(0.140, -0.13, 0.030), Vector3(0.156, -0.05, 0.040), Vector3(0.160, 0.05, 0.046),
+		Vector3(0.152, 0.13, 0.048), Vector3(0.130, 0.195, 0.048), Vector3(0.095, 0.235, 0.046),
+		Vector3(0.055, 0.250, 0.044), Vector3(0.025, 0.244, 0.042)])
+	for k in range(finger.size()):
+		finger[k].x *= side
+	b.add_tube(finger, 0.030, kit.lightened(0.04), 14)
+	# Finger stitching ridges across the roll.
+	for t: float in [0.30, 0.48, 0.66]:
+		var c := finger[int(t * (finger.size() - 1))]
+		b.add_tube(PackedVector3Array([c + Vector3(-0.012 * side, 0, 0.026), c + Vector3(0.028 * side, -0.004, 0.012)]), 0.004, kit.darkened(0.25), 6)
+	# Thumb: a slimmer roll up the inside, white with a kit tip.
+	var thumb := PackedVector3Array([
+		Vector3(-0.112, -0.09, 0.030), Vector3(-0.122, 0.0, 0.036), Vector3(-0.118, 0.09, 0.040),
+		Vector3(-0.102, 0.170, 0.042), Vector3(-0.075, 0.222, 0.042)])
+	for k in range(thumb.size()):
+		thumb[k].x *= side
+	b.add_tube(thumb, 0.023, WHITE, 12)
+	b.add_tube(PackedVector3Array([thumb[3], thumb[4], thumb[4] + Vector3(0.012 * side, 0.014, 0)]), 0.0245, kit, 12)
+	# T-trap: a leather T bar up the middle of the pocket, and a laced web
+	# strung between the thumb tip and the finger tip.
+	b.add_rounded_box(Vector3(0.010 * side, 0.150, 0.030), Vector3(0.026, 0.16, 0.012), 0.005, DARK, Basis(Vector3.RIGHT, -0.22))
+	b.add_rounded_box(Vector3(0.000 * side, 0.236, 0.042), Vector3(0.11, 0.018, 0.012), 0.005, DARK)
+	for k in range(5):
+		var x := lerpf(-0.062, 0.050, k / 4.0)
+		b.add_tube(PackedVector3Array([Vector3(x * side, 0.206, 0.040), Vector3((x + 0.008) * side, 0.252, 0.046)]), 0.0045, LACE, 6)
+	for yy: float in [0.212, 0.250]:
+		b.add_tube(PackedVector3Array([Vector3(-0.070 * side, yy, 0.040), Vector3(0.0, yy + 0.004, 0.046), Vector3(0.060 * side, yy, 0.042)]), 0.0045, LACE, 6)
+	# Cuff and cheater: the flat padded panel down the wrist on the thumb side,
+	# carrying the glove's graphic toward the shooter.
+	b.add_panel(Vector3(-0.030 * side, -0.215, -0.018), Vector2(0.17, 0.15), 0.052, 0.03, Basis(Vector3.BACK, 0.10 * side), WHITE, kit, OFFWHITE)
+	var graphic := _cached("catcher|%s|%s" % [kit.to_html(), accent.to_html()], func(): return _paint_cheater(kit, accent))
+	return b.to_mesh(0.55, graphic)
+
+## Catcher cuff/cheater panel graphic: kit binding, a kit sweep and an accent
+## pinstripe on white, matching the blocker and pads.
+static func _paint_cheater(kit: Color, accent: Color) -> Texture2D:
+	var g := Graphic.new(256, 256, WHITE)
+	g.poly([Vector2(0, 0), Vector2(1, 0), Vector2(1, 0.32), Vector2(0, 0.62)], kit)
+	g.stripe([Vector2(-0.05, 0.69), Vector2(1.05, 0.37)], 0.022, accent)
+	g.rect(0, 0.93, 1, 1, kit)
+	g.rect(0, 0, 0.06, 1, kit)
+	g.rect(0.94, 0, 1, 1, kit)
+	return g.texture()
 
 # ---------------------------------------------------------------- goalie mask
 ## Fibreglass shell with a protruding chin, recessed face opening and cat-eye cage.

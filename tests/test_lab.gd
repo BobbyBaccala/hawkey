@@ -21,8 +21,8 @@ func run() -> void:
 		goalie.collision_layer = 0
 		scene.set_puck_contacts_enabled(goalie,false)
 	scene.cooldown = 0
-	scene.player.position = Vector3(0, 0, -23.8)
-	scene.puck.position = Vector3(0, 0.15, -24.6)
+	scene.player.position = Vector3(0, 0, -25.45)
+	scene.puck.position = Vector3(0, 0.15, -26.25)
 	scene.previous_puck = scene.puck.position
 	scene.strike(Vector3.FORWARD, 34)
 	for i in range(30):
@@ -33,12 +33,12 @@ func run() -> void:
 	for i in range(8):
 		await physics_frame
 	check(scene.puck.position.distance_to(scene.player.position) < 2, "Reset must return puck")
-	scene.puck.position = Vector3(13.5, 0.15, 0)
+	scene.puck.position = Vector3(preload("res://scripts/arena.gd").HALF_WIDTH - 1.5, 0.15, 0)
 	scene.puck.linear_velocity = Vector3(34, 0, 0)
 	scene.cooldown = 2.0
 	for i in range(20):
 		await physics_frame
-	check(scene.puck.position.x < 15.0 and scene.puck.linear_velocity.x < 0, "Fast puck must rebound from side boards")
+	check(scene.puck.position.x < preload("res://scripts/arena.gd").HALF_WIDTH and scene.puck.linear_velocity.x < 0, "Fast puck must rebound from side boards")
 	scene.paused = true
 	await physics_frame
 	await physics_frame
@@ -52,10 +52,10 @@ func run() -> void:
 	for goalie in scene.goalkeepers:
 		goalie.collision_layer = 2
 		scene.set_puck_contacts_enabled(goalie,true)
-	scene.goalkeepers[0].position = Vector3(0,0,-24)
+	scene.goalkeepers[0].position = Vector3(0,0,-25.65)
 	scene.goalkeepers[0].velocity = Vector3.ZERO
-	scene.player.position = Vector3(4,0,-20)
-	scene.puck.position = Vector3(0,0.12,-21)
+	scene.player.position = Vector3(4,0,-21.65)
+	scene.puck.position = Vector3(0,0.12,-22.65)
 	scene.puck.linear_velocity = Vector3(0,0,-25)
 	scene.previous_puck = scene.puck.position
 	for i in range(45):
