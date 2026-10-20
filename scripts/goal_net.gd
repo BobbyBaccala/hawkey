@@ -232,6 +232,8 @@ func _build_collision() -> void:
 	var pm := PhysicsMaterial.new()
 	pm.friction = 0.6
 	pm.bounce = 0.12
+	# Flexible netting absorbs the puck material restitution instead of adding it.
+	pm.absorbent = true
 	body.physics_material_override = pm
 	add_child(body)
 	const STEPS := 8

@@ -50,7 +50,11 @@ func run() -> void:
 	scene.player.position = Vector3(0, 0, -25.45)
 	scene.puck.position = Vector3(0, 0.15, -26.25)
 	scene.previous_puck = scene.puck.position
-	scene.strike(Vector3.FORWARD, 34)
+	# Explicit centre placement: this test isolates back-net containment/ripple,
+	# independent of the current pointer position under the new net-aim controls.
+	scene.practice_input.active = true
+	scene.practice_input.left_stick = Vector2.ZERO
+	check(scene.strike(Vector3.FORWARD, 34), "Centre net shot is accepted")
 	for i in range(60):
 		await physics_frame
 	check(scene.goals == 1, "Front shot scores exactly once")

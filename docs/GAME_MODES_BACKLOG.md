@@ -82,3 +82,5 @@ Rules remain the explicit shared HL exhibition preset. See CONTROLS_AND_TIEBREAK
 and final verification evidence. Full referee/CBA exceptions, hardware feel, annual
 GM simulation and persistent saves remain open. Official EA lookup blocked by runtime
 network policy; exact EA control parity is not claimed.
+
+Late integration: preserved prototype b5a292a goal-net/ripple update. Corrected net material energy absorption for new shots; verified net containment/ripple, shooting and shootout behavior after reconciliation.

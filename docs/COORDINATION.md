@@ -4,7 +4,7 @@ Updated 2026-10-20 14:02 America/Toronto. Assignments are not completion evidenc
 
 | Owner | Active task | Branch | Affected systems | Dependencies | Integration | Last verified build |
 |---|---|---|---|---|---|---|
-| Codex | Interface polish, net-targeted controller shots, playable OT/shootout | codex/game-modes | HUD/fonts, match/Practice/input, match state, tests and captures | Native Godot 4.6.3 verified; EA lookup blocked pending network settings | Tested and locally integrated; PR #2 pending review; no merge/release | 21 Python tests; 22 engine suites; OT/SO 75 checks; shots 132; navigation 47; genuine renders |
+| Codex | Interface polish, net-targeted controller shots, playable OT/shootout | codex/game-modes | HUD/fonts, match/Practice/input, match state, tests and captures | Native Godot 4.6.3 verified; EA lookup blocked pending network settings | Tested and locally integrated; PR #2 pending review; no merge/release | 21 Python tests; 23 engine suites; OT/SO 75 checks; shots 132; navigation 47; genuine renders |
 | Claude/separate presentation agent (owner-reported) | Graphics/lighting/models/gear/animation | prototype/skating-puck-lab observed; confirm ownership before edits | presentation assets, skater visuals, arena lighting, HUD styling | Shared scene and match interfaces | Prototype observed at 28fb10b; runtime not inspected here | Unknown in this session; do not infer from assignment |
 
 ## Coordination protocol
@@ -75,3 +75,9 @@ Actual final test/build evidence: verification/polish-shooting-tiebreaks-2026102
 No PR merge/release. EA reference lookup blocked by current egress; additive required
 domains saved but not activated. Next: official control verification after access,
 human/controller feel pass, complete rule exceptions, then saves/GM season loop.
+
+Late reconciliation: new prototype b5a292a (goal frame/mesh/ripple) was fetched,
+inspected and merged at c7f3485, retaining both goalie-gear and net changelog entries.
+Only the net collision material's energy absorption was corrected; geometry and
+shader remain Claude's. Explicit centre aim added to the net test fixture; its
+containment/ripple assertions retained. Final net/shot/OT tests rerun after correction.

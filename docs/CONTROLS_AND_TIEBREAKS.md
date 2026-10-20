@@ -81,7 +81,7 @@ owner's requested behavior, and this research prerequisite remains explicit.
 
 ## Validation and captures
 
-21 Python tests and 22 engine suites passed; optional mocap playback skipped. Net shooting: 132 checks passed; overtime/shootout: 75 checks passed, including the final camera-framing correction; navigation: 47 checks passed.
+21 Python tests and 23 engine suites passed; optional mocap playback skipped. Net shooting: 132 checks passed; overtime/shootout: 75 checks passed, including the final camera-framing correction; navigation: 47 checks passed.
 
 Final executed results are in [verification/polish-shooting-tiebreaks-20261020.json](verification/polish-shooting-tiebreaks-20261020.json).
 Focused checks cover ballistic goal-plane targeting from multiple positions at both
@@ -105,3 +105,15 @@ The supported runtime loader was tested; no artifact/TLS verification was bypass
 Future export presets must include the raw font files; no packaged export is claimed.
 
 Screenshots: [title](screenshots/polish-title-20261020.png), [match](screenshots/polish-match-20261020.png), [overtime](screenshots/polish-overtime-20261020.png), [shootout](screenshots/polish-shootout-20261020.png), [results](screenshots/polish-results-20261020.png).
+
+## Concurrent net integration
+
+Claude's prototype `b5a292a7a66d339640b513eaee2e1e16b0e88bc2` arrived during
+this run and is reconciled in the mode branch. Its net geometry, shader, padding
+and ripple implementation are retained. The net material is marked absorbent so
+its restitution subtracts from the puck material instead of adding energy; this
+prevents the new higher-trajectory shots from rebounding back out of the net.
+The goal-net test now explicitly selects neutral/centre aim to isolate back-net
+containment/ripple under the new shot controls. All original containment, scoring,
+ripple and decay assertions are retained. Initial integration failure and focused
+rechecks are recorded separately in the verification JSON.

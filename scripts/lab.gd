@@ -434,7 +434,7 @@ func _physics_process(delta: float) -> void:
 	status.text = "GOAL  /  R to restart" if goal_timer > 0 else ("PUCK CONTROL  •  Click to shoot at the net · Alt + click slap shot" if pickup_owner else "FREE PUCK  •  Skate into reach to collect")
 	power.value = charge
 	power.visible = charge > 0
-	help.text = "WASD Skate    Shift Effort    Ctrl Stop    Mouse Aim    Hold / release LMB Shoot    RMB Pass\nSpace Switch skater    R Reset    C Broadcast / full rink    Wheel Zoom    Esc Pause    F1 Diagnostics"
+	help.text = "WASD Skate    Shift Effort    Ctrl Stop    Mouse Aim    Click LMB Wrist · Alt + click Slap    RMB Pass\nSpace Switch skater    R Reset    C Broadcast / full rink    Wheel Zoom    Esc Pause    F1 Diagnostics"
 	if debug:
 		help.text = "Speed %.1f m/s   Puck %.1f m/s   Shots %d   Passes %d   Pad contacts %d   Rating %d\n1 / 2 Compare ratings    Fixed physics 120 Hz    C Camera    F1 Close diagnostics" % [velocity.length(),puck.linear_velocity.length(),shots,passes,saves,rating]
 
