@@ -2,6 +2,8 @@ extends SceneTree
 ## Rink markings to NHL proportions and skate cuts carved behind skaters.
 const Arena = preload("res://scripts/arena.gd")
 const Skating = preload("res://scripts/skating.gd")
+const Puck = preload("res://scripts/puck.gd")
+const IceMarks = preload("res://scripts/ice_marks.gd")
 var failures := 0
 
 func check(ok: bool, message: String) -> void:
@@ -26,7 +28,13 @@ func run() -> void:
 	var circle_gap := Arena.GOAL_LINE - (Arena.END_DOT_Z + Arena.CIRCLE_RADIUS)
 	check(circle_gap > 1.4 and circle_gap < 1.6, "Circle stops ~5 ft short of the goal line (%.2f m)" % circle_gap)
 	check(Arena.CIRCLE_RADIUS + Arena.DOT_X + 0.61 < Arena.corner_half_width(Arena.END_DOT_Z), "Hash marks fit inside the boards")
-	check(near(Arena.corner_half_width(10.0), 15.0) and Arena.corner_half_width(Arena.GOAL_LINE) < 15.0, "Corner half-width narrows in the corners")
+	check(near(Arena.corner_half_width(10.0), Arena.HALF_WIDTH) and Arena.corner_half_width(Arena.GOAL_LINE) < Arena.HALF_WIDTH, "Corner half-width narrows in the corners")
+	# NHL sheet: 85 ft wide, 28 ft corner radii, continuous where the arc starts.
+	check(near(Arena.HALF_WIDTH * 2.0, 85 * 0.3048), "Rink is 85 ft wide")
+	check(near(Arena.CORNER_RADIUS, 28 * 0.3048), "Corners have a 28 ft radius")
+	check(near(Arena.corner_half_width(Arena.CORNER_START + 0.001), Arena.HALF_WIDTH), "Corner arc meets the side boards smoothly")
+	check(near(Arena.corner_half_width(Arena.HALF_LENGTH), Arena.HALF_WIDTH - Arena.CORNER_RADIUS), "Corner arc meets the end boards")
+	check(near(Puck.RINK_HALF.x, Arena.HALF_WIDTH + 0.2) and near(IceMarks.RINK_SIZE.x, Arena.HALF_WIDTH * 2.0), "Puck ice plane and cut map follow the rink width")
 	# Goal plane follows the goal line.
 	var gl := Arena.GOAL_LINE
 	check(Skating.goal_crossing(Vector3(0, 0.1, -gl + 0.5), Vector3(0, 0.1, -gl - 0.5)), "Goal registers on the moved goal line")

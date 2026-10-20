@@ -3,6 +3,7 @@ extends SceneTree
 ## bounce back into play; lifted pucks may only leave over the side glass
 ## (a real out-of-play stoppage), never through the boards or over the ends.
 ## Also checks that a sliding puck keeps its speed on open ice.
+const Arena = preload("res://scripts/arena.gd")
 var failures := 0
 
 func check(ok: bool, message: String) -> void:
@@ -23,7 +24,7 @@ func shoot(m, start: Vector3, velocity: Vector3, frames: int) -> Vector3:
 	for i in range(frames):
 		await physics_frame
 		var p: Vector3 = m.puck.position
-		if p.y < -0.5 or absf(p.x) > 16 or absf(p.z) > 31:
+		if p.y < -0.5 or absf(p.x) > Arena.HALF_WIDTH + 1.0 or absf(p.z) > 31:
 			return p
 	return Vector3.INF
 
@@ -43,7 +44,7 @@ func run() -> void:
 		await physics_frame
 	check(m.puck.linear_velocity.length() > 19.0, "Sliding puck keeps its speed on open ice (%.1f m/s)" % m.puck.linear_velocity.length())
 	check(absf(m.puck.position.y - 0.0127) < 0.003, "Sliding puck rests on the ice surface")
-	var starts := [Vector3(0, 0.0128, 0), Vector3(8, 0.0128, 20), Vector3(-8, 0.0128, -20), Vector3(12, 0.0128, -26)]
+	var starts := [Vector3(0, 0.0128, 0), Vector3(8, 0.0128, 20), Vector3(-8, 0.0128, -20), Vector3(10, 0.0128, -26), Vector3(-12.3, 0.0128, 6), Vector3(7, 0.0128, 28.5)]
 	for speed in [8.0, 25.0, 45.0]:
 		for deg in range(0, 360, 30):
 			var dir := Vector3(cos(deg_to_rad(deg)), 0, sin(deg_to_rad(deg)))
@@ -55,7 +56,7 @@ func run() -> void:
 		var dir := Vector3(cos(deg_to_rad(deg)), 0, sin(deg_to_rad(deg)))
 		var out: Vector3 = await shoot(m, Vector3(0, 0.0128, 0), dir * 45 * cos(0.3) + Vector3.UP * 45 * sin(0.3), 120)
 		if out != Vector3.INF:
-			check(out.y > 2.66 and absf(out.x) > 15 and absf(out.z) < 22, "Lifted shot at %d deg left only over the side glass (%s)" % [deg, out])
+			check(out.y > 2.66 and absf(out.x) > Arena.HALF_WIDTH and absf(out.z) < Arena.CORNER_START + 0.5, "Lifted shot at %d deg left only over the side glass (%s)" % [deg, out])
 	m.queue_free()
 	await process_frame
 	print("Board failures: ", failures)

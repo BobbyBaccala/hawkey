@@ -33,12 +33,12 @@ func run() -> void:
 	for i in range(8):
 		await physics_frame
 	check(scene.puck.position.distance_to(scene.player.position) < 2, "Reset must return puck")
-	scene.puck.position = Vector3(13.5, 0.15, 0)
+	scene.puck.position = Vector3(preload("res://scripts/arena.gd").HALF_WIDTH - 1.5, 0.15, 0)
 	scene.puck.linear_velocity = Vector3(34, 0, 0)
 	scene.cooldown = 2.0
 	for i in range(20):
 		await physics_frame
-	check(scene.puck.position.x < 15.0 and scene.puck.linear_velocity.x < 0, "Fast puck must rebound from side boards")
+	check(scene.puck.position.x < preload("res://scripts/arena.gd").HALF_WIDTH and scene.puck.linear_velocity.x < 0, "Fast puck must rebound from side boards")
 	scene.paused = true
 	await physics_frame
 	await physics_frame

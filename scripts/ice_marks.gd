@@ -7,7 +7,7 @@ extends Node
 ##       (faceoff dots, the slot, along the boards), like snow on used ice.
 ## Both build up over a period; clear() is a fresh flood at period start.
 
-const RINK_SIZE := Vector2(30.0, 60.0)   # x, z extent of the ice (metres)
+const RINK_SIZE := Vector2(preload("res://scripts/arena.gd").HALF_WIDTH * 2.0, 60.0)   # x, z extent of the ice (metres)
 const PX_PER_M := 36.0                   # ~2.8 cm per texel
 const ON_ICE_HEIGHT := 0.11              # skate origin above this = foot lifted
 const MIN_SPEED := 0.8                   # m/s blade speed before it cuts

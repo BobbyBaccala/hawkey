@@ -405,7 +405,7 @@ func _physics_process(delta: float) -> void:
 		help.text = "Speed %.1f m/s   Puck %.1f m/s   Shots %d   Passes %d   Pad contacts %d   Rating %d\n1 / 2 Compare ratings    Fixed physics 120 Hz    C Camera    F1 Close diagnostics" % [velocity.length(),puck.linear_velocity.length(),shots,passes,saves,rating]
 
 func update_partner(delta: float) -> void:
-	var target := Vector3(clampf(player.position.x + (6 if player.position.x < 0 else -6),-11,11),0,clampf(player.position.z - 5,-21,21))
+	var target := Vector3(clampf(player.position.x + (6 if player.position.x < 0 else -6),-(Arena.HALF_WIDTH-2.0),Arena.HALF_WIDTH-2.0),0,clampf(player.position.z - 5,-21,21))
 	# Receiver moves to the pass, otherwise holds a supporting lane.
 	if cooldown > 0.05 and passes > 0 and teammate.position.distance_to(puck.position) < 5:
 		target = Vector3(puck.position.x,0,puck.position.z)

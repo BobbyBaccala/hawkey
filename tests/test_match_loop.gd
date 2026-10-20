@@ -18,7 +18,7 @@ func run()->void:
 					count_+=1
 					if actor.get_meta("roster_id") in ids:failures+=1
 					ids.append(actor.get_meta("roster_id"))
-					if absf(actor.position.x)>15.5 or absf(actor.position.z)>30.5:failures+=1
+					if absf(actor.position.x)>preload("res://scripts/arena.gd").HALF_WIDTH+0.5 or absf(actor.position.z)>30.5:failures+=1
 				if count_!=scene.match_state.count(team):failures+=1
 	if scene.match_state.clock>=start_clock:failures+=1
 	print("20-second match-loop failures: ",failures," • score ",scene.match_state.score," • clock ",scene.match_state.clock_text())

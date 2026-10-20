@@ -6,7 +6,14 @@ const WHITE = Color("#f0f5fa")
 ## Rink markings to NHL Rule 1 proportions on the 60 m rink (z is the long
 ## axis, centre ice at 0). Feet converted at 0.3048 m.
 const FT := 0.3048
-const GOAL_LINE := 30.0 - 11.0 * FT      # 11 ft from the end boards
+## NHL sheet: 85 ft wide with 28 ft corner radii (the length stays 60 m,
+## within a foot of the 200 ft standard). Board face at |x| = HALF_WIDTH.
+const HALF_WIDTH := 42.5 * FT            # 12.95 m
+const HALF_LENGTH := 30.0
+const CORNER_RADIUS := 28.0 * FT         # 8.53 m
+## Distance from centre ice where the corner arcs begin.
+const CORNER_START := HALF_LENGTH - CORNER_RADIUS
+const GOAL_LINE := HALF_LENGTH - 11.0 * FT      # 11 ft from the end boards
 const BLUE_LINE := 25.0 * FT             # 25 ft either side of centre
 const LINE_WIDTH := 12.0 * 0.0254        # red and blue lines: 12 in
 const GOAL_LINE_WIDTH := 2.0 * 0.0254    # goal lines and circles: 2 in
@@ -33,11 +40,13 @@ var _wear_shader: Shader
 ## Shared by the paint and emblem-wear shaders: same channels and response as
 ## the ice shader (R = scratches, G = wear haze), mapped from world x/z.
 const CUT_COMMON := """
+const float RINK_W = 25.908;
+const float RINK_L = 60.0;
 uniform sampler2D cut_tex:filter_linear_mipmap,repeat_disable,hint_default_black;
 uniform float fresh = 0.0;
 varying vec2 rink_uv;
 const vec3 FROST = vec3(0.80,0.82,0.85);
-void vertex(){vec3 w=(MODEL_MATRIX*vec4(VERTEX,1.0)).xyz;rink_uv=vec2(w.x/30.0+0.5,w.z/60.0+0.5);}
+void vertex(){vec3 w=(MODEL_MATRIX*vec4(VERTEX,1.0)).xyz;rink_uv=vec2(w.x/RINK_W+0.5,w.z/RINK_L+0.5);}
 """
 
 func mat(color: Color, roughness: float = 0.5) -> StandardMaterial3D:
@@ -214,7 +223,7 @@ func board_segment(a: Vector3, b: Vector3) -> void:
 	root.add_child(wall)
 	# Protective netting above the end and corner glass, as in NHL arenas:
 	# a lifted puck drops back into play instead of leaving the rink.
-	if absf(root.position.z) > 21.0:
+	if absf(root.position.z) > CORNER_START - 0.5:
 		var net := StaticBody3D.new()
 		var net_shape := CollisionShape3D.new()
 		var net_box := BoxShape3D.new()
@@ -237,8 +246,9 @@ func board_segment(a: Vector3, b: Vector3) -> void:
 
 ## Half-width of the rink (to the board face) at distance `z` from centre.
 static func corner_half_width(z: float) -> float:
-	if z <= 22.0: return 15.0
-	return 7.0 + sqrt(maxf(0.0, 64.0 - (z - 22.0) * (z - 22.0)))
+	if z <= CORNER_START: return HALF_WIDTH
+	var dz := z - CORNER_START
+	return HALF_WIDTH - CORNER_RADIUS + sqrt(maxf(0.0, CORNER_RADIUS * CORNER_RADIUS - dz * dz))
 
 ## End-zone faceoff circle: 15 ft ring, 2 ft spot, two pairs of 2 ft hash
 ## marks on the outside of the ring (5 ft 7 in apart) and the four L marks
@@ -306,7 +316,7 @@ func goal(end_sign: float) -> void:
 
 func _ready() -> void:
 	block(self, Vector3(85, 0.5, 100), Vector3(0, -0.65, 0), Color("#101e31"))
-	var ice := block(self, Vector3(30, 0.3, 60), Vector3(0, -0.15, 0), Color("#e4edf2"), true, 0.02)
+	var ice := block(self, Vector3(HALF_WIDTH * 2.0, 0.3, HALF_LENGTH * 2.0), Vector3(0, -0.15, 0), Color("#e4edf2"), true, 0.02)
 	ice.get_child(0).physics_material_override.friction=0.0
 	# The ice is on its own layer (5). Skaters stand on it; the puck does not
 	# collide with it, because puck.gd supports the puck on the ice plane itself.
@@ -316,22 +326,23 @@ func _ready() -> void:
 	ice.visible = false
 	var ice_material := mat(Color("#afc0cc"),0.38)
 	ice.material_override = ice_material
-	# Rounded perimeter: half width 15, half length 30, 8 metre corners.
+	# Rounded perimeter: 85 ft wide, 60 m long, 28 ft corners.
 	var points: Array[Vector3] = []
-	for corner in [Vector2(7, 22), Vector2(-7, 22), Vector2(-7,-22), Vector2(7,-22)]:
+	var cx := HALF_WIDTH - CORNER_RADIUS
+	for corner in [Vector2(cx, CORNER_START), Vector2(-cx, CORNER_START), Vector2(-cx, -CORNER_START), Vector2(cx, -CORNER_START)]:
 		var start := 0.0
 		if corner.x < 0 and corner.y > 0: start = PI * 0.5
 		if corner.x < 0 and corner.y < 0: start = PI
 		if corner.x > 0 and corner.y < 0: start = PI * 1.5
 		for i in range(17):
 			var angle := start + float(i) / 16 * PI * 0.5
-			points.append(Vector3(corner.x + cos(angle) * 8, 0, corner.y + sin(angle) * 8))
+			points.append(Vector3(corner.x + cos(angle) * CORNER_RADIUS, 0, corner.y + sin(angle) * CORNER_RADIUS))
 	var surface := ImmediateMesh.new()
 	surface.surface_begin(Mesh.PRIMITIVE_TRIANGLES,ice_material)
 	for i in range(points.size()):
 		for v in [Vector3.ZERO, points[i], points[(i + 1) % points.size()]]:
 			surface.surface_set_normal(Vector3.UP)
-			surface.surface_set_uv(Vector2(v.x / 30, v.z / 60))
+			surface.surface_set_uv(Vector2(v.x / (HALF_WIDTH * 2.0), v.z / (HALF_LENGTH * 2.0)))
 			surface.surface_add_vertex(v)
 	surface.surface_end()
 	var surface_instance := MeshInstance3D.new()
@@ -348,11 +359,11 @@ func _ready() -> void:
 uniform sampler2D ice_tex:source_color,repeat_enable,filter_linear_mipmap;
 uniform sampler2D cut_tex:filter_linear_mipmap,repeat_disable,hint_default_black;
 uniform float fresh = 0.0;
-uniform vec2 half_size = vec2(15.0, 30.0);
-uniform float corner_radius = 8.0;
+uniform vec2 half_size = vec2(12.954, 30.0);
+uniform float corner_radius = 8.5344;
 float board_distance(vec2 p){vec2 inner=half_size-vec2(corner_radius);vec2 d=abs(p)-inner;return corner_radius-(length(max(d,vec2(0.0)))+min(max(d.x,d.y),0.0));}
 void fragment(){
-	vec3 tex=texture(ice_tex,UV*vec2(3.0,6.0)).rgb;float grain=dot(tex,vec3(0.3,0.59,0.11));
+	vec3 tex=texture(ice_tex,UV*vec2(2.6,6.0)).rgb;float grain=dot(tex,vec3(0.3,0.59,0.11));
 	vec2 cm=texture(cut_tex,UV+0.5).rg;
 	float scratch=clamp(cm.r*1.6,0.0,1.0)*(0.75+grain*0.6);
 	float haze=smoothstep(0.0,0.6,cm.g);
@@ -360,7 +371,7 @@ void fragment(){
 	vec3 base=vec3(0.64,0.67,0.70)+(grain-0.4)*0.05;
 	vec3 albedo=mix(base,vec3(0.79,0.81,0.84),haze*0.7);
 	albedo=mix(albedo,base*vec3(0.70,0.74,0.78),clamp(scratch*0.75,0.0,0.75));
-	float d=max(board_distance(UV*vec2(30.0,60.0)),0.0);
+	float d=max(board_distance(UV*half_size*2.0),0.0);
 	float dasher=exp(-d/0.35);float stands=exp(-d/1.6)-dasher;
 	float mirror=(1.0-0.7*cut)*(0.75+0.25*fresh);
 	albedo=mix(albedo,vec3(0.78,0.74,0.55),dasher*0.32*mirror);
@@ -379,8 +390,8 @@ void fragment(){
 		board_segment(points[i], points[(i + 1) % points.size()])
 	# All markings are flush at one elevation; intended widths are explicit.
 	for z in [-BLUE_LINE, BLUE_LINE]:
-		line(Vector3(29.65, 0.006, LINE_WIDTH), Vector3(0, 0.008, z), BLUE)
-	line(Vector3(29.65, 0.006, LINE_WIDTH), Vector3(0, 0.008, 0), RED)
+		line(Vector3(HALF_WIDTH * 2.0 - 0.35, 0.006, LINE_WIDTH), Vector3(0, 0.008, z), BLUE)
+	line(Vector3(HALF_WIDTH * 2.0 - 0.35, 0.006, LINE_WIDTH), Vector3(0, 0.008, 0), RED)
 	# Centre red line is broken by the faceoff circle's blue ring only visually.
 	for z in [-GOAL_LINE, GOAL_LINE]:
 		# Goal line runs board to board: chord of the corner arc at this depth.

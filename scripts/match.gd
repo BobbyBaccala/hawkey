@@ -4,6 +4,8 @@ const ControllerInput = preload("res://scripts/controller_input.gd")
 const PuckPhysics = preload("res://scripts/puck.gd")
 const BroadcastHud = preload("res://scripts/broadcast_hud.gd")
 const CAMERA_NAMES := ["DYNAMIC", "OVERHEAD", "BROADCAST", "FULL RINK"]
+## Bench gate (changing skaters head here) just inside the west side boards.
+const BENCH_X := -(Arena.HALF_WIDTH - 1.3)
 ## Restarting from the pause menu skips the title screen.
 static var skip_title := false
 var hud_node: CanvasLayer
@@ -97,7 +99,7 @@ func _ready() -> void:
 		official.number=""
 		official.kit=Color("#11171e")
 		add_child(official)
-		official.position=Vector3(-11 if i==0 else 11,0,-12 if i==0 else 12)
+		official.position=Vector3(-(Arena.HALF_WIDTH-2.0) if i==0 else Arena.HALF_WIDTH-2.0,0,-12 if i==0 else 12)
 		referee_nodes.append(official)
 	setup_faceoff()
 	camera.position = Vector3(0,20,24)
@@ -188,7 +190,7 @@ func setup_faceoff() -> void:
 		actor.position = spots[slot]
 		actor.position.z *= -sign_
 		actor.position+=next_faceoff
-		actor.position.x=clampf(actor.position.x,-12.5,12.5)
+		actor.position.x=clampf(actor.position.x,-(Arena.HALF_WIDTH-1.0),Arena.HALF_WIDTH-1.0)
 		actor.position.z=clampf(actor.position.z,-28,28)
 		actor.velocity = Vector3.ZERO
 		actor.get_child(1).rotation.y = 0 if sign_<0 else PI
@@ -216,7 +218,7 @@ func sync_strength() -> void:
 			actor.collision_layer = 2 if eligible else 0
 			set_puck_contacts_enabled(actor,eligible)
 			if eligible and not old:
-				actor.position = Vector3(13.6,0,team*4-2)
+				actor.position = Vector3(Arena.HALF_WIDTH-1.4,0,team*4-2)
 				actor.velocity = Vector3.ZERO
 		# If a line held multiple penalized IDs, substitute eligible reserves into unused slots.
 		if active_count < target_count:
@@ -577,7 +579,7 @@ func update_team_ai(delta: float) -> void:
 		var target:=Vector3.ZERO
 		var changing:=bool(actor.get_meta("changing"))
 		if changing:
-			target=Vector3(-13.7,0,(slot-1)*1.6+(team*8-4))
+			target=Vector3(BENCH_X,0,(slot-1)*1.6+(team*8-4))
 			if actor.position.distance_to(target)<0.9:
 				change_identity(actor,int(actor.get_meta("pending_id")))
 				if actor==player: switch_player()
@@ -607,11 +609,11 @@ func update_team_ai(delta: float) -> void:
 			var x_slots: Array[float]=[0,-6,6,-5,5]
 			var z_offset: Array[float]=[3,1,1,-8,-8]
 			if possession:
-				target=Vector3(clampf(puck.position.x*0.25+x_slots[slot],-12,12),0,clampf(puck.position.z+attack*z_offset[slot],-(Arena.GOAL_LINE-2.0),Arena.GOAL_LINE-2.0))
+				target=Vector3(clampf(puck.position.x*0.25+x_slots[slot],-(Arena.HALF_WIDTH-1.5),Arena.HALF_WIDTH-1.5),0,clampf(puck.position.z+attack*z_offset[slot],-(Arena.GOAL_LINE-2.0),Arena.GOAL_LINE-2.0))
 			else:
 				var own_goal:float= -attack*Arena.GOAL_LINE
 				var defended_z:float=lerpf(puck.position.z,own_goal,0.35 if slot>=3 else 0.1)
-				target=Vector3(clampf(puck.position.x*0.3+x_slots[slot],-11,11),0,clampf(defended_z,-(Arena.GOAL_LINE-2.0),Arena.GOAL_LINE-2.0))
+				target=Vector3(clampf(puck.position.x*0.3+x_slots[slot],-(Arena.HALF_WIDTH-2.0),Arena.HALF_WIDTH-2.0),0,clampf(defended_z,-(Arena.GOAL_LINE-2.0),Arena.GOAL_LINE-2.0))
 		var to_target:=target-actor.position
 		var intent:=to_target.limit_length(1)
 		if to_target.length()<0.6: intent=Vector3.ZERO
@@ -741,13 +743,15 @@ func update_camera(delta: float) -> void:
 			look=camera_target+Vector3(0,0.4,-side*3.0)
 		2: # Broadcast: press-box side view; the camera changes sides between
 			# periods so Toronto always attacks to the right, as on TV.
-			desired=Vector3(side*21.5*zoom/0.8,12.0,camera_target.z*0.85)
+			desired=Vector3(side*(Arena.HALF_WIDTH+6.5)*zoom/0.8,12.0,camera_target.z*0.85)
 			look=Vector3(camera_target.x*0.4,0,camera_target.z)
 		_: # Full rink.
 			desired=Vector3(0,51,side*27)
 			look=Vector3(0,0.4,-side*3.0)
 	camera.position=desired if snap else camera.position.lerp(desired,1-exp(-delta*5))
 	if camera_mode!=2: camera.position.x=camera_target.x
+	# Full rink looks down past the roof line: hide trusses and the jumbotron.
+	camera.cull_mask=0xFFFFF & ~preload("res://scripts/arena_lighting.gd").RIGGING_LAYER if camera_mode==3 else 0xFFFFF
 	camera.look_at(look,Vector3.UP)
 	camera.rotation.z=0
 	selection.position=player.position+Vector3(0,0.025,0)
@@ -837,7 +841,7 @@ func goalkeeper_at_end(end_sign: float) -> CharacterBody3D:
 func update_officials(delta: float) -> void:
 	for i in range(referee_nodes.size()):
 		var official:=referee_nodes[i]
-		var target:=Vector3(-11 if i==0 else 11,0,clampf(puck.position.z+(-9 if i==0 else 9),-(Arena.GOAL_LINE-1.0),Arena.GOAL_LINE-1.0))
+		var target:=Vector3(-(Arena.HALF_WIDTH-2.0) if i==0 else Arena.HALF_WIDTH-2.0,0,clampf(puck.position.z+(-9 if i==0 else 9),-(Arena.GOAL_LINE-1.0),Arena.GOAL_LINE-1.0))
 		var move:Vector3=(target-official.position).limit_length(1)*4
 		official.position+=move*delta
 		if move.length()>0.2:

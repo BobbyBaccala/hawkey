@@ -17,6 +17,7 @@ Godot 4.6 standard/GDScript was selected because its editor and headless runtime
 - scripts/arena.gd: rounded rink, markings, two goals, netting, glass and seating.
 - scripts/arena_lighting.gd: per-zone overhead spot pools and player rim lights (arena meshes sit on visual layer 2, which rim lights skip).
 - scripts/ice_marks.gd: skate-cut map (one texel ~4 cm) scored by every blade on the ice and sampled by the ice shader and by the paint shader on every marking/emblem (arena.gd paint(), set_cut_map()); cleared at each period.
+- Rink size is NHL: arena.gd HALF_WIDTH (85 ft sheet), HALF_LENGTH (60 m), CORNER_RADIUS (28 ft); everything that depends on the rink width reads these rather than literals. Overhead rigging is on arena_lighting.gd RIGGING_LAYER, hidden by the full-rink camera.
 - Rink markings use NHL proportions from constants in arena.gd (GOAL_LINE, BLUE_LINE, END_DOT_Z, DOT_X...); gameplay code reads Arena.GOAL_LINE rather than literal distances.
 - scripts/skater_visual.gd: CC0 skinned human foundation, original kit and two-bone lateral push/glide posing.
 - scripts/crowd.gd: alpha-cutout generated crowd artwork in seating rows.
