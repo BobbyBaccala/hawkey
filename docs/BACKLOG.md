@@ -31,7 +31,7 @@ Rules for every run:
 - [ ] Fix camera 1 (`--capture --camera=1`): the view is mostly a flat blue slab with a white block and a dark diagonal bar across it (something sits between that camera and the ice); reproduced on b5a292a.
 - [ ] Benches and penalty boxes on one side with glass, doors and players seated, removing the bare stands there.
 - [ ] Crowd reactions: cards bob/raise on goals and big saves; seat shimmer during play.
-- [ ] Goal horn light and arena light flash on goals; jumbotron "GOAL" animation.
+- [x] Goal horn light and arena light flash on goals; jumbotron "GOAL" animation.
 - [ ] Replay after goals: 4–6 second replay with an alternate camera and a "REPLAY" wipe.
 - [ ] Faceoff presentation: camera cut closer for faceoffs; players set in proper faceoff stance.
 - [ ] Intermission and final screens: period stats (shots, hits, faceoffs, PP) styled like the score bug.
@@ -46,9 +46,12 @@ Rules for every run:
 - [ ] Goalie saves (slice 2): pad stack (stacked pads, sliding on the side) for desperation saves, poke check on close carriers, and a post-save freeze/rebound-control beat.
 - [ ] Shooting animations: wrist-shot and slapshot wind-up/follow-through driven by charge; stick flex look.
 - [ ] Crossovers and tight turns: leg crossover cycle when turning at speed; lean into turns.
-- [ ] Hockey stops: snow spray particles and a skid pose when braking hard.
+- [x] Hockey stops: snow spray particles and a skid pose when braking hard.
 - [ ] Body checks: hit reaction lean/stumble, glass rattle when near boards.
 - [ ] Jersey detail: numbers on sleeves and back via proper decals, team stripe on socks matching jersey, nameplate polish.
+
+- [ ] Hockey stop polish: snow spray reads faint against the white ice (more density/contrast, maybe a darker-edged spray); Ctrl braking stops so fast the spray lasts ~0.25 s.
+- [ ] Goal light beam and overhead-pool pulse barely show in gl_compatibility (ice mesh likely at the 8-lights-per-object limit); check in Forward+ and fake the sweep on the ice if needed.
 
 ## Gameplay feel
 - [ ] Passing feel: pass speed by distance, receiver stick reach, saucer passes clearing sticks.
@@ -72,3 +75,4 @@ Rules for every run:
 - 2026-10-20 — Rink narrowed to NHL width: 85 ft (25.9 m) with 28 ft corner radii, from arena.gd constants HALF_WIDTH / CORNER_RADIUS / CORNER_START that boards, ice, shaders, cut map (ice_marks.gd), puck ice plane, AI/official/bench clamps, broadcast camera, seating bowl, crowd cards and light pools now read. Full-rink camera was black (looking at the ceiling from above): ceiling is now a back-culled downward plane and trusses/lamps/jumbotron sit on a RIGGING_LAYER that only that camera hides. test_boards (new corner start points), test_ice and test_lighting extended. Screenshots: docs/screenshots/rink-width-full-auto-20261020-1755.png, docs/screenshots/rink-width-ice-auto-20261020-1755.png
 - 2026-10-20 — Goal nets rebuilt (new scripts/goal_net.gd, arena.goal() uses it): NHL-style frame with a rounded base frame 40 in deep and an upper back bar 22 in behind the crossbar, netting hung between them (top shelf, side panels, sloping back) as one mesh with an anti-aliased diamond-mesh shader that fades to a soft veil at distance, white foam padding inside the base frame, and collision slabs that follow the netting (posts/crossbar unchanged). The arena watches the puck (lab.gd sets arena.puck) and a sharp velocity change in or against a net starts a vertex-shader ripple (bulge + ring wave, decays over ~1 s). New tests/test_goal_net.gd and tools/capture_net.gd. Screenshots: docs/screenshots/goal-net-side-auto-20261020-1904.png, docs/screenshots/goal-net-ripple-auto-20261020-1904.png
 - 2026-10-20 — Overlapping run: built goal nets in parallel, but b5a292a (19:05) had already landed the same item, so this run's version was dropped, not pushed. Found that camera 1 renders a big blue slab across the view (added to the backlog). No code changes.
+- 2026-10-20 — Owner asked for several things at once and said the net still looked cartoonish; three parallel workers, integrated and tested together (all 21 suites pass). (1) Net realism pass in goal_net.gd: ~3 mm off-white knotted cords on a 2 in diamond mesh with per-cord variation that fades cleanly to a grey haze at distance, light through the netting, soft contact shadow, shelf and tie-point sag, belly on the back, inner skirt curtain that ripples harder, satin red frame with rounded elbows and ice pegs, flat foam sleeve on the base. Screenshots: docs/screenshots/goal-net-real-auto-20261020-1923.png, goal-net-real-side-auto-20261020-1923.png, goal-net-real-goalie-auto-20261020-1923.png. (2) Goal celebration (new scripts/goal_celebration.gd, one call from match.gd): red rotating goal lamp behind the scored-on net, warm checkerboard pulse of the overhead pools, LED ribbons tinted, jumbotron GOAL → team name → score. New tests/test_goal_celebration.gd, tools/capture_goal_light.gd. Screenshots: docs/screenshots/goal-light-auto-20261020-1916.png, goal-jumbotron-auto-20261020-1916.png. (3) Hockey stops in skater_visual.gd (hard brake/deceleration from >4 m/s): hips turn ~79°, low two-foot skid, smooth blend in/out; snow spray from the blades (new scripts/snow_spray.gd) and heavier cuts in ice_marks.gd. New tests/test_hockey_stop.gd, tools/capture_stop.gd. Screenshot: docs/screenshots/hockey-stop-auto-20261020-2015.png
