@@ -32,6 +32,9 @@ func run() -> void:
 		var matches: Array=original_meshes.filter(func(m): return m.mesh.get_surface_count()==node.mesh.get_surface_count())
 		check(matches.size()==1,"Unambiguous bundled source mesh")
 		for surface in range(node.mesh.get_surface_count()):
+			var before_lods: Array=RenderingServer.mesh_get_surface(matches[0].mesh.get_rid(),surface).get("lods",[])
+			var after_lods: Array=RenderingServer.mesh_get_surface(node.mesh.get_rid(),surface).get("lods",[])
+			check(before_lods==after_lods,"Imported distance LOD thresholds/indices preserved")
 			var before: Array=matches[0].mesh.surface_get_arrays(surface)
 			var after: Array=node.mesh.surface_get_arrays(surface)
 			for key in [Mesh.ARRAY_VERTEX,Mesh.ARRAY_NORMAL,Mesh.ARRAY_INDEX,Mesh.ARRAY_BONES,Mesh.ARRAY_WEIGHTS]:

@@ -9,6 +9,17 @@ static func eyes() -> ShaderMaterial:
 	if eye_material==null:
 		eye_material=ShaderMaterial.new();eye_material.shader=EyeShader
 	return eye_material
+static func lods(source: Mesh, surface: int) -> Dictionary:
+	var data: Dictionary=RenderingServer.mesh_get_surface(source.get_rid(),surface)
+	var result: Dictionary={}
+	var stride: int=2 if int(data.vertex_count)<=65536 else 4
+	for lod in data.get("lods",[]):
+		var bytes: PackedByteArray=lod.index_data
+		var indices:=PackedInt32Array();indices.resize(bytes.size()/stride)
+		for i in range(indices.size()): indices[i]=bytes.decode_u16(i*stride) if stride==2 else bytes.decode_u32(i*stride)
+		result[float(lod.edge_length)]=indices
+	return result
+
 static func eye_mesh(source: Mesh) -> ArrayMesh:
 	var key:=source.get_rid().get_id()
 	if eye_meshes.has(key): return eye_meshes[key]
@@ -21,7 +32,7 @@ static func eye_mesh(source: Mesh) -> ArrayMesh:
 			uv.append(Vector2(p.x-(0.0306 if p.x>=0 else -0.0306),p.y-1.6762))
 			uv2.append(Vector2(p.z,0))
 		arrays[Mesh.ARRAY_TEX_UV]=uv;arrays[Mesh.ARRAY_TEX_UV2]=uv2
-		result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+		result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays,[],lods(source,surface))
 	eye_meshes[key]=result
 	return result
 
@@ -35,7 +46,7 @@ static func skin_mesh(source: Mesh) -> ArrayMesh:
 		for p in arrays[Mesh.ARRAY_VERTEX]:
 			uv.append(Vector2(atan2(p.x,p.z)/TAU+0.5,p.y*0.5))
 		arrays[Mesh.ARRAY_TEX_UV]=uv
-		result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+		result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays,[],lods(source,surface))
 	skin_meshes[key]=result
 	return result
 

@@ -53,11 +53,11 @@ void fragment() {
 		// Original subtle facial albedo, located in stable bind-pose UV space.
 		// Distinguish lips/brows without painting lighting into the skin.
 		float face_u = UV.x - 0.5;
-		float lip = exp(-pow((rest_height - 1.601) / 0.008, 2.0) - pow(face_u / 0.029, 4.0));
+		float lip = exp(-pow(abs(rest_height - 1.601) / 0.008, 2.0) - pow(abs(face_u) / 0.029, 4.0));
 		color = mix(color, color * vec3(1.08, 0.72, 0.73), lip * 0.15);
 		float brow_u = (abs(face_u) - 0.036) / 0.020;
 		float brow_y = 1.703 + 0.004 * (1.0 - brow_u * brow_u);
-		float brow = exp(-pow((rest_height - brow_y) / 0.0028, 2.0) - pow(brow_u, 6.0));
+		float brow = exp(-pow(abs(rest_height - brow_y) / 0.0028, 2.0) - pow(abs(brow_u), 6.0));
 		color *= 1.0 - 0.65 * brow;
 	}
 	if (skin > 0.5 && has_skin_detail) {

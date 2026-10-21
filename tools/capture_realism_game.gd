@@ -24,6 +24,16 @@ func run() -> void:
 	scene.camera.look_at(player.global_position+Vector3.UP*0.8);scene.camera.fov=38
 	scene.hud_node.visible=false
 	await capture("arena-player-review")
+	var visual=player.get_child(1)
+	var head: Vector3=visual.helmet.global_position
+	scene.camera.position=head+facing*0.8+side*0.3+Vector3.UP*0.03
+	scene.camera.look_at(head+Vector3(0,-0.05,0));scene.camera.fov=32
+	await capture("face-lit-review")
+	if "--diagnose-face" in OS.get_cmdline_user_args():
+		visual.helmet.get_node("Visor").visible=false
+		await capture("diagnostic-face-no-visor")
+		for light in scene.find_children("*","DirectionalLight3D",true,false): light.shadow_enabled=false
+		await capture("diagnostic-face-no-shadows")
 	var metadata: Dictionary={"source":"Actual combined main.tscn, real title and match; final camera is a frozen in-arena model inspection, not normal gameplay","engine":Engine.get_version_info().string,"adapter":RenderingServer.get_video_adapter_name()}
 	var file:=FileAccess.open("res://build/realism-arena-capture.json",FileAccess.WRITE);file.store_string(JSON.stringify(metadata,"\t"));file.close()
 	scene.queue_free();await process_frame;quit()
