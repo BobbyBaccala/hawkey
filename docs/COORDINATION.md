@@ -173,3 +173,21 @@ Python tests passed. Accessibility recheck: 31 assertions; checkpoint: 10.
 Isolated snapshot-worker remeasurement: ~105 ms main-thread launch, ~5.75 s
 overall (copy hitch and total save latency remain explicit). JPEGs are actual
 native UI captures, not gameplay renders. See DEVELOPMENT_RESEARCH.md.
+
+
+## 2026-10-20 — GM front-office continuation
+
+Codex, codex/game-modes / draft PR #2. Implemented a versioned management overlay:
+64 original professional free agents, 736 base contracts, exact cap/term checks,
+atomic worker signing and automatic roster/simulation integration. Added Contracts,
+sortable Team statistics, Season records and Junior scouting pages. Scouting covers
+2,727 eligible NA juniors, three assignments/day, next-day preliminary ranges and
+persistent observations. GM_OPERATIONS.md records scope, provisional HL policy and
+remaining CBA/draft/development/player-stat/history work. Official NHL/EA/HLM web
+requests returned proxy 403; current cap/CBA and edition feature parity are not
+asserted. Captures are genuine native UI JPEGs in an isolated ten-day demo season.
+Full baseline: 36 engine suites passed, optional mocap skipped, 24 Python tests
+passed. Follow-up management 160/scouting 2,755 checks pass, including scheduled
+match identity and saved scout assignment. Verification: gm-operations-20261020.json.
+Next: shared played/simulated player-stat ledger and leaders/history; verified
+NHLPA/CBA policy and offseason/draft dependencies remain required. No release/PR merge.

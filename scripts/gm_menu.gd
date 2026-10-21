@@ -41,7 +41,7 @@ func build_setup() -> void:
 	if FileAccess.file_exists(Session.slot_path) or FileAccess.file_exists(Session.slot_path+".bak"):
 		card.add_child(UI.button("Continue saved season",resume_season))
 	card.add_child(UI.text("Single local save slot with backup recovery. Starting again asks before replacing it.",16,UI.MUTED))
-	card.add_child(UI.text("Season alpha: play or simulate, standings, autosave and resume.\nContracts, drafts, development and playoffs are still to come.",16,UI.MUTED))
+	card.add_child(UI.text("Season alpha: play or simulate, standings, autosave and resume.\nFree agents, contracts and team statistics are available.\nDrafts, development and playoffs are still to come.",16,UI.MUTED))
 	message=UI.text(Session.error,17,UI.ACCENT);box.add_child(message)
 	box.add_child(UI.button("Return to menu",return_to_menu))
 	confirm=ConfirmationDialog.new();confirm.title="Replace saved season?"
@@ -79,6 +79,7 @@ func build_dashboard() -> void:
 	sim_button=UI.button("Simulate rest of day" if not fixture.is_empty() and not fixture.result.is_empty() else "Simulate league day",advance_day);actions.add_child(sim_button)
 	sim_button.disabled=complete or not Session.pending_result.is_empty()
 	actions.add_child(UI.button("Roster room",func(): get_tree().change_scene_to_file("res://gm_rosters.tscn")))
+	actions.add_child(UI.button("Front office",func(): get_tree().change_scene_to_file("res://gm_office.tscn")))
 	actions.add_child(UI.button("Save & return to menu",save_exit))
 	var columns:=HBoxContainer.new();columns.add_theme_constant_override("separation",20);columns.size_flags_vertical=Control.SIZE_EXPAND_FILL;box.add_child(columns)
 	var table:=UI.card(columns)

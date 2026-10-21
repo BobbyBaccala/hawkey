@@ -109,7 +109,7 @@ func _ready() -> void:
 	teammate.queue_free()
 	rosters = [[],[]]
 	for team in range(2):
-		rosters[team] = database.match_roster(selected_teams[team])
+		rosters[team] = GMSession.season.match_roster(selected_teams[team].id) if is_gm_match else database.match_roster(selected_teams[team])
 		for slot in range(5):
 			var roster_id := slot if slot<3 else 12+slot-3
 			var actor := make_skater(Vector3.ZERO,team_color(team),str(rosters[team][roster_id].number),false,team_accent(team))

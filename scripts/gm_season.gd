@@ -1,5 +1,6 @@
 extends RefCounted
-## Original, deterministic single-season HL slice. No contracts/progression claimed.
+## Original, deterministic single-season HL alpha with versioned management overlay.
+const Management=preload("res://scripts/gm_management.gd")
 const Database=preload("res://scripts/roster_database.gd")
 var state: Dictionary={}
 var database:=Database.new()
@@ -17,6 +18,7 @@ func new_season(world_text: String, club: String, seed_value: int=20261020) -> b
 		return false
 	var world: Dictionary=JSON.parse_string(world_text)
 	state={"schema_version":1,"season":world.season,"club_id":club,"seed":seed_value,"day":0,"team_ids":ids,"world":world,"fixtures":schedule(ids)}
+	ensure_management()
 	cache_strengths()
 	error=""
 	return true
@@ -60,6 +62,7 @@ func validate(data: Dictionary) -> bool:
 			if fixture.day<data.day: return false
 		else:
 			if fixture.day>data.day or not valid_result(fixture.result): return false
+	if data.has("management") and not Management.validate(data.management,data.world,ids,int(data.day),whole): return false
 	return true
 
 func load_state(data: Dictionary) -> bool:
@@ -68,6 +71,7 @@ func load_state(data: Dictionary) -> bool:
 		return false
 	state=data.duplicate(true)
 	database.load_text(JSON.stringify(state.world))
+	ensure_management()
 	cache_strengths()
 	error=""
 	return true
@@ -82,9 +86,10 @@ func cache_strengths() -> void:
 	for team in database.teams:
 		if team.league_id!="hl": continue
 		var attack:=0.0
-		for p in team.players:
+		var active: Dictionary=Management.active_team(state.management,team) if state.has("management") else team
+		for p in active.players:
 			attack+=float(p.ratings.get("shot_accuracy",p.ratings.get("reflexes",50)))
-		strengths[team.id]=attack/team.players.size()
+		strengths[team.id]=attack/active.players.size()
 
 func club(id_: String) -> Dictionary:
 	for team in database.teams:
@@ -160,3 +165,68 @@ func standings() -> Array:
 		if a.gf-a.ga!=b.gf-b.ga: return a.gf-a.ga>b.gf-b.ga
 		return a.id<b.id)
 	return result
+
+func ensure_management() -> void:
+	if not state.has("management"): state.management=Management.initial(state.world)
+
+func match_roster(id_: String) -> Array:
+	return database.match_roster(Management.active_team(state.management,club(id_)))
+
+func sign_free_agent(id_: String, aav: Variant, years: Variant) -> bool:
+	if state.is_empty() or state.day>=62:
+		error="The regular-season market is closed."
+		return false
+	var fixture:=current_fixture()
+	if not fixture.is_empty() and not fixture.result.is_empty():
+		error="Advance the completed league day before changing the roster."
+		return false
+	error=Management.rejection(state.management,state.club_id,id_,aav,years,whole)
+	if not error.is_empty(): return false
+	state.management.contracts[id_]={"club":state.club_id,"aav":aav,"years":years}
+	state.management.transactions.append({"sequence":state.management.transactions.size()+1,"day":state.day,"club":state.club_id,"player":id_,"aav":aav,"years":years})
+	cache_strengths()
+	return true
+
+func team_statistics() -> Array:
+	var rows:=standings()
+	for row in rows:
+		row.gd=int(row.gf)-int(row.ga)
+		row.pts_pct=float(row.pts)/(2*row.gp) if row.gp>0 else 0.0
+		row.gf_gp=float(row.gf)/row.gp if row.gp>0 else 0.0
+		row.ga_gp=float(row.ga)/row.gp if row.gp>0 else 0.0
+		row.home_w=0;row.away_w=0;row.shutouts=0
+		row.payroll=Management.payroll(state.management,row.id)
+	for fixture in state.fixtures:
+		if fixture.result.is_empty(): continue
+		for row in rows:
+			if row.id not in [fixture.home,fixture.away]: continue
+			var home: bool=row.id==fixture.home
+			var own: int=int(fixture.result.home if home else fixture.result.away)
+			var other: int=int(fixture.result.away if home else fixture.result.home)
+			if other==0: row.shutouts+=1
+			if own>other:
+				if home: row.home_w+=1
+				else: row.away_w+=1
+	return rows
+
+func season_records() -> Array:
+	var records: Array=[]
+	for f in state.fixtures:
+		if f.result.is_empty(): continue
+		records.append({"fixture":f,"total":int(f.result.home)+int(f.result.away),"margin":absi(int(f.result.home)-int(f.result.away))})
+	records.sort_custom(func(a,b): return a.total>b.total if a.total!=b.total else a.fixture.id<b.fixture.id)
+	return records
+
+func assign_scout(id_: String) -> bool:
+	var pool:=Management.Scouting.candidates(state.world)
+	error=Management.Scouting.rejection(state.management.scouting_jobs,id_,int(state.day),pool)
+	if not error.is_empty(): return false
+	state.management.scouting_jobs.append({"player":id_,"day":state.day})
+	return true
+
+func scouting_report(id_: String) -> Dictionary:
+	for job in state.management.scouting_jobs:
+		if job.player==id_ and job.day<state.day:
+			var pool:=Management.Scouting.candidates(state.world)
+			return Management.Scouting.report(pool[id_].player,int(job.day)+1)
+	return {}

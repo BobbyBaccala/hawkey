@@ -32,6 +32,11 @@ func _ready() -> void:
 	for team in db.teams:
 		teams_by_id[team.id]=team
 		for player in team.players: entries.append({"player":player,"team":team})
+	for row in Session.season.state.management.market:
+		var contract: Dictionary=Session.season.state.management.contracts.get(row.player.id,{})
+		if contract.is_empty(): continue
+		var signed: Dictionary=row.player.duplicate(true);signed.hl_rights_team_id=contract.club
+		entries.append({"player":signed,"team":teams_by_id[contract.club]})
 	for player in db.draft_pool(): eligible[player.id]=true
 	entries.sort_custom(func(a,b): return a.player.id<b.player.id)
 	build()
@@ -40,7 +45,7 @@ func build() -> void:
 	var box:=UI.setup(self)
 	box.add_child(UI.text("GENERAL MANAGER  /  PEOPLE & DEVELOPMENT",14,UI.ACCENT))
 	box.add_child(UI.text("The roster room",38))
-	box.add_child(UI.text("Your saved world · 33 leagues · 643 clubs · 14,745 original players",17,UI.MUTED))
+	box.add_child(UI.text("Your saved world · 33 leagues · 643 clubs · %s original players"%str(entries.size()),17,UI.MUTED))
 	var filters:=HBoxContainer.new();filters.add_theme_constant_override("separation",12);box.add_child(filters)
 	source_choice=OptionButton.new()
 	for title in ["Club rosters","My organization","Draft candidates"]: source_choice.add_item(title)
