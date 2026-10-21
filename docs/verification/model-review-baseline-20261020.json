@@ -1,0 +1,43 @@
+{
+	"captures": [
+		{
+			"camera": "(0.0, 0.9, 3.5)",
+			"error": 0,
+			"fov": 35.0,
+			"path": "res://build/model-review-baseline-back.jpg",
+			"target": "(0.0, 0.75, 0.0)"
+		},
+		{
+			"camera": "(2.2, 1.2, -3.0)",
+			"error": 0,
+			"fov": 35.0,
+			"path": "res://build/model-review-baseline-three-quarter.jpg",
+			"target": "(0.0, 0.75, 0.0)"
+		},
+		{
+			"camera": "(3.5, 0.9, 0.0)",
+			"error": 0,
+			"fov": 35.0,
+			"path": "res://build/model-review-baseline-side.jpg",
+			"target": "(0.0, 0.75, 0.0)"
+		},
+		{
+			"camera": "(0.4, 1.437919, -1.011554)",
+			"error": 0,
+			"fov": 32.0,
+			"path": "res://build/model-review-baseline-head.jpg",
+			"target": "(-0.0, 1.357919, -0.361555)"
+		},
+		{
+			"camera": "(0.278657, 1.062922, -0.913225)",
+			"error": 0,
+			"fov": 32.0,
+			"path": "res://build/model-review-baseline-glove.jpg",
+			"target": "(-0.121343, 0.912922, -0.363225)"
+		}
+	],
+	"renderer": "softpipe",
+	"size": "960x960",
+	"source": "Actual isolated Godot 4.6.3 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay",
+	"stage": "baseline"
+}

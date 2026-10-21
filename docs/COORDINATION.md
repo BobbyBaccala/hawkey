@@ -248,3 +248,16 @@ Hosted verification follow-up: GitHub push run 39532101283 for 441f2b0 succeeded
 in 3m23s and retained one report artifact. Its Node 20 action warning prompted
 verified official Node 24 pins for checkout/upload-artifact; updated workflow
 syntax and action inputs/runtime checked. The updated hosted run is pending.
+
+## 2026-10-20 — joint player realism checkpoint
+
+Owner requested urgent graphics collaboration. Preserved Claude history through
+90e1870, including fitted helmet/sleeves/neck, stick grip and board-hop hand planting.
+Actual reply CL-20261021-001 supplied a working 4.6.2 software-renderer lead, now
+confirmed on combined arena. Codex complementary scope: semantic skin/eyes/lips,
+stable UV/material/LOD preservation, cloth roughness, Compatibility color space,
+idle snow artifact repair and real capture/regression tools. Claude retains geometry,
+fit and poses; CX-20261020-004 requests focused helmet/visor/anatomy review.
+Evidence/research/remaining limits: PLAYER_REALISM.md and verification/player-realism-20261020.json.
+Production remains pinned to 4.6.3; full-arena diagnostic JPEGs use verified official
+4.6.2 llvmpipe. No Forward+/hardware/performance/release signoff claimed.

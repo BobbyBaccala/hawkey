@@ -1,0 +1,38 @@
+{
+	"captures": [
+		{
+			"camera": "(0.0, 0.9, 3.5)",
+			"error": 0,
+			"fov": 35.0,
+			"path": "res://build/model-review-goalie-pad-save-back.jpg",
+			"target": "(0.0, 0.75, 0.0)"
+		},
+		{
+			"camera": "(2.2, 1.2, -3.0)",
+			"error": 0,
+			"fov": 35.0,
+			"path": "res://build/model-review-goalie-pad-save-three-quarter.jpg",
+			"target": "(0.0, 0.75, 0.0)"
+		},
+		{
+			"camera": "(3.5, 0.9, 0.0)",
+			"error": 0,
+			"fov": 35.0,
+			"path": "res://build/model-review-goalie-pad-save-side.jpg",
+			"target": "(0.0, 0.75, 0.0)"
+		},
+		{
+			"camera": "(0.671655, 1.126537, -0.842515)",
+			"error": 0,
+			"fov": 32.0,
+			"path": "res://build/model-review-goalie-pad-save-head.jpg",
+			"target": "(0.271655, 1.046537, -0.192515)"
+		}
+	],
+	"goalkeeper": true,
+	"pose": "pad_right",
+	"renderer": "softpipe",
+	"size": "960x960",
+	"source": "Actual isolated Godot 4.6.3 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay",
+	"stage": "goalie-pad-save"
+}
