@@ -172,3 +172,13 @@ Python tests passed. Accessibility recheck: 31 assertions; checkpoint: 10.
 Isolated snapshot-worker remeasurement: ~105 ms main-thread launch, ~5.75 s
 overall (copy hitch and total save latency remain explicit). JPEGs are actual
 native UI captures, not gameplay renders. See DEVELOPMENT_RESEARCH.md.
+
+## 2026-10-21 — helmet equipment review
+
+Equipment art/customization remains **Partial** overall. Reference-guided helmet
+construction is implemented and tested (99933f1): lower crown, horizontal vents,
+clear ear frames and retention hardware; approved visor preserved. Genuine native
+neutral/arena JPEGs and checks: HELMET_REFERENCE_REVIEW.md and
+verification/helmet-reference-20261021.json. Authored anatomy, customization/save
+coverage, distance LODs/hardware performance and specialist review remain open;
+this is not release-ready equipment art.

@@ -284,3 +284,16 @@ byte-identical to 9844db3 and material unchanged. Eleven final affected suites p
 verification/helmet-retention-20261021.json. Handoff CX-20261021-006 preserves e3caa27
 and explicitly leaves reference-based shell refinement pending attachment. No
 Re-Akt accuracy, hardware FPS, Claude acknowledgement or release claim.
+
+## 2026-10-21 — reference-guided helmet construction
+
+Owner supplied two helmet photographs; Codex actually reviewed them. Reference
+blocker resolved. Original lower crown/satin panel, horizontal lateral openings
+and recessed ribs, translucent ear frames, fasteners/ladder-locks implemented at
+99933f1. Approved visor arrays byte-identical, material/attachment unchanged. Closed
+loop tube initialization fixed after genuine render exposed collapsed frames.
+Claude e3caa27 remains preserved; CX-20261021-007 records narrow ownership/review
+request. Details/captures: HELMET_REFERENCE_REVIEW.md; evidence:
+verification/helmet-reference-20261021.json. Broad regression plus final affected
+rechecks are distinguished in that evidence. No brand logo, cage, exact-product
+replica, hardware FPS, acknowledgement or release claim.

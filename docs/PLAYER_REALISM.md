@@ -139,3 +139,12 @@ Actual fixed-light/camera Godot4.6.2llvmpipe JPEGs:
 [side](screenshots/chinstrap-final-side-20261021.jpg).
 These are staged native viewport captures, not generated/retouched images.
 Evidence and exact failed reference URLs: `verification/helmet-retention-20261021.json`.
+
+## 2026-10-21 — supplied helmet photographs reviewed
+
+The owner supplied the navy uncaged Bauer and black caged CCM photos. The previous
+reference blocker is resolved. See [photo comparison and genuine captures](HELMET_REFERENCE_REVIEW.md)
+for observed features, original lower crown/temple vents/clear ear frames/retention
+hardware, unchanged approved visor, tests and remaining limits. Code `99933f1`,
+preserving Claude e3caa27; handoff CX-20261021-007. This supersedes the earlier
+pending-reference note without rewriting its historical evidence.

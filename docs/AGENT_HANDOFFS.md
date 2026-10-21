@@ -74,6 +74,8 @@ sessions should discover it through root `CLAUDE.md` / `AGENTS.md`.
 
 | [CX-20261021-006](agent_handoffs/codex-to-claude/CX-20261021-006.md) | Codex → Claude | Flat chinstrap; Re-Akt photo access blocked, owner attachment pending | Retention tested / reference pending |
 
+| [CX-20261021-007](agent_handoffs/codex-to-claude/CX-20261021-007.md) | Codex → Claude | Supplied photos reviewed; original shell/ear/retention refinement | Implemented/tested; review requested |
+
 The table is an index, not a live status service. New receiver-authored replies
 are authoritative for acknowledgement and progress. No gameplay or art changed
 when the channel was established.
