@@ -444,6 +444,38 @@ static func helmet_shell(color: Color) -> ShaderMaterial:
 		m.set_shader_parameter("albedo_variation", 0.03)
 		return m)
 
+## Matte impact liner/rubber backing: no plastic sparkle inside vent holes.
+static func helmet_liner() -> ShaderMaterial:
+	return cached("helmet_liner",func() -> ShaderMaterial:
+		var m := _gear(ripstop_texture(),40.0,0.06,0.94,0.12)
+		m.set_shader_parameter("base_color",Color("#22272b"))
+		return m)
+
+## Satin crown insert and lightly translucent ear protection from the photo
+## comparison. These do not change the approved visor shader/material.
+static func helmet_crown_panel() -> ShaderMaterial:
+	return cached("helmet_crown_panel",func() -> ShaderMaterial:
+		var m := _gear(paint_texture(),30.0,0.01,0.45,0.32)
+		m.set_shader_parameter("use_vertex_color",false)
+		m.set_shader_parameter("base_color",Color("#1b2b3b"))
+		return m)
+static func helmet_ears() -> StandardMaterial3D:
+	return cached("helmet_ears",func() -> StandardMaterial3D:
+		var m := StandardMaterial3D.new()
+		m.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA
+		m.cull_mode=BaseMaterial3D.CULL_DISABLED
+		m.albedo_color=Color(0.62,0.69,0.73,0.38)
+		m.roughness=0.14;m.metallic_specular=0.65
+		return m)
+
+## Original clips/silver fasteners; preserve vertex colors independently of
+## the dark liner so hardware does not disappear into the shell.
+static func helmet_hardware() -> ShaderMaterial:
+	return cached("helmet_hardware",func() -> ShaderMaterial:
+		var m := _gear(paint_texture(),60.0,0.05,0.55,0.30)
+		m.set_shader_parameter("metal_from_grey",true)
+		return m)
+
 ## Matte woven nylon, distinct from the retention clips and painted shell.
 static func chinstrap() -> ShaderMaterial:
 	return cached("chinstrap", func() -> ShaderMaterial:

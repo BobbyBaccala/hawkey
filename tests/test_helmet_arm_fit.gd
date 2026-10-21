@@ -26,7 +26,7 @@ func run() -> void:
 					mn = mn.min(p)
 					mx = mx.max(p)
 	var centre: Vector3 = head_o + Gear.HELMET_OFFSET
-	var top: float = centre.y + Gear.HELMET_H
+	var top: float = centre.y + Gear.helmet_point(0.0,0.0).y
 	check(top - mx.y > 0.015 and top - mx.y < 0.045, "Helmet crown sits 1.5-4.5 cm above the head (%.3f)" % (top - mx.y))
 	check(Gear.HELMET_W - mx.x > 0.012 and Gear.HELMET_W - mx.x < 0.035, "Helmet sides sit close to the head (%.3f)" % (Gear.HELMET_W - mx.x))
 	var back: float = centre.z - Gear.HELMET_D * 1.04

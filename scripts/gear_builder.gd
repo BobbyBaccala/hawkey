@@ -102,7 +102,11 @@ class MeshBuilder:
 	func add_tube(points: PackedVector3Array, radius: float, color: Color, sides := 8) -> void:
 		var rings := []
 		var ring_colors := []
-		var span := (points[points.size() - 1] - points[0]).normalized()
+		var span := points[points.size() - 1] - points[0]
+		# Closed ear frames/buckles have coincident endpoints. A zero initial
+		# tangent collapsed their rings to a line and made the frame invisible.
+		if span.length_squared() < 1e-12: span = points[1] - points[0]
+		span = span.normalized()
 		var across := span.cross(Vector3.UP if absf(span.y) < 0.8 else Vector3.BACK).normalized()
 		for i in range(points.size()):
 			var prev := points[maxi(i - 1, 0)]
@@ -1132,7 +1136,12 @@ const HELMET_H := 0.112
 ## Helmet origin relative to the head bone (rest), for skaters.
 const HELMET_OFFSET := Vector3(0, 0.066, 0.004)
 ## Vent slots: [angle round the head (0 = front), phi down from the crown, half-length (rad), half-width (rad)].
-const HELMET_VENTS := [[0.30, 0.55, 0.20, 0.045], [-0.30, 0.55, 0.20, 0.045], [PI - 0.30, 0.70, 0.18, 0.045], [PI + 0.30, 0.70, 0.18, 0.045], [0.95, 0.95, 0.12, 0.04], [-0.95, 0.95, 0.12, 0.04]]
+const HELMET_VENTS := [
+	[0.95,0.96,0.034,0.25],[-0.95,0.96,0.034,0.25],
+	[1.03,1.15,0.032,0.28],[-1.03,1.15,0.032,0.28],
+	[1.12,1.34,0.030,0.25],[-1.12,1.34,0.030,0.25],
+	[0.65,0.55,0.14,0.035],[-0.65,0.55,0.14,0.035],
+	[PI-0.45,0.90,0.045,0.18],[PI+0.45,0.90,0.045,0.18]]
 static func helmet_point(a: float, phi: float, inset := 0.0) -> Vector3:
 	# a: angle round the head, 0 = front (+Z); phi: angle down from the crown.
 	var s := sin(phi)
@@ -1151,6 +1160,13 @@ static func helmet_point(a: float, phi: float, inset := 0.0) -> Vector3:
 	var cy := signf(c) * pow(absf(c), 1.15)
 	var sy := pow(s, 0.85)
 	var p := Vector3(px * sy * (HELMET_W - inset), cy * (HELMET_H - inset), pz * sy * (d - inset))
+	# Lower, less bulbous crown from the supplied side/quarter reference.
+	# Blend out above the existing visor mount, preserving its approved mesh.
+	p.y -= 0.008 * (1.0 - smoothstep(0.75,1.45,phi))
+	# Broad moulded crown rails, not tiny corrugations or pinched vent dents.
+	var rail := exp(-pow(absf(absf(p.x)-0.034)/0.014,4.0))
+	rail *= smoothstep(0.025,0.060,p.y)*(1.0-smoothstep(0.09,0.12,absf(p.z)))
+	p.y += rail*0.0015
 	var out := Vector3(sa, 0, ca)
 	# Brow: the front edge turns slightly out over the visor clip line.
 	p += out * 0.004 * pow(front, 4) * smoothstep(1.35, 1.6, phi)
@@ -1260,32 +1276,26 @@ static func skater_helmet() -> ArrayMesh:
 			b.indices.append_array(PackedInt32Array([base + ia, base + ic, base + ib]))
 		else:
 			b.indices.append_array(PackedInt32Array([base + ia, base + ib, base + ic]))
+	# Layered side-shell break, lifted only a millimetre from the smooth body.
+	# This catches a narrow edge highlight without denting the crown.
+	for side: float in [-1.0,1.0]:
+		var line := PackedVector3Array()
+		for k in range(28):
+			var a := side * lerpf(0.22,2.92,float(k)/27.0)
+			var phi := 1.44 - 0.25 * maxf(0.0,-cos(a))
+			line.append(helmet_point(a,phi)+helmet_normal(a,phi)*0.0005)
+		b.add_tube(line,0.0011,shell,8)
 	_helmet_mesh = b.to_mesh(0.27)
 	return _helmet_mesh
 
 ## Ear guards, vent inserts, occipital adjuster and chin strap.
 ## Head landmarks (helmet space): ears at x = +-0.082, y = -0.06, z = -0.01;
 ## chin at y = -0.13, z = 0.075.
+static var _helmet_fittings_mesh: ArrayMesh
 static func helmet_fittings() -> ArrayMesh:
+	if _helmet_fittings_mesh != null: return _helmet_fittings_mesh
 	var b := MeshBuilder.new()
 	var plastic := Color("#0b1621")
-	for s: float in [-1.0, 1.0]:
-		# Ear guard: a flat oval plate with a raised rim, clipped to the lower
-		# shell in front of and over the ear.
-		var side := Basis(Vector3.UP, s * 0.10)
-		var ear := Vector3(s * 0.096, -0.062, 0.006)
-		b.add_rounded_box(ear, Vector3(0.010, 0.058, 0.046), 0.005, plastic, side)
-		b.add_rounded_box(ear + Vector3(s * 0.004, 0.004, 0), Vector3(0.006, 0.040, 0.030), 0.003, Color("#1c2a36"), side)
-		# Small round press-stud at the strap anchor, not a large chin cup.
-		var snap := Vector3(s * 0.102, -0.078, 0.026)
-		b.add_tube(PackedVector3Array([snap, snap + Vector3(s * 0.0018, 0, 0)]), 0.0045, Color("#899299"), 16)
-	# Dark inserts set just under each vent so the slots read as openings.
-	for vt: Array in HELMET_VENTS:
-		var pts := PackedVector3Array()
-		for k in range(7):
-			var phi: float = float(vt[1]) + lerpf(-0.75, 0.75, k / 6.0) * float(vt[2])
-			pts.append(helmet_point(float(vt[0]), phi, 0.0025))
-		b.add_tube(pts, 0.0022, Color("#05090d"), 8)
 	# Curved impact-liner backing under each aperture. A tube alone leaves
 	# scalp visible at oblique angles; the patch overlaps the rounded opening.
 	for vent: Array in HELMET_VENTS:
@@ -1305,7 +1315,94 @@ static func helmet_fittings() -> ArrayMesh:
 	# Occipital lock adjuster on the back of the shell.
 	var occ := helmet_point(PI, 1.92)
 	b.add_rounded_box(occ + Vector3(0, 0.004, -0.004), Vector3(0.050, 0.014, 0.010), 0.004, plastic)
-	return b.to_mesh(0.4)
+	_helmet_fittings_mesh=b.to_mesh(0.4)
+	return _helmet_fittings_mesh
+
+static var _crown_panel_mesh: ArrayMesh
+static func helmet_crown_panel() -> ArrayMesh:
+	if _crown_panel_mesh != null: return _crown_panel_mesh
+	var b := MeshBuilder.new()
+	var rows := 24;var columns := 8
+	for r in range(rows + 1):
+		var z := lerpf(-0.100,0.104,float(r)/rows)
+		# Taper the panel at its ends like a separate moulded crown section.
+		var width := 0.027*(0.88+0.12*sin(PI*float(r)/rows))
+		for c in range(columns + 1):
+			var x := lerpf(-width,width,float(c)/columns)
+			var a := atan2(x/HELMET_W,z/HELMET_D)
+			var radial := Vector2(x/HELMET_W,z/HELMET_D).length()
+			var phi := asin(pow(minf(radial,0.98),1.0/0.85))
+			var normal := helmet_normal(a,phi)
+			b.vertices.append(helmet_point(a,phi)+normal*0.0007)
+			b.normals.append(normal);b.colors.append(Color.WHITE);b.uvs.append(BLANK_UV)
+	for r in range(rows):
+		for c in range(columns):
+			var i := r*(columns+1)+c
+			# Clockwise from outside (+Y) for the crown's row/column ordering.
+			b.indices.append_array(PackedInt32Array([i,i+1,i+columns+2,i,i+columns+2,i+columns+1]))
+	_crown_panel_mesh=b.to_mesh(0.45)
+	return _crown_panel_mesh
+
+static var _ear_guard_mesh: ArrayMesh
+static func helmet_ear_guards() -> ArrayMesh:
+	if _ear_guard_mesh != null: return _ear_guard_mesh
+	var b := MeshBuilder.new()
+	for side: float in [-1.0,1.0]:
+		var x := side * 0.098
+		# Open, thin polycarbonate ear plate with two cross ribs. The reference
+		# exposes the ear through clear windows, unlike the old padded blocks.
+		var rim := PackedVector3Array([
+			Vector3(x,-0.023,0.020),Vector3(x,-0.027,-0.023),
+			Vector3(x,-0.049,-0.032),Vector3(x,-0.080,-0.021),
+			Vector3(x,-0.080,0.026),Vector3(x,-0.053,0.027),Vector3(x,-0.023,0.020)])
+		var smooth_rim := PackedVector3Array()
+		for i in range(6):
+			for k in range(4):
+				smooth_rim.append(rim[i].cubic_interpolate(rim[(i+1)%6],rim[(i+5)%6],rim[(i+2)%6],float(k)/4.0))
+		smooth_rim.append(smooth_rim[0])
+		b.add_tube(smooth_rim,0.0020,Color.WHITE,10)
+		b.add_tube(PackedVector3Array([Vector3(x,-0.043,-0.030),Vector3(x,-0.046,0.027)]),0.0015,Color.WHITE,8)
+		b.add_tube(PackedVector3Array([Vector3(x,-0.063,-0.028),Vector3(x,-0.066,0.027)]),0.0015,Color.WHITE,8)
+	_ear_guard_mesh=b.to_mesh(0.12)
+	return _ear_guard_mesh
+
+static var _helmet_hardware_mesh: ArrayMesh
+static func helmet_hardware() -> ArrayMesh:
+	if _helmet_hardware_mesh != null: return _helmet_hardware_mesh
+	var b := MeshBuilder.new()
+	for side: float in [-1.0,1.0]:
+		# Temple mounting screws and press-stud strap anchor.
+		for yz in [Vector2(-0.016,0.034),Vector2(-0.034,0.032),Vector2(-0.078,0.026)]:
+			var p := Vector3(side*0.102,yz.x,yz.y)
+			b.add_tube(PackedVector3Array([p,p+Vector3(side*0.002,0,0)]),0.0036,Color("#a3a9ad"),16)
+		# Ladder-lock adjuster, with the webbing routed through its middle bar.
+		var p := Vector3(side*0.091,-0.099,0.041)
+		var axis := Vector3(-side*0.35,-0.84,0.38).normalized()
+		var width := Vector3(0,0.40,0.916).normalized()
+		var rim := PackedVector3Array()
+		var profile := GearProfiles.rounded_rect(0.016,0.019,[0.003,0.003,0.003,0.003],3,1)
+		for v in profile: rim.append(p+width*v.x+axis*v.y)
+		rim.append(rim[0])
+		b.add_tube(rim,0.0012,Color("#080a0c"),8)
+		b.add_tube(PackedVector3Array([p-width*0.007,p+width*0.007]),0.0011,Color("#080a0c"),8)
+	# Recessed bridge ribs break up the flat black vent openings. They sit
+	# below the painted skin, like the internal supports visible in the photo.
+	for vent: Array in HELMET_VENTS:
+		for offset: float in [-0.35,0.35]:
+			var rib := PackedVector3Array()
+			for k in range(3):
+				var a: float=vent[0];var phi: float=vent[1]
+				var across := lerpf(-0.88,0.88,float(k)/2.0)
+				if float(vent[3])>float(vent[2]):
+					phi+=float(vent[2])*across
+					a+=float(vent[3])*offset/sin(phi)
+				else:
+					phi+=float(vent[2])*offset
+					a+=float(vent[3])*across/sin(phi)
+				rib.append(helmet_point(a,phi)-helmet_normal(a,phi)*0.0015)
+			b.add_tube(rib,0.00065,Color("#26323c"),6)
+	_helmet_hardware_mesh=b.to_mesh(0.55)
+	return _helmet_hardware_mesh
 
 ## Unbranded retention webbing: flat 12 mm nylon, 1.4 mm thick, routed
 ## under the chin. Coordinates remain in the existing head-attached frame.
