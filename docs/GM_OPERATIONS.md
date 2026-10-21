@@ -127,3 +127,10 @@ records/scouting as JPEG. No real user save is touched. Images are UI progress,
 not new 3D gameplay renders or proof of consumer GPU performance. The cloud 3D
 renderer and physical controller feel remain unverified. No additional plugin
 was needed for the implemented Godot functionality.
+
+
+Final combined build: preserved prototype 040ef91 bench animation/numbers via
+merge 6b9b818; 36 engine suites pass, optional mocap skipped, 24 Python tests pass.
+Management 160 checks and scouting 2,755 checks passed in the integrated build.
+Capture source tree is the front-office increment (85bff90); subsequent bench
+integration does not change these native UI pages.

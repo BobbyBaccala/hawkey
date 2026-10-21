@@ -491,5 +491,429 @@
     "gm-team-stats-20261020.jpg": "f49ef6218d90673545485a75c55f8a50d4af8f96490ed1f5013113dce9d020f4",
     "gm-contracts-20261020.jpg": "ccf2b94eed4dda34fe33cd8ef3227004ef1c19a5540906eda7da898ca2d36708",
     "gm-market-20261020.jpg": "8a5c2529342b204d4f3dab78574976aeb39e1876574ebfec9e3a8326bbb3dffe"
+  },
+  "integrated": {
+    "tested_commit": "6b9b818",
+    "preserved_prototype": "040ef917c839feba86b4a40e81987c7e5c7aad17",
+    "engine": [
+      {
+        "suite": "tests/test_accessibility.gd",
+        "returncode": 0,
+        "seconds": 2.75,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Accessibility: 31 checks; 0 failures"
+        ]
+      },
+      {
+        "suite": "tests/test_animation.gd",
+        "returncode": 0,
+        "seconds": 0.51,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Animation integration failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_benches.gd",
+        "returncode": 0,
+        "seconds": 2.48,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Bench failures: 0",
+          "PASS"
+        ]
+      },
+      {
+        "suite": "tests/test_boards.gd",
+        "returncode": 0,
+        "seconds": 5.74,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Board failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_clipping.gd",
+        "returncode": 0,
+        "seconds": 1.64,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Clipping failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_controller.gd",
+        "returncode": 0,
+        "seconds": 2.12,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Controller failures: 0 (synthetic events; hardware untested)"
+        ]
+      },
+      {
+        "suite": "tests/test_controls.gd",
+        "returncode": 0,
+        "seconds": 1.17,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Control integration failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_gear_graphics.gd",
+        "returncode": 0,
+        "seconds": 0.23,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Gear graphic failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_gm_checkpoint.gd",
+        "returncode": 0,
+        "seconds": 19.13,
+        "skipped": false,
+        "tail": [
+          "   GDScript backtrace (most recent call first):",
+          "       [0] save_file (res://scripts/save_store.gd:68)",
+          "       [1] _run (res://scripts/gm_checkpoint_job.gd:30)",
+          "GM checkpoint: 10 checks; 0 failures; 830320 process callbacks during save; 150.02 ms main-thread launch"
+        ]
+      },
+      {
+        "suite": "tests/test_gm_management.gd",
+        "returncode": 0,
+        "seconds": 48.98,
+        "skipped": false,
+        "tail": [
+          "   GDScript backtrace (most recent call first):",
+          "       [0] save_file (res://scripts/save_store.gd:68)",
+          "       [1] _run (res://scripts/gm_checkpoint_job.gd:30)",
+          "GM management: 160 checks; 0 failures"
+        ]
+      },
+      {
+        "suite": "tests/test_gm_navigation.gd",
+        "returncode": 0,
+        "seconds": 58.57,
+        "skipped": false,
+        "tail": [
+          "       [2] advance_day (res://scripts/gm_session.gd:69)",
+          "       [3] run (res://tests/test_gm_navigation.gd:67)",
+          "       [4] advance_day (res://scripts/gm_menu.gd:150)",
+          "GM navigation: 22 checks; 0 failures"
+        ]
+      },
+      {
+        "suite": "tests/test_gm_rosters.gd",
+        "returncode": 0,
+        "seconds": 3.02,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "GM roster browser: 3274 checks; 0 failures"
+        ]
+      },
+      {
+        "suite": "tests/test_gm_scouting.gd",
+        "returncode": 0,
+        "seconds": 17.36,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Scout UI rows 26 query  page 0",
+          "GM scouting: 2755 checks; 0 failures; 2727 eligible junior prospects"
+        ]
+      },
+      {
+        "suite": "tests/test_gm_season.gd",
+        "returncode": 0,
+        "seconds": 9.64,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "GM season: 3088 checks; 0 failures"
+        ]
+      },
+      {
+        "suite": "tests/test_goal_celebration.gd",
+        "returncode": 0,
+        "seconds": 2.11,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Goal celebration failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_goal_net.gd",
+        "returncode": 0,
+        "seconds": 1.36,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Goal net failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_goalie_gear.gd",
+        "returncode": 0,
+        "seconds": 2.38,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Goalie gear failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_goalie_saves.gd",
+        "returncode": 0,
+        "seconds": 0.52,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Goalie save failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_hockey_audio.gd",
+        "returncode": 0,
+        "seconds": 2.1,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Hockey audio: 64 checks; 0 failures"
+        ]
+      },
+      {
+        "suite": "tests/test_hockey_stop.gd",
+        "returncode": 0,
+        "seconds": 0.99,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Hockey stop failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_ice.gd",
+        "returncode": 0,
+        "seconds": 2.85,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Ice failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_lab.gd",
+        "returncode": 0,
+        "seconds": 0.89,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Integration failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_lighting.gd",
+        "returncode": 0,
+        "seconds": 2.1,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Lighting failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_match.gd",
+        "returncode": 0,
+        "seconds": 2.01,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Match integration failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_match_loop.gd",
+        "returncode": 0,
+        "seconds": 11.32,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "20-second match-loop failures: 0 \u2022 score [0, 1] \u2022 clock 19:01"
+        ]
+      },
+      {
+        "suite": "tests/test_match_state.gd",
+        "returncode": 0,
+        "seconds": 0.14,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Match-state failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_mocap.gd",
+        "returncode": 0,
+        "seconds": 0.14,
+        "skipped": true,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Mocap failures: 0 (skipped: clips not installed in assets/mixamo/)"
+        ]
+      },
+      {
+        "suite": "tests/test_net_shooting.gd",
+        "returncode": 0,
+        "seconds": 2.28,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Net shooting: 135 checks; 0 failures"
+        ]
+      },
+      {
+        "suite": "tests/test_overtime_shootout.gd",
+        "returncode": 0,
+        "seconds": 2.94,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Overtime/shootout: 75 checks; 0 failures"
+        ]
+      },
+      {
+        "suite": "tests/test_play_now.gd",
+        "returncode": 0,
+        "seconds": 17.64,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Play Now: 47 checks; 0 failures"
+        ]
+      },
+      {
+        "suite": "tests/test_puck_flight.gd",
+        "returncode": 0,
+        "seconds": 0.98,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Puck flight failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_roster_database.gd",
+        "returncode": 0,
+        "seconds": 0.15,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Native roster: 44 checks; 0 failures"
+        ]
+      },
+      {
+        "suite": "tests/test_save_store.gd",
+        "returncode": 0,
+        "seconds": 0.14,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Save/recovery: 25 checks; 0 failures"
+        ]
+      },
+      {
+        "suite": "tests/test_simulation.gd",
+        "returncode": 0,
+        "seconds": 0.23,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "PASS: rating acceleration, deceleration, front-mouth goal, back entry, wide and high misses"
+        ]
+      },
+      {
+        "suite": "tests/test_skate_stick.gd",
+        "returncode": 0,
+        "seconds": 0.43,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Skate/stick failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_stride.gd",
+        "returncode": 0,
+        "seconds": 0.61,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "Stride failures: 0"
+        ]
+      },
+      {
+        "suite": "tests/test_world_database.gd",
+        "returncode": 0,
+        "seconds": 19.87,
+        "skipped": false,
+        "tail": [
+          "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+          "",
+          "World database: 4586 checks; 0 failures; 3256 draft candidates"
+        ]
+      }
+    ],
+    "python": {
+      "returncode": 0,
+      "output": "........................\n----------------------------------------------------------------------\nRan 24 tests in 1.131s\n\nOK\n"
+    },
+    "summary": "36 engine suites pass; optional mocap skipped; 24 Python tests pass; management 160/scouting 2755 checks",
+    "merge_resolution": "Retained reduced-motion goal-light suppression and new bench goal reactions; roster-number update preserved."
   }
 }

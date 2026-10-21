@@ -4,7 +4,7 @@ Updated 2026-10-20. Assignments are not completion evidence.
 
 | Owner | Active task | Branch | Affected systems | Dependencies | Integration | Last verified build |
 |---|---|---|---|---|---|---|
-| Codex | Source-backed comfort/focus, responsive GM checkpoint, JPEG progress | codex/game-modes | Settings/HUD/camera cue, data worker, session guards, profiler/tests/captures | Godot 4.6.3; official Godot docs read; preserved prototype aa2e25d | Tested and locally integrated; draft PR #2; no release | 34 engine suites passed, optional mocap skipped; 24 Python tests; DEVELOPMENT_RESEARCH.md |
+| Codex | GM free agency/contracts, junior scouting, statistics/records and JPEG progress | codex/game-modes | Versioned management overlay, isolated checkpoint, organization/match roster, native operations pages | Godot 4.6.3; preserved prototype 040ef91; official NHL/EA/HLM web research blocked | Tested and integrated; draft PR #2; no release | 36 engine suites passed, optional mocap skipped; 24 Python tests; GM_OPERATIONS.md |
 | Claude/separate presentation agent (owner-reported) | Graphics/lighting/models/gear/animation; latest bench/penalty-box work retained | prototype/skating-puck-lab | Arena, seated players, goalie/gear/animation, presentation | Shared match/HUD interface | Observed and reconciled aa2e25d | Headless integration/bench checks passed; this run does not establish new 3D visual approval |
 
 ## Coordination protocol
@@ -191,3 +191,14 @@ passed. Follow-up management 160/scouting 2,755 checks pass, including scheduled
 match identity and saved scout assignment. Verification: gm-operations-20261020.json.
 Next: shared played/simulated player-stat ledger and leaders/history; verified
 NHLPA/CBA policy and offseason/draft dependencies remain required. No release/PR merge.
+
+
+Final integrated operations checkpoint — Preserved prototype 040ef91 bench puck
+tracking, goal reactions and roster numbers via history merge 6b9b818. Resolved
+match conflict by retaining both reduced-motion light suppression and bench
+reactions. Re-ran all 37 engine suites: 36 pass, optional mocap skipped; 24 Python
+tests pass. Management 160 checks and scouting 2,755 checks pass, including native
+assignment save/resume and signed actor identity in an actual scheduled match.
+All five JPEGs are inspected 1440×900 native UI captures; full 3D visual quality
+remains unapproved. Draft PR #2 updated through the development branch; no merge
+or release. Next checkpoint remains shared player-stat ledger and verified CBA.
