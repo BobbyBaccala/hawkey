@@ -6,6 +6,7 @@ const PuckPhysics = preload("res://scripts/puck.gd")
 const BroadcastHud = preload("res://scripts/broadcast_hud.gd")
 const GoalCelebration = preload("res://scripts/goal_celebration.gd")
 const Benches = preload("res://scripts/arena_benches.gd")
+const GoalReplay = preload("res://scripts/goal_replay.gd")
 const CAMERA_NAMES := ["DYNAMIC", "OVERHEAD", "BROADCAST", "FULL RINK"]
 ## Bench gate (changing skaters head here) just inside the west side boards.
 const BENCH_X := -(Arena.HALF_WIDTH - 0.75)
@@ -28,6 +29,8 @@ var last_phase := -1
 var match_state := MatchState.new()
 ## Goal light, arena light flash and jumbotron GOAL (scripts/goal_celebration.gd).
 var celebration: Node3D
+## Instant replay after goals (scripts/goal_replay.gd).
+var replay: Node
 var skaters: Array[CharacterBody3D] = []
 var rosters: Array = [[],[]]
 var active_lines: Array[int] = [0,0]
@@ -117,6 +120,13 @@ func _ready() -> void:
 		add_child(official)
 		official.position=Vector3(-(Arena.HALF_WIDTH-2.0) if i==0 else Arena.HALF_WIDTH-2.0,0,-12 if i==0 else 12)
 		referee_nodes.append(official)
+	replay=GoalReplay.new()
+	replay.name="GoalReplay"
+	add_child(replay)
+	replay.camera=camera
+	replay.puck=puck
+	replay.ice_marks=ice_marks
+	replay.track(skaters.map(func(a): return a.get_child(1))+goalkeepers.map(func(a): return a.get_child(1))+referee_nodes)
 	setup_faceoff()
 	camera.position = Vector3(0,20,24)
 	camera.look_at(Vector3.ZERO)
@@ -541,6 +551,14 @@ func _physics_process(delta: float) -> void:
 	if paused:
 		if not hud_node.pause_panel.visible: set_paused(true)
 		return
+	if replay.playing():
+		# Instant replay: the live match waits; Enter/Space or A skips.
+		if Input.is_action_just_pressed("ui_accept"): replay.skip()
+		replay.step(delta)
+		hud_node.banner.visible=false
+		selection.visible=not replay.playing()
+		if is_instance_valid(puck_shadow): puck_shadow.position=Vector3(puck.position.x,0.003,puck.position.z)
+		return
 	elapsed+=delta
 	cooldown=maxf(0,cooldown-delta)
 	action_cooldown=maxf(0,action_cooldown-delta)
@@ -579,6 +597,8 @@ func _physics_process(delta: float) -> void:
 				if carrier!=null and body_team(carrier)==scoring_team: scorer_name=str(roster(carrier).name).to_upper()
 				# Red goal light behind this net, arena light pulse, jumbotron GOAL.
 				celebration.celebrate(end_, hud_node.team_colors[scoring_team], hud_node.team_names[scoring_team])
+				# REPLAY wipe and a reverse-angle replay a couple of seconds later.
+				replay.goal(end_)
 				# Scoring bench jumps up, the other one slumps (arena_benches.gd).
 				var goal_benches=arena.get_node_or_null("Benches")
 				if goal_benches!=null: goal_benches.celebrate(scoring_team)
@@ -605,6 +625,7 @@ func _physics_process(delta: float) -> void:
 	away_goals=match_state.score[1]
 	update_camera(delta)
 	update_match_hud()
+	replay.capture(delta)
 	if is_instance_valid(puck_shadow):
 		puck_shadow.position=Vector3(puck.position.x,0.003,puck.position.z)
 		var shadow_scale:=clampf(1+puck.position.y*0.15,1,1.8)
@@ -990,12 +1011,48 @@ func capture_preview() -> void:
 	if "--paused" in OS.get_cmdline_user_args():
 		set_paused(true)
 		await get_tree().process_frame
+	if "--replay" in OS.get_cmdline_user_args() or "--replay-wipe" in OS.get_cmdline_user_args():
+		await capture_replay("--replay-wipe" in OS.get_cmdline_user_args())
 	if "--goal-banner" in OS.get_cmdline_user_args():
 		hud_node.show_banner("GOAL", "TORONTO  ·  VALE", hud_node.team_colors[0], 5.0)
 		for i in range(20): await get_tree().process_frame
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png("/tmp/hawkey-match-preview.png")
 	get_tree().quit()
+
+## --replay / --replay-wipe screenshots: a skater carries the puck in on the
+## net Toronto attacks and it is put over the line; capture during the replay's
+## slow motion, or with the REPLAY wipe covering the cut.
+func capture_replay(wipe_frame: bool) -> void:
+	# Software rendering runs this at ~1/30 real time: skip drawing the 3D
+	# world until just before the frame we want.
+	get_viewport().disable_3d=true
+	var end_:=attack_direction(0)
+	var net_z:=end_*Arena.GOAL_LINE
+	# A shooter walks in on the slot and lets a shot go at the far post.
+	var shooter:=skaters[0]
+	shooter.position=Vector3(3.0,0,net_z-end_*11.0)
+	puck.position=shooter.position+Vector3(-0.3,0.02,end_*0.8)
+	puck.linear_velocity=Vector3(-0.4,0,end_*6.0)
+	for i in range(int(0.9*Engine.physics_ticks_per_second)): await get_tree().physics_frame
+	puck.position=Vector3(2.2,0.05,net_z-end_*7.5)
+	puck.linear_velocity=(Vector3(-0.55,0.35,net_z)-puck.position).normalized()*26.0
+	var scored:int=match_state.score[0]+match_state.score[1]
+	for i in range(60):
+		await get_tree().physics_frame
+		if match_state.score[0]+match_state.score[1]!=scored: break
+	if match_state.score[0]+match_state.score[1]==scored:
+		# Saved: put it in anyway so there is a replay to show.
+		match_state.phase=MatchState.Phase.PLAY
+		previous_puck=Vector3(0.1,0.02,net_z-end_*0.25)
+		puck.position=Vector3(0.1,0.02,net_z+end_*0.4)
+	for i in range(1200):
+		await get_tree().physics_frame
+		if wipe_frame and replay.wipe_progress()>0.2: get_viewport().disable_3d=false
+		if not wipe_frame and replay.playing() and replay.play_t>replay.goal_time-0.7: get_viewport().disable_3d=false
+		if wipe_frame and replay.wipe_progress()>0.44 and replay.wipe_progress()<0.56: break
+		if not wipe_frame and replay.playing() and replay.play_t>replay.goal_time-0.25: break
+	get_viewport().disable_3d=false
 
 func goalkeeper_at_end(end_sign: float) -> CharacterBody3D:
 	for keeper in goalkeepers:
