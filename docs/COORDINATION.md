@@ -4,7 +4,7 @@ Updated 2026-10-20. Assignments are not completion evidence.
 
 | Owner | Active task | Branch | Affected systems | Dependencies | Integration | Last verified build |
 |---|---|---|---|---|---|---|
-| Codex | Persistent HL GM season, independent preferences, roster/prospect browser | codex/game-modes | Mode scenes, save store, season/snapshot model, match handoff/results, tests/captures | Godot 4.6.3; native validated world; Mesa softpipe capture fallback | Functional single-season alpha; tested and locally integrated; PR #2 review pending | GM_SEASON.md and verification/gm-season-20261020.json; no release claim |
+| Codex | Realism: original on-ice audio, persisted volume, renderer diagnosis | codex/game-modes | Audio bank/router, match/Practice hooks, preferences, tests and native UI capture | Godot 4.6.3; preserved prototype 3c324a4; full-arena renderer blocked | Functional audio foundation; human listening still open; draft PR #2 | HOCKEY_AUDIO.md and verification/realism-audio-20261020.json |
 | Claude/separate presentation agent (owner-reported) | Graphics/lighting/models/gear/animation | prototype/skating-puck-lab observed; confirm ownership before edits | presentation assets, skater visuals, arena lighting, HUD styling | Shared scene and match interfaces | Prototype observed at 28fb10b; runtime not inspected here | Unknown in this session; do not infer from assignment |
 
 ## Coordination protocol
@@ -136,3 +136,19 @@ activation. Evidence and intentional failed-write diagnostics are recorded in
 verification/gm-season-20261020.json. Roster/prospect pages were rendered and
 inspected; a full 3D softpipe title capture timed out without a usable image.
 No 3D quality/performance or hardware-controller approval is implied.
+
+
+## 2026-10-20 — realism/audio continuation
+
+Owner: Codex, codex/game-modes / PR #2. Owner requested sustained improvement
+toward a realistic title; no unattended scheduler is available, so no work between
+active turns is claimed. Preserved prototype 3c324a4; presentation source untouched.
+Added 33 original procedurally authored audio samples, spatial bounded event pool,
+shot/pass/contact/stop/check/whistle/horn routing, saved volume/mute and backward-
+compatible preferences. HOCKEY_AUDIO.md gives exact coverage and human-listening gaps.
+Runtime/quality evidence: verification/realism-audio-20261020.json. Actual preference
+UI captured with Mesa softpipe; full arena still aborts in the current llvmpipe
+runtime. A 128-bit diagnostic probe passed but did not establish a working game
+renderer; no fresh 3D photo or fixed-renderer claim. No PR merge/release.
+Next: human listening/mix iteration, more skating/crowd event layers, renderer
+native crash diagnosis, then remaining realistic controls/rules and GM systems.

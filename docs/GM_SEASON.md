@@ -43,9 +43,9 @@ Career mode remains unimplemented; no empty Career button was added.
 
 The one local slot is `user://gm/slot-1.json`; its previous validated version is
 `.bak`. Godot's `user://` resolves to the application data folder on the host.
-Preferences live separately at `user://settings.json` and currently include only
-match camera and stick dead zone (5–40%). They apply to Play Now/GM matches;
-Practice consumes the saved dead zone. Full remapping, sensitivity, audio,
+Preferences live separately at `user://settings.json` and currently include
+match camera, stick dead zone (5–40%) and on-ice effects volume/mute. They apply
+to Play Now/GM matches; Practice consumes the saved dead zone and effects volume. Full remapping, sensitivity, audio,
 accessibility and presentation settings remain future work.
 
 `save_store.gd` uses a version-2 envelope containing serialized JSON payload and

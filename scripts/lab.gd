@@ -39,7 +39,7 @@ var goal_timer := 0.0
 var elapsed := 0.0
 var camera_target := Vector3.ZERO
 var pickup_owner := false
-var audio: AudioStreamPlayer
+var audio: Node3D
 var selection: MeshInstance3D
 
 func make_skater(pos: Vector3, color: Color, jersey: String, is_goalie: bool = false, accent: Color = Color(0,0,0,0)) -> CharacterBody3D:
@@ -190,9 +190,9 @@ func _ready() -> void:
 	camera.position = Vector3(0,23,23)
 	camera.look_at(Vector3(0,0,-4))
 	build_hud()
-	audio = AudioStreamPlayer.new()
-	audio.volume_db = -15
+	audio = preload("res://scripts/hockey_audio.gd").new()
 	add_child(audio)
+	audio.level=preferences.values.get("sfx_volume",1.0)
 	reset_puck()
 	# Screenshot automation is opt-in and only runs in a real rendering session.
 	if "--portrait" in OS.get_cmdline_user_args():
@@ -262,21 +262,6 @@ func capture_preview() -> void:
 	get_viewport().get_texture().get_image().save_png("/tmp/hawkey-preview.png")
 	get_tree().quit()
 
-func beep(frequency: float) -> void:
-	if DisplayServer.get_name()=="headless": return
-	# Finite original synthetic impact; no persistent playback generator.
-	var bytes := PackedByteArray()
-	for i in range(1600):
-		var sample := int(sin(float(i) * frequency * TAU / 22050) * 9000 * exp(-float(i) / 300))
-		bytes.append(sample & 255)
-		bytes.append((sample >> 8) & 255)
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = 22050
-	stream.data = bytes
-	audio.stream = stream
-	audio.play()
-
 func reset_puck() -> void:
 	charge = 0
 	pickup_owner = false
@@ -336,7 +321,7 @@ func strike(direction: Vector3, speed: float, is_pass: bool = false, loft: float
 	pickup_owner = false
 	cooldown = 0.42
 	if not is_pass: shots += 1
-	beep(180 if not is_pass else 260)
+	audio.cue("pass" if is_pass else ("slap" if (practice_input.slap_requested if practice_input.active else Input.is_physical_key_pressed(KEY_ALT)) else "wrist"),puck.global_position,speed/32)
 	return true
 
 func _on_puck_contact(body: Node) -> void:
@@ -344,9 +329,9 @@ func _on_puck_contact(body: Node) -> void:
 	if actor is CharacterBody3D and actor in goalkeepers:
 		saves += 1
 		cooldown = 0.22
-		beep(115)
+		audio.cue("pad",puck.global_position,clampf(puck.linear_velocity.length()/28,0.2,1))
 	elif puck.linear_velocity.length() > 5:
-		beep(320)
+		audio.contact(body,puck.global_position,puck.linear_velocity.length())
 
 func update_camera(delta: float) -> void:
 	var focus := player.position * 0.65 + puck.position * 0.35
@@ -363,6 +348,7 @@ func update_camera(delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	if practice_input.pause_pressed: paused=not paused
+	audio.set_suspended(paused)
 	if practice_input.active and not paused:
 		practice_input.advance(delta)
 		if practice_input.trigger_pressed:
@@ -408,6 +394,7 @@ func _physics_process(delta: float) -> void:
 	var old_rotation := player_visual.rotation.y
 	player_visual.rotation.y = rotate_toward(old_rotation,target_rotation,7.5 * delta)
 	player_visual.animate(velocity.length(),delta,angle_difference(old_rotation,target_rotation) * velocity.length() * 0.02,intent.length_squared()>0.01,Input.is_physical_key_pressed(KEY_CTRL))
+	audio.track_stop(player,player_visual.stop_weight,velocity.length())
 	sync_skater_contacts(player)
 	charge = 0
 	# Stable critically damped stick spring with speed and reach limits.
@@ -436,7 +423,7 @@ func _physics_process(delta: float) -> void:
 				else: away_goals += 1
 				goal_timer = 2.5
 				pickup_owner = false
-				beep(550)
+				audio.cue("horn",puck.global_position)
 	previous_puck = puck.position
 	if puck.position.y < -2 or absf(puck.position.x) > 18 or absf(puck.position.z) > 33:
 		reset_puck()
@@ -486,11 +473,6 @@ func update_goalkeepers(delta: float) -> void:
 		goalie.move_and_slide()
 		goalie_visuals[i].animate(goalie.velocity.length(),delta)
 		sync_goalie_contacts(goalie)
-
-func _exit_tree() -> void:
-	if is_instance_valid(audio):
-		audio.stop()
-		audio.stream=null
 
 func add_puck_collision(actor: CharacterBody3D, is_goalie: bool) -> void:
 	if is_goalie:

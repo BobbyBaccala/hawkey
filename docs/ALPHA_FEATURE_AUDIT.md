@@ -39,7 +39,7 @@ Definitions: Missing = no implementation identified; Placeholder = stand-in; Par
 | Career trust/progression | Missing | No coach trust/skill development choices identified | Career events and role model | Teamwork/positioning rewarded; selfish padding not dominant | Compare balanced/defensive/selfish play scenarios |
 | Equipment art/customization | Partial | Imported gear and original kit; visual owner active | Asset fit, equipment IDs and saves | Correct fit/animation, usable edits and persistent cosmetics | Clip/pose reviews and equipment save/load; specialist approval |
 | Arena/presentation | Partial | Broadcast HUD, multiple cameras, arena/lighting work active | Presentation owner and menu interfaces | Readable puck/text, coherent menus/intermissions/results/replays | Actual render review and full navigation playtest |
-| Audio/crowd/chants | Placeholder | Synthetic event sounds and cutout crowd foundation | Original/licensed audio assets and event priorities | Varied context-aware spatial layers; chants respond without constant peaks | Mix/priority/event coverage and human listening tests |
+| Audio/crowd/chants | Partial | Original 33-cue procedural on-ice bank, bounded spatial routing/priority/pause and saved effects volume; crowd remains visual cutout foundation; HOCKEY_AUDIO.md | Original/licensed audio assets and event priorities | Varied context-aware spatial layers; chants respond without constant peaks | Mix/priority/event coverage and human listening tests |
 | Input/controller | Partial | Keyboard/mouse and mapped gamepad adapter; radial deadzone/disconnect code | Settings/remap and physical devices | Rebind/sensitivity/deadzones, correct prompts, hot-plug recovery | Synthetic checks plus physical controller sessions |
 | Accessibility | Missing | No complete accessibility settings flow identified | Settings and UI ownership | Text/puck cues, hold/toggle, reduced motion, audio/subtitles as needed | Accessibility checklist and user testing; feature-by-feature evidence |
 | Performance | Partial | 120 Hz physics; no current measured hardware baseline | Runtime and representative hardware | Published workload/hardware/frame-time and sim-throughput baseline | Full-match profiling with repeatable seeds; before/after evidence |
@@ -135,3 +135,19 @@ activation. Evidence and intentional failed-write diagnostics are recorded in
 verification/gm-season-20261020.json. Roster/prospect pages were rendered and
 inspected; a full 3D softpipe title capture timed out without a usable image.
 No 3D quality/performance or hardware-controller approval is implied.
+
+
+## 2026-10-20 — realism/audio continuation
+
+Owner: Codex, codex/game-modes / PR #2. Owner requested sustained improvement
+toward a realistic title; no unattended scheduler is available, so no work between
+active turns is claimed. Preserved prototype 3c324a4; presentation source untouched.
+Added 33 original procedurally authored audio samples, spatial bounded event pool,
+shot/pass/contact/stop/check/whistle/horn routing, saved volume/mute and backward-
+compatible preferences. HOCKEY_AUDIO.md gives exact coverage and human-listening gaps.
+Runtime/quality evidence: verification/realism-audio-20261020.json. Actual preference
+UI captured with Mesa softpipe; full arena still aborts in the current llvmpipe
+runtime. A 128-bit diagnostic probe passed but did not establish a working game
+renderer; no fresh 3D photo or fixed-renderer claim. No PR merge/release.
+Next: human listening/mix iteration, more skating/crowd event layers, renderer
+native crash diagnosis, then remaining realistic controls/rules and GM systems.

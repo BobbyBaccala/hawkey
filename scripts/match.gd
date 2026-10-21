@@ -220,6 +220,7 @@ func build_hud() -> void:
 	hud_node.practice_requested.connect(func(): get_tree().change_scene_to_file("res://practice.tscn"))
 
 func set_paused(on: bool) -> void:
+	if is_instance_valid(audio): audio.set_suspended(on)
 	if on: controller_pass_actor=null
 	paused = on
 	charge = 0
@@ -443,10 +444,12 @@ func strike(direction: Vector3, speed: float, is_pass: bool = false, elevation: 
 func emit_net_shot(actor: CharacterBody3D, placement: Vector2, slap: bool = false) -> void:
 	var ratings: Dictionary = roster(actor).ratings
 	release_velocity(actor,NetShooting.launch(puck.position,attack_direction(body_team(actor)),placement,float(ratings.get("shot_power",75)),slap))
+	audio.cue("slap" if slap else "wrist",puck.global_position,clampf(puck.linear_velocity.length()/38,0.35,1))
 
 func release_puck(actor: CharacterBody3D, direction: Vector3, speed: float, elevation: float = 0.0) -> void:
 	# Passing/clearances retain directional flight; shots use emit_net_shot.
 	release_velocity(actor,PuckPhysics.launch(direction,speed,elevation)+actor.velocity*0.2)
+	audio.cue("pass",puck.global_position,clampf(speed/24,0.25,1))
 
 func release_velocity(actor: CharacterBody3D, launch_velocity: Vector3) -> void:
 	puck.sleeping=false
@@ -457,7 +460,6 @@ func release_velocity(actor: CharacterBody3D, launch_velocity: Vector3) -> void:
 	cooldown=0.42
 	actor.get_child(1).shot_follow=1.0
 	actor.get_child(1).shot_charge=0
-	beep(170)
 
 func defensive_action(body_check: bool) -> void:
 	if match_state.phase!=MatchState.Phase.PLAY or action_cooldown>0: return
@@ -486,6 +488,7 @@ func defensive_action(body_check: bool) -> void:
 		var push := (victim.position-player.position).normalized()
 		victim.velocity+=push*(4 if body_check else 1.2)
 		victim.set_meta("stun",0.35 if body_check else 0.08)
+		audio.cue("check" if body_check else "pass",victim.global_position,clampf(relative_speed/8,0.3,1))
 		if victim==carrier:
 			carrier=null
 			puck.linear_velocity=push*5
@@ -497,12 +500,13 @@ func assess_penalty(actor: CharacterBody3D, reason: String) -> void:
 		pickup_owner=false
 		sync_strength()
 		if actor==player: switch_player()
-		beep(900)
+		audio.cue("whistle",player.global_position)
 
 func _on_puck_contact(body: Node) -> void:
 	var actor:=hit_actor(body)
 	if actor is CharacterBody3D and actor in goalkeepers and goalie_contact_timer<=0:
 		if match_state.is_shootout():
+			audio.cue("pad",puck.global_position,clampf(last_puck_velocity.length()/28,0.2,1))
 			shootout_contact=true
 			goalie_contact_timer=0.25
 			carrier=null
@@ -526,12 +530,13 @@ func _on_puck_contact(body: Node) -> void:
 			next_faceoff=Vector3(-Arena.DOT_X if puck.position.x<0 else Arena.DOT_X,0,signf(actor.position.z)*Arena.END_DOT_Z)
 			puck.linear_velocity=Vector3.ZERO
 			puck.freeze=true
-		beep(115)
+		audio.cue("pad",puck.global_position,clampf(last_puck_velocity.length()/28,0.2,1))
 	elif puck.linear_velocity.length()>8:
-		beep(300)
+		audio.contact(body,puck.global_position,maxf(last_puck_velocity.length(),puck.linear_velocity.length()))
 
 func _physics_process(delta: float) -> void:
 	if skaters.is_empty(): return
+	audio.set_suspended(paused or in_menu)
 	if in_menu:
 		# Slow orbit over the arena behind the title screen.
 		camera.cull_mask=0xFFFFF & ~preload("res://scripts/arena_lighting.gd").RIGGING_LAYER
@@ -600,7 +605,7 @@ func _physics_process(delta: float) -> void:
 					if body_team(actor)==scoring_team:
 						actor.get_child(1).play_mocap("Standing_Cheering",false,["spine","arms","stick_up"])
 				next_faceoff=Vector3.ZERO
-				beep(550)
+				audio.cue("horn",puck.global_position)
 				carrier=null
 				break
 		previous_puck=puck.position
@@ -657,6 +662,7 @@ func control_player(delta: float) -> void:
 	visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-aim.x,-aim.z),6*delta)
 	visual.shot_charge=charge
 	visual.animate(player.velocity.length(),delta,0,intent.length_squared()>0.01,braking)
+	audio.track_stop(player,visual.stop_weight,player.velocity.length())
 	sync_skater_contacts(player)
 
 func update_roster_stamina(delta: float) -> void:

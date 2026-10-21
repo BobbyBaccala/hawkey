@@ -52,3 +52,12 @@ Sans regular/bold from the environment's Debian fonts-dejavu-core package. Origi
 font copyright, public-domain DejaVu changes and distribution permission are in
 `assets/fonts/LICENSE.txt`. Shared runtime loader: scripts/interface_font.gd.
 Used for HUD/menu and arena text. No EA font, logo or other publisher asset imported.
+
+## Original procedural hockey audio — 2026-10-20
+
+`assets/audio/*.wav`: 33 original project-generated effects, three variations of
+11 event/material families. No recordings, voice likenesses, music or third-party
+sample libraries. Authored deterministically by `tools/generate_hockey_audio.py`
+using Python standard-library noise filters, oscillators and envelopes; 22,050 Hz,
+16-bit mono PCM. Regeneration is byte-identical and tested. Normal Godot audio
+imports are used. Scope, routing, remaining listening/quality gaps: HOCKEY_AUDIO.md.

@@ -6,6 +6,8 @@ var camera: OptionButton
 var zone: HSlider
 var value_label: Label
 var message: Label
+var sound_level: HSlider
+var sound_label: Label
 func _ready() -> void:
 	settings.load_settings()
 	var box:=UI.setup(self)
@@ -23,6 +25,11 @@ func _ready() -> void:
 	zone.custom_minimum_size.y=40;zone.value_changed.connect(func(value): value_label.text="%d%% · Increase to reduce stick drift"%roundi(value*100));card.add_child(zone)
 	zone.value_changed.emit(zone.value)
 	card.add_child(UI.text("Camera applies in Play Now and GM matches. Dead zone applies in matches and Practice.",16,UI.MUTED))
+	card.add_child(UI.text("On-ice sound effects",22))
+	sound_label=UI.text("");card.add_child(sound_label)
+	sound_level=HSlider.new();sound_level.min_value=0;sound_level.max_value=1;sound_level.step=0.05;sound_level.value=settings.values.sfx_volume;sound_level.custom_minimum_size.y=40
+	sound_level.value_changed.connect(func(value): sound_label.text="Muted" if value==0 else "%d%%"%roundi(value*100));card.add_child(sound_level)
+	sound_level.value_changed.emit(sound_level.value)
 	var save:=UI.button("Save preferences",save_preferences);box.add_child(save)
 	box.add_child(UI.button("Return to menu",func():
 		load("res://scripts/match.gd").return_to_title=true
@@ -30,4 +37,4 @@ func _ready() -> void:
 	message=UI.text(settings.error,17,UI.ACCENT);box.add_child(message)
 	save.grab_focus()
 func save_preferences() -> void:
-	message.text="Preferences saved." if settings.save_settings(camera.selected,zone.value) else settings.error
+	message.text="Preferences saved." if settings.save_settings(camera.selected,zone.value,sound_level.value) else settings.error
