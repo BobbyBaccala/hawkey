@@ -5,6 +5,7 @@ const NetShooting = preload("res://scripts/net_shooting.gd")
 const Skating = preload("res://scripts/skating.gd")
 const Arena = preload("res://scripts/arena.gd")
 const Skater = preload("res://scripts/skater_visual.gd")
+const RenderLook = preload("res://scripts/render_look.gd")
 var ice_marks
 var arena: Node3D
 var player: CharacterBody3D
@@ -84,39 +85,20 @@ func _ready() -> void:
 	if get_script().resource_path == "res://scripts/lab.gd": Input.joy_connection_changed.connect(on_practice_connection)
 	var world := WorldEnvironment.new()
 	world.environment = Environment.new()
-	world.environment.background_mode = Environment.BG_COLOR
-	world.environment.background_color = Color("#091222")
-	world.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	world.environment.ambient_light_color = Color("#cbdfee")
-	world.environment.ambient_light_energy = 0.34
-	world.environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	world.environment.background_color = Color("#04070b")
-	# Bloom on arena lights, scoreboard and LED ribbons; contact shading under
-	# skates. Reflections and indirect light apply under the Forward+ renderer.
-	world.environment.glow_enabled = true
-	world.environment.glow_intensity = 0.55
-	world.environment.glow_bloom = 0.04
-	world.environment.glow_hdr_threshold = 1.1
-	world.environment.ssao_enabled = true
-	world.environment.ssao_radius = 0.6
-	world.environment.ssao_intensity = 1.4
-	world.environment.ssr_enabled = true
-	world.environment.ssr_max_steps = 48
-	world.environment.ssr_fade_in = 0.2
-	world.environment.ssil_enabled = true
-	world.environment.adjustment_enabled = true
-	world.environment.adjustment_contrast = 1.06
-	world.environment.adjustment_saturation = 1.05
+	# Tonemap, grade, glow, SSAO/SSIL/SSR, haze: scripts/render_look.gd.
+	RenderLook.configure_environment(world.environment)
 	add_child(world)
 	var sun := DirectionalLight3D.new()
 	# Arena lighting comes from overhead rigs: a steep key with soft shadows.
 	sun.rotation_degrees = Vector3(-80,-20,0)
 	sun.light_energy = 0.42
-	sun.shadow_opacity=0.45
-	sun.shadow_blur=1.5
-	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 100
+	RenderLook.configure_key_light(sun)   # soft PSSM shadows, tuned bias
 	add_child(sun)
+	# Render look extras: thin upper-bowl haze (Forward+ volumetric fog), a
+	# soft vignette under the HUD, and contact shadows under every skater.
+	add_child(RenderLook.make_bowl_haze())
+	add_child(RenderLook.make_vignette())
+	add_child(preload("res://scripts/contact_shadows.gd").new())
 	# Per-zone overhead pools and side rim lights (scripts/arena_lighting.gd).
 	var lighting = preload("res://scripts/arena_lighting.gd").new()
 	add_child(lighting)

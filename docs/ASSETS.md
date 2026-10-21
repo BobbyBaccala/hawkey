@@ -39,6 +39,12 @@ Python preparation tools are development-only dependencies; obtain their licence
 - No EA artwork, models, code or motion are used; the EA NHL screenshot was a visual reference only.
 - 2026-10-20 goalie gear v2 (pads, catcher, mask): shapes were proportioned against owner-supplied product photos of current retail goalie equipment, used as visual reference only. No photo pixels, logos, wordmarks, trade dress or product graphics were copied; all geometry and paint is generated in code, the graphics are original generic sweeps and pinstripes, and gear carries no brand.
 
+## Kit materials (skater surface detail)
+- Source: scripts/kit_materials.gd and assets/kit_cloth.gdshader, kit_gear.gdshader, kit_visor.gdshader, kit_detail.gdshaderinc, uniform.gdshader (all original code written for this project).
+- Textures are generated at runtime from code: tiling height functions (knit pores, folds, sock ribs, ripstop, Worley leather pebble, paint orange-peel, skin pores) become mipmapped normal maps. No image files are shipped or downloaded.
+- Jersey numbers and nameplates are signed distance fields built from the vector outlines of Godot's embedded default font (Open Sans, SIL OFL 1.1), so no font file is added to the project.
+- Designs are generic: no team marks, logos, manufacturer branding or EA assets.
+
 ## Presentation — 0.10
 - UI typeface: Bahnschrift, loaded from Windows at runtime (not shipped); falls back to other system fonts elsewhere.
 - Sponsor names on the boards (Northline, Glacier Cola, Ironwood Bank, Polar Air, Summit Tire, Bluewater, Maplefield, Rinkside) are invented and do not depict real companies.
