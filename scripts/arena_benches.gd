@@ -8,13 +8,16 @@ extends Node3D
 ## reads glass_openings()); the board/glass collider is unchanged, so a lifted
 ## puck still stays in play.
 ##
-## Seated players are simple code-built figures (helmet, jersey with shoulder
-## pads, pants, socks, skates, gloves, sticks), not the skinned skater: they sit
-## 1-3 m behind the boards and read at gameplay-camera distance. Kit colours are
-## shared materials, so set_team_colors() recolours a whole bench at once.
+## Seated players are the same skinned skater as on the ice (skater_visual.gd)
+## in its seated pose (pose_seated()): full kit, numbers on the jersey, helmet
+## and neck guard, about half of them holding their stick upright. They are
+## posed only when their inputs change, a few per frame (POSE_BUDGET), so a
+## full bench costs little more than the on-ice skaters. set_team_colors()
+## rebuilds a team's figures in the new kit.
 ## set_penalty_count() seats up to two penalised players in a team's box.
 
 const Arena = preload("res://scripts/arena.gd")
+const SkaterVisual = preload("res://scripts/skater_visual.gd")
 
 const BENCH_SIDE := -1.0
 const BOX_SIDE := 1.0
@@ -31,9 +34,8 @@ const BOARD_BACK := 0.12
 const SEAT_TOP := 0.48
 const GLASS_TOP := 2.66
 const PLAYERS_PER_BENCH := 9
-## Upper-body pivot (hips) seated and standing, in figure space.
-const SEAT_HIP := Vector3(0, 0.56, -0.16)
-const STAND_HIP := Vector3(0, 0.94, -0.03)
+## Most bench figures re-posed per frame (only those whose pose changed).
+const POSE_BUDGET := 6
 ## How far the upper body / head turn to follow the puck (radians).
 const BODY_TURN := 0.55
 const HEAD_TURN := 0.75
@@ -54,13 +56,14 @@ var box_seats: Array = [[], []]
 var _team_mats: Array = [{}, {}]
 var _rng := RandomNumberGenerator.new()
 var _glass_mat: StandardMaterial3D
-## Per-figure pose state (build_player()), the back-number labels per team,
+## Per-figure pose state (build_player()), the seated skater visuals per team,
 ## and when each team's bench cheers (it scored) or slumps (it conceded).
 var _rigs: Array = []
 var _numbers: Array = [[], []]
 var _cheer_until := [-1.0, -1.0]
 var _slump_until := [-1.0, -1.0]
 var _time := 0.0
+var _next_pose := 0
 ## World position the players watch; defaults to the arena's puck.
 var watch_target: Variant = null
 
@@ -101,16 +104,16 @@ func set_team_colors(team: int, jersey: Color, accent: Color, pants: Color = Col
 	m.accent.albedo_color = accent
 	if pants.a > 0: m.pants.albedo_color = pants
 	team_kits[team] = {"jersey": jersey, "accent": accent, "pants": m.pants.albedo_color}
-	for num in _numbers[team]:
-		num.modulate = accent
-		num.outline_modulate = m.pants.albedo_color
+	# The skinned kit bakes its colours into several meshes: rebuild the team.
+	for rig in _rigs:
+		if rig.team == team: _dress(rig)
 
 ## Jersey numbers for the seated players of `team` (bench first, then the two
 ## penalty-box seats), e.g. the roster players who are not on the ice.
 func set_bench_numbers(team: int, numbers: Array) -> void:
 	if numbers.is_empty(): return
 	for i in range(_numbers[team].size()):
-		_numbers[team][i].text = str(numbers[i % numbers.size()])
+		_numbers[team][i].set_number(str(numbers[i % numbers.size()]))
 
 ## Goal reaction: `team`'s bench jumps up and cheers, arms raised, for
 ## CHEER_TIME; the other bench slumps forward, heads down.
@@ -126,8 +129,11 @@ func is_cheering(team: int) -> bool:
 func _process(delta: float) -> void:
 	update_figures(delta)
 
-## Idle motion: breathing sway, upper body and head turning (with a little
-## per-player lag) to follow the puck, standing up and cheering on goals.
+## Idle motion: upper body and head turning (with a little per-player lag)
+## to follow the puck, standing up and cheering on goals, slumping after a
+## goal against. Pose inputs update every frame; the skinned figures are
+## re-posed round-robin, at most POSE_BUDGET per frame, and only when their
+## inputs moved.
 func update_figures(delta: float) -> void:
 	_time += delta
 	var target := Vector3.ZERO
@@ -150,35 +156,38 @@ func update_figures(delta: float) -> void:
 		var want := clampf(atan2(lp.x, lp.z), -1.3, 1.3)
 		# Lagged reaction: each player re-aims at a slightly different rate.
 		rig.yaw = lerpf(rig.yaw, want, k * (0.55 + rig.lag))
-		_pose_rig(rig)
+	var n := _rigs.size()
+	var posed := 0
+	for step in range(n):
+		if posed >= POSE_BUDGET: break
+		var rig: Dictionary = _rigs[(_next_pose + step) % n]
+		if not rig.fig.is_visible_in_tree(): continue
+		if _pose_rig(rig): posed += 1
+	_next_pose = (_next_pose + maxi(posed, 1)) % maxi(n, 1)
 
-func _pose_rig(rig: Dictionary) -> void:
+## Feeds the rig's state to its skater visual; re-poses it (returns true) only
+## if something visible changed since the last pose.
+func _pose_rig(rig: Dictionary, force := false) -> bool:
+	var v = rig.visual
 	var st: float = smoothstep(0.0, 1.0, rig.stand)
-	var sl: float = rig.slump
-	var breathe := sin(_time * 1.7 + rig.phase)
-	var upper: Node3D = rig.upper
-	var bounce := sin(_time * 9.0 + rig.cheer_phase) * 0.025 * st
-	upper.position = SEAT_HIP.lerp(STAND_HIP, st) + Vector3(0, bounce + breathe * 0.004, 0)
-	upper.rotation = Vector3(
-		lerpf(rig.lean + sl * 0.3 + breathe * 0.015, 0.06, st),
-		rig.yaw_bias * (1.0 - st) + rig.yaw * BODY_TURN * (1.0 - sl * 0.6),
-		rig.roll * (1.0 - st))
-	var head: Node3D = rig.head
-	head.rotation = Vector3(lerpf(-0.1, 0.25, sl) - rig.lean * 0.5 * (1.0 - st), rig.yaw * HEAD_TURN * (1.0 - sl * 0.6), 0)
-	# Arms: rest on the knees seated; pumped overhead when cheering.
-	for i in range(rig.arms.size()):
-		var arm: Node3D = rig.arms[i]
-		var pump := sin(_time * 7.0 + rig.cheer_phase + i * 1.3) * 0.25
-		arm.rotation = Vector3(lerpf(0.0, -2.0 + pump, st), 0, (0.25 if i == 1 else -0.25) * st)
-	# Legs: hips rise with the upper body, feet slide back under them, knees solved.
-	for leg in rig.legs:
-		var hip: Vector3 = leg.hip.lerp(Vector3(leg.x * 0.9, STAND_HIP.y - 0.01, STAND_HIP.z), st) + Vector3(0, bounce, 0)
-		var ankle: Vector3 = leg.ankle.lerp(Vector3(leg.x * 1.05, 0.13, 0.1), st)
-		var knee := solve_knee(hip, ankle, leg.l1, leg.l2, Vector3(0, 0, 1))
-		_place(leg.thigh, hip, knee)
-		_place(leg.shin, knee, ankle)
-		_place(leg.stripe, knee.lerp(ankle, 0.35), knee.lerp(ankle, 0.5))
-		leg.foot.position = ankle
+	var state := [1.0 - st, rig.yaw_bias * (1.0 - st) + rig.yaw, rig.slump, st,
+		_time * 7.0 + rig.cheer_phase if st > 0.01 else 0.0]
+	var last: Array = rig.get("posed", [])
+	if not force and last.size() == state.size():
+		var moved := 0.0
+		for i in range(state.size()): moved = maxf(moved, absf(state[i] - last[i]))
+		if moved < 0.004: return false
+	rig.posed = state
+	v.seat = state[0]
+	v.seat_yaw = state[1]
+	v.seat_slump = state[2]
+	v.cheer = state[3]
+	v.cheer_pump = state[4]
+	v.seat_lean = rig.lean
+	v.pose_seated()
+	# Cheering bounce on the toes.
+	v.position.y = absf(sin(_time * 9.0 + rig.cheer_phase)) * 0.03 * st
+	return true
 
 ## Two-bone solve: knee for a hip and ankle with fixed thigh/shin lengths,
 ## bending towards `forward`.
@@ -189,12 +198,6 @@ static func solve_knee(hip: Vector3, ankle: Vector3, l1: float, l2: float, forwa
 	var h := sqrt(maxf(l1 * l1 - a * a, 0.0))
 	var bend := (forward - axis * forward.dot(axis)).normalized()
 	return hip + axis * a + bend * h
-
-## Re-place a capsule built by _limb() between two points (length unchanged).
-func _place(mi: MeshInstance3D, a: Vector3, b: Vector3) -> void:
-	mi.position = (a + b) * 0.5
-	if a.distance_to(b) > 0.001:
-		mi.quaternion = Quaternion(Vector3.UP, (b - a).normalized())
 
 ## Seats `count` (0-2) penalised players of `team` in its penalty box.
 func set_penalty_count(team: int, count: int) -> void:
@@ -318,101 +321,54 @@ func build_officials_booth() -> void:
 # --- figures ---------------------------------------------------------------
 
 ## Seated skater, origin on the floor under the front edge of his seat; faces
-## the ice (local +Z towards -side in world x). The figure is rigged for
-## update_figures(): legs are re-solved from hip/ankle targets with a two-bone
-## solve (fixed thigh/shin lengths), the upper body pivots at the hips, the
-## head turns on the neck and the arms swing from the shoulders.
+## the ice (local +Z towards -side in world x). The body is a skinned skater
+## (skater_visual.gd, _dress()) in its seated pose, driven by update_figures().
 func build_player(team: int, parent: Node3D, pos: Vector3, side: float) -> Node3D:
-	var m: Dictionary = _team_mats[team]
 	var fig := Node3D.new()
 	fig.name = "Seated"
 	parent.add_child(fig)
 	fig.position = pos
 	fig.rotation.y = -side * PI / 2 + _rng.randf_range(-0.12, 0.12)
-	var skin := _mat(Color.from_hsv(0.07, _rng.randf_range(0.25, 0.45), _rng.randf_range(0.55, 0.85)), 0.6)
-	var black := _mat(Color("#121417"), 0.5)
-	var glove := _mat(team_kits[team].pants.darkened(0.2), 0.7)
-	var spread := _rng.randf_range(0.10, 0.15)
-	var rig := {"team": team, "fig": fig, "legs": [], "phase": _rng.randf_range(0.0, TAU),
-		"lag": _rng.randf_range(0.0, 0.45), "stand": 0.0, "slump": 0.0, "yaw": 0.0, "cheer_phase": _rng.randf_range(0.0, TAU)}
-	# Legs: thighs out over the seat edge, shins down to skates on the floor.
-	for x in [-spread, spread]:
-		var hip := Vector3(x * 0.8, 0.55, -0.18)
-		var knee := Vector3(x, 0.56, 0.24 + _rng.randf_range(-0.03, 0.03))
-		var ankle := Vector3(x * 1.05, 0.13, knee.z + _rng.randf_range(0.02, 0.12))
-		var leg := {"x": x, "hip": hip, "ankle": ankle, "l1": hip.distance_to(knee), "l2": knee.distance_to(ankle)}
-		leg.thigh = _limb(fig, hip, knee, 0.105, m.pants)
-		leg.shin = _limb(fig, knee, ankle, 0.065, m.jersey)          # sock
-		leg.stripe = _limb(fig, knee.lerp(ankle, 0.35), knee.lerp(ankle, 0.5), 0.068, m.accent)
-		var foot := Node3D.new()
-		fig.add_child(foot)
-		foot.position = ankle
-		_part(foot, BoxMesh.new(), Vector3(0.1, 0.13, 0.29), Vector3(0, -0.05, 0.06), black)
-		_part(foot, BoxMesh.new(), Vector3(0.012, 0.03, 0.27), Vector3(0, -0.12, 0.06), _mat(Color("#b9c2ca"), 0.2))
-		leg.foot = foot
-		rig.legs.append(leg)
-	# Upper body on a pivot at the hips so it can lean forward over the knees.
-	var upper := Node3D.new()
-	upper.name = "Upper"
-	fig.add_child(upper)
-	upper.position = SEAT_HIP
-	rig.upper = upper
-	rig.lean = _rng.randf_range(0.12, 0.45)   # forward lean
-	rig.roll = _rng.randf_range(-0.05, 0.05)
-	rig.yaw_bias = _rng.randf_range(-0.15, 0.15)
-	upper.rotation = Vector3(rig.lean, rig.yaw_bias, rig.roll)
-	_part(upper, CapsuleMesh.new(), Vector3(0.21, 0.62, 0.0), Vector3(0, 0.3, 0), m.jersey)            # torso
-	_part(upper, BoxMesh.new(), Vector3(0.43, 0.08, 0.27), Vector3(0, 0.08, 0), m.accent)               # hem stripe
-	var shoulders := _part(upper, CapsuleMesh.new(), Vector3(0.13, 0.56, 0.0), Vector3(0, 0.53, 0), m.jersey)
-	shoulders.rotation.z = PI / 2
-	# Number on the back of the jersey (set_bench_numbers()), facing the fans.
-	var num := Label3D.new()
-	num.name = "BackNumber"
-	num.text = str(_rng.randi_range(2, 98))
-	num.font_size = 96
-	num.pixel_size = 0.2 / 96.0
-	num.modulate = team_kits[team].accent
-	num.outline_size = 10
-	num.outline_modulate = team_kits[team].pants
-	num.double_sided = false
-	num.rotation.y = PI
-	num.position = Vector3(0, 0.36, -0.215)
-	upper.add_child(num)
-	rig.number = num
-	_numbers[team].append(num)
-	var head := Node3D.new()
-	head.name = "Head"
-	upper.add_child(head)
-	head.position = Vector3(0, 0.68, 0.0)
-	_part(head, SphereMesh.new(), Vector3(0.1, 0.0, 0.0), Vector3(0, 0.08, 0.03), skin)                 # face/head
-	var helmet := _part(head, SphereMesh.new(), Vector3(0.122, 0.0, 0.0), Vector3(0, 0.11, -0.01), m.helmet)
-	helmet.scale = Vector3(1.0, 0.9, 1.1)
-	_part(head, BoxMesh.new(), Vector3(0.2, 0.05, 0.03), Vector3(0, 0.10, 0.115), _mat(Color(0.1, 0.12, 0.14, 0.55), 0.05))  # visor
-	rig.head = head
-	# Arms resting on the knees, gloves at the knees or holding the stick.
-	var hold_stick := _rng.randf() < 0.55
-	rig.arms = []
-	for x in [-1.0, 1.0]:
-		var shoulder := Vector3(x * 0.25, 0.5, 0.0)
-		var arm := Node3D.new()
-		upper.add_child(arm)
-		arm.position = shoulder
-		var elbow := Vector3(x * 0.27, 0.24, 0.2) - shoulder
-		var hand := Vector3(x * (0.06 if hold_stick else 0.17), 0.18 + (0.12 if hold_stick and x > 0 else 0.0), 0.38) - shoulder
-		_limb(arm, Vector3.ZERO, elbow, 0.07, m.jersey)
-		_limb(arm, elbow * 0.55, elbow * 0.75, 0.073, m.accent)   # sleeve stripe
-		_limb(arm, elbow, hand, 0.062, glove)
-		_part(arm, BoxMesh.new(), Vector3(0.1, 0.1, 0.14), hand, glove)
-		rig.arms.append(arm)
-	if hold_stick:
-		# Stick held upright between the knees, knob up near the chin.
-		var top := fig.to_global(Vector3(0.06, 1.3, 0.3))
-		var blade := fig.to_global(Vector3(0.03, 0.03, 0.6))
-		_stick(parent, parent.to_local(blade), parent.to_local(top))
+	var rig := {"team": team, "fig": fig, "phase": _rng.randf_range(0.0, TAU),
+		"lag": _rng.randf_range(0.0, 0.45), "stand": 0.0, "slump": 0.0, "yaw": 0.0, "cheer_phase": _rng.randf_range(0.0, TAU),
+		"lean": _rng.randf_range(0.12, 0.42), "yaw_bias": _rng.randf_range(-0.15, 0.15),
+		"spread": _rng.randf_range(0.12, 0.18), "stick": _rng.randf() < 0.55,
+		"number": str(_rng.randi_range(2, 98)), "index": _numbers[team].size(), "visual": null}
 	fig.set_meta("rig", rig)
 	_rigs.append(rig)
-	_pose_rig(rig)
+	_numbers[team].append(null)
+	_dress(rig)
 	return fig
+
+## (Re)builds the rig's skinned skater in its team's current kit.
+func _dress(rig: Dictionary) -> void:
+	var team: int = rig.team
+	var number: String = rig.number
+	var old = rig.visual
+	if old != null:
+		number = old.number
+		old.get_parent().remove_child(old)
+		old.queue_free()
+	var v = SkaterVisual.new()
+	v.name = "Skater"
+	v.kit = team_kits[team].jersey
+	v.accent = team_kits[team].accent
+	v.number = number
+	v.seat_stick = rig.stick
+	v.seat_spread = rig.spread
+	v.seat_lean = rig.lean
+	v.seat = 1.0
+	# Game-facing is -Z; the figure faces +Z (the ice).
+	v.rotation.y = PI
+	rig.fig.add_child(v)
+	# Not a skater on the ice: no skate cuts (ice_marks.gd) for bench figures.
+	v.remove_from_group("skater_visuals")
+	v.sticks.visible = rig.stick
+	for sp in v.sprays: sp.visible = false
+	rig.visual = v
+	_numbers[team][rig.index] = v
+	rig.erase("posed")
+	_pose_rig(rig, true)
 
 func build_coach(parent: Node3D, pos: Vector3, side: float) -> void:
 	var suit := _mat(Color("#1b1e24"), 0.7)

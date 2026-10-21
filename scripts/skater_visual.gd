@@ -144,6 +144,30 @@ const CARRY_LENGTH := 1.40
 const PLANT_REACH_FADE := 0.10
 ## A planted arm may straighten fully (upper 0.28 + forearm 0.29 m).
 const PLANT_REACH := 0.565
+## Seated on the bench (arena_benches.gd drives these through pose_seated()):
+## seat 0 = normal stance, 1 = sitting on the bench edge, thighs forward,
+## skates on the floor. seat_lean leans the upper body over the knees,
+## seat_yaw turns body and head toward the play (+ = rig +x), seat_slump drops
+## the shoulders and head (conceded a goal), cheer stands him up with the
+## arms (and the stick) raised. seat_stick: holds his stick leaning back
+## against him, blade on the floor in front; otherwise the gloves rest on
+## the knees.
+var seat := 0.0
+var seat_lean := 0.3
+var seat_yaw := 0.0
+var seat_slump := 0.0
+var seat_stick := true
+var seat_spread := 0.15
+var cheer := 0.0
+var cheer_pump := 0.0
+## Hip joint drop from the standing rest pose to sitting on a 0.48 m seat
+## (hip ~0.58 m up, 0.17 m behind the figure origin at the seat's front edge).
+const SEAT_DROP := Vector3(0,-0.38,-0.17)
+const SEAT_ANKLE := Vector3(0.15,0.145,0.33)
+## Seated stick: knob in front of the chin, shaft leaning forward-down to the
+## blade on the floor, full stick length.
+const SEAT_KNOB := Vector3(-0.17,0.06,0.30)
+const SEAT_STICK_LENGTH := 1.45
 const STOP_MIN_SPEED := 4.0      # m/s needed to start a stop
 const STOP_DECEL := 7.0          # m/s^2 (smoothed) that counts as a hard stop
 const STOP_ANGLE := 1.38         # hips turned this far from the travel (~79 deg)
@@ -795,6 +819,15 @@ func pose(speed: float, turn: float) -> void:
 		drop = drop.lerp(Vector3(0,-0.31,-0.04),crouch)
 		drop = drop.lerp(Vector3(0,-0.10,-0.06),tuck)
 		shoulder_turn = shoulder_turn*(1.0-maxf(crouch,tuck))
+	# Bench: sit on the seat edge, feet forward on the floor; or stand tall to cheer.
+	if not goalie and (seat > 0.0 or cheer > 0.0):
+		for i in range(2):
+			var side := 1.0 if i==0 else -1.0
+			var f: Dictionary = stride[i]
+			f.ankle = (f.ankle as Vector3).lerp(Vector3(side*seat_spread,SEAT_ANKLE.y,SEAT_ANKLE.z+0.03*side),seat)
+			for key in ["yaw","pitch","edge","ext","lift"]: f[key] = float(f[key])*(1.0-seat)
+		drop = drop.lerp(Vector3(0,-0.05,0),cheer*(1.0-seat)).lerp(SEAT_DROP,seat)
+		shoulder_turn = shoulder_turn*(1.0-maxf(seat,cheer))
 	var cap := {}
 	if mocap_weight>0 and not mocap.is_empty():
 		cap = Mocap.sample(mocap,mocap_time,mocap_loop)
@@ -814,6 +847,9 @@ func pose(speed: float, turn: float) -> void:
 	# Stop: the upper body leans back against the skid.
 	if stop_w > 0.0: bend = Basis(Vector3.BACK,-stop_side*0.24*stop_w)*bend
 	if not hop_state.is_empty(): bend = Basis(Vector3.RIGHT,0.38*float(hop_state.lean))*bend
+	if not goalie and (seat > 0.0 or cheer > 0.0):
+		var lean := lerpf(seat_lean+0.3*seat_slump,0.06,cheer*(1.0-seat))
+		bend = Basis(Vector3.UP,seat_yaw*0.55*(1.0-0.6*seat_slump))*Basis(Vector3.RIGHT,lerpf(0.5,lean,maxf(seat,cheer)))
 	if goalie:
 		var reach_lean: float = save_weights.glove*clampf(save_target.x-0.45,0.0,0.5)-save_weights.blocker*clampf(-save_target.x-0.45,0.0,0.5)
 		var pad_lean: float = save_weights.pad_left-save_weights.pad_right
@@ -834,8 +870,14 @@ func pose(speed: float, turn: float) -> void:
 	posed_head = pivot+drop+bend*(head.origin-pivot)
 	var head_pose := head
 	head_pose.origin = posed_head
+	# Bench: the head turns to follow the play and drops when slumped.
+	var look := Basis.IDENTITY
+	if not goalie and (seat > 0.0 or cheer > 0.0):
+		look = Basis(Vector3.UP,seat_yaw*(1.0-0.6*seat_slump))*Basis(Vector3.RIGHT,lerpf(-0.08*seat,0.55,seat_slump)-0.2*cheer)
+		head_pose.basis = look*head.basis
 	override_pose("head",head_pose)
-	helmet.position = posed_head+(Vector3(0,0.095,0.015) if goalie else Gear.HELMET_OFFSET)
+	helmet.position = posed_head+look*(Vector3(0,0.095,0.015) if goalie else Gear.HELMET_OFFSET)
+	helmet.basis = look
 	if neck_guard: update_neck_guard()
 	for i in range(2):
 		var side := 1.0 if i==0 else -1.0
@@ -965,6 +1007,18 @@ func pose(speed: float, turn: float) -> void:
 			if shoulder.distance_to(wrist)>STICK_ARM_REACH:
 				wrist = shoulder+(wrist-shoulder).normalized()*STICK_ARM_REACH
 		if referee: wrist=Vector3(side*0.32,0.96,0.03)
+		if not goalie and not referee and (seat > 0.0 or cheer > 0.0):
+			# Bench: gloves rest on top of the knees (no stick), and go up to cheer.
+			var w := 0.0
+			if not seat_stick:
+				var rest_ := knees[i]+Vector3(-side*0.02,0.085,-0.06)
+				wrist = wrist.lerp(rest_,seat)
+				w = seat
+			var pump := sin(cheer_pump+i*1.3)*0.08
+			var up_ := shoulder+Vector3(side*0.14,0.50+pump,0.10)
+			wrist = wrist.lerp(shoulder+(up_-shoulder).limit_length(STICK_ARM_REACH),cheer)
+			w = maxf(w,cheer)
+			grip_point = grip_point.lerp(wrist,w)
 		if i==0: hand_plant=plant_weight(shoulder)
 		if i==0 and hand_plant>0.0:
 			# Board hop: the top hand lets go of the stick and plants on the cap.
@@ -1260,10 +1314,31 @@ func stick_grip() -> Vector3:
 	grip += Vector3(0,-0.10,0.06)*stop_blend()
 	# Board hop: the knob comes down to the hip as the stick is carried.
 	if stick_carry>0.0: grip = grip.lerp(carry_knob(),stick_carry)
+	# Bench: knob held up in front of the chin, stick leaning back against him.
+	if seat>0.0: grip = grip.lerp(seat_knob(),seat)
 	# Pulling the stick in never drives the top hand into the hip pads.
 	grip.z = maxf(grip.z,shoulder_of(0).z+0.15)
 	# The top hand holds the stick in front of the jersey, never inside it.
 	return clear_hand(grip,0.075)
+
+func seat_knob() -> Vector3:
+	return shoulder_of(0)+SEAT_KNOB
+
+## Bench stick: blade on the floor (local y 0.07: the rubber floor is 4 cm
+## up) straight in front, one stick length from the knob.
+func seat_blade() -> Vector3:
+	var knob := seat_knob()
+	var dy := knob.y-0.07
+	return Vector3(knob.x+0.04,0.07,knob.z+sqrt(maxf(SEAT_STICK_LENGTH*SEAT_STICK_LENGTH-dy*dy,0.01)))
+
+## Bench figures (arena_benches.gd): pose the seated/cheering stance without
+## the skating layers. Cheap enough to call only when the inputs change.
+func pose_seated() -> void:
+	stick_intent = Vector2.ZERO
+	desired_stick = Vector2.ZERO
+	blade_position = Vector3(-0.36,0.029,1.05).lerp(seat_blade(),seat)
+	raised_stick = cheer if seat_stick else 0.0
+	pose(0,0)
 
 ## Board hop: how far the stick must be carried (0..1) so a blade left on the
 ## ice does not reach into the dasher - the blade's distance past the face of

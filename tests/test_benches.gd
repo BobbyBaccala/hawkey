@@ -102,7 +102,8 @@ func run() -> void:
 	await check_motion(m, benches)
 	finish()
 
-## Pass 2: back numbers from the roster, players watch the puck, the scoring
+## Pass 2/3: the seated players are skinned skaters (skater_visual.gd) in the
+## seated pose wearing the roster numbers; they watch the puck, the scoring
 ## bench stands and cheers while the other slumps, legs keep their length.
 func check_motion(m, benches) -> void:
 	benches.set_process(false)
@@ -110,16 +111,27 @@ func check_motion(m, benches) -> void:
 		var dressed := []
 		for i in range(3, 12): dressed.append(str(m.rosters[team][i].number))
 		var nums: Array = benches._numbers[team]
-		check(nums.size() == Benches.PLAYERS_PER_BENCH + 2, "Team %d has a back number per seated figure (%d)" % [team, nums.size()])
+		check(nums.size() == Benches.PLAYERS_PER_BENCH + 2, "Team %d has a skinned skater per seated figure (%d)" % [team, nums.size()])
 		for i in range(Benches.PLAYERS_PER_BENCH):
-			check(nums[i].text == dressed[i], "Team %d bench player %d wears roster number %s (got %s)" % [team, i, dressed[i], nums[i].text])
-		# Numbers face away from the ice (towards the fans behind the bench).
-		var n: Label3D = nums[0]
-		var facing: Vector3 = n.global_transform.basis.z
-		check(facing.x < -0.7, "Team %d back number faces away from the ice (%.2f)" % [team, facing.x])
+			check(nums[i].number == dressed[i], "Team %d bench player %d wears roster number %s (got %s)" % [team, i, dressed[i], nums[i].number])
+		var v = nums[0]
+		check(v.skeleton != null and v.kit.is_equal_approx(m.team_color(team)), "Team %d bench player is the skinned skater in the team kit" % team)
+		check(not v.is_in_group("skater_visuals"), "Bench skaters cut no ice (not in skater_visuals)")
+		# Faces the ice (game-facing -Z towards +x on the west side).
+		check((-v.global_transform.basis.z).x > 0.7, "Team %d bench player faces the ice" % team)
+		# Seated: hips on the seat, thighs forward, skates on the bench floor.
+		var hip: Vector3 = v.rig.global_transform * (v.rest["upperleg01.L"].origin + v.posed_drop)
+		check(absf(hip.y - (Benches.SEAT_TOP + 0.1)) < 0.06, "Team %d player sits on the seat (hip %.2f)" % [team, hip.y])
+		for i in range(2):
+			var knee: Vector3 = v.rig.global_transform * v.knees[i]
+			var foot: Vector3 = v.skates[i].global_position
+			var hip_i: Vector3 = v.rig.global_transform * (v.rest["upperleg01" + (".L" if i == 0 else ".R")].origin + v.posed_drop)
+			check(absf(knee.y - hip_i.y) < 0.15 and knee.distance_to(hip_i) < 0.47, "Thigh runs forward from the seat (knee %.2f, %.2f m)" % [knee.y, knee.distance_to(hip_i)])
+			check(foot.y > 0.03 and foot.y < 0.13, "Seated skate on the floor (%.2f)" % foot.y)
 	# Heads follow the puck: watch one end, then the other.
 	var fig: Node3D = benches.seated[0][4]
-	var head: Node3D = fig.get_meta("rig").head
+	var vis = fig.get_meta("rig").visual
+	var head: Node3D = vis.helmet
 	benches.watch_target = Vector3(0, 0, 25)
 	for i in range(240): benches.update_figures(1.0 / 60.0)
 	var look_a: Vector3 = head.global_transform.basis.z
@@ -132,36 +144,51 @@ func check_motion(m, benches) -> void:
 	var before: Vector3 = head.global_transform.basis.z
 	benches.update_figures(1.0 / 60.0)
 	check(head.global_transform.basis.z.distance_to(before) < 0.08, "Head turn is eased, not snapped")
+	# Only figures whose pose changed are re-posed, at most POSE_BUDGET a frame.
+	var budget_ok := true
+	for i in range(30):
+		var stamp := []
+		for rig in benches._rigs: stamp.append(rig.get("posed", []).duplicate())
+		benches.update_figures(1.0 / 60.0)
+		var n := 0
+		for k in range(benches._rigs.size()):
+			if benches._rigs[k].get("posed", []) != stamp[k]: n += 1
+		if n > Benches.POSE_BUDGET: budget_ok = false
+	check(budget_ok, "At most POSE_BUDGET bench skaters re-posed per frame")
+	for i in range(240): benches.update_figures(1.0 / 60.0)
 	# Goal: home bench stands and cheers, road bench slumps.
-	var upper0: Node3D = fig.get_meta("rig").upper
-	var seated_y := upper0.global_position.y
-	var road_head: Node3D = benches.seated[1][4].get_meta("rig").head
+	var seated_y: float = head.global_position.y
+	var road_head: Node3D = benches.seated[1][4].get_meta("rig").visual.helmet
 	var road_up_before: float = road_head.global_transform.basis.z.y
 	benches.celebrate(0)
 	check(benches.is_cheering(0) and not benches.is_cheering(1), "celebrate() cheers the scoring bench only")
 	for i in range(90): benches.update_figures(1.0 / 60.0)
-	check(upper0.global_position.y > seated_y + 0.3, "Scoring bench stands up (hips %.2f -> %.2f)" % [seated_y, upper0.global_position.y])
-	var arm: Node3D = fig.get_meta("rig").arms[1]
-	check(arm.global_transform.basis.y.y < -0.2 or arm.rotation.x < -1.4, "Cheering arms go up (arm rot %.2f)" % arm.rotation.x)
+	check(head.global_position.y > seated_y + 0.3, "Scoring bench stands up (head %.2f -> %.2f)" % [seated_y, head.global_position.y])
+	var arm_up: bool = vis.posed_wrists[1].y > vis.shoulder_of(1).y + 0.25 and vis.posed_wrists[0].y > vis.shoulder_of(0).y + 0.25
+	check(arm_up, "Cheering arms go up (wrist %.2f, shoulder %.2f)" % [vis.posed_wrists[1].y, vis.shoulder_of(1).y])
 	check(road_head.global_transform.basis.z.y < road_up_before - 0.05, "Conceding bench drops its heads")
 	for rig in benches._rigs:
 		if rig.team != 0 or rig.fig.name.begins_with("PenaltySeat"): continue
-		for leg in rig.legs:
-			var t: MeshInstance3D = leg.thigh
-			var sh: MeshInstance3D = leg.shin
-			var foot: Vector3 = leg.foot.position
-			check(foot.y > 0.1 and foot.y < 0.16, "Standing skates stay on the floor")
-			var knee: Vector3 = t.position * 2.0 - leg.hip.lerp(Vector3(leg.x * 0.9, Benches.STAND_HIP.y - 0.01, Benches.STAND_HIP.z), 1.0)
-			check(sh.position.distance_to((knee + foot) * 0.5) < 0.12, "Shin stays connected between knee and skate")
+		var v = rig.visual
+		for i in range(2):
+			var foot: Vector3 = v.skates[i].global_position
+			check(foot.y > 0.03 and foot.y < 0.13, "Standing skates stay on the floor (%.2f)" % foot.y)
+			var hip: Vector3 = v.rest["upperleg01" + (".L" if i == 0 else ".R")].origin + v.posed_drop
+			check(hip.distance_to(v.feet[i]) <= v.LEG_REACH + 0.01, "Leg keeps its length")
 	# Standing players still stay behind the boards.
 	for mi in benches.find_children("*", "MeshInstance3D", true, false):
 		if not mi.is_visible_in_tree(): continue
 		var aabb: AABB = mi.global_transform * mi.get_aabb()
 		if aabb.position.x > 0: continue
-		check(aabb.end.x <= -Arena.HALF_WIDTH + 0.14, "Standing %s stays behind the boards (x %.2f)" % [mi.name, aabb.end.x])
+		check(aabb.end.x <= -Arena.HALF_WIDTH + 0.14, "Standing %s stays behind the boards (x %.2f)" % [mi.get_path(), aabb.end.x])
 	# Then they sit back down.
-	for i in range(int(Benches.CHEER_TIME * 60) + 180): benches.update_figures(1.0 / 60.0)
-	check(not benches.is_cheering(0) and absf(upper0.global_position.y - seated_y) < 0.05, "Bench sits back down after the goal (%.2f)" % upper0.global_position.y)
+	for i in range(int(Benches.CHEER_TIME * 60) + 240): benches.update_figures(1.0 / 60.0)
+	check(not benches.is_cheering(0) and absf(head.global_position.y - seated_y) < 0.05, "Bench sits back down after the goal (%.2f)" % head.global_position.y)
+	# Recolouring a bench rebuilds its skaters in the new kit, numbers kept.
+	var num_before: String = benches._numbers[0][2].number
+	benches.set_team_colors(0, Color.GREEN, Color.BLACK)
+	check(benches._numbers[0][2].kit == Color.GREEN and benches._numbers[0][2].number == num_before, "set_team_colors re-dresses the bench skaters")
+	benches.set_team_colors(0, m.team_color(0), m.team_accent(0))
 	# Goal in the live match triggers the bench reaction.
 	var src := FileAccess.get_file_as_string("res://scripts/match.gd")
 	check(src.contains("goal_benches.celebrate(scoring_team)"), "match.gd tells the benches who scored")
