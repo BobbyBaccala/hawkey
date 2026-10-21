@@ -5,7 +5,9 @@ extends SceneTree
 ##  box    - penalty boxes and officials' booth (east), one road player seated
 ##  cheer  - home bench standing after a goal, road bench slumped
 ##  backs  - from behind the home bench (back numbers)
-##  goout  - line change: one home player up off the seat, stick raised, to go out
+##  outwalk - line change: a home player who got up walks from his seat to the
+##           boards (mid-step)
+##  goout  - he waits at the boards, stick raised, to go out
 ##  walk   - the player who came off walking from his landing spot to the free
 ##           seat (walk1 just after landing, walk2 turning round at the seat)
 ##  walkstep - the same walk from inside the bench, mid-step (one skate up,
@@ -52,7 +54,11 @@ func run() -> void:
 	# Line change: a home player gets up to go out (arena_benches.gd stand_up()).
 	benches.watch_target = Vector3(0, 0, 20)
 	benches.stand_up(0, 5.0)
-	for i in range(80): benches.update_figures(1.0 / 60.0)
+	# Slice 11: once up he walks from his seat to the boards (outwalk, mid-step)
+	# and waits there, stick raised (goout).
+	for i in range(58): benches.update_figures(1.0 / 60.0)
+	await shot(cam, Vector3(-w + 0.7, 2.4, 1.6), Vector3(-w - 1.3, 0.5, 4.6), 52, "/tmp/hawkey-bench-outwalk.png")
+	for i in range(62): benches.update_figures(1.0 / 60.0)
 	await shot(cam, Vector3(-w + 5.0, 1.9, 9.5), Vector3(-w - 1.6, 0.9, 4.0), 50, "/tmp/hawkey-bench-goout.png")
 	# The player coming off lands at z 5 and walks to the free seat.
 	benches.go_out(0, "45", Vector3(-w - 0.85, 0, 5.0), Vector3(-1, 0, 0))

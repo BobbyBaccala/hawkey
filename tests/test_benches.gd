@@ -239,16 +239,30 @@ func check_line_change(m, benches) -> void:
 	var at = benches.go_out(0, "77")
 	check(at is Vector3 and not fig.visible, "He leaves his seat for the hop")
 	if at is Vector3:
-		check(absf(at.z - fig.global_position.z) < 0.5 and at.x < -Arena.HALF_WIDTH - 1.0, "Hop starts where he stood (x %.2f)" % at.x)
+		check(absf(at.z - fig.global_position.z) < 0.5 and at.x < -Arena.HALF_WIDTH - Benches.OUT_DEPTH + 0.05, "Hop starts where he stood (x %.2f)" % at.x)
 	for i in range(int(Benches.SEAT_RETURN * 60) + 4): benches.update_figures(1.0 / 60.0)
 	check(fig.visible and v.number == "77", "The player coming off takes the free seat (%s)" % v.number)
 	for i in range(120): benches.update_figures(1.0 / 60.0)
 	check(absf(v.helmet.global_position.y - head0) < 0.06 and benches.rising_count(0) == 0, "and sits down (head %.2f)" % v.helmet.global_position.y)
 	check_seat_walk(benches, z0)
-	# A change called off (nobody goes out): he sits back down by himself.
+	check_out_walk(benches, z0)
+	# A change called off (nobody goes out): he walks back from the boards
+	# and sits back down by himself.
 	benches.stand_up(1, -5.0)
-	for i in range(int(4.5 * 60)): benches.update_figures(1.0 / 60.0)
+	var cr: Dictionary = {}
+	for r in benches._rigs:
+		if r.team == 1 and r.rise_target > 0.0: cr = r
+	var cr_head: float = cr.visual.helmet.global_position.y
+	var cr_prev: Vector3 = cr.visual.helmet.global_position
+	var cr_step := 0.0
+	for i in range(int(6.0 * 60)):
+		benches.update_figures(1.0 / 60.0)
+		cr_step = maxf(cr_step, cr.visual.helmet.global_position.distance_to(cr_prev))
+		cr_prev = cr.visual.helmet.global_position
 	check(benches.rising_count(1) == 0, "A player left standing sits back down")
+	var cr_spot: Vector3 = cr.fig.global_position
+	check(absf(cr.visual.helmet.global_position.y - cr_head) < 0.06 and absf(cr.visual.global_position.x - cr_spot.x) < 0.05, "back on his own seat (head %.2f, x off %.2f)" % [cr.visual.helmet.global_position.y, cr.visual.global_position.x - cr_spot.x])
+	check(cr_step < 0.05, "Walking back to the seat has no pops (%.3f m/frame)" % cr_step)
 	# Slice 10: the tired player is already waiting - a hurried rise, still eased.
 	check(not benches.has_riser(1) and benches.stand_up(1, -5.0, true), "A player gets up in a hurry")
 	var hr: Dictionary = {}
@@ -263,7 +277,9 @@ func check_line_change(m, benches) -> void:
 		if absf(hh - hprev) > 0.04: hsmooth = false
 		hprev = hh
 		frames += 1
-	check(frames < 30 and hsmooth, "Hurried rise is quick and eased (%d frames)" % frames)
+	# Slice 11: ready once he has also walked (quicker) to the boards.
+	check(frames < 70 and hsmooth, "Hurried rise and walk to the boards are quick and eased (%d frames)" % frames)
+	check(hr.visual.global_position.x > -Arena.HALF_WIDTH - Benches.OUT_DEPTH - 0.05, "Ready means at the boards (x %.2f)" % hr.visual.global_position.x)
 	benches.go_out(1, "12", hr.visual.global_position, Vector3(1, 0, 0))
 	for i in range(int(4.0 * 60)): benches.update_figures(1.0 / 60.0)
 	check(benches.rising_count(1) == 0 and not benches.has_riser(1), "and he is replaced and seated after")
@@ -384,6 +400,78 @@ func check_seat_walk(benches, z0: float) -> void:
 	seat_head = v.helmet.global_position.y
 	check(seat_head < 1.25 and benches.rising_count(0) == 0, "then sits down (head %.2f)" % seat_head)
 	check(v.sticks.visible and v.seat_stick, "holding the stick he came off with")
+
+## Pass 3 slice 11: the player who gets up walks from his seat to the boards
+## with the step cycle (facing the ice, stick raised) and waits there; only
+## then is he ready, and the hop starts from the boards.
+func check_out_walk(benches, z0: float) -> void:
+	check(benches.stand_up(0, z0), "Third change: a player gets up")
+	var rig: Dictionary = {}
+	for r in benches._rigs:
+		if r.team == 0 and r.rise_target > 0.0: rig = r
+	var v = rig.visual
+	var seat_x: float = (rig.fig.global_transform * Vector3(0, 0, Benches.RISE_STEP)).x
+	var floor_y: float = 0.0
+	var prev: Vector3 = v.helmet.global_position
+	var max_step := 0.0
+	var lifts := [0, 0]
+	var lifted := [false, false]
+	var max_lift := 0.0
+	var both_up := 0
+	var slip := 0.0
+	var was_down := [0, 0]
+	var last_foot: Array = [v.skates[0].global_position, v.skates[1].global_position]
+	var walked := false
+	var ready_early := false
+	var facing_ok := true
+	var stick_up := true
+	var frames := 0
+	while frames < 240:
+		benches.update_figures(1.0 / 60.0)
+		frames += 1
+		var h: Vector3 = v.helmet.global_position
+		max_step = maxf(max_step, h.distance_to(prev))
+		prev = h
+		if benches.is_walking(rig):
+			# Floor height from the standing skates as he sets off.
+			if not walked: floor_y = minf(v.skates[0].global_position.y, v.skates[1].global_position.y)
+			walked = true
+			var f: Vector3 = -v.global_transform.basis.z
+			if f.dot(Vector3(1, 0, 0)) < 0.9: facing_ok = false
+			if v.stick_carry < 0.95: stick_up = false
+			if benches.has_riser(0, true) and rig.walk_t < rig.walk_time: ready_early = true
+			for k in range(2):
+				var foot: Vector3 = v.skates[k].global_position
+				var up: float = foot.y - floor_y
+				var down := up < 0.004
+				var moved: Vector3 = foot - last_foot[k]
+				if down and was_down[k] >= 2: slip = maxf(slip, Vector2(moved.x, moved.z).length())
+				was_down[k] = was_down[k] + 1 if down else 0
+				max_lift = maxf(max_lift, up)
+				var is_up := up > 0.02
+				if is_up and not lifted[k]: lifts[k] += 1
+				lifted[k] = is_up
+			if lifted[0] and lifted[1]: both_up += 1
+		for k in range(2): last_foot[k] = v.skates[k].global_position
+		if walked and not benches.is_walking(rig) and frames > 60: break
+	check(walked, "He walks from his seat towards the boards")
+	check(lifts[0] + lifts[1] >= 2 and lifts[0] >= 1 and lifts[1] >= 1, "with steps (%d / %d lifts)" % [lifts[0], lifts[1]])
+	check(max_lift > 0.04 and max_lift < 0.12 and both_up == 0, "skates lift %.3f m, never both up (%d)" % [max_lift, both_up])
+	check(slip < 0.002, "planted skates do not glide (%.4f m/frame)" % slip)
+	check(max_step < 0.05, "no pops on the way (%.3f m/frame)" % max_step)
+	check(facing_ok and stick_up, "facing the ice with his stick raised")
+	check(not ready_early, "Not ready to go out until he gets there")
+	var p: Vector3 = v.global_position
+	var board_x := -Arena.HALF_WIDTH - Benches.OUT_DEPTH
+	check(absf(p.x - board_x) < 0.08 and p.x > seat_x + 0.5, "He waits at the boards (x %.2f, seat %.2f)" % [p.x, seat_x])
+	check(benches.has_riser(0, true), "and is ready to go out")
+	# Holds there (no drift back to the seat) while he waits.
+	for i in range(30): benches.update_figures(1.0 / 60.0)
+	check(absf(v.global_position.x - p.x) < 0.01, "and stays there while he waits")
+	var at = benches.go_out(0, "", null)
+	check(at is Vector3 and absf(at.x - board_x) < 0.08, "The hop starts from the boards (x %.2f)" % (at.x if at is Vector3 else 0.0))
+	for i in range(int((Benches.SEAT_RETURN + 2.0) * 60)): benches.update_figures(1.0 / 60.0)
+	check(rig.fig.visible and absf(v.global_position.x - rig.fig.global_position.x) < 0.05 and benches.rising_count(0) == 0, "and his seat is taken (not at the boards)")
 
 func finish() -> void:
 	print("Bench failures: ", failures)

@@ -152,6 +152,8 @@ func check_change_nobody_up(scene) -> void:
 	# The fresh player starts from the one who got up, not 0.7 m along from the landing.
 	var start:Vector3=v.global_position
 	check(start.x< -scene.Arena.HALF_WIDTH-0.9,"Fresh player goes out from the bench, behind the landing (x %.2f)" % start.x)
+	# Slice 11: the one who got up walked from his seat (~1.75 m back) to the boards first.
+	check(start.x> -scene.Arena.HALF_WIDTH-scene.Benches.OUT_DEPTH-0.1,"He walked to the boards before going out (x %.2f)" % start.x)
 	for i in range(600):
 		scene.update_team_ai(1.0/120)
 		if int(changer.get_meta("hop",0))==0: break

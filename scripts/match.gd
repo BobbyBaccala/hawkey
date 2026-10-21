@@ -12,7 +12,7 @@ const BENCH_X := -(Arena.HALF_WIDTH - 0.75)
 const HOP_BENCH_DEPTH := 0.85
 ## Longest the tired player waits on the bench floor for a teammate to get up
 ## (hop 3) before the fresh player goes out anyway.
-const HOP_WAIT_MAX := 1.2
+const HOP_WAIT_MAX := 1.6
 ## Restarting from the pause menu skips the title screen.
 static var skip_title := false
 var hud_node: CanvasLayer
