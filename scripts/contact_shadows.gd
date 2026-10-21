@@ -95,6 +95,8 @@ func refresh() -> void:
 	for visual in tracked:
 		if not is_instance_valid(visual) or not visual.is_inside_tree() or not visual.is_visible_in_tree():
 			continue
+		# Bench figures (arena_benches.gd) leave the group: they sit off the ice.
+		if not visual.is_in_group("skater_visuals"): continue
 		if i + 3 > MAX_INSTANCES: break
 		var origin: Vector3 = visual.global_position
 		var yaw: float = visual.global_rotation.y

@@ -32,6 +32,24 @@ const PLANT_START := 0.12
 const PLANT_END := 0.44
 const HAND_ABOVE_CAP := 0.055
 const HAND_SIDE := 0.24
+## Stick carry: the stick comes up off the ice in the first CARRY_IN of the hop
+## (blade raised high, shaft angled up and forward to the blade side) so it is
+## clear of the boards over the vault, and goes back down over the last
+## CARRY_OUT as the skater steps away (skater_visual.gd stick_carry).
+const CARRY_IN := 0.22
+const CARRY_OUT := 0.22
+## Turn: the skater turns from his heading at the start of the hop to face the
+## boards over the first TURN_IN of the hop for a quarter turn, longer for a
+## bigger turn (up to TURN_MAX, a half turn, still done before the vault), so
+## he pivots into the gather rather than snapping round (turn_weight()).
+const TURN_IN := 0.2
+const TURN_MAX := 0.3
+
+## Blend (0..1) from the starting heading to sample().facing at hop progress u
+## for a turn of `angle` radians.
+static func turn_weight(u: float, angle: float) -> float:
+	var span := clampf(TURN_IN * absf(angle) / (PI * 0.5), TURN_IN, TURN_MAX)
+	return smooth(u / span)
 
 static func smooth(x: float) -> float:
 	x = clampf(x, 0.0, 1.0)
@@ -47,7 +65,9 @@ static func bump(u: float, centre: float, width: float) -> float:
 ## offset - position relative to the body (parent space),
 ## facing - unit horizontal direction the skater faces (toward the far side),
 ## tuck - 0..1 knees-to-chest, crouch - 0..1 gather / landing absorb,
-## lean - 0..1 extra forward lean of the upper body.
+## lean - 0..1 extra forward lean of the upper body,
+## plant/hand - top-hand weight on the board cap and the cap point,
+## carry - 0..1 how far the stick is lifted into its carried pose.
 static func sample(u: float, a: Vector3, b: Vector3, board_x: float) -> Dictionary:
 	u = clampf(u, 0.0, 1.0)
 	var mid := board_x - BOARD_DEPTH * 0.5
@@ -82,4 +102,5 @@ static func sample(u: float, a: Vector3, b: Vector3, board_x: float) -> Dictiona
 	var plant := smooth((u - PLANT_START) / 0.14) * smooth((PLANT_END - u) / 0.10)
 	var left := Vector3.UP.cross(facing)
 	var hand := Vector3(mid, BOARD_TOP + HAND_ABOVE_CAP, lerpf(a.z, b.z, 0.5) + left.z * HAND_SIDE)
-	return {"offset": p, "facing": facing, "tuck": tuck, "crouch": crouch, "lean": maxf(tuck, crouch) * 0.8, "plant": plant, "hand": hand}
+	var carry := smooth(u / CARRY_IN) * smooth((1.0 - u) / CARRY_OUT)
+	return {"carry": carry, "offset": p, "facing": facing, "tuck": tuck, "crouch": crouch, "lean": maxf(tuck, crouch) * 0.8, "plant": plant, "hand": hand}

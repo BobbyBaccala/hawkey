@@ -1,7 +1,7 @@
 extends SceneTree
 ## Board-hop review renders (line change, board_hop.gd): one home skater at his
 ## bench door, frozen at points through the hop out (tired player) and back in
-## (fresh player). Writes /tmp/hawkey-hop-<n>.png (n = 0..5).
+## (fresh player). Writes /tmp/hawkey-hop-<n>.png (n = 0..6).
 ## xvfb-run -a -s "-screen 0 1728x1080x24" godot --rendering-method gl_compatibility --rendering-driver opengl3 --resolution 1728x1080 --script tools/capture_hop.gd
 ## Option: --hop-side  camera along the boards (side-on view of the vault).
 const Arena = preload("res://scripts/arena.gd")
@@ -40,6 +40,8 @@ func run() -> void:
 	benches.watch_target = Vector3(0, 0, 0)
 	actor.position = scene.bench_spot(0, 1)
 	var v = actor.get_child(1)
+	# Arrives skating along the boards toward the door; turns into the hop.
+	v.rotation.y = PI
 	for i in range(30): v.animate(0, 1.0 / 120.0, 0, false)
 	var cam: Camera3D = scene.camera
 	var w := Arena.HALF_WIDTH
@@ -50,13 +52,14 @@ func run() -> void:
 	var board_x: float = -w - actor.position.x
 	v.start_hop(Vector3.ZERO, bench_floor, board_x)
 	var n := 0
-	for u in [0.30, 0.47, 0.58]:
+	for u in [0.10, 0.30, 0.47, 0.58]:
 		hop_to(v, u)
 		await shot(cam, eye, look, 42, "/tmp/hawkey-hop-%d.png" % n)
 		n += 1
 	hop_to(v, 1.0)
 	scene.change_identity(actor, 6)
-	v.start_hop(v.position + Vector3(0, 0, -0.7), Vector3.ZERO, board_x)
+	v.rotation.y = -PI * 0.5
+	v.start_hop(v.position + Vector3(0, 0, -0.7), Vector3.ZERO, board_x, true)
 	for u in [0.45, 0.56, 0.80]:
 		hop_to(v, u)
 		await shot(cam, eye, look, 42, "/tmp/hawkey-hop-%d.png" % n)

@@ -124,11 +124,78 @@ var hop_a := Vector3.ZERO
 var hop_b := Vector3.ZERO
 var hop_board_x := 0.0
 var hop_state := {}
+## Visual yaw when the hop started: the skater turns from it toward the hop
+## facing over the first BoardHop.TURN_IN of the hop instead of snapping.
+var hop_yaw0 := 0.0
+## Stick lift (0..1) that keeps the blade out of the boards during a hop
+## (board_clearance_carry(), rate-limited; -1 = take the first need as is).
+var hop_guard := -1.0
 ## How firmly the top hand is planted on the board cap (0..1) this frame.
 var hand_plant := 0.0
+## Board hop stick carry (0..1, board_hop.gd "carry"): the stick is lifted off
+## the ice with the blade up so it clears the boards; see carry_knob().
+var stick_carry := 0.0
+## Carried stick (rig space): the knob a little below the normal top-hand grip,
+## in front of the top-hand hip, and the shaft angled up, forward and out to
+## the blade side so the blade rides high over the boards.
+const CARRY_KNOB := Vector3(-0.12,-0.30,0.02)
+const CARRY_DIR := Vector3(-0.40,0.88,0.25)
+const CARRY_LENGTH := 1.40
 const PLANT_REACH_FADE := 0.10
 ## A planted arm may straighten fully (upper 0.28 + forearm 0.29 m).
 const PLANT_REACH := 0.565
+## Seated on the bench (arena_benches.gd drives these through pose_seated()):
+## seat 0 = normal stance, 1 = sitting on the bench edge, thighs forward,
+## skates on the floor. seat_lean leans the upper body over the knees,
+## seat_yaw turns body and head toward the play (+ = rig +x), seat_slump drops
+## the shoulders and head (conceded a goal), cheer stands him up with the
+## arms (and the stick) raised. seat_stick: holds his stick leaning back
+## against him, blade on the floor in front; otherwise the gloves rest on
+## the knees.
+var seat := 0.0
+var seat_lean := 0.3
+var seat_yaw := 0.0
+var seat_slump := 0.0
+var seat_stick := true
+var seat_spread := 0.15
+var cheer := 0.0
+var cheer_pump := 0.0
+## Up off the bench to go out on a line change: standing tall (less crouch
+## than the skating stance), leaning a little forward, hands on the stick.
+var stand_tall := 0.0
+## Walking on the bench floor in skates (arena_benches.gd seat walk, needs
+## stand_tall): walk_amount 0..1 blends the step in, walk_phase (radians,
+## advanced by distance walked: one cycle = WALK_CYCLE metres, two steps)
+## drives it, walk_dir is the direction of travel in rig space (x, z).
+var walk_amount := 0.0
+var walk_phase := 0.0
+var walk_dir := Vector2(0,1)
+const WALK_CYCLE := 0.72
+## Share of the cycle each skate is planted (both down at the hand-overs).
+const WALK_STANCE := 0.62
+const WALK_LIFT := 0.075
+const WALK_WIDTH := 0.13
+## World spot each planted skate is pinned to (null in the swing), and where
+## (rig space) it lifted off from, so a skate never glides over the floor -
+## even while he turns and curves.
+var walk_plants: Array = [null,null]
+var walk_lift_from: Array = [Vector3.ZERO,Vector3.ZERO]
+
+func walk_reset() -> void:
+	walk_phase = 0.0
+	walk_plants = [null,null]
+## Hip joint drop from the standing rest pose to sitting on a 0.48 m seat
+## (hip ~0.58 m up, 0.17 m behind the figure origin at the seat's front edge).
+const SEAT_DROP := Vector3(0,-0.38,-0.17)
+const SEAT_ANKLE := Vector3(0.15,0.145,0.33)
+## Seated stick, held as players do on the bench: the top hand round the
+## shaft in front of the chin, the stick nearly upright (blade on the floor a
+## little ahead of the skates, SEAT_BLADE_AHEAD past the hand) and the shaft
+## running on past the hand so the knob stands above the helmet and shows over
+## the boards. SEAT_KNOB is the hand's grip point on the shaft.
+const SEAT_KNOB := Vector3(-0.17,0.06,0.30)
+const SEAT_STICK_LENGTH := 1.45
+const SEAT_BLADE_AHEAD := 0.36
 const STOP_MIN_SPEED := 4.0      # m/s needed to start a stop
 const STOP_DECEL := 7.0          # m/s^2 (smoothed) that counts as a hard stop
 const STOP_ANGLE := 1.38         # hips turned this far from the travel (~79 deg)
@@ -782,6 +849,50 @@ func pose(speed: float, turn: float) -> void:
 		drop = drop.lerp(Vector3(0,-0.31,-0.04),crouch)
 		drop = drop.lerp(Vector3(0,-0.10,-0.06),tuck)
 		shoulder_turn = shoulder_turn*(1.0-maxf(crouch,tuck))
+	# Bench: sit on the seat edge, feet forward on the floor; or stand tall to cheer.
+	if not goalie and (seat > 0.0 or cheer > 0.0 or stand_tall > 0.0):
+		for i in range(2):
+			var side := 1.0 if i==0 else -1.0
+			var f: Dictionary = stride[i]
+			f.ankle = (f.ankle as Vector3).lerp(Vector3(side*seat_spread,SEAT_ANKLE.y,SEAT_ANKLE.z+0.03*side),seat)
+			for key in ["yaw","pitch","edge","ext","lift"]: f[key] = float(f[key])*(1.0-seat)
+		drop = drop.lerp(Vector3(0,-0.05,0),maxf(cheer,stand_tall)*(1.0-seat)).lerp(SEAT_DROP,seat)
+		shoulder_turn = shoulder_turn*(1.0-maxf(seat,maxf(cheer,stand_tall)))
+		# Walking on the bench floor: alternate skate lifts and plants, the
+		# hips riding over the planted skate and highest as it passes under.
+		var walk := walk_amount*stand_tall*(1.0-seat)
+		if walk > 0.0:
+			var dir := Vector3(walk_dir.x,0,walk_dir.y).normalized()
+			# Smooth sway and bob, in step with the plants: over the left
+			# skate at its mid-stance, over the right half a cycle later; up
+			# at each mid-stance, down through the hand-overs.
+			var mid := fposmod(walk_phase/TAU-WALK_STANCE*0.5,1.0)*TAU
+			var shift := cos(mid)
+			var rise := cos(2.0*mid)
+			for i in range(2):
+				var side := 1.0 if i==0 else -1.0
+				var st := walk_step(walk_phase,i)
+				var f: Dictionary = stride[i]
+				var at := Vector3(side*WALK_WIDTH,0.115+float(st.lift),0.02)+dir*float(st.along)
+				var target := (f.ankle as Vector3).lerp(at,walk)
+				var to_rig := rig.global_transform.affine_inverse()
+				if float(st.lift) == 0.0:
+					# Planted: pinned where it touched down (blended back to the
+					# standing stance only as the walk fades out).
+					if walk_plants[i] == null: walk_plants[i] = rig.global_transform*target
+					var pinned: Vector3 = to_rig*(walk_plants[i] as Vector3)
+					pinned.y = target.y
+					f.ankle = target.lerp(pinned,walk)
+					walk_lift_from[i] = f.ankle
+				else:
+					# Swing: from where it lifted to its next landing spot.
+					walk_plants[i] = null
+					var w := float(st.swing)
+					var from: Vector3 = walk_lift_from[i]
+					f.ankle = from.lerp(target,smoothstep(0.0,0.3,w))
+					f.ankle.y = target.y
+				for key in ["yaw","pitch","edge","ext","lift"]: f[key] = float(f[key])*(1.0-walk)
+			drop += Vector3(shift*0.035,0.01*rise-0.01,0)*walk
 	var cap := {}
 	if mocap_weight>0 and not mocap.is_empty():
 		cap = Mocap.sample(mocap,mocap_time,mocap_loop)
@@ -801,6 +912,11 @@ func pose(speed: float, turn: float) -> void:
 	# Stop: the upper body leans back against the skid.
 	if stop_w > 0.0: bend = Basis(Vector3.BACK,-stop_side*0.24*stop_w)*bend
 	if not hop_state.is_empty(): bend = Basis(Vector3.RIGHT,0.38*float(hop_state.lean))*bend
+	if not goalie and (seat > 0.0 or cheer > 0.0 or stand_tall > 0.0):
+		var tall := maxf(cheer,stand_tall)
+		var upright := lerpf(0.22,0.06,cheer/maxf(tall,0.001))
+		var lean := lerpf(seat_lean+0.3*seat_slump,upright,tall*(1.0-seat))
+		bend = Basis(Vector3.UP,seat_yaw*0.55*(1.0-0.6*seat_slump))*Basis(Vector3.RIGHT,lerpf(0.5,lean,maxf(seat,tall)))
 	if goalie:
 		var reach_lean: float = save_weights.glove*clampf(save_target.x-0.45,0.0,0.5)-save_weights.blocker*clampf(-save_target.x-0.45,0.0,0.5)
 		var pad_lean: float = save_weights.pad_left-save_weights.pad_right
@@ -821,8 +937,14 @@ func pose(speed: float, turn: float) -> void:
 	posed_head = pivot+drop+bend*(head.origin-pivot)
 	var head_pose := head
 	head_pose.origin = posed_head
+	# Bench: the head turns to follow the play and drops when slumped.
+	var look := Basis.IDENTITY
+	if not goalie and (seat > 0.0 or cheer > 0.0 or stand_tall > 0.0):
+		look = Basis(Vector3.UP,seat_yaw*(1.0-0.6*seat_slump))*Basis(Vector3.RIGHT,lerpf(-0.08*seat,0.55,seat_slump)-0.2*cheer)
+		head_pose.basis = look*head.basis
 	override_pose("head",head_pose)
-	helmet.position = posed_head+(Vector3(0,0.095,0.015) if goalie else Gear.HELMET_OFFSET)
+	helmet.position = posed_head+look*(Vector3(0,0.095,0.015) if goalie else Gear.HELMET_OFFSET)
+	helmet.basis = look
 	if neck_guard: update_neck_guard()
 	for i in range(2):
 		var side := 1.0 if i==0 else -1.0
@@ -952,6 +1074,18 @@ func pose(speed: float, turn: float) -> void:
 			if shoulder.distance_to(wrist)>STICK_ARM_REACH:
 				wrist = shoulder+(wrist-shoulder).normalized()*STICK_ARM_REACH
 		if referee: wrist=Vector3(side*0.32,0.96,0.03)
+		if not goalie and not referee and (seat > 0.0 or cheer > 0.0):
+			# Bench: gloves rest on top of the knees (no stick), and go up to cheer.
+			var w := 0.0
+			if not seat_stick:
+				var rest_ := knees[i]+Vector3(-side*0.02,0.085,-0.06)
+				wrist = wrist.lerp(rest_,seat)
+				w = seat
+			var pump := sin(cheer_pump+i*1.3)*0.08
+			var up_ := shoulder+Vector3(side*0.14,0.50+pump,0.10)
+			wrist = wrist.lerp(shoulder+(up_-shoulder).limit_length(STICK_ARM_REACH),cheer)
+			w = maxf(w,cheer)
+			grip_point = grip_point.lerp(wrist,w)
 		if i==0: hand_plant=plant_weight(shoulder)
 		if i==0 and hand_plant>0.0:
 			# Board hop: the top hand lets go of the stick and plants on the cap.
@@ -1074,11 +1208,14 @@ func update_layers(delta: float) -> void:
 
 ## Starts a board hop from `a` to `b` (parent space, see board_hop.gd) over the
 ## board plane x = board_x; the body stays put while this visual travels.
-func start_hop(a: Vector3, b: Vector3, board_x: float) -> void:
+## `carried`: the stick is already up (a fresh player getting off the bench).
+func start_hop(a: Vector3, b: Vector3, board_x: float, carried := false) -> void:
 	hop_a = a
 	hop_b = b
 	hop_board_x = board_x
 	hop_u = 0.0
+	hop_yaw0 = rotation.y
+	hop_guard = 1.0 if carried else -1.0
 	hop_state = BoardHop.sample(0.0,a,b,board_x)
 	position = a
 
@@ -1114,7 +1251,8 @@ func update_hop(delta: float) -> void:
 	hop_state = BoardHop.sample(hop_u,hop_a,hop_b,hop_board_x)
 	position = hop_state.offset
 	var f: Vector3 = hop_state.facing
-	rotation.y = atan2(-f.x,-f.z)
+	var yaw := atan2(-f.x,-f.z)
+	rotation.y = lerp_angle(hop_yaw0,yaw,BoardHop.turn_weight(hop_u,angle_difference(hop_yaw0,yaw)))
 	if hop_u >= 1.0:
 		# Landed: stand normally where the hop ended.
 		hop_state = {}
@@ -1133,6 +1271,19 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	blade_position=Vector3(-0.02+butterfly*0.05,0.042,0.60-butterfly*0.04+0.035*sin(PI*butterfly)) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
 	# Stop: the stick reaches out in front for balance.
 	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
+	# Board hop: lift the stick clear of the boards (blade rises first, so it
+	# never sweeps through the dasher on the way up or down).
+	stick_carry = float(hop_state.get("carry",0.0)) if not goalie and not referee and not hop_state.is_empty() else 0.0
+	# Stood close to the boards (or facing them as the hop starts) the stick on
+	# the ice would reach into them: lift it at least as far as that needs.
+	if not goalie and not referee and not hop_state.is_empty():
+		var need := board_clearance_carry()
+		hop_guard = need if hop_guard < 0.0 else move_toward(hop_guard,need,STICK_GUARD_RATE*delta)
+		stick_carry = maxf(stick_carry,hop_guard)
+	if stick_carry>0.0:
+		var up := 1.0-pow(1.0-stick_carry,3.0)
+		var carried := carry_blade()
+		blade_position = Vector3(lerpf(blade_position.x,carried.x,stick_carry),lerpf(blade_position.y,carried.y,up),lerpf(blade_position.z,carried.z,stick_carry))
 	var target := clampf(speed/5.0,0,1) if pushing and not braking and not goalie else 0.0
 	# Critically damped spring (not a linear ramp) so starting or easing off a
 	# push - including into a hockey stop - never kinks the foot path.
@@ -1229,10 +1380,98 @@ func stick_grip() -> Vector3:
 	var grip := shoulder_of(0)+Vector3(-0.11-stick_intent.x*0.20-shot_follow*0.12,-0.235+shot_charge*0.06,0.15-stick_intent.y*0.05-shot_charge*0.12+shot_follow*0.22)
 	# Stop: hands come down with the hips and push the stick out front.
 	grip += Vector3(0,-0.10,0.06)*stop_blend()
+	# Board hop: the knob comes down to the hip as the stick is carried.
+	if stick_carry>0.0: grip = grip.lerp(carry_knob(),stick_carry)
+	# Bench: knob held up in front of the chin, stick leaning back against him.
+	if seat>0.0: grip = grip.lerp(seat_knob(),seat)
 	# Pulling the stick in never drives the top hand into the hip pads.
 	grip.z = maxf(grip.z,shoulder_of(0).z+0.15)
 	# The top hand holds the stick in front of the jersey, never inside it.
 	return clear_hand(grip,0.075)
+
+func seat_knob() -> Vector3:
+	return shoulder_of(0)+SEAT_KNOB
+
+## Bench stick: blade on the floor (local y 0.07: the rubber floor is 4 cm
+## up) straight in front, one stick length from the knob.
+func seat_blade() -> Vector3:
+	var knob := seat_knob()
+	return Vector3(knob.x+0.04,0.07,knob.z+SEAT_BLADE_AHEAD)
+
+## Knob end of the stick shaft (past the top hand), in the shaft's parent
+## space: lets tests check the seated stick stands above the helmet.
+func stick_knob_end() -> Vector3:
+	return stick_shaft.position+stick_shaft.basis.y.normalized()*stick_shaft.scale.y*0.5
+
+## Bench figures (arena_benches.gd): pose the seated/cheering stance without
+## the skating layers. Cheap enough to call only when the inputs change.
+func pose_seated() -> void:
+	stick_intent = Vector2.ZERO
+	desired_stick = Vector2.ZERO
+	blade_position = Vector3(-0.36,0.029,1.05).lerp(seat_blade(),seat)
+	# Getting up to go out on a line change: stick comes up as for the hop.
+	if stick_carry>0.0: blade_position = blade_position.lerp(carry_blade(),stick_carry)
+	raised_stick = cheer if seat_stick else 0.0
+	pose(0,0)
+
+## One skate's place in the bench walk cycle: `along` (metres along the
+## direction of travel from under the hip), `lift` (blade height above the
+## floor) and `load` (1 while it carries the weight, eased at the hand-overs).
+## Planted, it slides back exactly as fast as the body moves forward, so it
+## stays put on the floor; in the swing it comes through low and lands ahead.
+static func walk_step(phase: float, i: int) -> Dictionary:
+	var c := fposmod(phase/TAU+float(i)*0.5,1.0)
+	var half := WALK_CYCLE*WALK_STANCE*0.5
+	if c < WALK_STANCE:
+		var u := c/WALK_STANCE
+		# Weight comes on just after the plant and goes as the other lands.
+		var load := smoothstep(0.0,0.2,u)*(1.0-smoothstep(0.8,1.0,u))
+		return {"along":lerpf(half,-half,u),"lift":0.0,"load":load,"swing":0.0}
+	var w := (c-WALK_STANCE)/(1.0-WALK_STANCE)
+	# Swing: the skate leaves and lands at rest on the floor (in the world),
+	# so along the body it starts and ends moving back at walking speed.
+	var body := WALK_CYCLE*(1.0-WALK_STANCE)
+	var along := -half+(2.0*half+body)*smoothstep(0.0,1.0,w)-body*w
+	return {"along":along,"lift":WALK_LIFT*sin(PI*w),"load":0.0,"swing":w}
+
+## Board hop: how far the stick must be carried (0..1) so a blade left on the
+## ice does not reach into the dasher - the blade's distance past the face of
+## the boards on the side the skater is on, with a STICK_BOARD_MARGIN lead-in.
+## Checked at the current heading and, ahead of the turn into the boards, at
+## the hop's facing (lifted over STICK_LEAD_IN of the hop) so the stick is
+## already coming up as the turn swings the blade toward the boards.
+const STICK_BOARD_MARGIN := 0.35
+const STICK_LEAD_IN := 0.02
+const STICK_GUARD_RATE := 3.5
+func board_clearance_carry() -> float:
+	var need := blade_board_need(transform)
+	if hop_u < BoardHop.VAULT_START:
+		var f: Vector3 = hop_state.facing
+		var ahead := Transform3D(Basis(Vector3.UP,atan2(-f.x,-f.z)),position)
+		need = maxf(need,blade_board_need(ahead)*BoardHop.smooth(hop_u/STICK_LEAD_IN))
+	return need
+
+func blade_board_need(xf: Transform3D) -> float:
+	var mid := hop_board_x-BoardHop.BOARD_DEPTH*0.5
+	var side := signf(position.x-mid)
+	if side == 0.0: side = 1.0
+	var face := mid+side*BoardHop.BOARD_DEPTH*0.5
+	var reach := -INF
+	# Toe and heel of the blade on the ice, in the body's (parent) space.
+	var to_parent := xf*rig.transform
+	for k in [-0.5,0.5]:
+		var p: Vector3 = to_parent*(blade_position+Vector3(stick_blade_length*k,0,0))
+		reach = maxf(reach,(face-p.x)*side)
+	return BoardHop.smooth((reach+STICK_BOARD_MARGIN)/STICK_BOARD_MARGIN)
+
+## Board hop carried stick: knob and mid-blade points (rig space).
+func carry_knob() -> Vector3:
+	return shoulder_of(0)+CARRY_KNOB
+
+func carry_blade() -> Vector3:
+	var d := CARRY_DIR.normalized()
+	var toe := Vector3(d.x,0,d.z).normalized()
+	return carry_knob()+d*CARRY_LENGTH+toe*stick_blade_length*0.48
 
 ## Heel of the blade (where the shaft meets it) for a top-hand position.
 func stick_heel(top: Vector3) -> Vector3:
@@ -1281,6 +1520,11 @@ func update_stick() -> void:
 	stick_shaft.basis=Basis(Quaternion(Vector3.UP,axis.normalized()))
 	# A goalie's hand sits at the top of the paddle; the shaft runs on past it.
 	var beyond:=0.42 if goalie else 0.06
+	if not goalie and seat>0.0:
+		# Bench: the hand is round the shaft, the rest of the stick runs on
+		# past it to the knob (full stick length from the heel).
+		var held:=seat*(1.0-raised_stick)*(1.0-stick_carry)
+		beyond=lerpf(beyond,maxf(beyond,SEAT_STICK_LENGTH-axis.length()),held)
 	stick_shaft.scale=Vector3(1,axis.length()+beyond,1)
 	stick_shaft.position+=axis.normalized()*beyond*0.5
 	if goalie:
@@ -1289,9 +1533,9 @@ func update_stick() -> void:
 		goalie_paddle.basis=stick_shaft.basis
 		goalie_paddle.scale=Vector3(1,bottom.distance_to(paddle_top),1)
 	var flat:=Basis(toe_dir,Vector3.UP,toe_dir.cross(Vector3.UP))
-	stick_blade.basis=flat.slerp(stick_shaft.basis.orthonormalized(),raised_stick)
+	stick_blade.basis=flat.slerp(stick_shaft.basis.orthonormalized(),maxf(raised_stick,stick_carry))
 	stick_blade.position=bottom+stick_blade.basis*Vector3(stick_blade_length*0.48,0,0)
-	grip_tape.position=top
+	grip_tape.position=top+axis.normalized()*maxf(beyond-0.06,0.0)
 	grip_tape.basis=stick_shaft.basis
 
 ## Axis of a skate's ankle cuff: the shin direction, but a stiff boot only
