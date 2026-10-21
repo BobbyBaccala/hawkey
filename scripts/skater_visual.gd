@@ -506,8 +506,7 @@ func jersey_point(a: float, y: float, scale_: float = 1.0) -> Vector3:
 
 ## Top edge of the sweater: a V-neck at the front, a round collar elsewhere.
 func jersey_neck(a: float) -> float:
-	var front := maxf(0.0,sin(a))
-	return 1.56-0.032*pow(front,4.0)-0.008*front
+	return preload("res://scripts/jersey_profile.gd").neck(a)
 
 ## Skin weights for a rest-space point: the hem follows the hips, the body
 ## the spine chain up to the chest, the shoulder pads partly the upper arms.

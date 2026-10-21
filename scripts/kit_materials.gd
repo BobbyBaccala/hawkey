@@ -360,6 +360,9 @@ static func jersey(kit: Color, accent: Color, number: String, name_: String, ref
 		m.set_shader_parameter("uv_metres", Vector2(0.8, 1.0))
 		m.set_shader_parameter("hem_v", hem_v)
 		m.set_shader_parameter("collar_v", collar_v)
+		var profile=preload("res://scripts/jersey_profile.gd")
+		m.set_shader_parameter("collar_profile",profile.SHADER_PROFILE)
+		m.set_shader_parameter("collar_band_width",profile.BAND_WIDTH)
 		if not referee and number != "":
 			var tex := text_texture(number, 0.92)
 			m.set_shader_parameter("number_tex", tex)

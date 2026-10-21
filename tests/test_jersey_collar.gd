@@ -8,6 +8,9 @@ func check(ok: bool,message: String) -> void:
 func _initialize() -> void: call_deferred("run")
 func run() -> void:
 	var v:=Visual.new();root.add_child(v);await process_frame
+	var profile=preload("res://scripts/jersey_profile.gd")
+	check(v.jersey.material_override.get_shader_parameter("collar_profile")==profile.SHADER_PROFILE,"Mesh and shader share the same neckline")
+	check(v.jersey.material_override.get_shader_parameter("collar_band_width")==profile.BAND_WIDTH,"Trim band uses shared physical width")
 	check(v.jersey_neck(PI/2)>1.51,"Front neckline covers the upper chest")
 	check(v.jersey_neck(-PI/2)-v.jersey_neck(PI/2)<0.05,"Collar stays shallow")
 	check(v.neck_guard.material_override.get_shader_parameter("roughness")>0.85,"Neck guard uses matte fabric")

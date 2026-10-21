@@ -29,6 +29,9 @@ uniform float sheen = 0.35;
 // Jersey layout (metres up the body).
 uniform float hem_v = 0.865;
 uniform float collar_v = 0.0;
+// Shared jersey_profile.gd values supplied by the material factory.
+uniform vec4 collar_profile = vec4(1.56,0.032,0.008,4.0);
+uniform float collar_band_width = 0.012;
 uniform float metres_per_u = 1.65;
 uniform bool show_number = false;
 uniform sampler2D number_tex : filter_linear_mipmap, repeat_disable, hint_default_black;
@@ -112,8 +115,11 @@ void fragment() {
 		ao *= mix(0.72, 1.0, smoothstep(hem_v, hem_v + 0.05, L.y));
 		// Collar: trim band along the neckline (V at the front, as
 		// skater_visual.gd jersey_neck(); collar_v > 0 gives a flat collar).
-		float front = max(0.0, sin(TAU * L.x));
-		float neck = collar_v > 0.0 ? collar_v : 1.56 - 0.095 * pow(front, 10.0) - 0.014 * front - 0.022;
+		// Mirrored UV.x is the original mesh angle (front=0, back=1),
+		// unlike UV2.x, whose atan2 is distorted by the torso ellipse.
+		float front = max(0.0, cos(PI * UV.x));
+		float edge = collar_profile.x - collar_profile.y * pow(front,collar_profile.w) - collar_profile.z * front;
+		float neck = (collar_v > 0.0 ? collar_v : edge) - collar_band_width;
 		float collar = smoothstep(neck - aa_l, neck + aa_l, L.y);
 		col = mix(col, stripe_color.rgb, collar);
 		ao *= mix(1.0, 0.85, smoothstep(neck - 0.04, neck + 0.02, L.y));
