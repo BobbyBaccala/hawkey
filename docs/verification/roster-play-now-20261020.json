@@ -1,0 +1,147 @@
+{
+  "date": "2026-10-20",
+  "timezone": "America/Toronto",
+  "godot": "4.6.3.stable.official.7d41c59c4",
+  "integrated_prototype": "b2e58d7477e9b778ef6b7bdfb4fe2cf7d406655c",
+  "integrated_claude": "796fe0fd0d44e4f0d97ca55d89703090974dd446",
+  "python_unittest": {
+    "executed": 11,
+    "failed": 0
+  },
+  "engine_command": "godot --headless --fixed-fps 120 --path . --script <test>",
+  "engine_results": [
+    {
+      "test": "tests/test_animation.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nAnimation integration failures: 0"
+    },
+    {
+      "test": "tests/test_boards.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nBoard failures: 0"
+    },
+    {
+      "test": "tests/test_clipping.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nClipping failures: 0"
+    },
+    {
+      "test": "tests/test_controller.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nController failures: 0 (synthetic events; hardware untested)"
+    },
+    {
+      "test": "tests/test_controls.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nControl integration failures: 0"
+    },
+    {
+      "test": "tests/test_gear_graphics.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGear graphic failures: 0"
+    },
+    {
+      "test": "tests/test_goalie_gear.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoalie gear failures: 0"
+    },
+    {
+      "test": "tests/test_goalie_saves.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoalie save failures: 0"
+    },
+    {
+      "test": "tests/test_ice.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nIce failures: 0"
+    },
+    {
+      "test": "tests/test_lab.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nIntegration failures: 0"
+    },
+    {
+      "test": "tests/test_lighting.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nLighting failures: 0"
+    },
+    {
+      "test": "tests/test_match.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nMatch integration failures: 0"
+    },
+    {
+      "test": "tests/test_match_loop.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\n20-second match-loop failures: 0 \u2022 score [0, 0] \u2022 clock 18:41"
+    },
+    {
+      "test": "tests/test_match_state.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nMatch-state failures: 0"
+    },
+    {
+      "test": "tests/test_mocap.gd",
+      "exit": 0,
+      "status": "skipped (optional clips not installed)",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nMocap failures: 0 (skipped: clips not installed in assets/mixamo/)"
+    },
+    {
+      "test": "tests/test_play_now.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPlay Now: 26 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_puck_flight.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPuck flight failures: 0"
+    },
+    {
+      "test": "tests/test_roster_database.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nNative roster: 44 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_simulation.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPASS: rating acceleration, deceleration, front-mouth goal, back entry, wide and high misses"
+    },
+    {
+      "test": "tests/test_stride.gd",
+      "exit": 0,
+      "status": "passed",
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nStride failures: 0"
+    }
+  ],
+  "limits": [
+    "Synthetic controller events only; physical devices untested",
+    "Linux headless and OpenGL software-render only; no Windows or Deck validation",
+    "Mocap playback skipped; clips not installed",
+    "No release build or performance/feel claim"
+  ],
+  "final_focused_recheck": {
+    "test": "tests/test_play_now.gd",
+    "checks": 27,
+    "exit": 0,
+    "output": "Play Now: 27 checks; 0 failures",
+    "note": "After results placement/banner cleanup; broader suite above ran 26-check version."
+  }
+}

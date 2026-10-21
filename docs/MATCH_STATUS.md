@@ -1,4 +1,6 @@
-# 0.6 exhibition simulation status
+# Exhibition simulation status
+
+Current controls, UI and tie-break checkpoint: [CONTROLS_AND_TIEBREAKS.md](CONTROLS_AND_TIEBREAKS.md). Current roster world: [HL_WORLD.md](HL_WORLD.md). The historical 0.6 list below predates those verified increments.
 
 ## Implemented
 - Ten on-ice skater actors and two goalkeepers; 18 fictional roster entries per team.

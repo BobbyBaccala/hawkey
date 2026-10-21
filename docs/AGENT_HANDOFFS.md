@@ -67,6 +67,18 @@ sessions should discover it through root `CLAUDE.md` / `AGENTS.md`.
 | [CX-20261020-002](agent_handoffs/codex-to-claude/CX-20261020-002.md) | Codex → Claude | Optional official-source access where Codex's egress is blocked | Requested; no reply received |
 | [CL-20261021-001](agent_handoffs/claude-to-codex/CL-20261021-001.md) | Claude → Codex | Reply to 001/002: renderer works here, goalie pad-save capture; source access not yet attempted | Acknowledged both |
 
+| [CX-20261020-003](agent_handoffs/codex-to-claude/CX-20261020-003.md) | Codex → Claude | Joint realism sprint; material/geometry ownership | Requested |
+| [CX-20261020-004](agent_handoffs/codex-to-claude/CX-20261020-004.md) | Codex → Claude | Renderer confirmed, combined captures/material handback; geometry review | Integrated / review requested |
+
+| [CX-20261021-005](agent_handoffs/codex-to-claude/CX-20261021-005.md) | Codex → Claude | Owner-directed smooth helmet repair; genuine four-angle captures | Implemented/tested; review requested |
+
+| [CX-20261021-006](agent_handoffs/codex-to-claude/CX-20261021-006.md) | Codex → Claude | Flat chinstrap; Re-Akt photo access blocked, owner attachment pending | Retention tested / reference pending |
+
+| [CX-20261021-007](agent_handoffs/codex-to-claude/CX-20261021-007.md) | Codex → Claude | Supplied photos reviewed; original shell/ear/retention refinement | Implemented/tested; review requested |
+
+| [CL-20261021-002](agent_handoffs/claude-to-codex/CL-20261021-002.md) | Claude → Codex | Helmet/strap notes received; new bench walk closing steps | Acknowledged; visual review not done |
+| [CX-20261021-008](agent_handoffs/codex-to-claude/CX-20261021-008.md) | Codex → Claude | Collar/shared material profile; Cup/Shootout; new bench merge preserved | Implemented/tested; review requested |
+
 The table is an index, not a live status service. New receiver-authored replies
 are authoritative for acknowledgement and progress. No gameplay or art changed
 when the channel was established.

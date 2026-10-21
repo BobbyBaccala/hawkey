@@ -80,8 +80,8 @@ func run() -> void:
 	for i in range(c.lighting.pools.size()):
 		check(is_equal_approx(c.lighting.pools[i].light_energy, c._pool_base[i][0]), "Pool %d back to its base energy" % i)
 	check(not dressing.scoreboard_hold, "Jumbotron handed back to the score")
-	var score_text := "%d" % scene.match_state.score[scoring_team]
-	check(main.text.contains(score_text) and main.text.begins_with("TOR"), "Jumbotron shows the updated score ('%s')" % main.text)
+	var expected_board := "%s  %d     %s  %d"%[scene.hud_node.team_codes[0],scene.match_state.score[0],scene.hud_node.team_codes[1],scene.match_state.score[1]]
+	check(main.text==expected_board, "Jumbotron shows both selected clubs and updated scores ('%s')" % main.text)
 	check(main.scale.is_equal_approx(Vector3.ONE), "Score text back to normal size")
 	finish(scene)
 

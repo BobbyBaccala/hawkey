@@ -11,6 +11,7 @@ var shavings: CPUParticles3D
 var haze: CPUParticles3D
 ## 0..1 strength (speed of the stop); scales throw speed and opacity.
 var strength := 1.0
+var tail_remaining := 0.0
 
 static var dot_texture: Texture2D
 
@@ -110,6 +111,17 @@ func _ready() -> void:
 	haze.color = Color(1, 1, 1, 1)
 	haze.color_ramp = fade(0.45)
 	haze.color_initial_ramp = tint(Color(0.74, 0.80, 0.88), Color(0.93, 0.96, 1.0))
+	# Some software GL drivers draw uninitialised CPU-particle buffers even
+	# when emission is off. Keep the whole effect hidden until a real scrape.
+	visible = false
+	set_process(false)
+
+func _process(delta: float) -> void:
+	if shavings.emitting or haze.emitting: return
+	tail_remaining = maxf(0.0,tail_remaining-delta)
+	if tail_remaining<=0.0:
+		visible=false
+		set_process(false)
 
 ## Starts or stops throwing snow; strength 0..1 (how hard the stop is) and
 ## the skater's speed: shavings leave the blade carrying the skater's own
@@ -117,6 +129,9 @@ func _ready() -> void:
 func spray(on: bool, strength_: float, skater_speed := 0.0) -> void:
 	strength = clampf(strength_, 0.0, 1.0)
 	if on:
+		visible=true
+		tail_remaining=maxf(shavings.lifetime,haze.lifetime)
+		set_process(true)
 		shavings.initial_velocity_min = skater_speed * 0.8 + 0.4
 		shavings.initial_velocity_max = skater_speed * 1.2 + lerpf(1.5, 3.5, strength)
 		haze.initial_velocity_min = skater_speed * 0.6 + 0.2

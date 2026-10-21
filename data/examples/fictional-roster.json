@@ -1,0 +1,704 @@
+{
+  "schema_version": 1,
+  "database_metadata_version": 1,
+  "teams": [
+    {
+      "id": "har",
+      "city": "Harbor",
+      "name": "Lanterns",
+      "league_id": "fictional-pro",
+      "season": "2026-27",
+      "players": [
+        {
+          "id": "fictional:har:01",
+          "name": "Evan Vale",
+          "position": "C",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 74.0,
+            "acceleration": 72.0,
+            "agility": 73.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:02",
+          "name": "Nico March",
+          "position": "LW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 75.0,
+            "acceleration": 75.0,
+            "agility": 78.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:03",
+          "name": "Arin Renaud",
+          "position": "RW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 76.0,
+            "acceleration": 78.0,
+            "agility": 83.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:04",
+          "name": "Milo Holt",
+          "position": "C",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 77.0,
+            "acceleration": 81.0,
+            "agility": 88.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:05",
+          "name": "Luca Voss",
+          "position": "LW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 78.0,
+            "acceleration": 84.0,
+            "agility": 77.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:06",
+          "name": "Jules Belisle",
+          "position": "RW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 79.0,
+            "acceleration": 87.0,
+            "agility": 82.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:07",
+          "name": "Dara Mercer",
+          "position": "C",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 80.0,
+            "acceleration": 73.0,
+            "agility": 87.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:08",
+          "name": "Oren Lind",
+          "position": "LW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 81.0,
+            "acceleration": 76.0,
+            "agility": 76.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:09",
+          "name": "Tavi Keene",
+          "position": "RW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 82.0,
+            "acceleration": 79.0,
+            "agility": 81.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:10",
+          "name": "Idris Caron",
+          "position": "C",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 83.0,
+            "acceleration": 82.0,
+            "agility": 86.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:11",
+          "name": "Soren Adler",
+          "position": "LW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 84.0,
+            "acceleration": 85.0,
+            "agility": 75.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:12",
+          "name": "Perrin Kent",
+          "position": "RW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 85.0,
+            "acceleration": 88.0,
+            "agility": 80.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:13",
+          "name": "Remy Cole",
+          "position": "D",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 86.0,
+            "acceleration": 74.0,
+            "agility": 85.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:14",
+          "name": "Vian Baird",
+          "position": "D",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 87.0,
+            "acceleration": 77.0,
+            "agility": 74.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:15",
+          "name": "Galen Laurent",
+          "position": "D",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 88.0,
+            "acceleration": 80.0,
+            "agility": 79.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:16",
+          "name": "Kiran Stone",
+          "position": "D",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 74.0,
+            "acceleration": 83.0,
+            "agility": 84.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:17",
+          "name": "Finn Arvid",
+          "position": "D",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 75.0,
+            "acceleration": 86.0,
+            "agility": 73.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:18",
+          "name": "Bryn Sable",
+          "position": "D",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 76.0,
+            "acceleration": 72.0,
+            "agility": 78.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:19",
+          "name": "Alex Wren",
+          "position": "G",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 77.0,
+            "acceleration": 75.0,
+            "agility": 83.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:har:20",
+          "name": "Morgan Reed",
+          "position": "G",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 78.0,
+            "acceleration": 78.0,
+            "agility": 88.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        }
+      ]
+    },
+    {
+      "id": "sum",
+      "city": "Summit",
+      "name": "Comets",
+      "league_id": "fictional-pro",
+      "season": "2026-27",
+      "players": [
+        {
+          "id": "fictional:sum:01",
+          "name": "Robin Lind",
+          "position": "C",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 77.0,
+            "acceleration": 73.0,
+            "agility": 74.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:02",
+          "name": "Sasha Keene",
+          "position": "LW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 78.0,
+            "acceleration": 76.0,
+            "agility": 79.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:03",
+          "name": "Ellis Caron",
+          "position": "RW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 79.0,
+            "acceleration": 79.0,
+            "agility": 84.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:04",
+          "name": "Rowan Adler",
+          "position": "C",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 80.0,
+            "acceleration": 82.0,
+            "agility": 73.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:05",
+          "name": "Blair Kent",
+          "position": "LW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 81.0,
+            "acceleration": 85.0,
+            "agility": 78.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:06",
+          "name": "Casey Cole",
+          "position": "RW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 82.0,
+            "acceleration": 88.0,
+            "agility": 83.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:07",
+          "name": "Devon Baird",
+          "position": "C",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 83.0,
+            "acceleration": 74.0,
+            "agility": 88.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:08",
+          "name": "Emery Laurent",
+          "position": "LW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 84.0,
+            "acceleration": 77.0,
+            "agility": 77.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:09",
+          "name": "Frankie Stone",
+          "position": "RW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 85.0,
+            "acceleration": 80.0,
+            "agility": 82.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:10",
+          "name": "Gray Arvid",
+          "position": "C",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 86.0,
+            "acceleration": 83.0,
+            "agility": 87.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:11",
+          "name": "Harper Sable",
+          "position": "LW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 87.0,
+            "acceleration": 86.0,
+            "agility": 76.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:12",
+          "name": "Indigo Wren",
+          "position": "RW",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 88.0,
+            "acceleration": 72.0,
+            "agility": 81.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:13",
+          "name": "Jamie Reed",
+          "position": "D",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 74.0,
+            "acceleration": 75.0,
+            "agility": 86.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:14",
+          "name": "Kai Vale",
+          "position": "D",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 75.0,
+            "acceleration": 78.0,
+            "agility": 75.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:15",
+          "name": "Lane March",
+          "position": "D",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 76.0,
+            "acceleration": 81.0,
+            "agility": 80.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:16",
+          "name": "Micah Renaud",
+          "position": "D",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 77.0,
+            "acceleration": 84.0,
+            "agility": 85.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:17",
+          "name": "Noel Holt",
+          "position": "D",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 78.0,
+            "acceleration": 87.0,
+            "agility": 74.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:18",
+          "name": "Oak Voss",
+          "position": "D",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 79.0,
+            "acceleration": 73.0,
+            "agility": 79.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:19",
+          "name": "Parker Belisle",
+          "position": "G",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 80.0,
+            "acceleration": 76.0,
+            "agility": 84.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        },
+        {
+          "id": "fictional:sum:20",
+          "name": "Quinn Mercer",
+          "position": "G",
+          "identity_kind": "fictional",
+          "source": null,
+          "ratings": {
+            "speed": 81.0,
+            "acceleration": 79.0,
+            "agility": 73.0
+          },
+          "rating_metadata": {
+            "kind": "estimate",
+            "method": "original fictional balance fixture v1; uncalibrated",
+            "confidence": "unassessed"
+          }
+        }
+      ]
+    }
+  ]
+}

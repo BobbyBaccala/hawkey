@@ -1,0 +1,141 @@
+# HL General Manager season alpha
+
+2026-10-20. Branch codex/game-modes, existing draft PR #2. This is a playable
+single regular season, with original fictional players and estimated ratings.
+
+Choose **GM Season** from the title, select an HL club and start a season, or
+continue the existing local slot. A new season asks before replacing that slot.
+The dashboard shows league standings, your record/rank, scheduled opponent and
+recent results. Play your scheduled fixture or simulate one complete league day.
+After playing, simulate the rest of that day to advance. Every change autosaves;
+Save & return to menu also writes a checkpoint. All 32 clubs have one game per
+league day, 31 home and 31 away, one fixture in each venue against each opponent.
+There are 992 fixtures and 62 league days; this compact alpha calendar is not a
+real professional schedule with travel, rest days or an 82-game slate.
+
+The controlled club always occupies the first match/HUD side, including away
+fixtures; the final is mapped back to the schedule's home/away sides. It uses the
+career's roster snapshot, not a fresh copy of the bundled world. Returning before
+the final leaves the fixture unplayed. Completed fixtures cannot be replayed or
+counted twice. Failed final saves show **RESULT NOT SAVED** on the results screen;
+returning to GM retries the pending result. The session blocks advancement while
+that result remains unsaved. Pending in-memory results cannot survive process
+termination after an unsuccessful write; the previous valid on-disk save remains.
+
+Standings award two points for a win and one for an OT/shootout loss. Tiebreaks are
+points, regulation wins, goal difference, then stable club ID. This is the stated
+HL alpha preset, not complete real-league playoff qualification rules. Offline
+simulation uses fixture-local SHA-256-derived seeds and bounded scoring chances
+based on estimated team shot accuracy/goalie reflexes, with a small home modifier.
+Tied simulated regulation goes to OT or SO and adds one deciding goal. It is an
+original coarse simulation, not calibrated against real hockey or a substitute
+for match-engine physics. Playing a fixture leaves other clubs' deterministic
+results unchanged. No hidden controller/physics advantages are added.
+
+The save embeds all 643 clubs and 14,745 players, their identity/provenance,
+feeder links and estimated development profiles. Those are persistent data;
+contracts, trading, scouting, drafting, actual development, injuries, playoffs,
+awards, next-season rollover and multi-season simulation remain unimplemented.
+At day 62 the mode displays final standings and disables further advancement.
+Career mode remains unimplemented; no empty Career button was added.
+
+## Persistence and preferences
+
+The one local slot is `user://gm/slot-1.json`; its previous validated version is
+`.bak`. Godot's `user://` resolves to the application data folder on the host.
+Preferences live separately at `user://settings.json` and currently include
+match camera, stick dead zone (5–40%) and on-ice effects volume/mute. They apply
+to Play Now/GM matches; Practice consumes the saved dead zone and effects volume. Full remapping, sensitivity, audio,
+broader accessibility and presentation settings remain future work. Reduced-motion
+fixed camera/goal-flash suppression and a high-contrast puck marker are now saved
+options; details: DEVELOPMENT_RESEARCH.md.
+
+`save_store.gd` uses a version-2 envelope containing serialized JSON payload and
+SHA-256 corruption check. Typed mode/settings validators run before staging and
+on readback. A sibling `.tmp` is flushed, read back and validated; a valid current
+file is retained via a staged backup before the staged primary is atomically
+renamed into place. A corrupt primary never replaces a valid backup. Orphaned
+staging files are ignored. Reading a recovered backup reports recovery without
+silently overwriting the damaged file. Unsupported envelope versions block both
+fallback and overwrite to protect saves from a newer build. Version-1 envelopes
+are validated and migrated in memory; the next explicit save writes version 2.
+The checksum detects accidental damage, not tampering/authenticity.
+
+The complete world is copied/validated. League-day checkpoints now use an
+isolated data worker so the dashboard remains responsive; other creation/resume
+and save paths remain synchronous. Cloud
+software rendering and snapshot work do not establish consumer frame times or
+production save latency. OS rename/flush behavior was exercised on Linux only;
+there is no directory-fsync guarantee or proven protection against every hardware
+power failure. Windows, Steam Deck, physical-controller feel and release packaging
+remain untested. No save deletion/cloud sync or release feature is implied.
+
+## Verification and actual engine images
+
+Focused tests exercise save faults/recovery/migration/settings, a complete seeded
+season and actual title → settings → GM → scheduled match → results → GM → resume.
+The final evidence file is [verification/gm-season-20261020.json](verification/gm-season-20261020.json).
+Screenshots are real 1440×900 Godot renders. Dashboard day 14 is staged by simulating
+13 league days; it does not represent human-played games. Capture paths are isolated
+under ignored build output, never the user's real season/settings.
+
+- [Club setup](screenshots/gm-setup-20261020.png)
+- [Opening day](screenshots/gm-opening-20261020.png)
+- [Standings after 13 simulated days](screenshots/gm-standings-20261020.png)
+- [Independent preferences](screenshots/gm-preferences-20261020.png)
+
+The default cloud Mesa llvmpipe renderer crashed with SIGILL before capturing both
+the arena and a standalone 2D page. The supported alternate Mesa `softpipe` driver
+rendered these mode pages successfully using OpenGL compatibility. A separate
+3D title capture hit its 180-second limit without producing an image; no 3D render or
+hardware performance claim is made from this run. Reproduce with `DISPLAY=:9
+GALLIUM_DRIVER=softpipe ... godot --rendering-method gl_compatibility --audio-driver
+Dummy --script tools/capture_gm.gd`, plus the writable XDG paths in setup guidance.
+
+
+## Roster room and draft candidate browsing
+
+**Roster room** opens from the season dashboard. Browse all 33 leagues and 643
+clubs in the saved world, including youth data, or filter **My organization** to
+the managed club, explicitly affiliated clubs and players with its HL rights.
+**Draft candidates** uses the snapshot's existing age/rights eligibility query
+on its stated draft date (2027-09-15), yielding 3,256 players in this initial world.
+The AGE column uses the world as-of date (2026-09-15); draft eligibility uses the
+separately displayed future date. Search names, clubs and positions; lists page
+25 players at a time. Player cards show position, age/birthday, handedness, size,
+nationality, rights, estimated potential, every position-specific rating and
+explicit league development routes. Goalies have no shot-accuracy value in the
+skater SHT column; their goalie skills appear on their card.
+
+All browsing is read-only. It cannot advance the season, assign/trade/develop
+players or execute draft picks. Ratings/potential remain generated uncalibrated
+estimates, not verified scouting accuracy or guaranteed progression. Youth remains
+excluded from Play Now. Snapshot identity/state preservation, filtering, pagination,
+selection/focus and actual dashboard navigation are covered by 3,274 native checks.
+
+- [Club roster and player card](screenshots/gm-rosters-20261020.png)
+- [Eligible draft candidates](screenshots/gm-prospects-20261020.png)
+
+
+Final integrated verification: **30 engine suites passed**, optional mocap playback
+skipped; **21 Python tests passed**. Save/recovery: 25 checks; season: 3,088;
+GM navigation/retry: 22; roster browser: 3,274. A final controller regression also
+passed after separating trigger activation from the saved stick dead zone.
+
+
+## 2026-10-20 — GM front-office continuation
+
+Codex, codex/game-modes / draft PR #2. Implemented a versioned management overlay:
+64 original professional free agents, 736 base contracts, exact cap/term checks,
+atomic worker signing and automatic roster/simulation integration. Added Contracts,
+sortable Team statistics, Season records and Junior scouting pages. Scouting covers
+2,727 eligible NA juniors, three assignments/day, next-day preliminary ranges and
+persistent observations. GM_OPERATIONS.md records scope, provisional HL policy and
+remaining CBA/draft/development/player-stat/history work. Official NHL/EA/HLM web
+requests returned proxy 403; current cap/CBA and edition feature parity are not
+asserted. Captures are genuine native UI JPEGs in an isolated ten-day demo season.
+Full baseline: 36 engine suites passed, optional mocap skipped, 24 Python tests
+passed. Follow-up management 160/scouting 2,755 checks pass, including scheduled
+match identity and saved scout assignment. Verification: gm-operations-20261020.json.
+Next: shared played/simulated player-stat ledger and leaders/history; verified
+NHLPA/CBA policy and offseason/draft dependencies remain required. No release/PR merge.

@@ -1,142 +1,117 @@
-# Hawkey — 0.10 game-night presentation
+# Hawkey
 
-Native Godot 4.6 PC hockey exhibition prototype. Uses a CC0 skinned human foundation with original hockey equipment, procedural skating and generated crowd/ice textures. This is an early exhibition prototype, not EA NHL-level photorealism or a complete regulation ruleset.
+[![Project checks](https://github.com/BobbyBaccala/hawkey/actions/workflows/project-checks.yml/badge.svg?branch=codex%2Fgame-modes)](https://github.com/BobbyBaccala/hawkey/actions/workflows/project-checks.yml)
 
-## Open this version
-Download the ZIP from the **prototype/skating-puck-lab** branch, extract to a new folder, then import that folder's **project.godot** in Godot 4.6. Press F5. Opening an older downloaded folder will continue running the old build.
+A native **Godot hockey simulation** with original fictional leagues, playable
+exhibitions, a knockout cup, standalone shootouts and a growing general-manager mode. **Alpha development**: realistic
+hockey and deep management are the targets; complete rules, Career, multi-season
+GM and AAA visual quality are still in development.
 
-## Controller controls
-Godot's native gamepad support is used; no separate plugin is required. Controller hardware has not been tested here.
+[Play the development branch](#run-the-game) · [Roadmap](docs/ROADMAP.md) ·
+[Contribute](CONTRIBUTING.md) · [Feature audit](docs/ALPHA_FEATURE_AUDIT.md)
+
+| On the ice | In the front office |
+|---|---|
+| ![Existing native prototype presentation capture](docs/screenshots/kit-geometry-ingame-auto-20261021-0050.png) | ![Native GM interface with sports typography](docs/screenshots/sports-font-menu-20261020.jpg) |
+
+The left image is an existing presentation-prototype capture; the right is an
+actual Godot GM UI capture. Screenshots are development evidence, not a claim
+that all platforms or graphics configurations have been validated.
+
+## What you can play
+
+| Mode | Working scope | Important next work |
+|---|---|---|
+| Play Now | League/team selection, exhibition, results/rematch, overtime and shootout | Complete rule exceptions, richer setup and physical-controller feel |
+| Knockout Cup | Eight HL clubs, play/simulate seven knockout games, saved bracket and champion | Custom fields/formats; this is separate from GM playoffs |
+| Shootout | Direct three-round contest with sudden death, real roster shooters/goalies, results and rematch | Custom formats and physical-controller feel |
+| Practice | Shared skating, puck, shot and pass mechanics | Structured drills and feedback |
+| GM Season | 32 HL clubs, 62-game regular season, play/sim, standings and persistent saves | Playoffs, offseason, trades, draft and development |
+| Front office | Free agents/contracts, cap checks, junior scouting, team statistics and season game records | Verified NHL-based contract rules, player/goalie stat ledger and histories |
+
+Open **More modes** from the title for Cup and Shootout. See [mode scope and saves](docs/GAME_MODES.md).
+
+The original saved world contains **33 leagues, 643 clubs and 14,745 players**:
+32 HL teams, professional farm tiers, North American juniors, European leagues
+and youth leagues. Youth currently supports browsing, not age-specific play.
+GM adds a 64-player fictional professional free-agent market. Ratings are
+uncalibrated estimates. See [world coverage](docs/HL_WORLD.md) and
+[GM operations](docs/GM_OPERATIONS.md) for exact functionality and limitations.
+
+## Run the game
+
+1. Download/clone **`codex/game-modes`**, the current combined development branch.
+   `main` does not yet contain this complete playable build.
+2. Install **Godot 4.6.3 standard edition**. No paid plugin or .NET SDK is required.
+3. Import this checkout's `project.godot` and press **F5**.
+
+```sh
+git clone --branch codex/game-modes https://github.com/BobbyBaccala/hawkey.git
+cd hawkey
+godot --path .
+```
+
+The title offers Play Now, GM Season, Practice and Preferences. Forward+ is the
+preferred renderer; Godot can fall back to OpenGL. Compatibility can be requested
+with `godot --path . --rendering-method gl_compatibility`. The current cloud Mesa
+renderer has known 3D limitations; native UI captures do not establish desktop
+GPU performance. Physical-controller and packaged-platform testing remain open.
+
+## Current controls
 
 | Input | Action |
-| --- | --- |
-| Left stick | Skate and aim shot; direction persists at neutral |
-| Right stick | Move stick blade / stickhandle |
-| RT / R2 | Hold to charge, release to shoot |
-| LT / L2 | Shot elevation, from flat to lifted |
-| RB / R1 | Assisted pass toward aimed teammate |
-| Y / Triangle | Saucer pass |
-| A / Cross | Switch skater |
-| B / Circle; X / Square | Body check; poke |
-| D-pad up/down; left/right | Forward line; defence pair |
-| L3; R3; Start | Effort; stop; pause |
-| F2 | Expanded controller help |
-
-## New in 0.10
-- EA-style cameras: Dynamic (default, low chase cam), Overhead, Broadcast (press-box side view) and Full rink. Your team always attacks up the screen (or right, in Broadcast); controls are screen-relative. C cycles cameras, mouse wheel zooms.
-- Weightier skating: gradual acceleration (about 6.5 m/s after one second), longer glides, wider turns at speed.
-- Game-night arena: full seating bowl with crowd on all four sides, invented sponsor boards, LED fascia, overhead light rigs, centre-hung scoreboard showing the live score, centre-ice emblem, brighter broadcast ice and overhead lighting with bloom.
-- Broadcast presentation: score bug with shots on goal and power-play strip, goal/penalty/period banners, line panel with stamina bars, title screen, pause menu (camera, controls, restart, quit). Toronto in blue, Montreal in road whites.
-- Renderer: Forward+ (reflections, bounce light, ambient occlusion) with automatic fallback to OpenGL on PCs without Vulkan.
-- tests/test_match.gd checks every camera keeps the attack direction in both periods.
-- Renders: docs/screenshots/gameplay-v10.png, broadcast-v10.png, title-v10.png, pause-v10.png.
-
-## New in 0.9
-- Mixamo motion capture retargeted onto the players: captured goalie idle, lateral shuffle footwork, body-block save reactions and goal celebrations with sticks raised.
-- Raw Mixamo files stay out of the repository (Adobe terms). Put them in assets/mixamo/ locally; see docs/MOTION_CAPTURE.md. Without them the game uses procedural motion.
-- Clipping test extended to the captured shuffle and celebration poses; tests/test_mocap.gd covers the live-match triggers.
-- Render: docs/screenshots/mocap-v09.png.
-
-## New in 0.8
-- Automated equipment clipping test (tests/test_clipping.gd) across 20 goalie and skater poses; 0 overlaps.
-- Pads rest on the skates with toe caps showing; thigh rises fold and compress in the butterfly without crossing.
-- Realistic skater stance height and lean; slimmer goalie torso.
-- Renders: docs/screenshots/goalie-closeup-v08.png, skater-closeup-v08.png, equipment-v08.png.
-
-## New in 0.7
-- Real-proportion goalie gear built as smooth 3D meshes: box-style pads with outer roll, knee/boot breaks and toe bridge; curled blocker board; deep-pocket catcher with T-trap; fibreglass cat-eye mask.
-- Thigh rise hinges at the knee break and folds back in the butterfly; pad collision follows the visible pad.
-- Goalie ready stance sits back with pads meeting at the knees, hands in front and the stick flat ahead of the skates.
-- Skaters gain padded hockey pants, striped socks, shoulder pads, rounded gloves and new skates.
-- Gear exports to assets/gear/*.glb for Blender via tools/export_gear.gd.
-- Renders: docs/screenshots/goalie-closeup-v07.png, skater-closeup-v07.png, gear-gallery-v07.png, equipment-v07.png, gameplay-v07.png.
-- Details and research sources: docs/GOALIE_GEAR.md.
-
-## New in 0.6
-- Lower active skater/goalie stances, forward knee flexion and grounded skate blades.
-- Curved, thin stick blades; rectangular shafts, goalie paddle, corrected hand/gear assignment and closed gloves.
-- Continuous IK-driven cloth sleeves, matte team kits and beveled pad shells.
-- Independent pad, catcher, blocker, paddle, blade, torso and mask collision; transforms follow the visible gear.
-- Butterfly pads rotate and seal at the ice rather than expanding an invisible wall.
-- Different equipment rebound materials; front-pocket catch logic rejects rear glove hits.
-- Steeper centred broadcast camera, neutral quieter ice and a smaller scoreboard.
-- Actual engine PNGs: docs/screenshots/gameplay-v06.png, equipment-v06.png and goalie-closeup-v06.png.
-- Implementation and limits: docs/GOALIE_GEAR.md.
-
-## New in 0.5
-- Removed puck height lock: gravity, airborne shots, saucer passes, spin/tumbling and physical rebounds.
-- Puck-specific skate/body/pad/glove colliders replace rounded movement capsules for puck contacts.
-- Shot-height prediction drives basic goalie pad/glove coverage; catches/covers whistle for a zone faceoff.
-- Stick blade, shaft and hand targets follow the right stick; analog movement and disconnect pause.
-- Shoulder/armpit gaps repaired by retaining the continuous skinned undershirt.
-- Actual renders: docs/screenshots/gameplay-v05.png (live match) and flight-review-v05.png (explicitly labelled scripted shot fixture).
-- Research and explicit production gaps: [SPORTS_GAME_RESEARCH.md](docs/SPORTS_GAME_RESEARCH.md).
-- Player art remains provisional and below the requested EA NHL standard. No new motion-capture library is shipped.
-
-## Match controls
-| Input | Action |
-| --- | --- |
+|---|---|
+| Left stick | Skate and place net-targeted shots |
+| Right stick up / down then up | Wrist shot / slap-shot gesture |
+| R2 / RT | Hold/release pass with possession; switch player without possession |
+| R1 / RB | Saucer pass with possession; poke check without possession |
+| Right stick without possession | Body check |
+| L3 / left-stick click | Hustle |
 | WASD / Shift / Ctrl | Skate / effort / stop |
-| Mouse / hold-release LMB | Aim / charge and shoot |
-| RMB | Pass toward aimed teammate |
-| Space | Switch controlled skater |
-| 1–4 | Request forward line |
-| Q | Cycle defence pair |
-| E / F | Poke / body check (illegal context can cause a minor) |
-| L | Toggle automatic fatigue-based forward changes |
-| C / wheel | Straight follow/full-rink camera / zoom |
-| Escape / F1 | Pause / diagnostics |
+| Left mouse / Alt + left mouse | Wrist / slap shot |
+| Right mouse / Space | Pass / switch player |
+| 1–4 / Q | Forward line / defence pair |
+| C / mouse wheel | Camera / zoom |
+| Escape / F2 | Pause / controller help |
 
-## New in 0.4
-- Full ten-skater exhibition scene, two goalkeepers and two visual officials.
-- Three periods, clock, stoppages, faceoff setups, goals, end switching and match end.
-- 18 fictional roster entries per side, manual/on-the-fly line changes and fatigue.
-- Three contextual minor types with timers, queued minors, power-play strength and goal-release logic.
-- Delayed goalkeeper tracking, prediction, butterfly/recovery poses, mask/gloves and directed rebounds.
-- Camera has no lateral offset or roll.
-- Actual video pose-extraction experiment rejected low-quality footage; no video-derived animation is shipped.
-- Full implemented/absent feature list: docs/MATCH_STATUS.md.
-- Actual in-engine screenshot: docs/screenshots/gameplay-v04.png.
+Shots do not gain power by holding a button. See
+[controls and tie-break scope](docs/CONTROLS_AND_TIEBREAKS.md) for the implemented
+Skill Stick subset and remaining advanced controls. Hardware feel is unverified.
 
-## New in 0.3
-- Replaced rounded body-part placeholders with a skinned 163-bone human mesh, original jersey, helmet/visor, skates/blades/laces and equipment.
-- Bent-knee hockey stance, lateral push/recovery cycles, low skate lift, two-hand stick pose and push-to-glide blending when movement input stops.
-- Generated photographic spectator artwork replaces empty block seats. Spectators use flat alpha-cutout cards in the 3D arena.
-- Generated worn-ice texture integrated through a subtle surface shader.
-- Asset source, CC0 provenance, preparation workflow and exact generation prompts: docs/ASSETS.md.
+## Check a change
 
-## Rebuilt in 0.2
-- Two red goal frames with visible mesh netting, back/side collision and scoring at both ends.
-- Rounded boards, yellow kickplate, glass/stanchions, seating and arena signage.
-- Consistent blue/centre lines, goal lines, faceoff circles/dots and blue half-disc creases.
-- Perspective camera with smooth follow, zoom and full-rink view.
-- Articulated procedural skaters with helmets, jerseys, gloves, skates, sticks and stride animation.
-- Both goalkeepers track puck angle and physically block/rebound pucks using simple pad-shaped colliders.
-- Skaters collide with boards and other players; momentum turning, coasting and hard stops replace the original movement.
-- Bounded damped puck control, flat charged shots, physical board/post rebounds, moving passing support, reception and switching.
-- Cleaner practice HUD and finite synthetic impact sounds.
+With Python 3.10+ and Godot 4.6.3 on your PATH:
 
-## Validation
-Godot 4.6 Linux headless import and scene smoke tests pass.
-Ten executable suites:
+```sh
+python3 tools/check_project.py --suite smoke
+python3 tools/check_project.py --suite all --workers 2
 ```
-godot --headless --path . --script tests/test_simulation.gd
-godot --headless --path . --script tests/test_lab.gd
-godot --headless --path . --script tests/test_controls.gd
-godot --headless --path . --script tests/test_animation.gd
-godot --headless --path . --script tests/test_match_state.gd
-godot --headless --path . --script tests/test_match.gd
-godot --headless --path . --script tests/test_match_loop.gd
-godot --headless --path . --script tests/test_controller.gd
-godot --headless --path . --script tests/test_puck_flight.gd
-godot --headless --path . --script tests/test_goalie_gear.gd
-```
-Tests cover ratings, deceleration, directional goal detection, two nets, rounded boards, perspective camera, high-speed board rebound, goal counting, reset/pause, goalkeeper contact/save, actual W/Ctrl input and stationary puck-control stability.
 
-Rendered screenshots were inspected at 1728×1080 using Linux Mesa llvmpipe software rendering. This verifies appearance and framing, not Windows performance, physical controller compatibility or satisfying human gameplay feel. The imported human is a foundation with procedural equipment and posing; motion capture, photorealistic player textures, advanced skating transitions, sophisticated tactics, complete rules, GM and career are not implemented.
+The same full-check command is configured for GitHub pull requests and development
+pushes. It checks engine version/import, executes native suites and Python tests,
+and writes per-check logs plus JSON/JUnit reports under `build/checks/`.
+Optional mocap is reported as skipped when its local clips are absent. CI logs
+are retained as workflow artifacts; a committed workflow is not a claim that a
+remote run has already passed. See [contributing](CONTRIBUTING.md) for installation,
+branch ownership, save safety and review expectations.
 
-## Windows export
-Install matching Godot 4.6 export templates, then Project > Export > Add > Windows Desktop. Export to a separate empty folder. Windows export/installation has not been validated here and no executable is supplied.
+## Development direction
 
-## Further work
-See docs/DEVELOPMENT.md for architecture, remaining limitations and the production roadmap.
+Next: an authoritative played/simulated player-stat ledger, player/goalie leaders
+and history, then deeper roster management and the draft/offseason loop. In
+parallel, continue skating/goalie/tactical/rule work and presentation polish.
+[Roadmap milestones](docs/ROADMAP.md) link to the detailed production backlog.
+
+Presentation is developed on `prototype/skating-puck-lab`; mode/simulation work
+integrates on `codex/game-modes`. Preserve both streams and use focused feature
+branches for concrete changes. No automatic PR merge, deployment or game release
+is configured.
+
+## Assets and notices
+
+Characters, equipment, arena, generated content and fonts have documented source
+and attribution notes in [ASSETS.md](docs/ASSETS.md) and the
+[font notices](assets/fonts/README.md). Raw Mixamo clips are optional local files
+and are not redistributed; see [motion capture](docs/MOTION_CAPTURE.md).
+A project-wide redistribution license has not yet been selected. Adding an asset
+or reference does not replace the need to preserve its own applicable notices.

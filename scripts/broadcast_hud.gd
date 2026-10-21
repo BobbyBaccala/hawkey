@@ -1,24 +1,32 @@
 extends CanvasLayer
 ## Broadcast-style match presentation: score bug, event banners, line panel,
 ## penalty strip, shot meter, controls overlay, pause menu and title screen.
-## Typography uses Bahnschrift (bundled with Windows 10/11) with fallbacks.
+## Bundled licensed typography and shared surfaces for consistent native rendering.
 
 signal resume_requested
 signal camera_requested
 signal restart_requested
 signal quit_requested
 signal play_requested
+signal menu_requested
+signal events_requested
+var event_context:=""
+signal gm_requested
+signal settings_requested
+var gm_context:=false
+var reduce_motion:=false
 signal practice_requested
 
+const InterfaceFont = preload("res://scripts/interface_font.gd")
 const INK := Color("#f2f5f8")
-const MUTED := Color("#93a3b3")
-const SLATE := Color("#0b1118")
-const SLATE_2 := Color("#16212c")
-const ACCENT := Color("#e8b83a")
+const MUTED := Color("#aabbd0")
+const SLATE := Color("#0b1524")
+const SLATE_2 := Color("#15263b")
+const ACCENT := Color("#63e6cf")
 
 var team_colors: Array[Color] = [Color("#1f5fbf"), Color("#b3162c")]
-var team_codes: Array[String] = ["TOR", "MTL"]
-var team_names: Array[String] = ["TORONTO", "MONTREAL"]
+var team_codes: Array[String] = ["HOME", "AWAY"]
+var team_names: Array[String] = ["HOME", "AWAY"]
 
 var root_ui: Control
 var bug: PanelContainer
@@ -47,21 +55,31 @@ var controls_panel: PanelContainer
 var controls_label: Label
 var pause_panel: Control
 var pause_camera_button: Button
+var team_choices: Array[OptionButton] = []
+var choice_ids: Array[String] = []
+var league_choice: OptionButton
+var league_choice_ids: Array[String] = []
+var available_teams: Array = []
+var selection_error: Label
+var results_panel: PanelContainer
+var results_text: Label
+var title_play_button: Button
+var matchup_label: Label
+var shot_reticle: Label
+var shootout_panel: PanelContainer
+var shootout_label: Label
 var title_screen: Control
 
 func font(weight := 600) -> Font:
-	var f := SystemFont.new()
-	f.font_names = PackedStringArray(["Bahnschrift", "DIN Alternate", "Barlow Condensed", "Roboto Condensed", "Arial Narrow", "Segoe UI", "Inter", "DejaVu Sans Condensed", "DejaVu Sans"])
-	f.font_weight = weight
-	f.font_stretch = 75
-	f.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
-	f.hinting = TextServer.HINTING_LIGHT
-	return f
+	return InterfaceFont.get_font(weight >= 600)
 
-func panel_style(color: Color, radius := 6, pad := Vector4(14, 8, 14, 8)) -> StyleBoxFlat:
+func panel_style(color: Color, radius := 12, pad := Vector4(14, 8, 14, 8)) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = color
 	s.set_corner_radius_all(radius)
+	s.border_color=Color(0.65,0.8,1,0.14)
+	s.set_border_width_all(1)
+	s.anti_aliasing=true
 	s.content_margin_left = pad.x
 	s.content_margin_top = pad.y
 	s.content_margin_right = pad.z
@@ -94,12 +112,29 @@ func _ready() -> void:
 	build_controls()
 	build_pause()
 	build_title()
+	shot_reticle=label("⊕",30,ACCENT,600)
+	shot_reticle.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	shot_reticle.visible=false
+	root_ui.add_child(shot_reticle)
+	shootout_panel=PanelContainer.new()
+	shootout_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	shootout_panel.offset_left=-240
+	shootout_panel.offset_right=240
+	shootout_panel.offset_top=28
+	shootout_panel.add_theme_stylebox_override("panel",panel_style(SLATE,12,Vector4(20,12,20,12)))
+	shootout_label=label("",16,INK,500)
+	shootout_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	shootout_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	shootout_label.custom_minimum_size.x=440
+	shootout_panel.add_child(shootout_label)
+	root_ui.add_child(shootout_panel)
+	shootout_panel.visible=false
 
 # ------------------------------------------------------------ score bug
 func build_bug() -> void:
 	bug = PanelContainer.new()
 	bug.position = Vector2(36, 28)
-	bug.add_theme_stylebox_override("panel", panel_style(Color(SLATE, 0.94), 6, Vector4(0, 0, 0, 0)))
+	bug.add_theme_stylebox_override("panel", panel_style(Color(SLATE, 0.97), 14, Vector4(10, 8, 10, 8)))
 	root_ui.add_child(bug)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 0)
@@ -112,17 +147,17 @@ func build_bug() -> void:
 		cell.add_theme_constant_override("separation", 0)
 		var stripe := ColorRect.new()
 		stripe.color = team_colors[team]
-		stripe.custom_minimum_size = Vector2(6, 44)
+		stripe.custom_minimum_size = Vector2(3, 40)
 		cell.add_child(stripe)
-		var code := label(team_codes[team], 22, INK, 600)
+		var code := label(team_codes[team], 18, INK, 600)
 		code.custom_minimum_size = Vector2(62, 44)
 		code.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		code.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		cell.add_child(code)
 		code_labels.append(code)
 		var score_box := PanelContainer.new()
-		score_box.add_theme_stylebox_override("panel", panel_style(Color(team_colors[team].darkened(0.35), 0.95), 0, Vector4(0, 0, 0, 0)))
-		var score := label("0", 26, INK, 700)
+		score_box.add_theme_stylebox_override("panel", panel_style(Color(1,1,1,0.06), 8, Vector4(0, 0, 0, 0)))
+		var score := label("0", 24, INK, 700)
 		score.custom_minimum_size = Vector2(42, 44)
 		score.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		score.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -131,13 +166,13 @@ func build_bug() -> void:
 		score_labels.append(score)
 		row.add_child(cell)
 	var time_box := PanelContainer.new()
-	time_box.add_theme_stylebox_override("panel", panel_style(SLATE_2, 0, Vector4(16, 0, 16, 0)))
+	time_box.add_theme_stylebox_override("panel", panel_style(SLATE_2, 8, Vector4(16, 0, 16, 0)))
 	var time_row := HBoxContainer.new()
 	time_row.add_theme_constant_override("separation", 14)
-	period_label = label("1ST", 20, ACCENT, 700)
+	period_label = label("1ST", 16, ACCENT, 700)
 	period_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	period_label.custom_minimum_size.y = 44
-	clock_label = label("20:00", 24, INK, 600)
+	clock_label = label("20:00", 22, INK, 600)
 	clock_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	clock_label.custom_minimum_size = Vector2(66, 44)
 	time_row.add_child(period_label)
@@ -151,7 +186,7 @@ func build_bug() -> void:
 	strip.visible = false
 	column.add_child(strip)
 	var sog_box := PanelContainer.new()
-	sog_box.add_theme_stylebox_override("panel", panel_style(Color(SLATE, 0.80), 0, Vector4(12, 3, 12, 4)))
+	sog_box.add_theme_stylebox_override("panel", panel_style(Color(SLATE, 0.0), 0, Vector4(4, 8, 4, 0)))
 	sog_label = label("SOG  0 – 0", 14, MUTED, 600)
 	sog_box.add_child(sog_label)
 	column.add_child(sog_box)
@@ -199,22 +234,25 @@ func build_banner() -> void:
 	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	banner.pivot_offset = Vector2(360, 50)
 	root_ui.add_child(banner)
-	var back := ColorRect.new()
-	back.color = Color(SLATE, 0.92)
+	var back := Panel.new()
+	back.add_theme_stylebox_override("panel",panel_style(Color(SLATE,0.95),14,Vector4.ZERO))
 	back.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	banner.add_child(back)
 	banner_band = ColorRect.new()
 	banner_band.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
-	banner_band.offset_right = 14
+	banner_band.offset_left = 12
+	banner_band.offset_right = 16
+	banner_band.offset_top = 12
+	banner_band.offset_bottom = -12
 	banner.add_child(banner_band)
 	var box := VBoxContainer.new()
 	box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_theme_constant_override("separation", -4)
 	banner.add_child(box)
-	banner_title = label("GOAL", 54, INK, 700)
+	banner_title = label("GOAL", 40, INK, 700)
 	banner_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	banner_sub = label("", 18, MUTED, 600)
+	banner_sub = label("", 16, MUTED, 600)
 	banner_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(banner_title)
 	box.add_child(banner_sub)
@@ -229,6 +267,11 @@ func show_banner(title: String, sub: String, color: Color, seconds := 2.6) -> vo
 	banner.scale = Vector2(0.92, 0.92)
 	if banner_tween: banner_tween.kill()
 	banner_tween = create_tween()
+	if reduce_motion:
+		banner.scale=Vector2.ONE;banner.modulate.a=1
+		banner_tween.tween_interval(seconds)
+		banner_tween.tween_callback(func(): banner.visible=false)
+		return
 	banner_tween.tween_property(banner, "modulate:a", 1.0, 0.18)
 	banner_tween.parallel().tween_property(banner, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	banner_tween.tween_interval(seconds)
@@ -339,9 +382,9 @@ func build_controls() -> void:
 
 func set_controls_text(controller: bool) -> void:
 	if controller:
-		controls_label.text = "CONTROLLER\n\nLeft stick      Skate and aim\nRight stick     Stickhandle\nRT / R2         Hold to charge, release to shoot\nLT / L2         Lift the shot\nRB / R1         Pass          Y / △   Saucer pass\nA / ×           Switch player\nB / ○  Check     X / □  Poke\nL3  Burst        R3  Stop\nD-pad           Lines and defence pairs\nStart           Pause"
+		controls_label.text = "CONTROLLER\n\nLeft stick      Skate + place shot in net (up = high)\nRight stick     Flick up: wrist · down/up: slap\nRT / R2         Pass: hold strength, release · Defence: switch\nNeutral stick   Aim centre of net\nRB / R1         Saucer pass · Defence: poke check\nRight stick     Defence: flick to body check\nB / ○  Forward line     X / □  Defence pair\nL3              Burst\nD-pad           Lines and defence pairs\nStart           Pause"
 	else:
-		controls_label.text = "KEYBOARD AND MOUSE\n\nW A S D         Skate (screen relative)\nMouse           Aim\nLeft button     Hold to charge, release to shoot\nAlt             Lift the shot\nRight button    Pass       Shift + right  Saucer\nSpace           Switch player\nE  Poke          F  Check\nShift  Burst     Ctrl  Stop\n1–4  Lines       Q  Defence pair\nC  Camera        Wheel  Zoom        Esc  Pause"
+		controls_label.text = "KEYBOARD AND MOUSE\n\nW A S D         Skate (screen relative)\nMouse           Place shot within the net\nLeft button     Quick wrist shot on click\nAlt + click     Slap shot\nRight button    Pass       Shift + right  Saucer\nSpace           Switch player\nE  Poke          F  Check\nShift  Burst     Ctrl  Stop\n1–4  Lines       Q  Defence pair\nC  Camera        Wheel  Zoom        Esc  Pause"
 
 # ------------------------------------------------------------ menus
 func menu_button(text: String, handler: Callable) -> Button:
@@ -352,14 +395,17 @@ func menu_button(text: String, handler: Callable) -> Button:
 	b.add_theme_font_override("font", font(600))
 	b.add_theme_font_size_override("font_size", 22)
 	b.add_theme_color_override("font_color", INK)
-	b.add_theme_color_override("font_focus_color", SLATE)
-	b.add_theme_color_override("font_hover_color", SLATE)
-	var normal := panel_style(Color(1, 1, 1, 0.06), 4, Vector4(18, 6, 18, 6))
-	var hot := panel_style(INK, 4, Vector4(18, 6, 18, 6))
+	b.add_theme_color_override("font_focus_color", INK)
+	b.add_theme_color_override("font_hover_color", INK)
+	var normal := panel_style(Color(1, 1, 1, 0.04), 10, Vector4(18, 10, 18, 10))
+	var hot := panel_style(Color("#213b51"), 10, Vector4(18, 10, 18, 10))
 	b.add_theme_stylebox_override("normal", normal)
 	b.add_theme_stylebox_override("hover", hot)
-	b.add_theme_stylebox_override("focus", hot)
-	b.add_theme_stylebox_override("pressed", panel_style(ACCENT, 4, Vector4(18, 6, 18, 6)))
+	var focus := hot.duplicate()
+	focus.border_color=ACCENT
+	focus.set_border_width_all(2)
+	b.add_theme_stylebox_override("focus", focus)
+	b.add_theme_stylebox_override("pressed", panel_style(Color("#276659"), 10, Vector4(18, 10, 18, 10)))
 	b.pressed.connect(handler)
 	b.mouse_entered.connect(func(): b.grab_focus())
 	return b
@@ -384,6 +430,7 @@ func build_pause() -> void:
 	box.add_child(pause_camera_button)
 	box.add_child(menu_button("Controls", func(): controls_panel.visible = not controls_panel.visible))
 	box.add_child(menu_button("Restart game", func(): restart_requested.emit()))
+	box.add_child(menu_button("Return to cup" if event_context=="cup" else ("More modes" if event_context=="shootout" else ("Return to GM season" if gm_context else "Return to menu")), func(): menu_requested.emit()))
 	box.add_child(menu_button("Quit", func(): quit_requested.emit()))
 	pause_panel.visible = false
 	root_ui.add_child(pause_panel)
@@ -396,50 +443,192 @@ func show_pause(on: bool, camera_name: String) -> void:
 	elif pause_panel.get_child(1).get_child(1) is Button:
 		pause_panel.get_child(1).get_child(1).grab_focus()
 
+func style_choice(choice: OptionButton) -> void:
+	choice.custom_minimum_size=Vector2(440,44)
+	choice.add_theme_font_override("font",font(500))
+	choice.add_theme_font_size_override("font_size",17)
+	choice.add_theme_color_override("font_color",INK)
+	choice.add_theme_stylebox_override("normal",panel_style(SLATE_2,10,Vector4(16,10,16,10)))
+	var focused := panel_style(Color("#20384c"),10,Vector4(16,10,16,10))
+	focused.border_color=ACCENT
+	choice.add_theme_stylebox_override("hover",focused)
+	choice.add_theme_stylebox_override("focus",focused)
+	choice.add_theme_stylebox_override("pressed",focused)
+	var popup := choice.get_popup()
+	popup.add_theme_font_override("font",font(500))
+	popup.add_theme_font_size_override("font_size",17)
+	popup.add_theme_constant_override("v_separation",14)
+	popup.add_theme_stylebox_override("panel",panel_style(SLATE,12,Vector4(12,12,12,12)))
+	popup.add_theme_stylebox_override("hover",focused)
+
 func build_title() -> void:
-	title_screen = Control.new()
+	title_screen=Control.new()
 	title_screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var side := ColorRect.new()
-	side.color = Color(0.03, 0.05, 0.08, 0.86)
-	side.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
-	side.offset_right = 560
-	title_screen.add_child(side)
-	var edge := ColorRect.new()
-	edge.color = ACCENT
-	edge.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
-	edge.offset_left = 560
-	edge.offset_right = 564
-	title_screen.add_child(edge)
+	var shade := ColorRect.new()
+	shade.color=Color(0.015,0.035,0.07,0.28)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	title_screen.add_child(shade)
+	var surface := PanelContainer.new()
+	surface.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
+	surface.offset_left=32
+	surface.offset_right=592
+	surface.offset_top=32
+	surface.offset_bottom=-32
+	var surface_style := panel_style(Color("#0b1524f5"),24,Vector4(32,28,32,28))
+	surface_style.shadow_color=Color(0,0,0,0.28)
+	surface_style.shadow_size=12
+	surface.add_theme_stylebox_override("panel",surface_style)
+	title_screen.add_child(surface)
 	var box := VBoxContainer.new()
-	box.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
-	box.offset_left = 96
-	box.offset_top = -250
-	box.offset_bottom = 250
-	box.add_theme_constant_override("separation", 12)
-	title_screen.add_child(box)
-	var mark := label("HAWKEY", 96, INK, 700)
-	box.add_child(mark)
-	box.add_child(label("SIMULATION HOCKEY", 20, ACCENT, 600))
+	box.add_theme_constant_override("separation",8)
+	surface.add_child(box)
+	box.add_child(label("HL   /   HOCKEY LEAGUE",14,ACCENT,600))
+	box.add_child(label("HAWKEY",64,INK,700))
+	box.add_child(label("YOUR ICE. YOUR NEXT CHAPTER.",15,MUTED,500))
 	var gap := Control.new()
-	gap.custom_minimum_size.y = 28
+	gap.custom_minimum_size.y=8
 	box.add_child(gap)
-	var play := menu_button("Play exhibition", func(): play_requested.emit())
-	box.add_child(play)
-	box.add_child(menu_button("Practice", func(): practice_requested.emit()))
-	box.add_child(menu_button("Controls", func(): controls_panel.visible = not controls_panel.visible))
-	box.add_child(menu_button("Quit", func(): quit_requested.emit()))
-	var gap2 := Control.new()
-	gap2.custom_minimum_size.y = 20
-	box.add_child(gap2)
-	box.add_child(label("TORONTO  vs  MONTREAL   ·   3 × 20:00", 16, MUTED, 500))
-	title_screen.visible = false
+	title_play_button=menu_button("Play Now     →",func(): play_requested.emit())
+	box.add_child(title_play_button)
+	var competitions:=HBoxContainer.new();competitions.add_theme_constant_override("separation",12);box.add_child(competitions)
+	var gm_button:=menu_button("GM Season",func(): gm_requested.emit());gm_button.custom_minimum_size.x=232;competitions.add_child(gm_button)
+	var events_button:=menu_button("More modes",func(): events_requested.emit());events_button.custom_minimum_size.x=232;competitions.add_child(events_button)
+	box.add_child(menu_button("Practice",func(): practice_requested.emit()))
+	var utility:=HBoxContainer.new()
+	box.add_child(utility)
+	var controls_button:=menu_button("Controls",func(): controls_panel.visible=not controls_panel.visible)
+	controls_button.custom_minimum_size.x=230;utility.add_child(controls_button)
+	var settings_button:=menu_button("Preferences",func(): settings_requested.emit())
+	settings_button.custom_minimum_size.x=230;utility.add_child(settings_button)
+	box.add_child(menu_button("Quit",func(): quit_requested.emit()))
+	var spacer := Control.new()
+	spacer.custom_minimum_size.y=8
+	box.add_child(spacer)
+	box.add_child(label("COMPETITION",13,MUTED,600))
+	league_choice=OptionButton.new()
+	style_choice(league_choice)
+	league_choice.item_selected.connect(select_league)
+	box.add_child(league_choice)
+	for caption in ["HOME", "AWAY"]:
+		box.add_child(label(caption,13,MUTED,600))
+		var choice := OptionButton.new()
+		style_choice(choice)
+		choice.item_selected.connect(func(_index): update_matchup())
+		box.add_child(choice)
+		team_choices.append(choice)
+	selection_error=label("",14,MUTED,500)
+	box.add_child(selection_error)
+	var preview := PanelContainer.new()
+	preview.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	preview.offset_left=-520
+	preview.offset_right=-32
+	preview.offset_top=-205
+	preview.offset_bottom=-32
+	preview.add_theme_stylebox_override("panel",panel_style(Color("#0b1524ed"),20,Vector4(24,20,24,20)))
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation",12)
+	preview.add_child(column)
+	column.add_child(label("EXHIBITION   /   NEXT ON THE ICE",13,ACCENT,600))
+	matchup_label=label("",22,INK,600)
+	matchup_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	matchup_label.custom_minimum_size.x=410
+	column.add_child(matchup_label)
+	column.add_child(label("3 × 20 MIN   ·   3v3 OT   ·   SHOOTOUT",13,MUTED,500))
+	title_screen.add_child(preview)
+	title_screen.visible=false
 	root_ui.add_child(title_screen)
+
+func update_matchup() -> void:
+	if not is_instance_valid(matchup_label) or choice_ids.is_empty(): return
+	var selected := selected_ids()
+	var names: Array[String]=[]
+	for id_ in selected:
+		var found: Array=available_teams.filter(func(t): return t.id==id_)
+		if not found.is_empty(): names.append(found[0].city+" "+found[0].name)
+	if names.size()==2: matchup_label.text=names[0]+"\nvs  "+names[1]
 
 func show_title(on: bool) -> void:
 	title_screen.visible = on
 	for node in [bug, status_panel, line_panel, penalties_panel, hint_label.get_parent()]:
 		node.visible = not on
 	if on:
-		(title_screen.get_child(2).get_child(3) as Button).grab_focus()
+		title_play_button.grab_focus()
 	else:
 		controls_panel.visible = false
+
+func configure_teams(teams: Array, selected: Array[String], leagues: Array = []) -> void:
+	available_teams = teams
+	league_choice.clear()
+	league_choice_ids.clear()
+	for league in leagues:
+		if league.get("play_now", true):
+			league_choice_ids.append(league.id)
+			league_choice.add_item(league.name)
+	if leagues.is_empty():
+		league_choice_ids.append(str(teams[0].league_id))
+		league_choice.add_item("Fictional exhibition")
+	var selected_league: String = str(teams[0].league_id)
+	for team in teams:
+		if team.id == selected[0]: selected_league = team.league_id
+	var league_index := maxi(0, league_choice_ids.find(selected_league))
+	league_choice.select(league_index)
+	select_league(league_index)
+	for i in range(2):
+		team_choices[i].select(maxi(0, choice_ids.find(selected[i])))
+	update_matchup()
+
+func select_league(index: int) -> void:
+	choice_ids.clear()
+	for choice in team_choices: choice.clear()
+	for team in available_teams:
+		if team.league_id != league_choice_ids[index]: continue
+		choice_ids.append(team.id)
+		for choice in team_choices: choice.add_item(team.city + " " + team.name)
+	if choice_ids.size() >= 2:
+		team_choices[0].select(0)
+		team_choices[1].select(1)
+	if is_instance_valid(selection_error):
+		selection_error.text = "Original players · estimated ratings\n3 × 20:00 · overtime + shootout"
+	update_matchup()
+
+func selected_ids() -> Array[String]:
+	return [choice_ids[team_choices[0].selected], choice_ids[team_choices[1].selected]]
+
+func show_results(scores: Array[int], shots: Array[int], decision: String = "REG", shootout_scores: Array = []) -> void:
+	if is_instance_valid(results_panel): return
+	if banner_tween: banner_tween.kill()
+	banner.visible = false
+	results_panel = PanelContainer.new()
+	results_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	results_panel.offset_left = -320
+	results_panel.offset_right = 320
+	results_panel.offset_top = -130
+	results_panel.offset_bottom = 130
+	results_panel.add_theme_stylebox_override("panel", panel_style(SLATE, 8, Vector4(30, 24, 30, 24)))
+	root_ui.add_child(results_panel)
+	var box := VBoxContainer.new()
+	results_panel.add_child(box)
+	box.add_child(label("FINAL", 32, INK, 700))
+	results_text = label("%s %d – %d %s\nShots: %d – %d" % [team_names[0], scores[0], scores[1], team_names[1], shots[0], shots[1]], 22)
+	box.add_child(results_text)
+	box.add_child(label({"OT":"Won in sudden-death overtime", "SO":"Won in a shootout", "REG":"Regulation final"}.get(decision,"Final"),16,MUTED,500))
+	if decision == "SO" and shootout_scores.size()==2:
+		box.add_child(label("Shootout conversions: %d – %d" % [shootout_scores[0],shootout_scores[1]],16,MUTED,500))
+	var rematch := menu_button("Rematch", func(): restart_requested.emit())
+	rematch.visible=not gm_context and event_context!="cup"
+	box.add_child(rematch)
+	box.add_child(menu_button("Return to cup" if event_context=="cup" else ("More modes" if event_context=="shootout" else ("Return to GM season" if gm_context else "Return to menu")), func(): menu_requested.emit()))
+	if rematch.visible: rematch.grab_focus()
+	else: box.get_child(box.get_child_count()-1).grab_focus()
+
+func update_shootout(state, shooter_name: String) -> void:
+	shootout_panel.visible=state.is_shootout()
+	if state.is_shootout(): line_panel.visible=false
+	if not state.is_shootout(): return
+	var histories: Array[String]=[]
+	for team in range(2):
+		var marks := ""
+		for a in state.shootout_attempts:
+			if a.team==team: marks += "  G" if a.scored else "  —"
+		histories.append(team_codes[team]+" "+str(state.shootout_score[team])+marks)
+	shootout_label.text="SHOOTOUT · "+histories[0]+"   /   "+histories[1]+"\n"+shooter_name+" · "+("Get ready" if state.phase==state.Phase.SHOOTOUT_READY else "One attempt · shoot at the net")

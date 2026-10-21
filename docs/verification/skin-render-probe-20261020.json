@@ -1,0 +1,7 @@
+{
+	"adapter": "llvmpipe (LLVM 19.1.7, 256 bits)",
+	"black_samples": 0,
+	"engine": "4.6.2-stable (official)",
+	"negative_control": false,
+	"samples": 576
+}

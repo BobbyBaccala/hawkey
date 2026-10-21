@@ -27,7 +27,9 @@ vec3 kit_bump(vec3 n, vec3 pos, float h) {
 	vec3 r2 = cross(n, sx);
 	float det = dot(sx, r1);
 	vec3 grad = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2);
-	return normalize(abs(det) * n - grad);
+	vec3 perturbed = abs(det) * n - grad;
+	// Degenerate screen derivatives must preserve the valid input normal.
+	return dot(perturbed, perturbed) > 1e-16 ? normalize(perturbed) : n;
 }
 
 // Triplanar weights from an object-space normal.

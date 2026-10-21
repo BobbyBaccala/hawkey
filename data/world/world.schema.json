@@ -1,0 +1,443 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Original HL hockey world v2",
+  "description": "Fictional league system. Native validation additionally enforces declared team/roster counts, position balance, ages, unique IDs/numbers, season, affiliation hierarchy and rights/route references. v1 remains supported separately.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "database_metadata_version",
+    "world_id",
+    "generator_version",
+    "as_of",
+    "season",
+    "identity_policy",
+    "draft_policy",
+    "development_routes",
+    "leagues",
+    "teams"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 2
+    },
+    "database_metadata_version": {
+      "const": 1
+    },
+    "world_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generator_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "as_of": {
+      "type": "string",
+      "format": "date"
+    },
+    "season": {
+      "type": "string",
+      "minLength": 1
+    },
+    "identity_policy": {
+      "type": "string",
+      "minLength": 1
+    },
+    "draft_policy": {
+      "type": "object",
+      "required": [
+        "id",
+        "date",
+        "min_age",
+        "max_age",
+        "rights_required"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "min_age": {
+          "const": 18
+        },
+        "max_age": {
+          "const": 20
+        },
+        "rights_required": {
+          "const": "unowned"
+        }
+      }
+    },
+    "development_routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "from_league_id",
+          "to_league_ids"
+        ],
+        "properties": {
+          "from_league_id": {
+            "type": "string"
+          },
+          "to_league_ids": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "leagues": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/league"
+      }
+    },
+    "teams": {
+      "type": "array",
+      "minItems": 32,
+      "items": {
+        "$ref": "#/$defs/team"
+      }
+    }
+  },
+  "$defs": {
+    "player": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "position",
+        "ratings",
+        "identity_kind",
+        "source",
+        "rating_metadata",
+        "birth_date",
+        "nationality",
+        "shoots",
+        "height_cm",
+        "weight_kg",
+        "jersey_number",
+        "potential",
+        "hl_rights_team_id",
+        "skill_rating_metadata"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string"
+        },
+        "position": {
+          "enum": [
+            "C",
+            "LW",
+            "RW",
+            "D",
+            "G"
+          ]
+        },
+        "ratings": {
+          "type": "object",
+          "required": [
+            "speed",
+            "acceleration",
+            "agility",
+            "stamina",
+            "strength",
+            "balance",
+            "discipline"
+          ],
+          "properties": {
+            "speed": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "acceleration": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "agility": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "identity_kind": {
+          "enum": [
+            "fictional",
+            "generated"
+          ]
+        },
+        "source": {
+          "type": "null"
+        },
+        "rating_metadata": {
+          "type": "object",
+          "required": [
+            "kind",
+            "method",
+            "confidence"
+          ],
+          "properties": {
+            "kind": {
+              "const": "estimate"
+            },
+            "method": {
+              "type": "string",
+              "minLength": 1
+            },
+            "confidence": {
+              "const": "unassessed"
+            }
+          }
+        },
+        "birth_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "nationality": {
+          "type": "string",
+          "pattern": "^[A-Z]{2}$"
+        },
+        "shoots": {
+          "enum": [
+            "L",
+            "R"
+          ]
+        },
+        "height_cm": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 230
+        },
+        "weight_kg": {
+          "type": "integer",
+          "minimum": 20,
+          "maximum": 150
+        },
+        "jersey_number": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 99
+        },
+        "potential": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "hl_rights_team_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "skill_rating_metadata": {
+          "type": "object",
+          "required": [
+            "kind",
+            "method",
+            "confidence"
+          ],
+          "properties": {
+            "kind": {
+              "const": "estimate"
+            },
+            "method": {
+              "type": "string",
+              "minLength": 1
+            },
+            "confidence": {
+              "const": "unassessed"
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "position": {
+                "const": "G"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "ratings": {
+                "required": [
+                  "reflexes",
+                  "glove",
+                  "blocker",
+                  "rebound_control",
+                  "positioning",
+                  "recovery",
+                  "puck_handling"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "ratings": {
+                "required": [
+                  "passing",
+                  "puck_control",
+                  "shot_accuracy",
+                  "shot_power",
+                  "offensive_awareness",
+                  "defensive_awareness",
+                  "checking",
+                  "poke_check",
+                  "faceoffs"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "league": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "tier",
+        "region",
+        "team_count",
+        "roster_size",
+        "min_age",
+        "max_age",
+        "parent_league_id",
+        "play_now"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tier": {
+          "enum": [
+            "top",
+            "minor",
+            "junior",
+            "europe",
+            "youth"
+          ]
+        },
+        "region": {
+          "type": "string",
+          "minLength": 1
+        },
+        "team_count": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 100
+        },
+        "roster_size": {
+          "enum": [
+            20,
+            23,
+            25
+          ]
+        },
+        "min_age": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 40
+        },
+        "max_age": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 50
+        },
+        "parent_league_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "play_now": {
+          "type": "boolean"
+        }
+      }
+    },
+    "team": {
+      "type": "object",
+      "required": [
+        "id",
+        "city",
+        "name",
+        "code",
+        "league_id",
+        "season",
+        "affiliate_of",
+        "players"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "city": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 3
+        },
+        "league_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "season": {
+          "type": "string",
+          "minLength": 1
+        },
+        "affiliate_of": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "players": {
+          "type": "array",
+          "minItems": 20,
+          "maxItems": 25,
+          "items": {
+            "$ref": "#/$defs/player"
+          }
+        }
+      }
+    }
+  }
+}

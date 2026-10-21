@@ -1,0 +1,5 @@
+{
+	"adapter": "llvmpipe (LLVM 19.1.7, 256 bits)",
+	"engine": "4.6.2-stable (official)",
+	"source": "Actual combined main.tscn, real title and match; final camera is a frozen in-arena model inspection, not normal gameplay"
+}

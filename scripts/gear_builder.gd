@@ -102,7 +102,11 @@ class MeshBuilder:
 	func add_tube(points: PackedVector3Array, radius: float, color: Color, sides := 8) -> void:
 		var rings := []
 		var ring_colors := []
-		var span := (points[points.size() - 1] - points[0]).normalized()
+		var span := points[points.size() - 1] - points[0]
+		# Closed ear frames/buckles have coincident endpoints. A zero initial
+		# tangent collapsed their rings to a line and made the frame invisible.
+		if span.length_squared() < 1e-12: span = points[1] - points[0]
+		span = span.normalized()
 		var across := span.cross(Vector3.UP if absf(span.y) < 0.8 else Vector3.BACK).normalized()
 		for i in range(points.size()):
 			var prev := points[maxi(i - 1, 0)]
@@ -208,7 +212,7 @@ class MeshBuilder:
 	## Flat padded panel (a rounded rectangle with bound edges), its front face
 	## mapped to the graphic: size is (width, height), thickness along local Z.
 	## u runs along local +X, v along local +Y.
-	func add_panel(center: Vector3, size: Vector2, thickness: float, radius: float, basis: Basis, face: Color, edge: Color, back: Color) -> void:
+	func add_panel(center: Vector3, size: Vector2, thickness: float, radius: float, basis: Basis, face: Color, edge: Color, back: Color, uv_rect := Rect2(0, 0, 1, 1)) -> void:
 		var profile := GearProfiles.rounded_rect(size.x, size.y, [radius, radius, radius, radius], 6, 10)
 		var rings := []
 		var ring_colors := []
@@ -223,7 +227,9 @@ class MeshBuilder:
 				var q := p - p.normalized() * inset
 				ring.append(center + basis * Vector3(q.x, q.y, thickness * float(layer[0])))
 				cols.append(layer[2])
-				uv_ring.append(Vector2(clampf(q.x / size.x + 0.5, 0.0, 1.0), (0.5 - clampf(q.y / size.y, -0.5, 0.5)) * FACE_V) if layer[0] == 0.5 else BLANK_UV)
+				var fu := clampf(uv_rect.position.x + (q.x / size.x + 0.5) * uv_rect.size.x, 0.0, 1.0)
+				var fv := clampf(uv_rect.position.y + (q.y / size.y + 0.5) * uv_rect.size.y, 0.0, 1.0)
+				uv_ring.append(Vector2(fu, (1.0 - fv) * FACE_V) if layer[0] == 0.5 else BLANK_UV)
 			rings.append(ring)
 			ring_colors.append(cols)
 			ring_uvs.append(uv_ring)
@@ -404,12 +410,21 @@ const PAD_LENGTH := 0.73
 const PAD_WIDTH := 0.275
 const PAD_KNEE := 0.035
 const PAD_ANKLE := -0.395
+## Face and back planes of the pad block (local Z): about 12 cm thick.
+const FACE_Z := 0.068
+const BACK_Z := -0.044
 ## The thigh-rise section hinges at this break above the knee.
 const PAD_BREAK := PAD_KNEE + 0.115
 
 ## Builds the pad between y_from and y_to (default: whole pad), so the
 ## thigh rise can be a separate hinged piece.
 static func goalie_pad(side: float, kit: Color, accent: Color, y_from := -1.0, y_to := 1.0) -> ArrayMesh:
+	# Modern flat-face pad (after reference photos of current pro pads): a thick
+	# block with a flat face, square edges and full-height flat sidewalls; the
+	# face is quilted into three vertical columns and broken horizontally at
+	# the thigh rise, knee and boot; the boot section kinks forward over the
+	# skate toe and carries vertical boot-break ribs. Inside the leg: knee
+	# landing block, calf wrap and straps.
 	var b := MeshBuilder.new()
 	var rings := []
 	var ring_colors := []
@@ -421,34 +436,35 @@ static func goalie_pad(side: float, kit: Color, accent: Color, y_from := -1.0, y
 	while y < top:
 		if y >= y_from and y <= y_to:
 			ys.append(y)
-		y += 0.008 if (y < bottom + 0.05 or y > top - 0.05) else 0.011
+		y += 0.006 if (y < bottom + 0.04 or y > top - 0.04) else 0.008
 	ys.append(minf(top, y_to))
 	if y_from > bottom:
 		ys.push_front(y_from)
-	var grooves := [PAD_KNEE + 0.115, PAD_KNEE - 0.055, PAD_ANKLE + 0.115]
+	var boot_top := PAD_ANKLE + 0.10
+	var grooves := [[PAD_BREAK, 0.013], [PAD_KNEE - 0.065, 0.010], [boot_top, 0.012], [top - 0.115, 0.007]]
 	for yy: float in ys:
 		var w := PAD_WIDTH
-		# Thigh rise tapers a little toward its rounded top; the boot end narrows.
-		w -= smoothstep(top - 0.16, top, yy) * 0.035
-		w -= smoothstep(bottom + 0.10, bottom, yy) * 0.02
-		# Face stands proud at the knee (knee roll) and has stitched breaks.
-		var front := 0.058 + 0.010 * exp(-pow((yy - PAD_KNEE) / 0.07, 2))
-		var back := -0.040
+		w -= smoothstep(top - 0.12, top, yy) * 0.02
+		w -= smoothstep(bottom + 0.08, bottom, yy) * 0.015
+		var front := FACE_Z + 0.008 * exp(-pow((yy - PAD_KNEE) / 0.07, 2))
+		var back := BACK_Z
 		var groove := 0.0
-		for g: float in grooves:
-			groove = maxf(groove, _band(yy, g, 0.012))
-		front -= groove * 0.011
+		for g: Array in grooves:
+			groove = maxf(groove, _band(yy, g[0], g[1]))
+		front -= groove * 0.010
 		# Rounded top and toe tip.
 		var round_ := 1.0
-		if yy > top - 0.045:
-			round_ = sqrt(maxf(0.04, 1.0 - pow((yy - (top - 0.045)) / 0.045, 2)))
-		elif yy < bottom + 0.035:
-			round_ = sqrt(maxf(0.04, 1.0 - pow((bottom + 0.035 - yy) / 0.035, 2)))
-		# Boot channel / toe bridge: the bottom sweeps forward over the skate toe.
-		var toe := 0.07 * smoothstep(PAD_ANKLE + 0.25, PAD_ANKLE + 0.06, yy) + 0.014 * smoothstep(bottom + 0.05, bottom, yy)
+		if yy > top - 0.03:
+			round_ = sqrt(maxf(0.05, 1.0 - pow((yy - (top - 0.03)) / 0.03, 2)))
+		elif yy < bottom + 0.025:
+			round_ = sqrt(maxf(0.05, 1.0 - pow((bottom + 0.025 - yy) / 0.025, 2)))
+		# The boot section kinks forward over the skate toe.
+		var toe := 0.075 * pow(smoothstep(boot_top + 0.02, bottom, yy), 1.2)
+		var boot := smoothstep(boot_top + 0.01, boot_top - 0.03, yy)
 		var d := (front - back) * round_
 		var mid := (front + back) * 0.5
-		var profile := GearProfiles.rounded_rect(w * lerpf(0.55, 1.0, round_), d, [0.026, 0.010, 0.016, 0.016], 5, 12)
+		# Square face edges, softer back edges.
+		var profile := GearProfiles.rounded_rect(w * lerpf(0.7, 1.0, round_), d, [0.011, 0.011, 0.022, 0.022], 5, 14)
 		var ring := PackedVector3Array()
 		var cols := PackedColorArray()
 		var uv_ring := PackedVector2Array()
@@ -456,80 +472,87 @@ static func goalie_pad(side: float, kit: Color, accent: Color, y_from := -1.0, y
 		for p in profile:
 			var outer := p.x  # positive = outside of the leg
 			var z := mid + p.y
-			var is_front := p.y > d * 0.5 - 0.012
+			var is_front := p.y > d * 0.5 - 0.010
+			var is_side := absf(outer) > hw - 0.012 and not is_front and p.y > -d * 0.5 + 0.02
 			if is_front:
-				# Foam pillows gently between the face's vertical stitch lines and
-				# the face crowns slightly toward the outer roll.
-				z += 0.005 * (1.0 - pow(clampf(outer / (hw - 0.03), -1, 1), 2)) * round_
-				z -= 0.003 * (_band(outer, -hw / 3.0, 0.007) + _band(outer, hw / 3.0, 0.007)) * round_
+				# Quilted columns pillow between the stitch lines; the boot
+				# section carries three vertical boot-break ribs instead.
+				var col_u := outer / hw
+				var pillow := 0.007 * (1.0 - pow(clampf(col_u, -1, 1), 6))
+				var stitch := 0.007 * (_band(outer, -hw / 3.0, 0.009) + _band(outer, hw / 3.0, 0.009))
+				var rib := 0.010 * pow(0.5 + 0.5 * cos(col_u * 3.0 * PI), 0.6) * boot
+				z += (pillow - stitch * (1.0 - boot) + rib) * round_
 			ring.append(Vector3(outer * side, yy, z + toe))
 			var col := WHITE
 			if is_front:
-				col = WHITE.lerp(LINE, groove * 0.55)
+				col = WHITE.lerp(LINE, groove * 0.45)
 				uv_ring.append(face_uv(outer / w + 0.5, (yy - bottom) / PAD_LENGTH))
 			else:
 				uv_ring.append(BLANK_UV)
-				if outer > hw - 0.02:
-					col = kit
-				elif outer < -(hw - 0.02):
-					col = OFFWHITE
+				if is_side:
+					# Flat sidewalls, with a stitched seam just behind the face edge.
+					col = WHITE.darkened(0.03)
+					if p.y > d * 0.5 - 0.024: col = LINE.lightened(0.25)
+					if outer > 0 and p.y < d * 0.5 - 0.030 and p.y > d * 0.5 - 0.045: col = kit
+				elif p.y < -d * 0.5 + 0.004:
+					col = OFFWHITE.darkened(0.12)  # leg channel
 				else:
-					col = DARK
+					col = OFFWHITE
 			cols.append(col)
 		rings.append(ring)
 		ring_colors.append(cols)
 		ring_uvs.append(uv_ring)
 	b.add_loft(rings, ring_colors, true, true, ring_uvs)
-	# Outer roll: the raised tube along the outside edge of the face that seals
-	# against the post and turns pucks away from the five-hole.
-	var roll := PackedVector3Array()
-	var roll_from := maxf(bottom + 0.06, y_from)
-	var roll_to := minf(top - 0.06, y_to)
-	for k in range(13):
-		var ry := lerpf(roll_from, roll_to, k / 12.0)
-		var rw := PAD_WIDTH - smoothstep(top - 0.16, top, ry) * 0.035 - smoothstep(bottom + 0.10, bottom, ry) * 0.02
-		var rtoe := 0.07 * smoothstep(PAD_ANKLE + 0.25, PAD_ANKLE + 0.06, ry)
-		roll.append(Vector3((rw * 0.5 - 0.016) * side, ry, 0.050 + 0.010 * exp(-pow((ry - PAD_KNEE) / 0.07, 2)) + rtoe))
-	b.add_tube(roll, 0.019, kit, 12)
 	var graphic := _cached("pad|%s|%s" % [kit.to_html(), accent.to_html()], func(): return _paint_pad(kit, accent))
-	# Knee stack (inside), calf wing (outside) and leg straps behind the face.
+	# Behind the face: straps, knee landing block, calf wrap.
 	if y_from > bottom:
-		b.add_rounded_box(Vector3(0, PAD_KNEE + 0.17, -0.12), Vector3(0.20, 0.028, 0.012), 0.005, DARK)
-		return b.to_mesh(0.52, graphic)
-	b.add_rounded_box(Vector3(-side * 0.055, PAD_KNEE - 0.01, -0.085), Vector3(0.12, 0.17, 0.09), 0.03, OFFWHITE)
-	# Calf wing and straps stay above the skate boot.
-	b.add_rounded_box(Vector3(side * 0.118, (PAD_ANKLE + 0.20 + PAD_KNEE) * 0.5, -0.072), Vector3(0.026, PAD_KNEE - PAD_ANKLE - 0.20, 0.07), 0.011, kit)
+		b.add_rounded_box(Vector3(0, PAD_KNEE + 0.17, BACK_Z - 0.06), Vector3(0.20, 0.03, 0.012), 0.005, OFFWHITE)
+		return b.to_mesh(0.62, graphic)
+	# Knee landing block on the inside of the knee: a grey dense-foam block
+	# the goalie lands on in the butterfly, with an inner knee wedge.
+	b.add_rounded_box(Vector3(-side * 0.070, PAD_KNEE - 0.02, BACK_Z - 0.050), Vector3(0.115, 0.15, 0.10), 0.022, Color("#c8cdd1"))
+	b.add_rounded_box(Vector3(-side * 0.118, PAD_KNEE - 0.02, BACK_Z - 0.030), Vector3(0.04, 0.12, 0.07), 0.012, WHITE)
+	# Calf wrap: a padded flap from the inner sidewall around behind the calf.
+	b.add_rounded_box(Vector3(-side * 0.075, (PAD_ANKLE + 0.20 + PAD_KNEE - 0.10) * 0.5, BACK_Z - 0.040), Vector3(0.10, PAD_KNEE - PAD_ANKLE - 0.30, 0.06), 0.02, WHITE, Basis(Vector3.UP, side * 0.45))
+	# Outer calf wing and straps (white webbing, dark buckles).
+	b.add_rounded_box(Vector3(side * 0.115, (PAD_ANKLE + 0.20 + PAD_KNEE) * 0.5, BACK_Z - 0.028), Vector3(0.026, PAD_KNEE - PAD_ANKLE - 0.20, 0.06), 0.011, WHITE)
 	for sy: float in [PAD_ANKLE + 0.21, PAD_KNEE - 0.12]:
-		b.add_rounded_box(Vector3(0, sy, -0.12), Vector3(0.20, 0.028, 0.012), 0.005, DARK)
-	return b.to_mesh(0.52, graphic)
+		b.add_rounded_box(Vector3(0, sy, BACK_Z - 0.085), Vector3(0.20, 0.03, 0.012), 0.005, OFFWHITE)
+		b.add_rounded_box(Vector3(side * 0.09, sy, BACK_Z - 0.088), Vector3(0.03, 0.036, 0.014), 0.004, DARK)
+	return b.to_mesh(0.62, graphic)
 
-## Pad face graphic, modern pro style: white face, kit outer edge, a kit boot
-## sweep with an accent pinstripe, a knee window, kit thigh-rise cap, accent
-## pinstripe up the face and stitched breaks. Generic, no marks or logos.
+## Pad face graphic: a white pad with team trim, as pros wear them - kit
+## thigh-rise cap, a kit knee band with an accent insert, a kit sweep on the
+## boot section and a slim kit stripe up the outer edge, plus the face's
+## stitch work (column stitching, rows of short tack stitches, break seams).
+## Generic: no marks or logos.
 static func _paint_pad(kit: Color, accent: Color) -> Texture2D:
 	var g := Graphic.new(256, 704, WHITE)
 	var v := func(y: float) -> float: return (y + PAD_LENGTH * 0.5) / PAD_LENGTH
 	var vk: float = v.call(PAD_KNEE)
-	var stitch := WHITE.darkened(0.16)
-	# Vertical face stitching (behind the panels).
+	var stitch := WHITE.darkened(0.38)
+	# Column stitching and rows of short tack stitches in each column.
 	for u in [1.0 / 3.0, 2.0 / 3.0]:
-		g.stitches(Vector2(u, 0.02), Vector2(u, 0.985), 0.004, stitch, 70)
-	# Boot sweep and its pinstripe.
-	g.poly([Vector2(0, 0), Vector2(1, 0), Vector2(1, 0.27), Vector2(0, 0.11)], kit)
-	g.stripe([Vector2(-0.05, 0.135), Vector2(1.05, 0.305)], 0.011, accent)
-	# Knee window with an accent insert on the inside.
-	g.poly([Vector2(0, vk - 0.075), Vector2(1, vk - 0.05), Vector2(1, vk + 0.085), Vector2(0, vk + 0.06)], kit)
-	g.poly([Vector2(0, vk - 0.035), Vector2(0.30, vk - 0.028), Vector2(0.30, vk + 0.048), Vector2(0, vk + 0.042)], accent)
-	# Thigh-rise cap and its pinstripe.
-	g.rect(0, 0.935, 1, 1, kit)
-	g.rect(0, 0.912, 1, 0.922, accent)
-	# Pinstripe up the face from the knee window to the cap.
-	g.rect(0.60, vk + 0.085, 0.625, 0.912, accent)
-	# Outer edge band, behind the outer roll.
-	g.rect(0.88, 0, 1, 1, kit)
-	# Stitched horizontal breaks at the knee and boot.
-	for y in [PAD_KNEE + 0.115, PAD_KNEE - 0.055, PAD_ANKLE + 0.115]:
-		g.rect(0, v.call(y) - 0.003, 1, v.call(y) + 0.003, LINE)
+		g.stitches(Vector2(u, 0.03), Vector2(u, 0.975), 0.006, stitch, 80)
+	for row in range(14):
+		var vv := 0.30 + row * 0.045
+		if absf(vv - vk) < 0.07: continue
+		for u in [1.0 / 6.0, 0.5, 5.0 / 6.0]:
+			g.rect(u - 0.035, vv - 0.003, u + 0.035, vv + 0.003, stitch)
+	# Boot section: kit sweep and accent pinstripe.
+	g.poly([Vector2(0, 0), Vector2(1, 0), Vector2(1, 0.20), Vector2(0, 0.08)], kit)
+	g.stripe([Vector2(-0.05, 0.10), Vector2(1.05, 0.225)], 0.009, accent)
+	# Knee band with an accent insert on the inside.
+	g.poly([Vector2(0, vk - 0.05), Vector2(1, vk - 0.035), Vector2(1, vk + 0.035), Vector2(0, vk + 0.02)], kit)
+	g.poly([Vector2(0, vk - 0.03), Vector2(0.22, vk - 0.026), Vector2(0.22, vk + 0.017), Vector2(0, vk + 0.012)], accent)
+	# Thigh-rise cap and pinstripe.
+	g.rect(0, 0.945, 1, 1, kit)
+	g.rect(0, 0.925, 1, 0.933, accent)
+	# Slim kit stripe up the outer edge.
+	g.rect(0.93, 0.08, 1, 1, kit)
+	# Seams at the breaks.
+	for y in [PAD_BREAK, PAD_KNEE - 0.065, PAD_ANKLE + 0.10]:
+		g.rect(0, v.call(y) - 0.0025, 1, v.call(y) + 0.0025, LINE)
 	return g.texture()
 
 # ---------------------------------------------------------------- blocker
@@ -609,164 +632,286 @@ static func _paint_blocker(kit: Color, accent: Color) -> Texture2D:
 ## Origin at the hand; the pocket opens toward +Z; +X*side is the finger side.
 const CATCHER_SIZE := Vector3(0.28, 0.43, 0.11)
 
+## Catcher shape, after reference photos of current pro gloves (frame: +x
+## toward the fingers before mirroring, +y up the glove, +z to the shooter).
+## The mitt is a rounded body with a thick bound perimeter; the pocket fills
+## its upper half and is a string web over a dark leather T; the palm below is
+## padded; a large flat cuff ("cheater") stands off the thumb side.
+const CATCHER_OUTLINE := [
+	Vector2(-0.090, -0.150), Vector2(0.020, -0.165), Vector2(0.100, -0.135), Vector2(0.150, -0.065),
+	Vector2(0.170, 0.025), Vector2(0.166, 0.115), Vector2(0.142, 0.188), Vector2(0.098, 0.236),
+	Vector2(0.036, 0.258), Vector2(-0.030, 0.252), Vector2(-0.080, 0.226), Vector2(-0.108, 0.172),
+	Vector2(-0.118, 0.092), Vector2(-0.114, 0.000), Vector2(-0.104, -0.085)]
+const CATCHER_POCKET := [
+	Vector2(-0.092, 0.070), Vector2(0.138, 0.070), Vector2(0.146, 0.140), Vector2(0.122, 0.198),
+	Vector2(0.080, 0.232), Vector2(0.020, 0.244), Vector2(-0.040, 0.236), Vector2(-0.082, 0.208),
+	Vector2(-0.100, 0.150)]
+const POCKET_CENTER := Vector2(0.025, 0.150)
+## Texture regions: the palm uses the left of the catcher texture, the
+## cheater panel's face the right.
+const PALM_U := 0.66
+const CHEATER_UV := Rect2(0.70, 0.0, 0.30, 1.0)
+
 static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 	var b := MeshBuilder.new()
-	var outline := PackedVector2Array([
-		Vector2(-0.02, -0.18), Vector2(0.06, -0.175), Vector2(0.12, -0.13), Vector2(0.148, -0.05),
-		Vector2(0.158, 0.05), Vector2(0.152, 0.14), Vector2(0.13, 0.205), Vector2(0.095, 0.24),
-		Vector2(0.055, 0.25), Vector2(0.03, 0.232), Vector2(0.008, 0.212), Vector2(-0.018, 0.226),
-		Vector2(-0.055, 0.238), Vector2(-0.095, 0.22), Vector2(-0.118, 0.165), Vector2(-0.126, 0.085),
-		Vector2(-0.118, 0.0), Vector2(-0.102, -0.08), Vector2(-0.072, -0.15)])
-	outline = GearProfiles.resample(outline, 72)
-	# The pocket is a deep well high in the mitt, between the thumb and the
-	# finger roll under the T; the palm below it is a padded, nearly flat face.
-	var center := Vector2(0.012, 0.115)
-	# [scale toward outline, depth] from pocket centre, over the rim, to the back.
-	var sections := [[0.02, -0.058], [0.14, -0.052], [0.28, -0.030], [0.40, -0.002], [0.52, 0.016],
-		[0.66, 0.026], [0.80, 0.033], [0.92, 0.042], [0.975, 0.049], [1.0, 0.042], [1.014, 0.024],
-		[0.995, -0.022], [0.95, -0.042], [0.82, -0.058], [0.58, -0.067], [0.30, -0.071], [0.02, -0.071]]
+	var outline := GearProfiles.resample(PackedVector2Array(CATCHER_OUTLINE), 84)
+	# [scale toward outline, depth] from the pocket centre, over the rim, to the
+	# padded back of the hand. The pocket is deep; the palm below it slopes up
+	# to the rim.
+	var sections := [[0.02, -0.062], [0.16, -0.056], [0.32, -0.036], [0.48, -0.012], [0.64, 0.008],
+		[0.80, 0.022], [0.92, 0.031], [0.975, 0.036], [1.0, 0.030], [1.012, 0.012], [1.0, -0.014],
+		[0.975, -0.040], [0.90, -0.058], [0.70, -0.070], [0.40, -0.076], [0.02, -0.077]]
 	var rings := []
 	var ring_colors := []
+	var ring_uvs := []
 	for i in range(sections.size()):
-		var s: float = sections[i][0]
+		var sc: float = sections[i][0]
 		var z: float = sections[i][1]
 		var ring := PackedVector3Array()
 		var cols := PackedColorArray()
+		var uv_ring := PackedVector2Array()
 		for p in outline:
-			var q := center + (p - center) * s
+			var q := POCKET_CENTER + (p - POCKET_CENTER) * sc
 			ring.append(Vector3(q.x * side, q.y, z))
-			var col := WHITE
-			if i <= 2:
-				# Pocket leather, darker with use.
-				col = OFFWHITE.darkened(0.16)
-			elif i <= 7:
-				# Padded white palm face around the pocket.
-				col = WHITE
-			elif i <= 11:
-				col = kit
+			if i <= 8:
+				# Palm and pocket: painted (pocket leather, palm panels, seams).
+				cols.append(WHITE)
+				uv_ring.append(face_uv(PALM_U * (q.x + 0.13) / 0.31, (q.y + 0.175) / 0.44))
 			else:
-				col = WHITE
-				if q.y < -0.06 and q.y > -0.11:
-					col = kit
-				elif absf(q.x * 0.8 + q.y * 0.5 - 0.03) < 0.014:
-					col = accent
-			cols.append(col)
+				uv_ring.append(BLANK_UV)
+				# Rim binding, then the padded white back of the hand.
+				cols.append(kit if i <= 10 else WHITE.darkened(0.02))
 		rings.append(ring)
 		ring_colors.append(cols)
-	b.add_loft(rings, ring_colors)
-	# Finger section: a thick padded roll up the outside of the mitt and over
-	# the top to the T, the silhouette shooters see first.
-	var finger := PackedVector3Array([
-		Vector3(0.140, -0.13, 0.030), Vector3(0.156, -0.05, 0.040), Vector3(0.160, 0.05, 0.046),
-		Vector3(0.152, 0.13, 0.048), Vector3(0.130, 0.195, 0.048), Vector3(0.095, 0.235, 0.046),
-		Vector3(0.055, 0.250, 0.044), Vector3(0.025, 0.244, 0.042)])
-	for k in range(finger.size()):
-		finger[k].x *= side
-	b.add_tube(finger, 0.030, kit.lightened(0.04), 14)
-	# Finger stitching ridges across the roll.
-	for t: float in [0.30, 0.48, 0.66]:
-		var c := finger[int(t * (finger.size() - 1))]
-		b.add_tube(PackedVector3Array([c + Vector3(-0.012 * side, 0, 0.026), c + Vector3(0.028 * side, -0.004, 0.012)]), 0.004, kit.darkened(0.25), 6)
-	# Thumb: a slimmer roll up the inside, white with a kit tip.
-	var thumb := PackedVector3Array([
-		Vector3(-0.112, -0.09, 0.030), Vector3(-0.122, 0.0, 0.036), Vector3(-0.118, 0.09, 0.040),
-		Vector3(-0.102, 0.170, 0.042), Vector3(-0.075, 0.222, 0.042)])
-	for k in range(thumb.size()):
-		thumb[k].x *= side
-	b.add_tube(thumb, 0.023, WHITE, 12)
-	b.add_tube(PackedVector3Array([thumb[3], thumb[4], thumb[4] + Vector3(0.012 * side, 0.014, 0)]), 0.0245, kit, 12)
-	# T-trap: a leather T bar up the middle of the pocket, and a laced web
-	# strung between the thumb tip and the finger tip.
-	b.add_rounded_box(Vector3(0.010 * side, 0.150, 0.030), Vector3(0.026, 0.16, 0.012), 0.005, DARK, Basis(Vector3.RIGHT, -0.22))
-	b.add_rounded_box(Vector3(0.000 * side, 0.236, 0.042), Vector3(0.11, 0.018, 0.012), 0.005, DARK)
-	for k in range(5):
-		var x := lerpf(-0.062, 0.050, k / 4.0)
-		b.add_tube(PackedVector3Array([Vector3(x * side, 0.206, 0.040), Vector3((x + 0.008) * side, 0.252, 0.046)]), 0.0045, LACE, 6)
-	for yy: float in [0.212, 0.250]:
-		b.add_tube(PackedVector3Array([Vector3(-0.070 * side, yy, 0.040), Vector3(0.0, yy + 0.004, 0.046), Vector3(0.060 * side, yy, 0.042)]), 0.0045, LACE, 6)
-	# Cuff and cheater: the flat padded panel down the wrist on the thumb side,
-	# carrying the glove's graphic toward the shooter.
-	b.add_panel(Vector3(-0.030 * side, -0.215, -0.018), Vector2(0.17, 0.15), 0.052, 0.03, Basis(Vector3.BACK, 0.10 * side), WHITE, kit, OFFWHITE)
-	var graphic := _cached("catcher|%s|%s" % [kit.to_html(), accent.to_html()], func(): return _paint_cheater(kit, accent))
-	return b.to_mesh(0.55, graphic)
+		ring_uvs.append(uv_ring)
+	b.add_loft(rings, ring_colors, true, true, ring_uvs)
+	# Perimeter: a thick bound roll from the thumb tip over the top and down the
+	# finger side, laced to the body with white lace wraps.
+	var rim := PackedVector3Array()
+	var rim_pts := [Vector2(-0.090, 0.214), Vector2(-0.040, 0.248), Vector2(0.036, 0.262), Vector2(0.100, 0.240),
+		Vector2(0.146, 0.190), Vector2(0.171, 0.115), Vector2(0.175, 0.025), Vector2(0.155, -0.060), Vector2(0.108, -0.128)]
+	for q: Vector2 in rim_pts:
+		rim.append(Vector3(q.x * side, q.y, 0.030))
+	b.add_tube(rim, 0.024, kit, 14)
+	for k in range(1, 15):
+		var t := k / 15.0
+		var f := t * (rim_pts.size() - 1)
+		var a: Vector2 = rim_pts[int(f)]
+		var c: Vector2 = rim_pts[mini(int(f) + 1, rim_pts.size() - 1)]
+		var q := a.lerp(c, f - int(f))
+		var out := (q - POCKET_CENTER).normalized()
+		var lace := PackedVector3Array([
+			Vector3((q.x - out.x * 0.020) * side, q.y - out.y * 0.020, 0.044),
+			Vector3((q.x - out.x * 0.004) * side, q.y - out.y * 0.004, 0.056),
+			Vector3((q.x + out.x * 0.014) * side, q.y + out.y * 0.014, 0.050),
+			Vector3((q.x + out.x * 0.022) * side, q.y + out.y * 0.022, 0.034)])
+		b.add_tube(lace, 0.0035, WHITE, 5)
+	# Thumb: a slimmer white roll up the inside edge of the pocket.
+	var thumb := PackedVector3Array()
+	for q: Vector2 in [Vector2(-0.112, -0.020), Vector2(-0.120, 0.060), Vector2(-0.114, 0.140), Vector2(-0.095, 0.196), Vector2(-0.075, 0.222)]:
+		thumb.append(Vector3(q.x * side, q.y, 0.026))
+	b.add_tube(thumb, 0.020, WHITE, 12)
+	# String web: a diamond lattice stretched across the pocket, slightly
+	# cupped, with the dark leather T behind it.
+	var pocket := PackedVector2Array(CATCHER_POCKET)
+	var cup := func(q: Vector2) -> float:
+		return 0.022 - 0.020 * exp(-(q - POCKET_CENTER).length_squared() / 0.006)
+	for dir_ in [Vector2(1, 1).normalized(), Vector2(1, -1).normalized()]:
+		var normal := Vector2(-dir_.y, dir_.x)
+		for k in range(-12, 13):
+			var origin := POCKET_CENTER + normal * k * 0.024
+			var line := PackedVector2Array([origin - dir_ * 0.4, origin + dir_ * 0.4])
+			for seg in Geometry2D.intersect_polyline_with_polygon(line, pocket):
+				var a: Vector2 = seg[0]
+				var c: Vector2 = seg[seg.size() - 1]
+				if a.distance_to(c) < 0.02: continue
+				var pts := PackedVector3Array()
+				for m in range(6):
+					var q := a.lerp(c, m / 5.0)
+					pts.append(Vector3(q.x * side, q.y, cup.call(q)))
+				b.add_tube(pts, 0.0032, WHITE, 5)
+	b.add_rounded_box(Vector3(0.022 * side, 0.155, -0.002), Vector3(0.030, 0.17, 0.010), 0.004, DARK, Basis(Vector3.RIGHT, -0.30))
+	b.add_rounded_box(Vector3(0.022 * side, 0.236, 0.018), Vector3(0.15, 0.024, 0.010), 0.004, DARK)
+	# Cheater: the big flat cuff panel off the thumb side, angled out a little.
+	b.add_panel(Vector3(-0.185 * side, -0.040, -0.004), Vector2(0.155, 0.255), 0.052, 0.026, Basis(Vector3.BACK, 0.10 * side), WHITE, WHITE.darkened(0.05), OFFWHITE, CHEATER_UV)
+	# Back of the hand: padded backhand plate with the finger section ridged
+	# across the top, and the wrist strap.
+	b.add_rounded_box(Vector3(0.02 * side, 0.02, -0.086), Vector3(0.20, 0.20, 0.025), 0.012, WHITE.darkened(0.03))
+	for k in range(3):
+		b.add_rounded_box(Vector3((0.035 + 0.04 * (k - 1)) * side, 0.17, -0.084), Vector3(0.034, 0.14, 0.028), 0.014, WHITE)
+	b.add_rounded_box(Vector3(0.02 * side, -0.115, -0.082), Vector3(0.16, 0.035, 0.015), 0.006, DARK)
+	var graphic := _cached("catcher|%s|%s" % [kit.to_html(), accent.to_html()], func(): return _paint_catcher(kit, accent))
+	return b.to_mesh(0.58, graphic)
 
-## Catcher cuff/cheater panel graphic: kit binding, a kit sweep and an accent
-## pinstripe on white, matching the blocker and pads.
-static func _paint_cheater(kit: Color, accent: Color) -> Texture2D:
-	var g := Graphic.new(256, 256, WHITE)
-	g.poly([Vector2(0, 0), Vector2(1, 0), Vector2(1, 0.32), Vector2(0, 0.62)], kit)
-	g.stripe([Vector2(-0.05, 0.69), Vector2(1.05, 0.37)], 0.022, accent)
-	g.rect(0, 0.93, 1, 1, kit)
-	g.rect(0, 0, 0.06, 1, kit)
-	g.rect(0.94, 0, 1, 1, kit)
+## Catcher graphic (one texture for palm and cheater): the palm shows the
+## dark pocket leather behind the web and stitched palm panels; the cheater
+## panel (the add_panel face) uses the same texture's right-hand region.
+static func _paint_catcher(kit: Color, accent: Color) -> Texture2D:
+	var g := Graphic.new(512, 512, WHITE)
+	var to_uv := func(q: Vector2) -> Vector2: return Vector2(PALM_U * (q.x + 0.13) / 0.31, (q.y + 0.175) / 0.44)
+	# Pocket: dark leather seen through the web.
+	var pocket := []
+	for q: Vector2 in CATCHER_POCKET:
+		pocket.append(to_uv.call(q + (q - POCKET_CENTER) * 0.08))
+	g.poly(pocket, Color("#24292e"))
+	# Palm panel seams and a kit accent across the heel of the palm.
+	var seam := WHITE.darkened(0.30)
+	g.stitches(to_uv.call(Vector2(-0.02, 0.06)), to_uv.call(Vector2(-0.05, -0.15)), 0.004, seam, 18)
+	g.stitches(to_uv.call(Vector2(0.06, 0.06)), to_uv.call(Vector2(0.10, -0.12)), 0.004, seam, 18)
+	g.stripe([to_uv.call(Vector2(-0.12, -0.11)), to_uv.call(Vector2(0.16, -0.06))], 0.020, kit)
+	g.stripe([to_uv.call(Vector2(-0.12, -0.075)), to_uv.call(Vector2(0.16, -0.025))], 0.006, accent)
+	# Cheater face: white with a bold kit sweep, an accent pinstripe and a kit
+	# binding (u 0..1 across the panel maps into CHEATER_UV).
+	var cu := func(u: float, v: float) -> Vector2: return Vector2(CHEATER_UV.position.x + u * CHEATER_UV.size.x, v)
+	g.poly([cu.call(0, 0.18), cu.call(1, 0.36), cu.call(1, 0.50), cu.call(0, 0.30)], kit)
+	g.stripe([cu.call(-0.05, 0.36), cu.call(1.05, 0.555)], 0.006, accent)
+	g.rect(CHEATER_UV.position.x, 0.0, 1.0, 0.04, kit)
+	g.rect(CHEATER_UV.position.x, 0.96, 1.0, 1.0, kit)
+	var seam2 := WHITE.darkened(0.30)
+	g.stitches(cu.call(0.10, 0.62), cu.call(0.90, 0.62), 0.004, seam2, 14)
+	g.stitches(cu.call(0.10, 0.80), cu.call(0.90, 0.80), 0.004, seam2, 14)
 	return g.texture()
 
 # ---------------------------------------------------------------- goalie mask
-## Fibreglass shell with a protruding chin, recessed face opening and cat-eye cage.
+## Modern fibreglass goalie mask after reference photos: a smooth shell with a
+## raised crest over the forehead, wide cheeks and side flares behind the
+## cage, a long chin that juts forward below the cage, vent holes, temple
+## straps and a chrome cage (straight bars, cat-eye opening).
 ## Origin near eye level; +Z faces forward.
+## Shell keys per height y: [y, half-width, centre z, front reach, back reach].
+const MASK_KEYS := [
+	[-0.238, 0.022, 0.128, 0.018, 0.010],
+	[-0.215, 0.046, 0.108, 0.046, 0.022],
+	[-0.185, 0.068, 0.080, 0.074, 0.040],
+	[-0.150, 0.082, 0.050, 0.104, 0.070],
+	[-0.115, 0.104, 0.028, 0.124, 0.104],
+	[-0.075, 0.118, 0.014, 0.136, 0.128],
+	[-0.030, 0.124, 0.006, 0.142, 0.138],
+	[0.020, 0.122, 0.002, 0.142, 0.140],
+	[0.065, 0.112, 0.000, 0.135, 0.134],
+	[0.105, 0.092, -0.004, 0.115, 0.115],
+	[0.135, 0.062, -0.008, 0.082, 0.082],
+	[0.155, 0.028, -0.010, 0.040, 0.040],
+	[0.163, 0.004, -0.010, 0.006, 0.006]]
+const MASK_BOTTOM := -0.238
+const MASK_TOP := 0.163
+
+## Catmull-Rom through the shell keys, so the surface has no ripples.
+static func _mask_key(y: float, k: int) -> float:
+	var n := MASK_KEYS.size()
+	if y <= MASK_KEYS[0][0]: return MASK_KEYS[0][k]
+	if y >= MASK_KEYS[n - 1][0]: return MASK_KEYS[n - 1][k]
+	var i := 0
+	while MASK_KEYS[i + 1][0] < y: i += 1
+	var y1: float = MASK_KEYS[i][0]
+	var y2: float = MASK_KEYS[i + 1][0]
+	var t := (y - y1) / (y2 - y1)
+	var p0: float = MASK_KEYS[maxi(i - 1, 0)][k]
+	var p1: float = MASK_KEYS[i][k]
+	var p2: float = MASK_KEYS[i + 1][k]
+	var p3: float = MASK_KEYS[mini(i + 2, n - 1)][k]
+	return 0.5 * ((2.0 * p1) + (-p0 + p2) * t + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t * t + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t * t * t)
+
+## Point on the mask shell at angle a (0 = straight ahead) and height y.
+static func mask_point(a: float, y: float) -> Vector3:
+	var w := _mask_key(y, 1)
+	var c := _mask_key(y, 2)
+	var rf := _mask_key(y, 3)
+	var rb := _mask_key(y, 4)
+	var cz := cos(a)
+	var sa := sin(a)
+	# Crest: a raised ridge up the forehead to the crown.
+	var crest := 0.010 * exp(-pow(a / 0.22, 2)) * smoothstep(0.02, 0.10, y)
+	# Side flares: the shell widens behind the cage over the ears.
+	var flare := 1.0 + 0.07 * exp(-pow((absf(a) - 1.75) / 0.45, 2)) * smoothstep(-0.16, -0.08, y) * smoothstep(0.10, 0.04, y)
+	var z := c + (cz * (rf + crest) if cz > 0 else cz * rb)
+	return Vector3(sa * w * flare, y, z)
+
 static func goalie_mask(kit: Color, accent: Color) -> ArrayMesh:
 	var b := MeshBuilder.new()
-	var width_keys := [[-0.175, 0.035], [-0.14, 0.078], [-0.10, 0.100], [-0.04, 0.114], [0.02, 0.118], [0.09, 0.102], [0.13, 0.065], [0.15, 0.02]]
-	var front_keys := [[-0.175, 0.070], [-0.14, 0.150], [-0.10, 0.153], [-0.03, 0.142], [0.03, 0.137], [0.09, 0.112], [0.13, 0.065], [0.15, 0.02]]
-	var back_keys := [[-0.175, 0.025], [-0.15, 0.055], [-0.11, 0.095], [-0.06, 0.122], [0.0, 0.135], [0.08, 0.118], [0.13, 0.07], [0.15, 0.02]]
 	var rings := []
 	var ring_colors := []
-	var count := 56
-	var y := -0.175
-	while y <= 0.1501:
+	var ring_uvs := []
+	var count := 72
+	var y := MASK_BOTTOM
+	while y <= MASK_TOP + 0.0001:
 		var ring := PackedVector3Array()
 		var cols := PackedColorArray()
-		var w := GearProfiles.curve(width_keys, y)
-		var f := GearProfiles.curve(front_keys, y)
-		var bk := GearProfiles.curve(back_keys, y)
+		var uv_ring := PackedVector2Array()
 		for k in range(count):
 			var a := TAU * k / count - PI
-			var cz := cos(a)
-			var p := Vector3(sin(a) * w, y, cz * (f if cz > 0 else bk))
-			# Face opening: recessed and shadowed behind the cage.
-			var opening := smoothstep(0.80, 0.55, absf(a)) * smoothstep(-0.105, -0.085, y) * smoothstep(0.050, 0.030, y)
-			p = Vector3(p.x * lerpf(1, 0.82, opening), p.y, p.z * lerpf(1, 0.55, opening))
+			var p := mask_point(a, y)
+			# Face opening: recessed behind the cage, from the brow to the mouth.
+			var opening := smoothstep(0.78, 0.58, absf(a)) * smoothstep(-0.118, -0.098, y) * smoothstep(0.050, 0.032, y)
+			p = Vector3(p.x * lerpf(1, 0.80, opening), p.y, lerpf(p.z, p.z * 0.45, opening))
 			ring.append(p)
-			var col := WHITE
-			var sa := absf(sin(a))
-			if sa > 0.62 and cz > -0.45 and (y + 0.03 * cos(a * 4.0)) > -0.09 and (y + 0.03 * cos(a * 4.0)) < 0.06:
-				col = kit
-			if sa > 0.62 and cz > -0.45 and absf(y - 0.07 + 0.02 * cos(a * 4.0)) < 0.010:
-				col = accent
-			if sa < 0.16 and y > 0.055 and cz > 0:
-				col = kit
-			if cz < -0.35 and absf(y - 0.02) < 0.006:
-				col = LINE  # backplate seam
-			if opening > 0.35:
-				col = Color("#0c1014")
-			cols.append(col)
+			cols.append(Color("#14181c") if opening > 0.35 else WHITE)
+			uv_ring.append(face_uv((a + PI) / TAU, (y - MASK_BOTTOM) / (MASK_TOP - MASK_BOTTOM)))
 		rings.append(ring)
 		ring_colors.append(cols)
-		y += 0.008
-	b.add_loft(rings, ring_colors)
-	# Cat-eye cage that follows the front of the shell.
-	var cage_point := func(a: float, yy: float) -> Vector3:
-		var w := GearProfiles.curve(width_keys, yy)
-		var f := GearProfiles.curve(front_keys, yy)
-		return Vector3(sin(a) * w * 1.04, yy, cos(a) * f * 1.04 + 0.010)
-	for yy: float in [0.038, -0.004, -0.045, -0.088]:
+		ring_uvs.append(uv_ring)
+		y += 0.005
+	b.add_loft(rings, ring_colors, true, true, ring_uvs)
+	# Vent holes: dark recessed discs on the crown and over the ears.
+	for vent: Vector2 in [Vector2(-0.30, 0.125), Vector2(0.30, 0.125), Vector2(-0.95, 0.105), Vector2(0.95, 0.105),
+			Vector2(-1.85, 0.055), Vector2(1.85, 0.055), Vector2(-1.75, -0.040), Vector2(1.75, -0.040), Vector2(-2.10, -0.010), Vector2(2.10, -0.010)]:
+		var p := mask_point(vent.x, vent.y)
+		var n := (p - Vector3(0, vent.y * 0.6, _mask_key(vent.y, 2))).normalized()
+		b.add_tube(PackedVector3Array([p - n * 0.006, p + n * 0.0015]), 0.0105, Color("#101316"), 12)
+	# Temple and jaw straps (beige webbing) on both sides.
+	for s_: float in [-1.0, 1.0]:
+		for strap: Vector2 in [Vector2(1.45, 0.065), Vector2(1.55, -0.105)]:
+			var p := mask_point(s_ * strap.x, strap.y)
+			b.add_rounded_box(p + Vector3(s_ * 0.004, 0, 0), Vector3(0.010, 0.022, 0.050), 0.004, Color("#d9cfb8"))
+	# Backplate seam line around the back of the head.
+	var seam := PackedVector3Array()
+	for k in range(9):
+		var a := lerpf(2.05, TAU - 2.05, k / 8.0)
+		seam.append(mask_point(a, 0.0 + 0.10 * absf(sin(a))) * 1.012)
+	b.add_tube(seam, 0.003, LINE, 6)
+	# Chrome cage: straight horizontal and vertical bars standing off the
+	# shell, wrapping round to the temples; cat-eye bars beside the eyes.
+	var chrome := Color("#a3acb3")
+	var cage := func(a: float, yy: float) -> Vector3:
+		var p := mask_point(a, yy)
+		return Vector3(p.x * 1.05, yy, p.z + 0.016)
+	for yy: float in [0.040, 0.004, -0.034, -0.072, -0.106]:
 		var bar := PackedVector3Array()
-		for k in range(13):
-			bar.append(cage_point.call(lerpf(-0.82, 0.82, k / 12.0), yy))
-		b.add_tube(bar, 0.0045, METAL, 6)
-	for a: float in [-0.26, 0.26]:
+		var reach := 0.92 if yy > -0.09 else 0.70
+		for k in range(15):
+			bar.append(cage.call(lerpf(-reach, reach, k / 14.0), yy))
+		b.add_tube(bar, 0.0042, chrome, 6)
+	for a: float in [-0.13, 0.13, -0.42, 0.42]:
 		var bar := PackedVector3Array()
 		for k in range(9):
-			bar.append(cage_point.call(a, lerpf(-0.004, -0.092, k / 8.0)))
-		b.add_tube(bar, 0.0045, METAL, 6)
-	for s: float in [-1.0, 1.0]:
-		# Cat-eye bars rise diagonally beside each eye.
+			bar.append(cage.call(a, lerpf(0.004 if absf(a) < 0.2 else 0.040, -0.108, k / 8.0)))
+		b.add_tube(bar, 0.0042, chrome, 6)
+	for s_: float in [-1.0, 1.0]:
 		var bar := PackedVector3Array()
 		for k in range(7):
 			var t := k / 6.0
-			bar.append(cage_point.call(s * lerpf(0.12, 0.62, t), lerpf(-0.004, 0.040, t)))
-		b.add_tube(bar, 0.0045, METAL, 6)
-	return b.to_mesh(0.28)
+			bar.append(cage.call(s_ * lerpf(0.13, 0.62, t), lerpf(0.004, 0.040, t)))
+		b.add_tube(bar, 0.0042, chrome, 6)
+		# Clips holding the cage to the shell at brow and cheek.
+		for clip: Vector2 in [Vector2(0.80, 0.044), Vector2(0.86, -0.090)]:
+			b.add_rounded_box(mask_point(s_ * clip.x, clip.y) + Vector3(0, 0, 0.004), Vector3(0.018, 0.016, 0.018), 0.005, chrome)
+	var graphic := _cached("mask|%s|%s" % [kit.to_html(), accent.to_html()], func(): return _paint_mask(kit, accent))
+	return b.to_mesh(0.22, graphic)
+
+## Mask paint: white base, a kit sweep along each side from the chin back over
+## the ears, an accent pinstripe and a kit stripe over the crest. u runs round
+## the head (0.5 = front), v from chin (0) to crown (1).
+static func _paint_mask(kit: Color, accent: Color) -> Texture2D:
+	var g := Graphic.new(512, 256, WHITE)
+	for s_: float in [-1.0, 1.0]:
+		var u := func(a: float) -> float: return 0.5 + s_ * a / TAU
+		g.poly([Vector2(u.call(0.55), 0.05), Vector2(u.call(1.10), 0.10), Vector2(u.call(2.50), 0.42), Vector2(u.call(2.70), 0.66),
+			Vector2(u.call(1.90), 0.60), Vector2(u.call(1.20), 0.32), Vector2(u.call(0.70), 0.22)], kit)
+		g.stripe([Vector2(u.call(0.80), 0.30), Vector2(u.call(1.40), 0.42), Vector2(u.call(2.30), 0.72)], 0.006, accent)
+	g.rect(0.47, 0.84, 0.53, 1.0, kit)
+	g.rect(0.455, 0.84, 0.462, 1.0, accent)
+	g.rect(0.538, 0.84, 0.545, 1.0, accent)
+	return g.texture()
 
 # ---------------------------------------------------------------- skater gloves
 ## Skater hockey glove closed around the stick. Origin is the grip (the shaft
@@ -918,6 +1063,12 @@ static func _limb(radii: Array, depth_ratio: float, color_at: Callable, sides :=
 const PANTS_RINGS := 26
 const PANTS_SIDES := 36
 static func pants_leg(side: float, kit: Color, base: Color, flare := 1.0) -> ArrayMesh:
+	if is_zero_approx(flare):
+		# Keep the fitted goalie silhouette clear of articulated pads during saves.
+		# The new flared skater breezers below use a different hem/closure profile.
+		return _limb([0.118,0.132,0.136,0.134,0.128,0.120,0.112,0.104,0.098],0.92,func(t: float,a: float) -> Color:
+			if cos(a)*side>0.93: return kit
+			return base.lightened(0.12) if t>0.92 else base)
 	var b := MeshBuilder.new()
 	# flare 0: goalie pants taper in above the pads' thigh rises.
 	var base_r := [[0.0, 0.100], [0.06, 0.116], [0.16, 0.132], [0.32, 0.136], [0.55, 0.131], [0.75, lerpf(0.114, 0.122, flare)], [0.86, lerpf(0.105, 0.119, flare)], [0.95, lerpf(0.099, 0.126, flare)], [1.0, lerpf(0.097, 0.128, flare)]]
@@ -985,37 +1136,48 @@ const HELMET_H := 0.112
 ## Helmet origin relative to the head bone (rest), for skaters.
 const HELMET_OFFSET := Vector3(0, 0.066, 0.004)
 ## Vent slots: [angle round the head (0 = front), phi down from the crown, half-length (rad), half-width (rad)].
-const HELMET_VENTS := [[0.30, 0.55, 0.20, 0.045], [-0.30, 0.55, 0.20, 0.045], [PI - 0.30, 0.70, 0.18, 0.045], [PI + 0.30, 0.70, 0.18, 0.045], [0.95, 0.95, 0.12, 0.04], [-0.95, 0.95, 0.12, 0.04]]
+const HELMET_VENTS := [
+	[0.95,0.96,0.034,0.25],[-0.95,0.96,0.034,0.25],
+	[1.03,1.15,0.032,0.28],[-1.03,1.15,0.032,0.28],
+	[1.12,1.34,0.030,0.25],[-1.12,1.34,0.030,0.25],
+	[0.65,0.55,0.14,0.035],[-0.65,0.55,0.14,0.035],
+	[PI-0.45,0.90,0.045,0.18],[PI+0.45,0.90,0.045,0.18]]
 static func helmet_point(a: float, phi: float, inset := 0.0) -> Vector3:
 	# a: angle round the head, 0 = front (+Z); phi: angle down from the crown.
 	var s := sin(phi)
 	var c := cos(phi)
 	var front := maxf(0.0, cos(a))
 	var back := maxf(0.0, -cos(a))
-	# Plan: rounded rectangle-ish (superellipse), a touch longer at the back.
+	# Plan: smooth oval, a touch longer at the back.
 	var ca := cos(a)
 	var sa := sin(a)
-	var e := 0.82
-	var px := signf(sa) * pow(absf(sa), e)
-	var pz := signf(ca) * pow(absf(ca), e)
+	# Smooth oval, with a modest broadening toward the temples. Fractional
+	# signed powers made the derivatives singular on the front/rear axes.
+	var px := sa * (1.0 + 0.08 * ca * ca)
+	var pz := ca
 	var d := HELMET_D * (1.0 + 0.04 * back)
 	# Crown slightly flattened; sides fall nearly vertical below the equator.
 	var cy := signf(c) * pow(absf(c), 1.15)
 	var sy := pow(s, 0.85)
 	var p := Vector3(px * sy * (HELMET_W - inset), cy * (HELMET_H - inset), pz * sy * (d - inset))
+	# Lower, less bulbous crown from the supplied side/quarter reference.
+	# Blend out above the existing visor mount, preserving its approved mesh.
+	p.y -= 0.008 * (1.0 - smoothstep(0.75,1.45,phi))
+	# Broad moulded crown rails, not tiny corrugations or pinched vent dents.
+	var rail := exp(-pow(absf(absf(p.x)-0.034)/0.014,4.0))
+	rail *= smoothstep(0.025,0.060,p.y)*(1.0-smoothstep(0.09,0.12,absf(p.z)))
+	p.y += rail*0.0015
 	var out := Vector3(sa, 0, ca)
 	# Brow: the front edge turns slightly out over the visor clip line.
 	p += out * 0.004 * pow(front, 4) * smoothstep(1.35, 1.6, phi)
-	# Two-piece shell: the rear/lower piece stands 3 mm proud along a line
+	# Two-piece shell: the rear/lower piece stands 1.5 mm proud along a line
 	# that sweeps from the temples up over the back.
 	var step_line := lerpf(1.25, 0.85, back)
-	p += out * 0.003 * smoothstep(step_line - 0.02, step_line + 0.02, phi) * (1.0 - front)
+	p += out * 0.0015 * smoothstep(step_line - 0.10, step_line + 0.10, phi) * (1.0 - front)
 	# Occipital tuck under the back of the skull.
 	p -= out * 0.012 * back * smoothstep(1.75, 2.05, phi)
-	# Vent slots: a recess with a crisp edge.
-	var vent := helmet_vent(a, phi)
-	p -= out * 0.005 * vent
-	p.y -= 0.005 * vent * c
+	# Vent openings are cut from the topology below. Do not dent the shell:
+	# even shallow displaced slots produce unrealistic pinched reflections.
 	return p
 
 ## 0..1: how far (a, phi) lies inside a vent slot.
@@ -1025,7 +1187,7 @@ static func helmet_vent(a: float, phi: float) -> float:
 		var da := wrapf(a - float(vt[0]), -PI, PI) * sin(phi)
 		var dp := phi - float(vt[1])
 		var r := Vector2(dp / float(vt[2]), da / float(vt[3])).length()
-		v = maxf(v, smoothstep(1.0, 0.8, r))
+		v = maxf(v, 1.0 - smoothstep(0.55, 1.15, r))
 	return v
 
 ## Lower edge of the shell (phi) round the head: brow at the front just above
@@ -1036,15 +1198,33 @@ static func helmet_edge(a: float) -> float:
 	var side := absf(sin(a))
 	return 1.80 + 0.18 * back + 0.10 * side * side - 0.20 * pow(front, 3)
 
+static func helmet_inside_vent(a: float, phi: float, radius: float) -> bool:
+	for vent: Array in HELMET_VENTS:
+		var da := wrapf(a - float(vent[0]), -PI, PI) * sin(phi)
+		var dp := phi - float(vent[1])
+		if Vector2(dp / float(vent[2]), da / float(vent[3])).length() < radius:
+			return true
+	return false
+
+static var _helmet_mesh: ArrayMesh
+static func helmet_normal(a: float, phi: float) -> Vector3:
+	if phi < 0.015: return Vector3.UP
+	# Derivatives of the continuous surface, independent of triangle diagonal.
+	var delta := 0.0005
+	var around := helmet_point(a + delta, phi) - helmet_point(a - delta, phi)
+	var down := helmet_point(a, phi + delta) - helmet_point(a, phi - delta)
+	return down.cross(around).normalized()
+
 static func skater_helmet() -> ArrayMesh:
+	if _helmet_mesh != null: return _helmet_mesh
 	var b := MeshBuilder.new()
-	var cols_n := 64
-	var rows := 24
+	var cols_n := 96
+	var rows := 36
 	var rings := []
 	var ring_colors := []
 	var shell := Color("#132434")
 	# Rolled lip on the inside first, then up the shell to the crown.
-	for r in range(-2, rows + 1):
+	for r in range(-2, 1):
 		var ring := PackedVector3Array()
 		var cols := PackedColorArray()
 		for j in range(cols_n):
@@ -1060,43 +1240,208 @@ static func skater_helmet() -> ArrayMesh:
 			cols.append(shell)
 		rings.append(ring)
 		ring_colors.append(cols)
-	b.add_loft(rings, ring_colors, true, true)
-	return b.to_mesh(0.27)
+	# Keep the rolled rim separate. The outer shell uses sampled rounded vent
+	# boundaries, rather than deleting coarse grid triangles (sawtooth edges).
+	b.add_loft(rings.slice(0, 3), ring_colors.slice(0, 3), true, false)
+	var domain := PackedVector2Array()
+	for r in range(rows + 1):
+		for j in range(cols_n + 1):
+			var uv := Vector2(float(j) / cols_n, float(r) / rows)
+			var a := uv.x * TAU - PI / 2.0
+			var phi := helmet_edge(a) * (1.0 - uv.y)
+			if not helmet_inside_vent(a, phi, 1.025): domain.append(uv)
+	for vent: Array in HELMET_VENTS:
+		for j in range(40):
+			var angle := TAU * j / 40.0
+			var phi: float = vent[1] + vent[2] * cos(angle)
+			var a: float = vent[0] + vent[3] * sin(angle) / sin(phi)
+			a = wrapf(a, -PI / 2.0, TAU - PI / 2.0)
+			domain.append(Vector2((a + PI / 2.0) / TAU, 1.0 - phi / helmet_edge(a)))
+	var base := b.vertices.size()
+	for uv in domain:
+		var a := uv.x * TAU - PI / 2.0
+		var phi := helmet_edge(a) * (1.0 - uv.y)
+		b.vertices.append(helmet_point(a, phi))
+		b.normals.append(helmet_normal(a, phi))
+		b.colors.append(shell);b.uvs.append(BLANK_UV)
+	var triangles := Geometry2D.triangulate_delaunay(domain)
+	for t in range(0, triangles.size(), 3):
+		var ia := triangles[t];var ib := triangles[t + 1];var ic := triangles[t + 2]
+		var uv := (domain[ia] + domain[ib] + domain[ic]) / 3.0
+		var a := uv.x * TAU - PI / 2.0
+		if helmet_inside_vent(a, helmet_edge(a) * (1.0 - uv.y), 0.999): continue
+		var normal := (b.vertices[base + ib] - b.vertices[base + ia]).cross(b.vertices[base + ic] - b.vertices[base + ia])
+		if normal.length_squared() < 1e-18: continue
+		if normal.dot(b.normals[base + ia]) > 0:
+			b.indices.append_array(PackedInt32Array([base + ia, base + ic, base + ib]))
+		else:
+			b.indices.append_array(PackedInt32Array([base + ia, base + ib, base + ic]))
+	_helmet_mesh = b.to_mesh(0.27)
+	return _helmet_mesh
 
 ## Ear guards, vent inserts, occipital adjuster and chin strap.
 ## Head landmarks (helmet space): ears at x = +-0.082, y = -0.06, z = -0.01;
 ## chin at y = -0.13, z = 0.075.
+static var _helmet_fittings_mesh: ArrayMesh
 static func helmet_fittings() -> ArrayMesh:
+	if _helmet_fittings_mesh != null: return _helmet_fittings_mesh
 	var b := MeshBuilder.new()
 	var plastic := Color("#0b1621")
-	for s: float in [-1.0, 1.0]:
-		# Ear guard: a flat oval plate with a raised rim, clipped to the lower
-		# shell in front of and over the ear.
-		var side := Basis(Vector3.UP, s * 0.10)
-		var ear := Vector3(s * 0.096, -0.062, 0.006)
-		b.add_rounded_box(ear, Vector3(0.010, 0.058, 0.046), 0.005, plastic, side)
-		b.add_rounded_box(ear + Vector3(s * 0.004, 0.004, 0), Vector3(0.006, 0.040, 0.030), 0.003, Color("#1c2a36"), side)
-		# Chin strap: from the ear guard's lower front, along the jaw and under the chin.
-		var pts := PackedVector3Array([
-			ear + Vector3(-s * 0.004, -0.028, 0.012),
-			Vector3(s * 0.078, -0.112, 0.040),
-			Vector3(s * 0.050, -0.136, 0.066),
-			Vector3(s * 0.016, -0.142, 0.078),
-			Vector3(0.0, -0.142, 0.080)])
-		b.add_tube(pts, 0.0045, Color("#26313a"), 8)
-	# Chin cup.
-	b.add_rounded_box(Vector3(0, -0.140, 0.081), Vector3(0.040, 0.012, 0.024), 0.006, Color("#26313a"))
-	# Dark inserts set just under each vent so the slots read as openings.
-	for vt: Array in HELMET_VENTS:
-		var pts := PackedVector3Array()
-		for k in range(7):
-			var phi: float = float(vt[1]) + lerpf(-0.75, 0.75, k / 6.0) * float(vt[2])
-			pts.append(helmet_point(float(vt[0]), phi, 0.006))
-		b.add_tube(pts, 0.006, Color("#05090d"), 8)
+	# Curved impact-liner backing under each aperture. A tube alone leaves
+	# scalp visible at oblique angles; the patch overlaps the rounded opening.
+	for vent: Array in HELMET_VENTS:
+		var liner_rings := []
+		var liner_colors := []
+		for radius: float in [1.6, 0.01]:
+			var ring := PackedVector3Array()
+			var cols := PackedColorArray()
+			for j in range(40):
+				var angle := TAU * j / 40.0
+				var phi: float = vent[1] + vent[2] * cos(angle) * radius
+				var a: float = vent[0] + vent[3] * sin(angle) * radius / sin(phi)
+				ring.append(helmet_point(a, phi, 0.003))
+				cols.append(Color("#05090d"))
+			liner_rings.append(ring);liner_colors.append(cols)
+		b.add_loft(liner_rings, liner_colors, false, true)
+	# Layered side-shell break, lifted only a millimetre from the smooth body.
+	# The matte joint avoids a bright wire-like painted highlight.
+	for side: float in [-1.0,1.0]:
+		var line := PackedVector3Array()
+		for k in range(28):
+			var a := side * lerpf(0.22,2.92,float(k)/27.0)
+			var phi := 1.44 - 0.25 * maxf(0.0,-cos(a))
+			line.append(helmet_point(a,phi)+helmet_normal(a,phi)*0.0005)
+		b.add_tube(line,0.0011,Color("#18232e"),8)
 	# Occipital lock adjuster on the back of the shell.
 	var occ := helmet_point(PI, 1.92)
 	b.add_rounded_box(occ + Vector3(0, 0.004, -0.004), Vector3(0.050, 0.014, 0.010), 0.004, plastic)
-	return b.to_mesh(0.4)
+	_helmet_fittings_mesh=b.to_mesh(0.4)
+	return _helmet_fittings_mesh
+
+static var _crown_panel_mesh: ArrayMesh
+static func helmet_crown_panel() -> ArrayMesh:
+	if _crown_panel_mesh != null: return _crown_panel_mesh
+	var b := MeshBuilder.new()
+	var rows := 24;var columns := 8
+	for r in range(rows + 1):
+		var z := lerpf(-0.100,0.104,float(r)/rows)
+		# Taper the panel at its ends like a separate moulded crown section.
+		var width := 0.027*(0.88+0.12*sin(PI*float(r)/rows))
+		for c in range(columns + 1):
+			var x := lerpf(-width,width,float(c)/columns)
+			var a := atan2(x/HELMET_W,z/HELMET_D)
+			var radial := Vector2(x/HELMET_W,z/HELMET_D).length()
+			var phi := asin(pow(minf(radial,0.98),1.0/0.85))
+			var normal := helmet_normal(a,phi)
+			b.vertices.append(helmet_point(a,phi)+normal*0.0007)
+			b.normals.append(normal);b.colors.append(Color.WHITE);b.uvs.append(BLANK_UV)
+	for r in range(rows):
+		for c in range(columns):
+			var i := r*(columns+1)+c
+			# Clockwise from outside (+Y) for the crown's row/column ordering.
+			b.indices.append_array(PackedInt32Array([i,i+1,i+columns+2,i,i+columns+2,i+columns+1]))
+	_crown_panel_mesh=b.to_mesh(0.45)
+	return _crown_panel_mesh
+
+static var _ear_guard_mesh: ArrayMesh
+static func helmet_ear_guards() -> ArrayMesh:
+	if _ear_guard_mesh != null: return _ear_guard_mesh
+	var b := MeshBuilder.new()
+	for side: float in [-1.0,1.0]:
+		var x := side * 0.098
+		# Open, thin polycarbonate ear plate with two cross ribs. The reference
+		# exposes the ear through clear windows, unlike the old padded blocks.
+		var rim := PackedVector3Array([
+			Vector3(x,-0.023,0.020),Vector3(x,-0.027,-0.023),
+			Vector3(x,-0.049,-0.032),Vector3(x,-0.080,-0.021),
+			Vector3(x,-0.080,0.026),Vector3(x,-0.053,0.027),Vector3(x,-0.023,0.020)])
+		var smooth_rim := PackedVector3Array()
+		for i in range(6):
+			for k in range(4):
+				smooth_rim.append(rim[i].cubic_interpolate(rim[(i+1)%6],rim[(i+5)%6],rim[(i+2)%6],float(k)/4.0))
+		smooth_rim.append(smooth_rim[0])
+		b.add_tube(smooth_rim,0.0020,Color.WHITE,10)
+		b.add_tube(PackedVector3Array([Vector3(x,-0.043,-0.030),Vector3(x,-0.046,0.027)]),0.0015,Color.WHITE,8)
+		b.add_tube(PackedVector3Array([Vector3(x,-0.063,-0.028),Vector3(x,-0.066,0.027)]),0.0015,Color.WHITE,8)
+	_ear_guard_mesh=b.to_mesh(0.12)
+	return _ear_guard_mesh
+
+static var _helmet_hardware_mesh: ArrayMesh
+static func helmet_hardware() -> ArrayMesh:
+	if _helmet_hardware_mesh != null: return _helmet_hardware_mesh
+	var b := MeshBuilder.new()
+	for side: float in [-1.0,1.0]:
+		# Temple mounting screws and press-stud strap anchor.
+		for yz in [Vector2(-0.016,0.034),Vector2(-0.034,0.032),Vector2(-0.078,0.026)]:
+			var p := Vector3(side*0.102,yz.x,yz.y)
+			b.add_tube(PackedVector3Array([p,p+Vector3(side*0.002,0,0)]),0.0036,Color("#a3a9ad"),16)
+		# Ladder-lock adjuster, with the webbing routed through its middle bar.
+		var p := Vector3(side*0.091,-0.099,0.041)
+		var axis := Vector3(-side*0.35,-0.84,0.38).normalized()
+		var width := Vector3(0,0.40,0.916).normalized()
+		var rim := PackedVector3Array()
+		var profile := GearProfiles.rounded_rect(0.016,0.019,[0.003,0.003,0.003,0.003],3,1)
+		for v in profile: rim.append(p+width*v.x+axis*v.y)
+		rim.append(rim[0])
+		b.add_tube(rim,0.0012,Color("#080a0c"),8)
+		b.add_tube(PackedVector3Array([p-width*0.007,p+width*0.007]),0.0011,Color("#080a0c"),8)
+	# Recessed bridge ribs break up the flat black vent openings. They sit
+	# below the painted skin, like the internal supports visible in the photo.
+	for vent: Array in HELMET_VENTS:
+		for offset: float in [-0.35,0.35]:
+			var rib := PackedVector3Array()
+			for k in range(3):
+				var a: float=vent[0];var phi: float=vent[1]
+				var across := lerpf(-0.88,0.88,float(k)/2.0)
+				if float(vent[3])>float(vent[2]):
+					phi+=float(vent[2])*across
+					a+=float(vent[3])*offset/sin(phi)
+				else:
+					phi+=float(vent[2])*offset
+					a+=float(vent[3])*across/sin(phi)
+				rib.append(helmet_point(a,phi)-helmet_normal(a,phi)*0.0015)
+			b.add_tube(rib,0.00065,Color("#26323c"),6)
+	_helmet_hardware_mesh=b.to_mesh(0.55)
+	return _helmet_hardware_mesh
+
+## Unbranded retention webbing: flat 12 mm nylon, 1.4 mm thick, routed
+## under the chin. Coordinates remain in the existing head-attached frame.
+const CHINSTRAP_WIDTH := 0.012
+const CHINSTRAP_THICKNESS := 0.0014
+static var _chinstrap_mesh: ArrayMesh
+static func chinstrap_path() -> PackedVector3Array:
+	var controls := PackedVector3Array([
+		Vector3(-0.101,-0.078,0.026), Vector3(-0.085,-0.111,0.047),
+		Vector3(-0.057,-0.138,0.066), Vector3(-0.027,-0.148,0.071),
+		Vector3(0,-0.150,0.071), Vector3(0.027,-0.148,0.071),
+		Vector3(0.057,-0.138,0.066), Vector3(0.085,-0.111,0.047),
+		Vector3(0.101,-0.078,0.026)])
+	var result := PackedVector3Array()
+	for i in range(controls.size() - 1):
+		for k in range(4):
+			result.append(controls[i].cubic_interpolate(controls[i+1],controls[maxi(0,i-1)],controls[mini(controls.size()-1,i+2)],float(k)/4.0))
+	result.append(controls[-1])
+	return result
+
+static func chinstrap() -> ArrayMesh:
+	if _chinstrap_mesh != null: return _chinstrap_mesh
+	var b := MeshBuilder.new()
+	var points := chinstrap_path()
+	var rings := [];var colors := []
+	var profile := GearProfiles.rounded_rect(CHINSTRAP_WIDTH,CHINSTRAP_THICKNESS,[0.0005,0.0005,0.0005,0.0005],2,1)
+	for i in range(points.size()):
+		var axis := (points[mini(i+1,points.size()-1)]-points[maxi(i-1,0)]).normalized()
+		var out := Vector3(points[i].x/0.10,-0.30,0.15).normalized()
+		out = (out-axis*out.dot(axis)).normalized()
+		var width := axis.cross(out).normalized()
+		var ring := PackedVector3Array();var cols := PackedColorArray()
+		for p in profile:
+			ring.append(points[i]+width*p.x+out*p.y)
+			cols.append(Color("#050607"))
+		rings.append(ring);colors.append(cols)
+	b.add_loft(rings,colors)
+	_chinstrap_mesh=b.to_mesh(0.88)
+	return _chinstrap_mesh
 
 ## Curved half visor clipped at the temples: brow line to the nose tip,
 ## 2 cm off the face, cut up toward the sides.

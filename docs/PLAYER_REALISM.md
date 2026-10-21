@@ -1,0 +1,150 @@
+# Player realism review — 2026-10-20
+
+Combined branch preserves Claude presentation history through `90e1870`.
+This is an improvement checkpoint; it has not met a release-quality graphics bar.
+
+## Implemented
+
+The prepared CC0 body had lost its UVs/material assignments, so eyes inherited clay
+skin. Restore separate skinned eyes/lips and stable bind-pose UVs. Cache remapped
+meshes and retain positions, indices, bones, weights and imported LODs. Normal
+re-encoding measured at most 0.00013 difference, bounded at 0.0005 by tests.
+Add restrained iris/pupil, lip and brow definition; reduce plastic skin, breezer and
+glove highlights. Correct Compatibility vertex-color conversion while retaining
+linear-space metal classification. Guard degenerate detail normals. Hide idle CPU
+snow artifacts while allowing active spray to finish its lifetime. Clear visors no
+longer cast opaque shadows. No new external asset was imported.
+
+Full-scene review caught black facial stripes from negative GLSL pow inputs. All
+new facial exponent bases use absolute values. A displayed-GPU regression test
+checks the production shader: 576 samples, zero black pixels. A deliberately faulty
+negative control reproduces 480 black samples, confirming this test detects the
+bug. An initial probe with unspecified ambient color/insufficient warmup was
+underlit and not used as final evidence.
+
+## Genuine engine JPEGs
+
+- [Before](screenshots/player-realism-before-head-20261020.jpg) / [after](screenshots/player-realism-after-head-20261020.jpg)
+- [Equipment](screenshots/player-realism-equipment-20261020.jpg)
+- [Goalie pad-save pose](screenshots/player-realism-goalie-20261020.jpg)
+- [Match camera](screenshots/player-realism-arena-20261020.jpg)
+- [Frozen arena close-up](screenshots/player-realism-arena-closeup-20261020.jpg)
+
+Neutral before/after: Godot 4.6.3 softpipe, identical lighting/cameras, 960×960;
+baseline source `eceda47` predates material fixes. Goalie is a staged pose, not
+proof of a live save. Full arena: official Godot 4.6.2 llvmpipe, 1440×900, following
+Claude's renderer lead. Close-up freezes simulation and hides HUD for inspection.
+All are direct viewport JPEGs, without retouching or image generation. Metadata:
+`docs/verification/*-20261020.json`.
+
+## Research read and applied
+
+Official Godot 4.6 docs read 2026-10-20, documentation head
+`b10b7ed373c2d15555186914b82e167169b5b87b`:
+
+- [Standard materials](https://github.com/godotengine/godot-docs/blob/4.6/tutorials/3d/standard_material_3d.rst): roughness/normal detail versus actual geometry; normal maps cannot fix silhouette.
+- [Spatial shaders](https://github.com/godotengine/godot-docs/blob/4.6/tutorials/shaders/shader_reference/spatial_shader.rst): OUTPUT_IS_SRGB distinguishes Compatibility color-space handling.
+- [Shader functions](https://github.com/godotengine/godot-docs/blob/4.6/tutorials/shaders/shader_reference/shader_functions.rst): negative pow bases are undefined, even with nominally integral floating exponents.
+- [Model export](https://github.com/godotengine/godot-docs/blob/4.6/tutorials/assets_pipeline/importing_3d_scenes/model_export_considerations.rst): preserve scale, orientation, UVs and normals.
+- [Mesh LOD](https://github.com/godotengine/godot-docs/blob/4.6/tutorials/3d/mesh_lod.rst): retain imported simplification data when rebuilding surfaces.
+- [Rendering limits](https://github.com/godotengine/godot-docs/blob/4.6/tutorials/3d/3d_rendering_limitations.rst): renderer-specific capability checks remain necessary.
+
+Free authoring tools researched through their actual READMEs, not installed:
+[Material Maker](https://github.com/RodZill4/material-maker) at
+`67446621f5104c55defe720c33beed32c4e1f85f` for procedural PBR;
+[MPFB](https://github.com/makehumancommunity/mpfb2) at
+`b1a2dc98776da9d1eea751b159d42cf61778fe2e` for Blender human generation.
+No extra plugin is necessary for this increment. Future imported assets need their
+own license review; tool availability is not evidence of finished hockey models.
+
+## Validation and remaining work
+
+Final Godot 4.6.3 runner: 45 passed, zero failed, one optional mocap skip; includes
+42 native suites and 31 Python tests. The final run includes the 77-check surface
+and LOD-preservation regression. Displayed 4.6.2 shader test
+passes 576 samples; negative control fails 480 as expected. See verification JSON.
+
+Production/CI remain pinned to 4.6.3. The separate official 4.6.2 diagnostic binary
+was verified against the release SHA512 list. This host's 4.6.3 full-arena software
+rendering remains unreliable; hardware GPU, Forward+ and export checks remain open.
+
+```sh
+python3 tools/check_project.py --suite all --workers 2 --output build/realism-checks
+# Working X display required; diagnostic binary is not the production pin:
+DISPLAY=:9 LP_NUM_THREADS=2 build/renderer-diagnostic/godot-4.6.2 --path . --rendering-method gl_compatibility --audio-driver Dummy --script tests/visual/test_skin_render.gd
+# Add -- --negative-control to verify detection of the old shader defect.
+DISPLAY=:9 LP_NUM_THREADS=2 build/renderer-diagnostic/godot-4.6.2 --path . --rendering-method gl_compatibility --audio-driver Dummy --script tools/capture_realism_game.gd
+```
+
+Claude owns the next helmet silhouette, padding fit, visor-rim and pose review.
+Close-ups still show broad helmet highlights, limited facial variety/coarse anatomy
+and a pronounced visor edge. Authored anatomy/UVs, equipment normal/roughness bakes
+and motion-reference review are needed. Materials alone cannot deliver AAA models.
+No PR merge, publication, purchase or game release was performed.
+
+## 2026-10-21 — smooth helmet geometry
+
+Code: `caf9ac6`, preserving Claude through `e3caa27` (new seated bench, walk and
+board-hop animations). Owner explicitly requested direct helmet/anatomy geometry
+work; Codex reserved this narrow helmet repair in CX-20261021-005.
+
+Replaced fractional-power plan with a continuous oval and stable derivative
+normals. Crown poles point upward; rear shell transition is broader and shallower.
+Replaced displaced vent dents with rounded parameter-space aperture boundaries,
+triangulated around the openings. Added curved dark backing so scalp cannot show
+through. First render experiments with shallow recesses and grid-deleted holes
+were rejected: they still pinched highlights or left sawtooth edges. Final geometry
+uses 40 samples per rounded opening and a smooth shared shell. Reduced paint grain
+and clearcoat; kept brow/ear/occipital fit, visor, rig and other equipment placement.
+
+- [Before quarter](screenshots/helmet-before-quarter-20261021.jpg)
+- [Final quarter](screenshots/helmet-final-quarter-20261021.jpg)
+- [Final front](screenshots/helmet-final-front-20261021.jpg)
+- [Final side](screenshots/helmet-final-side-20261021.jpg)
+- [Final rear](screenshots/helmet-final-rear-20261021.jpg)
+
+Genuine direct Godot 4.6.2 llvmpipe JPEGs, 960×960, fixed neutral stage, same
+cameras/light setup before and after. Baseline source `6122c8c`, before geometry
+changes. Staged model inspection, not gameplay. No image generation/retouching.
+Capture: `tools/capture_model_review.gd -- --helmet-only --stage=helmet-final`.
+Metadata and tests: `verification/helmet-geometry-20261021.json` and companion files.
+
+Final shell: 4,040 vertices / 7,386 triangles, cached once and shared by bench and
+on-ice players. The old shell had 1,730 vertices / 3,456 triangles; increased detail
+has a bounded triangle budget, not a measured FPS improvement. Fifty-six new checks
+cover finite/unit/outward normals, cardinal seam continuity, crown, actual vent
+openings, sharing and budget; ten final affected suites pass. Base facial anatomy,
+individual player likenesses, visor realism, authored equipment bakes and hardware
+performance remain future work. No new release-quality claim.
+
+## 2026-10-21 — retention strap, reference comparison pending
+
+Owner approved the existing visor and requested Bauer Re-Akt photo comparison.
+Bauer and three retailer pages returned proxy CONNECT403, so no reference photo
+was reviewed. Owner offered an attachment; requested side/three-quarter view.
+Brand-specific shell/hardware comparison remains pending, not completed by inference.
+
+Code `867af9d` replaces the round cord/hard front cup with 12 mm flat nylon webbing,
+1.4 mm thick, a smooth path under the jaw, small snap anchors and matte woven
+material. Cached 398-vertex mesh, one additional draw call per skater. No hardware
+FPS claim. Existing shell unchanged; visor arrays are byte-identical to `9844db3`,
+and visor shader/attachment remain unchanged. Eleven final affected suites pass,
+including 100 retention checks. Claude's e3caa27 remains preserved; CX-20261021-006
+requests reference assistance/review without claiming a reply.
+
+Actual fixed-light/camera Godot4.6.2llvmpipe JPEGs:
+[before](screenshots/chinstrap-before-quarter-20261021.jpg),
+[after](screenshots/chinstrap-final-quarter-20261021.jpg),
+[front](screenshots/chinstrap-final-front-20261021.jpg),
+[side](screenshots/chinstrap-final-side-20261021.jpg).
+These are staged native viewport captures, not generated/retouched images.
+Evidence and exact failed reference URLs: `verification/helmet-retention-20261021.json`.
+
+## 2026-10-21 — supplied helmet photographs reviewed
+
+The owner supplied the navy uncaged Bauer and black caged CCM photos. The previous
+reference blocker is resolved. See [photo comparison and genuine captures](HELMET_REFERENCE_REVIEW.md)
+for observed features, original lower crown/temple vents/clear ear frames/retention
+hardware, unchanged approved visor, tests and remaining limits. Code `99933f1`,
+preserving Claude e3caa27; handoff CX-20261021-007. This supersedes the earlier
+pending-reference note without rewriting its historical evidence.

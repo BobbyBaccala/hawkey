@@ -1,0 +1,331 @@
+{
+  "date": "2026-10-20",
+  "timezone": "America/Toronto",
+  "base_commit": "7873243c92e3bf02ef26b2bff175c38e7a67d08d",
+  "godot": "4.6.3.stable.official.7d41c59c4",
+  "python_tests": {
+    "executed": 21,
+    "failed": 0
+  },
+  "engine_command": "godot --headless --fixed-fps 120 --path . --script <test>",
+  "engine_suites_passed": 23,
+  "engine_suites_skipped": 1,
+  "engine_results": [
+    {
+      "test": "tests/test_animation.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nAnimation integration failures: 0"
+    },
+    {
+      "test": "tests/test_boards.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nBoard failures: 0"
+    },
+    {
+      "test": "tests/test_clipping.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nClipping failures: 0"
+    },
+    {
+      "test": "tests/test_controller.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nController failures: 0 (synthetic events; hardware untested)"
+    },
+    {
+      "test": "tests/test_controls.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nControl integration failures: 0"
+    },
+    {
+      "test": "tests/test_gear_graphics.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGear graphic failures: 0"
+    },
+    {
+      "test": "tests/test_goal_net.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoal net failures: 0"
+    },
+    {
+      "test": "tests/test_goalie_gear.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoalie gear failures: 0"
+    },
+    {
+      "test": "tests/test_goalie_saves.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoalie save failures: 0"
+    },
+    {
+      "test": "tests/test_ice.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nIce failures: 0"
+    },
+    {
+      "test": "tests/test_lab.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nIntegration failures: 0"
+    },
+    {
+      "test": "tests/test_lighting.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nLighting failures: 0"
+    },
+    {
+      "test": "tests/test_match.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nMatch integration failures: 0"
+    },
+    {
+      "test": "tests/test_match_loop.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\n20-second match-loop failures: 0 \u2022 score [0, 0] \u2022 clock 18:41"
+    },
+    {
+      "test": "tests/test_match_state.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nMatch-state failures: 0"
+    },
+    {
+      "test": "tests/test_mocap.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nMocap failures: 0 (skipped: clips not installed in assets/mixamo/)"
+    },
+    {
+      "test": "tests/test_net_shooting.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nNet shooting: 132 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_overtime_shootout.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nOvertime/shootout: 75 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_play_now.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPlay Now: 47 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_puck_flight.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPuck flight failures: 0"
+    },
+    {
+      "test": "tests/test_roster_database.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nNative roster: 44 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_simulation.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPASS: rating acceleration, deceleration, front-mouth goal, back entry, wide and high misses"
+    },
+    {
+      "test": "tests/test_stride.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nStride failures: 0"
+    },
+    {
+      "test": "tests/test_world_database.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nWorld database: 4586 checks; 0 failures; 3256 draft candidates"
+    }
+  ],
+  "final_camera_recheck": {
+    "test": "tests/test_overtime_shootout.gd",
+    "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nOvertime/shootout: 75 checks; 0 failures",
+    "note": "The integrated full run and final focused checks both include the 75-check camera-margin version."
+  },
+  "shots_checks": 132,
+  "navigation_checks": 47,
+  "import": "Final headless editor import exited zero without errors; raw fonts use Keep and supported main-thread FontFile.data loader.",
+  "rendering": {
+    "driver": "Xorg dummy / Mesa llvmpipe / OpenGL compatibility",
+    "viewport": [
+      1440,
+      900
+    ],
+    "screenshots": [
+      "docs/screenshots/polish-title-20261020.png",
+      "docs/screenshots/polish-match-20261020.png",
+      "docs/screenshots/polish-overtime-20261020.png",
+      "docs/screenshots/polish-shootout-20261020.png",
+      "docs/screenshots/polish-results-20261020.png"
+    ],
+    "inspected": [
+      "title",
+      "match",
+      "overtime",
+      "shootout",
+      "results"
+    ],
+    "capture_note": "Clocks advanced and deterministic shootout attempt results supplied for UI captures, not a complete human-played match.",
+    "warnings": "Compatibility lacks Forward+ SSR/SSIL/screen-space AA and driver V-Sync."
+  },
+  "ea_reference": {
+    "attempted": "https://help.ea.com/en/articles/nhl/nhl-26/controls/",
+    "result": "Proxy denied CONNECT with HTTP 403; page and mapping not verified",
+    "saved_domain_requirements": [
+      "help.ea.com",
+      "www.ea.com",
+      "media.contentapi.ea.com"
+    ],
+    "runtime_activated": false
+  },
+  "limits": [
+    "Synthetic controllers; physical feel untested",
+    "Shared original HL exhibition preset; full league/CBA/shootout violation rules remain incomplete",
+    "Net assist selects net points; shots remain physical and goalkeepers can save",
+    "No Windows/Deck or packaged export/performance claim",
+    "Claude models/lighting/gear/animation preserved; arena text changes limited to font/filter"
+  ],
+  "integrated_prototype": "b5a292a7a66d339640b513eaee2e1e16b0e88bc2",
+  "integration_merge": "c7f3485",
+  "initial_new_net_integration_run": [
+    {
+      "test": "tests/test_animation.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nAnimation integration failures: 0"
+    },
+    {
+      "test": "tests/test_boards.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nBoard failures: 0"
+    },
+    {
+      "test": "tests/test_clipping.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nClipping failures: 0"
+    },
+    {
+      "test": "tests/test_controller.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nController failures: 0 (synthetic events; hardware untested)"
+    },
+    {
+      "test": "tests/test_controls.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nControl integration failures: 0"
+    },
+    {
+      "test": "tests/test_gear_graphics.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGear graphic failures: 0"
+    },
+    {
+      "test": "tests/test_goal_net.gd",
+      "exit": 2,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nERROR: Puck hitting the netting starts a ripple\n   at: push_error (core/variant/variant_utility.cpp:1024)\n   GDScript backtrace (most recent call first):\n       [0] check (res://tests/test_goal_net.gd:8)\n       [1] run (res://tests/test_goal_net.gd:59)\nERROR: Ripple is live after the hit\n   at: push_error (core/variant/variant_utility.cpp:1024)\n   GDScript backtrace (most recent call first):\n       [0] check (res://tests/test_goal_net.gd:8)\n       [1] run (res://tests/test_goal_net.gd:60)\nGoal net failures: 2"
+    },
+    {
+      "test": "tests/test_goalie_gear.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoalie gear failures: 0"
+    },
+    {
+      "test": "tests/test_goalie_saves.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoalie save failures: 0"
+    },
+    {
+      "test": "tests/test_ice.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nIce failures: 0"
+    },
+    {
+      "test": "tests/test_lab.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nIntegration failures: 0"
+    },
+    {
+      "test": "tests/test_lighting.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nLighting failures: 0"
+    },
+    {
+      "test": "tests/test_match.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nMatch integration failures: 0"
+    },
+    {
+      "test": "tests/test_match_loop.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\n20-second match-loop failures: 0 \u2022 score [0, 0] \u2022 clock 18:41"
+    },
+    {
+      "test": "tests/test_match_state.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nMatch-state failures: 0"
+    },
+    {
+      "test": "tests/test_mocap.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nMocap failures: 0 (skipped: clips not installed in assets/mixamo/)"
+    },
+    {
+      "test": "tests/test_net_shooting.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nNet shooting: 132 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_overtime_shootout.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nOvertime/shootout: 75 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_play_now.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPlay Now: 47 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_puck_flight.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPuck flight failures: 0"
+    },
+    {
+      "test": "tests/test_roster_database.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nNative roster: 44 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_simulation.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPASS: rating acceleration, deceleration, front-mouth goal, back entry, wide and high misses"
+    },
+    {
+      "test": "tests/test_stride.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nStride failures: 0"
+    },
+    {
+      "test": "tests/test_world_database.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nWorld database: 4586 checks; 0 failures; 3256 draft candidates"
+    }
+  ],
+  "post_net_material_rechecks": [
+    {
+      "test": "tests/test_goal_net.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoal net failures: 0"
+    },
+    {
+      "test": "tests/test_net_shooting.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nNet shooting: 132 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_overtime_shootout.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nOvertime/shootout: 75 checks; 0 failures"
+    }
+  ],
+  "resolved_integration_failure": "New net regression initially assumed facing-based centre shot and then exposed energy adding on a higher net-directed trajectory. Fixture now requests explicit centre placement without removing assertions; absorbent net material subtracts puck restitution. Final containment/ripple, shot and OT/SO rechecks exit zero.",
+  "controller_overlay_recheck": {
+    "test": "tests/test_controller.gd",
+    "exit": 0,
+    "output": "Controller failures: 0 (synthetic events; hardware untested)",
+    "note": "Final added checks verify the advertised View/Back controls overlay opens and closes; disconnect clearing also passes."
+  }
+}

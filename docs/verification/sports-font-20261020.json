@@ -1,0 +1,502 @@
+{
+  "engine": [
+    {
+      "suite": "tests/test_accessibility.gd",
+      "returncode": 0,
+      "seconds": 3.49,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Accessibility: 31 checks; 0 failures"
+      ]
+    },
+    {
+      "suite": "tests/test_animation.gd",
+      "returncode": 0,
+      "seconds": 0.98,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Animation integration failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_benches.gd",
+      "returncode": 0,
+      "seconds": 3.12,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Bench failures: 0",
+        "PASS"
+      ]
+    },
+    {
+      "suite": "tests/test_boards.gd",
+      "returncode": 0,
+      "seconds": 6.66,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Board failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_clipping.gd",
+      "returncode": 1,
+      "seconds": 2.19,
+      "skipped": false,
+      "tail": [
+        "       [0] check (res://tests/test_clipping.gd:15)",
+        "       [1] check_pose (res://tests/test_clipping.gd:175)",
+        "       [2] run (res://tests/test_clipping.gd:198)",
+        "Clipping failures: 1"
+      ]
+    },
+    {
+      "suite": "tests/test_controller.gd",
+      "returncode": 0,
+      "seconds": 3.04,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Controller failures: 0 (synthetic events; hardware untested)"
+      ]
+    },
+    {
+      "suite": "tests/test_controls.gd",
+      "returncode": 0,
+      "seconds": 1.9,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Control integration failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_gear_graphics.gd",
+      "returncode": 0,
+      "seconds": 0.24,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Gear graphic failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_gm_checkpoint.gd",
+      "returncode": 0,
+      "seconds": 19.82,
+      "skipped": false,
+      "tail": [
+        "   GDScript backtrace (most recent call first):",
+        "       [0] save_file (res://scripts/save_store.gd:68)",
+        "       [1] _run (res://scripts/gm_checkpoint_job.gd:30)",
+        "GM checkpoint: 10 checks; 0 failures; 808425 process callbacks during save; 149.09 ms main-thread launch"
+      ]
+    },
+    {
+      "suite": "tests/test_gm_management.gd",
+      "returncode": 0,
+      "seconds": 50.87,
+      "skipped": false,
+      "tail": [
+        "   GDScript backtrace (most recent call first):",
+        "       [0] save_file (res://scripts/save_store.gd:68)",
+        "       [1] _run (res://scripts/gm_checkpoint_job.gd:30)",
+        "GM management: 160 checks; 0 failures"
+      ]
+    },
+    {
+      "suite": "tests/test_gm_navigation.gd",
+      "returncode": 0,
+      "seconds": 59.23,
+      "skipped": false,
+      "tail": [
+        "       [2] advance_day (res://scripts/gm_session.gd:69)",
+        "       [3] run (res://tests/test_gm_navigation.gd:67)",
+        "       [4] advance_day (res://scripts/gm_menu.gd:150)",
+        "GM navigation: 22 checks; 0 failures"
+      ]
+    },
+    {
+      "suite": "tests/test_gm_rosters.gd",
+      "returncode": 0,
+      "seconds": 3.12,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "GM roster browser: 3274 checks; 0 failures"
+      ]
+    },
+    {
+      "suite": "tests/test_gm_scouting.gd",
+      "returncode": 0,
+      "seconds": 17.33,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Scout UI rows 26 query  page 0",
+        "GM scouting: 2755 checks; 0 failures; 2727 eligible junior prospects"
+      ]
+    },
+    {
+      "suite": "tests/test_gm_season.gd",
+      "returncode": 0,
+      "seconds": 9.18,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "GM season: 3088 checks; 0 failures"
+      ]
+    },
+    {
+      "suite": "tests/test_goal_celebration.gd",
+      "returncode": 0,
+      "seconds": 3.03,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Goal celebration failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_goal_net.gd",
+      "returncode": 0,
+      "seconds": 1.82,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Goal net failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_goalie_gear.gd",
+      "returncode": 0,
+      "seconds": 3.4,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Goalie gear failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_goalie_saves.gd",
+      "returncode": 0,
+      "seconds": 0.9,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Goalie save failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_hockey_audio.gd",
+      "returncode": 0,
+      "seconds": 3.04,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Hockey audio: 64 checks; 0 failures"
+      ]
+    },
+    {
+      "suite": "tests/test_hockey_stop.gd",
+      "returncode": 0,
+      "seconds": 2.19,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Hockey stop failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_ice.gd",
+      "returncode": 0,
+      "seconds": 4.34,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Ice failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_kit_geometry.gd",
+      "returncode": 0,
+      "seconds": 0.79,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "faceting: jersey 4.9 pants 5.5 glove 11.4 helmet 6.1",
+        "Kit geometry failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_kit_materials.gd",
+      "returncode": 0,
+      "seconds": 1.07,
+      "skipped": false,
+      "tail": [
+        "PASS Number textures are cached",
+        "PASS Goalie sweater gets its own hem height",
+        "PASS Referee keeps the striped sweater",
+        "Kit material failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_lab.gd",
+      "returncode": 0,
+      "seconds": 1.35,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Integration failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_lighting.gd",
+      "returncode": 0,
+      "seconds": 3.03,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Lighting failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_match.gd",
+      "returncode": 0,
+      "seconds": 3.03,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Match integration failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_match_loop.gd",
+      "returncode": 0,
+      "seconds": 18.75,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "20-second match-loop failures: 0 \u2022 score [0, 1] \u2022 clock 19:01"
+      ]
+    },
+    {
+      "suite": "tests/test_match_state.gd",
+      "returncode": 0,
+      "seconds": 0.14,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Match-state failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_mocap.gd",
+      "returncode": 0,
+      "seconds": 0.14,
+      "skipped": true,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Mocap failures: 0 (skipped: clips not installed in assets/mixamo/)"
+      ]
+    },
+    {
+      "suite": "tests/test_net_shooting.gd",
+      "returncode": 0,
+      "seconds": 3.32,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Net shooting: 135 checks; 0 failures"
+      ]
+    },
+    {
+      "suite": "tests/test_overtime_shootout.gd",
+      "returncode": 0,
+      "seconds": 3.96,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Overtime/shootout: 75 checks; 0 failures"
+      ]
+    },
+    {
+      "suite": "tests/test_play_now.gd",
+      "returncode": 0,
+      "seconds": 21.17,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Play Now: 47 checks; 0 failures"
+      ]
+    },
+    {
+      "suite": "tests/test_puck_flight.gd",
+      "returncode": 0,
+      "seconds": 1.35,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Puck flight failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_render_settings.gd",
+      "returncode": 0,
+      "seconds": 3.03,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Render settings failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_roster_database.gd",
+      "returncode": 0,
+      "seconds": 0.14,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Native roster: 44 checks; 0 failures"
+      ]
+    },
+    {
+      "suite": "tests/test_save_store.gd",
+      "returncode": 0,
+      "seconds": 0.14,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Save/recovery: 25 checks; 0 failures"
+      ]
+    },
+    {
+      "suite": "tests/test_simulation.gd",
+      "returncode": 0,
+      "seconds": 0.23,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "PASS: rating acceleration, deceleration, front-mouth goal, back entry, wide and high misses"
+      ]
+    },
+    {
+      "suite": "tests/test_skate_stick.gd",
+      "returncode": 0,
+      "seconds": 0.9,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Skate/stick failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_stride.gd",
+      "returncode": 0,
+      "seconds": 1.35,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "Stride failures: 0"
+      ]
+    },
+    {
+      "suite": "tests/test_world_database.gd",
+      "returncode": 0,
+      "seconds": 19.3,
+      "skipped": false,
+      "tail": [
+        "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org",
+        "",
+        "World database: 4586 checks; 0 failures; 3256 draft candidates"
+      ]
+    }
+  ],
+  "python": {
+    "returncode": 0,
+    "output": "........................\n----------------------------------------------------------------------\nRan 24 tests in 1.135s\n\nOK\n"
+  },
+  "godot": "4.6.3.stable.official.7d41c59c4",
+  "font_change": "Barlow Regular body; Barlow Condensed SemiBold display/buttons; native button size 20",
+  "preserved_prototype": "d3cabacac1e3fa9ece1d5c1196084a821da5e606",
+  "integration_rechecks": [
+    {
+      "suite": "clipping",
+      "returncode": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nClipping failures: 0\n"
+    },
+    {
+      "suite": "goalie_gear",
+      "returncode": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoalie gear failures: 0\n"
+    },
+    {
+      "suite": "goalie_saves",
+      "returncode": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoalie save failures: 0\n"
+    },
+    {
+      "suite": "kit_geometry",
+      "returncode": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nfaceting: jersey 4.9 pants 5.5 glove 11.4 helmet 6.1\nKit geometry failures: 0\n"
+    },
+    {
+      "suite": "kit_materials",
+      "returncode": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPASS Kit shader is applied to the skinned jersey\nPASS Jersey uses the knit cloth shader\nPASS Jersey has a mipmapped knit normal map\nPASS Jersey has a cloth-fold normal map\nPASS Jersey has fabric sheen\nPASS Number is sewn into the jersey shader\nPASS No floating Label3D text on the skater\nPASS Nameplate is twill in the jersey shader\nPASS set_number() updates the sewn number\nPASS Number SDF has inside and outside (0..183)\nPASS Sleeves use striped knit cloth\nPASS Sleeve cloth has UVs for stripes and knit\nPASS Breezers have nylon detail and sheen\nPASS Socks have a ribbed knit normal and crisp stripes\nPASS Gloves have a leather grain normal\nPASS Skates have boot grain and steel runner\nPASS Helmet shell has a clearcoat over painted detail\nPASS Visor uses the clear Fresnel visor shader\nPASS Skin has pore detail\nPASS Skin shader still hides the body's pants and socks\nPASS Two skaters share the knit texture\nPASS Same kit shares the sleeve material\nPASS Same kit shares the breezer material\nPASS Same kit shares the sock material\nPASS Different numbers get different twill\nPASS Number textures are cached\nPASS Goalie sweater gets its own hem height\nPASS Referee keeps the striped sweater\nKit material failures: 0\n"
+    },
+    {
+      "suite": "render_settings",
+      "returncode": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nRender settings failures: 0\n"
+    }
+  ],
+  "final_status": "39 engine suites pass after clipping fix and six affected rechecks; optional mocap skipped; 24 Python tests pass",
+  "initial_failure": "New prototype goalie pants profile intersected right pad in save; goalie-specific profile restored, skater breezers and materials retained",
+  "capture_source": "Actual native Godot 4.6.3 UI under softpipe, isolated capture career; full 3D rendering unapproved",
+  "jpegs": {
+    "sports-font-statistics-20261020.jpg": "a2c6103807662aa10ef5ba3af843c9582e4e3b19ea0da41f7da07679c987a048",
+    "sports-font-menu-20261020.jpg": "09ff21bb30bdd7aa61ba2eff2c6ab8c96d9fb164686f3043551f10a933f0ec6d"
+  },
+  "fonts": {
+    "BarlowCondensed-SemiBold.ttf": "7b619d14bc2327509a9ef32b0890f709626f7ecc9ff61191c2a4314c5499d2d9",
+    "Barlow-Regular.ttf": "95aa02c7c43096e0dd44d787ba6216864a67157e402adab59b35572e0c1577ea"
+  }
+}

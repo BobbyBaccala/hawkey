@@ -1,43 +1,148 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Hawkey original roster",
+  "title": "Hawkey original Play Now roster",
   "type": "object",
-  "required": ["schema_version", "teams"],
+  "required": [
+    "schema_version",
+    "database_metadata_version",
+    "teams"
+  ],
   "properties": {
-    "schema_version": {"const": 1},
+    "schema_version": {
+      "const": 1
+    },
     "teams": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "city", "name", "players"],
+        "required": [
+          "id",
+          "city",
+          "name",
+          "players",
+          "league_id",
+          "season"
+        ],
         "properties": {
-          "id": {"type": "string", "minLength": 1},
-          "city": {"type": "string"},
-          "name": {"type": "string"},
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "city": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
           "players": {
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["id", "name", "position", "ratings"],
+              "required": [
+                "id",
+                "name",
+                "position",
+                "ratings",
+                "identity_kind",
+                "source",
+                "rating_metadata"
+              ],
               "properties": {
-                "id": {"type": "string", "minLength": 1},
-                "name": {"type": "string"},
-                "position": {"enum": ["C", "LW", "RW", "D", "G"]},
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "name": {
+                  "type": "string"
+                },
+                "position": {
+                  "enum": [
+                    "C",
+                    "LW",
+                    "RW",
+                    "D",
+                    "G"
+                  ]
+                },
                 "ratings": {
                   "type": "object",
-                  "required": ["speed", "acceleration", "agility"],
+                  "required": [
+                    "speed",
+                    "acceleration",
+                    "agility"
+                  ],
                   "properties": {
-                    "speed": {"type": "number", "minimum": 0, "maximum": 100},
-                    "acceleration": {"type": "number", "minimum": 0, "maximum": 100},
-                    "agility": {"type": "number", "minimum": 0, "maximum": 100}
+                    "speed": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "acceleration": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "agility": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    }
                   },
-                  "additionalProperties": {"type": "number", "minimum": 0, "maximum": 100}
+                  "additionalProperties": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100
+                  }
+                },
+                "identity_kind": {
+                  "enum": [
+                    "fictional",
+                    "generated"
+                  ]
+                },
+                "source": {
+                  "type": "null"
+                },
+                "rating_metadata": {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "method",
+                    "confidence"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "const": "estimate"
+                    },
+                    "method": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "confidence": {
+                      "const": "unassessed"
+                    }
+                  }
                 }
               }
-            }
+            },
+            "minItems": 20,
+            "maxItems": 20
+          },
+          "league_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "season": {
+            "type": "string",
+            "minLength": 1
           }
         }
-      }
+      },
+      "minItems": 2
+    },
+    "database_metadata_version": {
+      "const": 1
     }
-  }
+  },
+  "description": "Native Play Now contract. Exactly four C/LW/RW, six D and two G per team; globally unique player IDs and unique team IDs are additionally enforced by roster_database.gd. Licensed real datasets need a separately reviewed adapter."
 }

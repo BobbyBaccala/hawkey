@@ -77,7 +77,7 @@ var skates: Array[Node3D] = []
 var skate_cuffs: Array[MeshInstance3D] = []
 var helmet: Node3D
 var shirt: Node3D
-## Cut-resistant neck guard (skaters): fills the collar up to the jaw.
+## Close-fitting cut-resistant neck fabric inside the jersey collar.
 var neck_guard: MeshInstance3D
 var sticks: Node3D
 var pads: Array[Node3D] = []
@@ -288,7 +288,7 @@ func _ready() -> void:
 	uniform.set_shader_parameter("has_skin_detail",true)
 	for child in skeleton.get_children():
 		if child is MeshInstance3D:
-			child.material_override = uniform
+			preload("res://scripts/player_surface_materials.gd").apply(child,uniform)
 	helmet = Node3D.new()
 	rig.add_child(helmet)
 	build_helmet()
@@ -299,7 +299,7 @@ func _ready() -> void:
 		neck_guard = MeshInstance3D.new()
 		neck_guard.name = "NeckGuard"
 		neck_guard.mesh = ArrayMesh.new()
-		neck_guard.material_override = Kit.plastic(Color("#141a21"),0.85)
+		neck_guard.material_override = Kit.neck_guard()
 		rig.add_child(neck_guard)
 	sticks = Node3D.new()
 	rig.add_child(sticks)
@@ -444,10 +444,25 @@ func build_helmet() -> void:
 	shell.material_override = Kit.helmet_shell(Color("#132434"))
 	shell.name = "Shell"
 	var fittings := add_mesh(helmet,Gear.helmet_fittings())
-	fittings.material_override = Kit.plastic(Color("#0b1621"),0.6)
+	fittings.material_override = Kit.helmet_liner()
+	var crown := add_mesh(helmet,Gear.helmet_crown_panel())
+	crown.name = "CrownPanel"
+	crown.material_override = Kit.helmet_crown_panel()
+	var ears := add_mesh(helmet,Gear.helmet_ear_guards())
+	ears.name = "EarGuards"
+	ears.material_override = Kit.helmet_ears()
+	ears.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var hardware := add_mesh(helmet,Gear.helmet_hardware())
+	hardware.name = "RetentionHardware"
+	hardware.material_override = Kit.helmet_hardware()
+	var strap := add_mesh(helmet,Gear.chinstrap())
+	strap.name = "Chinstrap"
+	strap.material_override = Kit.chinstrap()
 	var visor := add_mesh(helmet,Gear.visor())
 	visor.material_override = Kit.visor()
 	visor.name = "Visor"
+	# Clear polycarbonate must not become an opaque shadow mask over the face.
+	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 ## Torso of the sweater in rest (shirt) space: half-width and front/back
 ## half-depths by height. Shoulder pads under the sweater give the wide,
@@ -491,8 +506,7 @@ func jersey_point(a: float, y: float, scale_: float = 1.0) -> Vector3:
 
 ## Top edge of the sweater: a V-neck at the front, a round collar elsewhere.
 func jersey_neck(a: float) -> float:
-	var front := maxf(0.0,sin(a))
-	return 1.56-0.095*pow(front,10.0)-0.014*front
+	return preload("res://scripts/jersey_profile.gd").neck(a)
 
 ## Skin weights for a rest-space point: the hem follows the hips, the body
 ## the spine chain up to the chest, the shoulder pads partly the upper arms.
@@ -542,9 +556,9 @@ func build_jersey() -> void:
 		levels.append([y,0.0,1.0,0.0,0.98+(y-hem)])
 	for k in range(1,7):
 		levels.append([-1.0,float(k)/6.0,1.0,0.0,0.0])
-	levels.append([-1.0,1.0,1.06,0.006,1.02])
-	levels.append([-1.0,1.0,1.08,-0.008,1.02])
-	levels.append([-1.0,1.0,0.97,-0.018,1.02])
+	levels.append([-1.0,1.0,1.025,0.003,1.02])
+	levels.append([-1.0,1.0,1.04,-0.003,1.02])
+	levels.append([-1.0,1.0,0.98,-0.009,1.02])
 	for level: Array in levels:
 		var ring := PackedVector3Array()
 		var uv_ring := PackedVector2Array()
@@ -1320,7 +1334,7 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	brake_turn = move_toward(brake_turn,1.0 if braking and not goalie else 0.0,delta*6)
 	shot_follow = maxf(0,shot_follow-delta*3)
 	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
-	blade_position=Vector3(-0.02+butterfly*0.05,0.042,0.60-butterfly*0.04) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
+	blade_position=Vector3(-0.02+butterfly*0.05,0.042,0.60-butterfly*0.04+0.035*sin(PI*butterfly)) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
 	# Stop: the stick reaches out in front for balance.
 	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
 	# Board hop: lift the stick clear of the boards (blade rises first, so it
@@ -1416,7 +1430,8 @@ func set_nameplate(value: String) -> void:
 
 func stick_grip() -> Vector3:
 	if goalie:
-		var grip := Vector3(lerpf(-0.36,-0.24,butterfly)+posed_drop.x,0.60-butterfly*0.12,0.49)
+		# Mid-drop the stick is pushed out ahead of the closing pads.
+		var grip := Vector3(lerpf(-0.36,-0.24,butterfly)+posed_drop.x,0.60-butterfly*0.12,0.49+0.035*sin(PI*butterfly))
 		var block_w: float = save_weights.blocker
 		if block_w > 0.0:
 			# Blocker save: the stick hand punches out to the puck's line and the
@@ -1669,11 +1684,11 @@ func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF
 
 const SLEEVE_ROWS := 14
 const SLEEVE_SIDES := 22
-## Neck guard: a padded collar tube from inside the jersey neckline up under
-## the jaw, following the posed torso and head.
+## Short fabric neck guard, with both ends attached in the posed bind frame.
+## A world-up offset from the head stretched the old guard during a skating lean.
 func update_neck_guard() -> void:
-	var bottom: Vector3 = shirt.transform*Vector3(0,1.47,0.006)
-	var top: Vector3 = posed_head+Vector3(0,0.012,0.0)
+	var bottom: Vector3 = shirt.transform*Vector3(0,1.505,0.006)
+	var top: Vector3 = posed_head+shirt.transform.basis*(Vector3(0,1.575,0.006)-(rest["head"] as Transform3D).origin)
 	var old:Array=neck_guard.get_meta("pose",[])
 	if old.size()==2 and bottom.is_equal_approx(old[0]) and top.is_equal_approx(old[1]):return
 	neck_guard.set_meta("pose",[bottom,top])
@@ -1686,7 +1701,7 @@ func update_neck_guard() -> void:
 	const SIDES:=20
 	const ROWS:=6
 	# Radius: flares into the collar, snug round the neck, rolled top edge.
-	var radii:=[0.105,0.090,0.077,0.070,0.068,0.068,0.064]
+	var radii:=[0.067,0.063,0.060,0.057,0.056,0.056,0.055]
 	var rings:=[]
 	for r in range(ROWS+1):
 		var t:=float(r)/ROWS

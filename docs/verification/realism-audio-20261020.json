@@ -1,0 +1,227 @@
+{
+  "date": "2026-10-20 America/Toronto",
+  "runtime": "Godot 4.6.3 Linux headless fixed-fps 120",
+  "status": "31 engine suites passed; optional mocap skipped; 24 Python tests passed",
+  "engine": [
+    {
+      "test": "tests/test_animation.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nAnimation integration failures: 0"
+    },
+    {
+      "test": "tests/test_boards.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nBoard failures: 0"
+    },
+    {
+      "test": "tests/test_clipping.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nClipping failures: 0"
+    },
+    {
+      "test": "tests/test_controller.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nController failures: 0 (synthetic events; hardware untested)"
+    },
+    {
+      "test": "tests/test_controls.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nControl integration failures: 0"
+    },
+    {
+      "test": "tests/test_gear_graphics.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGear graphic failures: 0"
+    },
+    {
+      "test": "tests/test_gm_navigation.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nERROR: Could not create directory: '/proc/hawkey-no-write'.\n   at: make_dir_recursive (core/io/dir_access.cpp:178)\n   GDScript backtrace (most recent call first):\n       [0] save_file (res://scripts/save_store.gd:68)\n       [1] save (res://scripts/gm_session.gd:14)\n       [2] finish_match (res://scripts/gm_session.gd:74)\n       [3] update_match_hud (res://scripts/match.gd:939)\n       [4] run (res://tests/test_gm_navigation.gd:52)\n       [5] settle (res://tests/test_gm_navigation.gd:14)\nERROR: Could not create directory: '/proc/hawkey-no-write'.\n   at: make_dir_recursive (core/io/dir_access.cpp:178)\n   GDScript backtrace (most recent call first):\n       [0] save_file (res://scripts/save_store.gd:68)\n       [1] save (res://scripts/gm_session.gd:14)\n       [2] advance_day (res://scripts/gm_session.gd:56)\n       [3] run (res://tests/test_gm_navigation.gd:67)\n       [4] settle (res://tests/test_gm_navigation.gd:14)\nGM navigation: 22 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_gm_rosters.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGM roster browser: 3274 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_gm_season.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGM season: 3088 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_goal_celebration.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoal celebration failures: 0"
+    },
+    {
+      "test": "tests/test_goal_net.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoal net failures: 0"
+    },
+    {
+      "test": "tests/test_goalie_gear.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoalie gear failures: 0"
+    },
+    {
+      "test": "tests/test_goalie_saves.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoalie save failures: 0"
+    },
+    {
+      "test": "tests/test_hockey_audio.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nHockey audio: 62 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_hockey_stop.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nHockey stop failures: 0"
+    },
+    {
+      "test": "tests/test_ice.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nIce failures: 0"
+    },
+    {
+      "test": "tests/test_lab.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nIntegration failures: 0"
+    },
+    {
+      "test": "tests/test_lighting.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nLighting failures: 0"
+    },
+    {
+      "test": "tests/test_match.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nMatch integration failures: 0"
+    },
+    {
+      "test": "tests/test_match_loop.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\n20-second match-loop failures: 0 \u2022 score [0, 1] \u2022 clock 19:01"
+    },
+    {
+      "test": "tests/test_match_state.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nMatch-state failures: 0"
+    },
+    {
+      "test": "tests/test_mocap.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nMocap failures: 0 (skipped: clips not installed in assets/mixamo/)"
+    },
+    {
+      "test": "tests/test_net_shooting.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nNet shooting: 135 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_overtime_shootout.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nOvertime/shootout: 75 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_play_now.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPlay Now: 47 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_puck_flight.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPuck flight failures: 0"
+    },
+    {
+      "test": "tests/test_roster_database.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nNative roster: 44 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_save_store.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nSave/recovery: 25 checks; 0 failures"
+    },
+    {
+      "test": "tests/test_simulation.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nPASS: rating acceleration, deceleration, front-mouth goal, back entry, wide and high misses"
+    },
+    {
+      "test": "tests/test_skate_stick.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nSkate/stick failures: 0"
+    },
+    {
+      "test": "tests/test_stride.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nStride failures: 0"
+    },
+    {
+      "test": "tests/test_world_database.gd",
+      "exit": 0,
+      "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nWorld database: 4586 checks; 0 failures; 3256 draft candidates"
+    }
+  ],
+  "python": {
+    "exit": 0,
+    "tests": 24,
+    "output": "........................\n----------------------------------------------------------------------\nRan 24 tests in 1.563s\n\nOK"
+  },
+  "final_audio_volume_recheck": {
+    "exit": 0,
+    "output": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nHockey audio: 64 checks; 0 failures"
+  },
+  "assets": {
+    "original_generated_wav": 33,
+    "variants_per_kind": 3,
+    "format": "22050 Hz 16-bit mono PCM",
+    "third_party_recordings": false,
+    "reproducibility": "Byte-identical regeneration verified by Python tests"
+  },
+  "capture": {
+    "file": "docs/screenshots/realism-preferences-20261020.png",
+    "type": "Actual 1440x900 native settings UI",
+    "renderer": "Mesa softpipe OpenGL compatibility",
+    "script": "tools/capture_audio_settings.gd",
+    "settings_path": "res://build/nonexistent-capture-audio-settings.json"
+  },
+  "renderer_attempts": [
+    {
+      "setup": "llvmpipe 128-bit, 2 raster threads, minimal text-only diagnostic",
+      "exit": 0,
+      "claim": "Only the small probe succeeded"
+    },
+    {
+      "setup": "llvmpipe 128-bit full arena",
+      "exit": 134,
+      "error": "malloc(): invalid size (unsorted)"
+    },
+    {
+      "setup": "llvmpipe 128-bit one raster thread, full arena",
+      "exit": 134,
+      "error": "malloc(): invalid size (unsorted)"
+    },
+    {
+      "setup": "direct rendering and single-thread scene, full arena",
+      "exit": 134,
+      "error": "malloc(): invalid size (unsorted)"
+    },
+    {
+      "setup": "Mobile/Vulkan attempt",
+      "result": "Fell back to OpenGL; allocator failure, no arena image"
+    },
+    {
+      "setup": "Diagnostic system-font override in isolated preferences probe",
+      "exit": 134,
+      "result": "Allocator failure; no application font source change committed"
+    }
+  ],
+  "limits": [
+    "Full arena capture still blocked in current cloud renderer",
+    "Original synthesized audio is a foundation, not verified professional realism",
+    "Human listening, audio hardware and physical controller untested",
+    "No unattended scheduling tool available; no background work between active turns claimed"
+  ]
+}

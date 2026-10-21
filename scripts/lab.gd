@@ -1,4 +1,7 @@
 extends Node3D
+var practice_pass_actor: CharacterBody3D
+var practice_input := preload("res://scripts/controller_input.gd").new()
+const NetShooting = preload("res://scripts/net_shooting.gd")
 const Skating = preload("res://scripts/skating.gd")
 const Arena = preload("res://scripts/arena.gd")
 const Skater = preload("res://scripts/skater_visual.gd")
@@ -29,6 +32,9 @@ var saves := 0
 var previous_puck := Vector3.ZERO
 var debug := false
 var paused := false
+var reduce_motion:=false
+var show_puck_indicator:=false
+var puck_marker: Control
 var rating := 85.0
 var zoom := 0.8
 var arena_title := "HAWKEY PRACTICE CENTRE"
@@ -37,7 +43,7 @@ var goal_timer := 0.0
 var elapsed := 0.0
 var camera_target := Vector3.ZERO
 var pickup_owner := false
-var audio: AudioStreamPlayer
+var audio: Node3D
 var selection: MeshInstance3D
 
 func make_skater(pos: Vector3, color: Color, jersey: String, is_goalie: bool = false, accent: Color = Color(0,0,0,0)) -> CharacterBody3D:
@@ -71,6 +77,12 @@ func make_skater(pos: Vector3, color: Color, jersey: String, is_goalie: bool = f
 	return body
 
 func _ready() -> void:
+	var preferences=preload("res://scripts/game_settings.gd").new()
+	preferences.load_settings()
+	practice_input.deadzone=preferences.values.deadzone
+	reduce_motion=preferences.values.reduce_motion
+	show_puck_indicator=preferences.values.puck_indicator
+	if get_script().resource_path == "res://scripts/lab.gd": Input.joy_connection_changed.connect(on_practice_connection)
 	var world := WorldEnvironment.new()
 	world.environment = Environment.new()
 	# Tonemap, grade, glow, SSAO/SSIL/SSR, haze: scripts/render_look.gd.
@@ -165,9 +177,9 @@ func _ready() -> void:
 	camera.position = Vector3(0,23,23)
 	camera.look_at(Vector3(0,0,-4))
 	build_hud()
-	audio = AudioStreamPlayer.new()
-	audio.volume_db = -15
+	audio = preload("res://scripts/hockey_audio.gd").new()
 	add_child(audio)
+	audio.level=preferences.values.get("sfx_volume",1.0)
 	reset_puck()
 	# Screenshot automation is opt-in and only runs in a real rendering session.
 	if "--portrait" in OS.get_cmdline_user_args():
@@ -180,6 +192,7 @@ func _ready() -> void:
 func build_hud() -> void:
 	var canvas := CanvasLayer.new()
 	add_child(canvas)
+	puck_marker=preload("res://scripts/puck_indicator.gd").new();canvas.add_child(puck_marker)
 	var top := PanelContainer.new()
 	top.position = Vector2(30,24)
 	top.size = Vector2(560,82)
@@ -221,27 +234,21 @@ func build_hud() -> void:
 	power.show_percentage = false
 	power.max_value = 1
 	canvas.add_child(power)
+	var menu := Button.new()
+	menu.text = "Return to menu"
+	menu.position = Vector2(32, 175)
+	menu.pressed.connect(func():
+		load("res://scripts/match.gd").return_to_title = true
+		get_tree().change_scene_to_file("res://main.tscn"))
+	canvas.add_child(menu)
+	for item in [hud,status,help,menu]: item.add_theme_font_override("font",preload("res://scripts/interface_font.gd").get_font(false))
+	menu.add_theme_font_size_override("font_size",16)
 
 func capture_preview() -> void:
 	await get_tree().create_timer(2).timeout
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png("/tmp/hawkey-preview.png")
 	get_tree().quit()
-
-func beep(frequency: float) -> void:
-	if DisplayServer.get_name()=="headless": return
-	# Finite original synthetic impact; no persistent playback generator.
-	var bytes := PackedByteArray()
-	for i in range(1600):
-		var sample := int(sin(float(i) * frequency * TAU / 22050) * 9000 * exp(-float(i) / 300))
-		bytes.append(sample & 255)
-		bytes.append((sample >> 8) & 255)
-	var stream := AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = 22050
-	stream.data = bytes
-	audio.stream = stream
-	audio.play()
 
 func reset_puck() -> void:
 	charge = 0
@@ -253,6 +260,10 @@ func reset_puck() -> void:
 	cooldown = 0.15
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventJoypadMotion or event is InputEventJoypadButton:
+		practice_input.handle(event)
+		return
+	if event is InputEventMouseButton or event is InputEventKey: practice_input.active=false
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.keycode:
 			KEY_ESCAPE:
@@ -280,8 +291,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			zoom = clampf(zoom - 0.08,0.65,1.7)
 		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
 			zoom = clampf(zoom + 0.08,0.65,1.7)
-		if event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
-			strike(aim,lerpf(14,36,charge))
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			strike(aim,28)
 			charge = 0
 		if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 			var direction := (teammate.position + teammate.velocity * 0.25 - puck.position)
@@ -289,15 +300,16 @@ func _unhandled_input(event: InputEvent) -> void:
 			if strike(direction.normalized(),17,true):
 				passes += 1
 
-func strike(direction: Vector3, speed: float, is_pass: bool = false) -> bool:
-	if player.position.distance_to(puck.position) > 1.8 or cooldown > 0:
+func strike(direction: Vector3, speed: float, is_pass: bool = false, loft: float = 0.0) -> bool:
+	if paused or player.position.distance_to(puck.position) > 1.8 or cooldown > 0 or puck.position.y>0.22:
 		return false
 	direction.y = 0
-	puck.linear_velocity = direction.normalized() * speed + velocity * 0.25
+	puck.linear_velocity = direction.normalized() * speed + velocity * 0.25 if is_pass else NetShooting.launch(puck.position,-1,practice_input.left_stick if practice_input.active else mouse_net_placement(-1),75,practice_input.slap_requested if practice_input.active else Input.is_physical_key_pressed(KEY_ALT))
+	if is_pass: puck.linear_velocity.y=speed*loft
 	pickup_owner = false
 	cooldown = 0.42
 	if not is_pass: shots += 1
-	beep(180 if not is_pass else 260)
+	audio.cue("pass" if is_pass else ("slap" if (practice_input.slap_requested if practice_input.active else Input.is_physical_key_pressed(KEY_ALT)) else "wrist"),puck.global_position,speed/32)
 	return true
 
 func _on_puck_contact(body: Node) -> void:
@@ -305,11 +317,14 @@ func _on_puck_contact(body: Node) -> void:
 	if actor is CharacterBody3D and actor in goalkeepers:
 		saves += 1
 		cooldown = 0.22
-		beep(115)
+		audio.cue("pad",puck.global_position,clampf(puck.linear_velocity.length()/28,0.2,1))
 	elif puck.linear_velocity.length() > 5:
-		beep(320)
+		audio.contact(body,puck.global_position,puck.linear_velocity.length())
 
 func update_camera(delta: float) -> void:
+	if reduce_motion:
+		apply_comfort_camera()
+		return
 	var focus := player.position * 0.65 + puck.position * 0.35
 	focus.x = clampf(focus.x,-7,7)
 	focus.z = clampf(focus.z,-21,21)
@@ -321,24 +336,50 @@ func update_camera(delta: float) -> void:
 	camera.look_at(camera_target + Vector3(0,0.3,-2))
 	camera.cull_mask = preload("res://scripts/arena_lighting.gd").camera_cull_mask(camera.position)
 	selection.position = player.position + Vector3(0,0.025,0)
+	if is_instance_valid(puck_marker): puck_marker.track(camera,puck.global_position,show_puck_indicator and not paused)
 
 func _physics_process(delta: float) -> void:
+	if practice_input.pause_pressed: paused=not paused
+	audio.set_suspended(paused)
+	if practice_input.active and not paused:
+		practice_input.advance(delta)
+		if practice_input.trigger_pressed:
+			practice_pass_actor=player if pickup_owner else null
+			if not pickup_owner: practice_input.switch_pressed=true
+		if practice_input.shoot_pressed: strike(aim,28)
+		if (practice_input.trigger_released and practice_pass_actor==player and pickup_owner) or (practice_input.saucer_pressed and pickup_owner):
+			if strike(teammate.position+teammate.velocity*0.25-puck.position,practice_input.pass_speed() if practice_input.trigger_released else 17.0,true,0.18 if practice_input.saucer_pressed else 0): passes+=1
+		if practice_input.switch_pressed:
+			var old := player
+			player=teammate
+			teammate=old
+			player_visual=player.get_child(1)
+			teammate_visual=teammate.get_child(1)
+			pickup_owner=false
+	if practice_input.trigger_released or paused or not pickup_owner: practice_pass_actor=null
+	practice_input.clear_edges()
 	puck.freeze = paused
 	if paused:
+		if is_instance_valid(puck_marker): puck_marker.visible=false
 		status.text = "PAUSED  /  Escape to resume"
 		return
 	elapsed += delta
 	cooldown = maxf(0,cooldown - delta)
 	goal_timer = maxf(0,goal_timer - delta)
 	var intent := Vector3(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),0,float(Input.is_physical_key_pressed(KEY_S))-float(Input.is_physical_key_pressed(KEY_W)))
-	velocity = Skating.step(velocity,intent,rating,Input.is_physical_key_pressed(KEY_SHIFT),delta)
-	if Input.is_physical_key_pressed(KEY_CTRL):
+	if practice_input.active: intent=Vector3(practice_input.left_stick.x,0,practice_input.left_stick.y)
+	velocity = Skating.step(velocity,intent,rating,practice_input.effort if practice_input.active else Input.is_physical_key_pressed(KEY_SHIFT),delta)
+	if (practice_input.active and practice_input.stop) or Input.is_physical_key_pressed(KEY_CTRL):
 		velocity = velocity.move_toward(Vector3.ZERO,22 * delta)
 	player.velocity = velocity
 	player.move_and_slide()
 	velocity = player.velocity
 	var intersection = Plane(Vector3.UP,0).intersects_ray(camera.project_ray_origin(get_viewport().get_mouse_position()),camera.project_ray_normal(get_viewport().get_mouse_position()))
-	if intersection != null:
+	if practice_input.active:
+		if intent.length()>0.05: aim=intent.normalized()
+		player_visual.desired_stick=practice_input.right_stick
+	elif intersection != null:
+		player_visual.desired_stick=Vector2.ZERO
 		var dir: Vector3 = intersection - player.position
 		dir.y = 0
 		if dir.length_squared() > 0.2: aim = dir.normalized()
@@ -346,9 +387,9 @@ func _physics_process(delta: float) -> void:
 	var old_rotation := player_visual.rotation.y
 	player_visual.rotation.y = rotate_toward(old_rotation,target_rotation,7.5 * delta)
 	player_visual.animate(velocity.length(),delta,angle_difference(old_rotation,target_rotation) * velocity.length() * 0.02,intent.length_squared()>0.01,Input.is_physical_key_pressed(KEY_CTRL))
+	audio.track_stop(player,player_visual.stop_weight,velocity.length())
 	sync_skater_contacts(player)
-	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-		charge = minf(1,charge + delta * 1.3)
+	charge = 0
 	# Stable critically damped stick spring with speed and reach limits.
 	var puck_flat := puck.position
 	puck_flat.y = 0
@@ -375,16 +416,18 @@ func _physics_process(delta: float) -> void:
 				else: away_goals += 1
 				goal_timer = 2.5
 				pickup_owner = false
-				beep(550)
+				audio.cue("horn",puck.global_position)
 	previous_puck = puck.position
 	if puck.position.y < -2 or absf(puck.position.x) > 18 or absf(puck.position.z) > 33:
 		reset_puck()
 	update_camera(delta)
 	hud.text = "HAWKEY   /   OPEN PRACTICE\nTOR   %02d     —     %02d   MTL      •      %02d:%02d" % [goals,away_goals,int(elapsed)/60,int(elapsed)%60]
-	status.text = "GOAL  /  R to restart" if goal_timer > 0 else ("PUCK CONTROL  •  Hold left mouse to load shot" if pickup_owner else "FREE PUCK  •  Skate into reach to collect")
+	status.text = "GOAL  /  R to restart" if goal_timer > 0 else ("PUCK CONTROL  •  Click to shoot at the net · Alt + click slap shot" if pickup_owner else "FREE PUCK  •  Skate into reach to collect")
 	power.value = charge
 	power.visible = charge > 0
-	help.text = "WASD Skate    Shift Effort    Ctrl Stop    Mouse Aim    Hold / release LMB Shoot    RMB Pass\nSpace Switch skater    R Reset    C Broadcast / full rink    Wheel Zoom    Esc Pause    F1 Diagnostics"
+	help.text = "WASD Skate    Shift Effort    Ctrl Stop    Mouse Aim    Click LMB Wrist · Alt + click Slap    RMB Pass\nSpace Switch skater    R Reset    C Broadcast / full rink    Wheel Zoom    Esc Pause    F1 Diagnostics"
+	if practice_input.active:
+		help.text = "LS Skate + aim    RS Up Wrist / Down-Up Slap    R2 Hold/release Pass · Without puck Switch\nR1 Saucer    L3 Hustle    Start Pause    Shots: fixed power; passes: hold for strength"
 	if debug:
 		help.text = "Speed %.1f m/s   Puck %.1f m/s   Shots %d   Passes %d   Pad contacts %d   Rating %d\n1 / 2 Compare ratings    Fixed physics 120 Hz    C Camera    F1 Close diagnostics" % [velocity.length(),puck.linear_velocity.length(),shots,passes,saves,rating]
 
@@ -423,11 +466,6 @@ func update_goalkeepers(delta: float) -> void:
 		goalie.move_and_slide()
 		goalie_visuals[i].animate(goalie.velocity.length(),delta)
 		sync_goalie_contacts(goalie)
-
-func _exit_tree() -> void:
-	if is_instance_valid(audio):
-		audio.stop()
-		audio.stream=null
 
 func add_puck_collision(actor: CharacterBody3D, is_goalie: bool) -> void:
 	if is_goalie:
@@ -516,3 +554,22 @@ func sync_skater_contacts(actor: CharacterBody3D) -> void:
 	for i in range(2):
 		var name_:String="LeftSkate" if i==0 else "RightSkate"
 		contact.get_node(name_).transform=frame*visual.skates[i].transform*Transform3D(Basis.IDENTITY,Vector3(0,-0.0025,0.06))
+
+func mouse_net_placement(end_: float) -> Vector2:
+	var cursor := get_viewport().get_mouse_position()
+	var hit: Variant = Plane(Vector3(0,0,1),end_*Arena.GOAL_LINE).intersects_ray(camera.project_ray_origin(cursor),camera.project_ray_normal(cursor))
+	if hit == null: return Vector2.ZERO
+	return Vector2(hit.x/(-end_*0.78),(0.59-hit.y)/0.47).clamp(Vector2(-1,-1),Vector2(1,1))
+
+func on_practice_connection(device: int, connected: bool) -> void:
+	if not connected and practice_input.disconnected(device):
+		practice_pass_actor=null
+		paused=true
+		charge=0
+
+func apply_comfort_camera() -> void:
+	camera.position=Vector3(0,51,35)
+	camera.look_at(Vector3(0,0.4,0),Vector3.UP)
+	camera.cull_mask=0xFFFFF & ~preload("res://scripts/arena_lighting.gd").RIGGING_LAYER
+	selection.position=player.position+Vector3(0,0.025,0)
+	if is_instance_valid(puck_marker): puck_marker.track(camera,puck.global_position,show_puck_indicator and not paused)

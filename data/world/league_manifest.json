@@ -1,0 +1,6191 @@
+{
+  "manifest_version": 1,
+  "note": "Original fictional competitions, explicitly enumerated club IDs. Edit metadata without renumbering existing IDs. Counts are design choices, not licensed real-league membership claims.",
+  "leagues": [
+    {
+      "id": "hl",
+      "name": "Hockey League",
+      "tier": "top",
+      "region": "NA",
+      "team_count": 32,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "hda",
+      "name": "Hockey Development Association",
+      "tier": "minor",
+      "region": "NA",
+      "team_count": 32,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": "hl",
+      "play_now": true
+    },
+    {
+      "id": "hdb",
+      "name": "Hockey Development B",
+      "tier": "minor",
+      "region": "NA",
+      "team_count": 32,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": "hda",
+      "play_now": true
+    },
+    {
+      "id": "j-west",
+      "name": "Western Junior Hockey",
+      "tier": "junior",
+      "region": "NA",
+      "team_count": 24,
+      "roster_size": 25,
+      "min_age": 16,
+      "max_age": 20,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "j-central",
+      "name": "Central Junior Hockey",
+      "tier": "junior",
+      "region": "NA",
+      "team_count": 20,
+      "roster_size": 25,
+      "min_age": 16,
+      "max_age": 20,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "j-east",
+      "name": "Eastern Junior Hockey",
+      "tier": "junior",
+      "region": "NA",
+      "team_count": 18,
+      "roster_size": 25,
+      "min_age": 16,
+      "max_age": 20,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "j-us",
+      "name": "United States Junior Premier",
+      "tier": "junior",
+      "region": "NA",
+      "team_count": 16,
+      "roster_size": 25,
+      "min_age": 16,
+      "max_age": 20,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "j-us2",
+      "name": "United States Junior Development",
+      "tier": "junior",
+      "region": "NA",
+      "team_count": 32,
+      "roster_size": 25,
+      "min_age": 16,
+      "max_age": 20,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "j-us3",
+      "name": "United States Junior Regional",
+      "tier": "junior",
+      "region": "NA",
+      "team_count": 36,
+      "roster_size": 25,
+      "min_age": 16,
+      "max_age": 20,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "ja-pacific",
+      "name": "Pacific Junior A",
+      "tier": "junior",
+      "region": "NA",
+      "team_count": 12,
+      "roster_size": 25,
+      "min_age": 16,
+      "max_age": 20,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "ja-prairie",
+      "name": "Prairie Junior A",
+      "tier": "junior",
+      "region": "NA",
+      "team_count": 12,
+      "roster_size": 25,
+      "min_age": 16,
+      "max_age": 20,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "ja-central",
+      "name": "Central Junior A",
+      "tier": "junior",
+      "region": "NA",
+      "team_count": 12,
+      "roster_size": 25,
+      "min_age": 16,
+      "max_age": 20,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "ja-ontario",
+      "name": "Ontario Junior A",
+      "tier": "junior",
+      "region": "NA",
+      "team_count": 12,
+      "roster_size": 25,
+      "min_age": 16,
+      "max_age": 20,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "ja-quebec",
+      "name": "Quebec Junior A",
+      "tier": "junior",
+      "region": "NA",
+      "team_count": 12,
+      "roster_size": 25,
+      "min_age": 16,
+      "max_age": 20,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "ja-atlantic",
+      "name": "Atlantic Junior A",
+      "tier": "junior",
+      "region": "NA",
+      "team_count": 12,
+      "roster_size": 25,
+      "min_age": 16,
+      "max_age": 20,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "eu-se",
+      "name": "Swedish Premier Hockey",
+      "tier": "europe",
+      "region": "SE",
+      "team_count": 14,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "eu-fi",
+      "name": "Finnish Premier Hockey",
+      "tier": "europe",
+      "region": "FI",
+      "team_count": 16,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "eu-cz",
+      "name": "Czech Premier Hockey",
+      "tier": "europe",
+      "region": "CZ",
+      "team_count": 14,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "eu-de",
+      "name": "German Premier Hockey",
+      "tier": "europe",
+      "region": "DE",
+      "team_count": 14,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "eu-ch",
+      "name": "Swiss Premier Hockey",
+      "tier": "europe",
+      "region": "CH",
+      "team_count": 14,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "eu-sk",
+      "name": "Slovak Premier Hockey",
+      "tier": "europe",
+      "region": "SK",
+      "team_count": 12,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "eu-at",
+      "name": "Alpine Hockey Association",
+      "tier": "europe",
+      "region": "AT",
+      "team_count": 13,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "eu-fr",
+      "name": "French Premier Hockey",
+      "tier": "europe",
+      "region": "FR",
+      "team_count": 12,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "eu-gb",
+      "name": "British Premier Hockey",
+      "tier": "europe",
+      "region": "GB",
+      "team_count": 10,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "eu-no",
+      "name": "Norwegian Premier Hockey",
+      "tier": "europe",
+      "region": "NO",
+      "team_count": 10,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "eu-dk",
+      "name": "Danish Premier Hockey",
+      "tier": "europe",
+      "region": "DK",
+      "team_count": 9,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "eu-pl",
+      "name": "Polish Premier Hockey",
+      "tier": "europe",
+      "region": "PL",
+      "team_count": 9,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "eu-east",
+      "name": "Eastern European Hockey",
+      "tier": "europe",
+      "region": "EAST",
+      "team_count": 22,
+      "roster_size": 23,
+      "min_age": 18,
+      "max_age": 40,
+      "parent_league_id": null,
+      "play_now": true
+    },
+    {
+      "id": "y-u9",
+      "name": "Youth U9",
+      "tier": "youth",
+      "region": "NA",
+      "team_count": 32,
+      "roster_size": 20,
+      "min_age": 7,
+      "max_age": 8,
+      "parent_league_id": null,
+      "play_now": false
+    },
+    {
+      "id": "y-u11",
+      "name": "Youth U11",
+      "tier": "youth",
+      "region": "NA",
+      "team_count": 32,
+      "roster_size": 20,
+      "min_age": 9,
+      "max_age": 10,
+      "parent_league_id": null,
+      "play_now": false
+    },
+    {
+      "id": "y-u13",
+      "name": "Youth U13",
+      "tier": "youth",
+      "region": "NA",
+      "team_count": 32,
+      "roster_size": 20,
+      "min_age": 11,
+      "max_age": 12,
+      "parent_league_id": null,
+      "play_now": false
+    },
+    {
+      "id": "y-u15",
+      "name": "Youth U15",
+      "tier": "youth",
+      "region": "NA",
+      "team_count": 32,
+      "roster_size": 20,
+      "min_age": 13,
+      "max_age": 14,
+      "parent_league_id": null,
+      "play_now": false
+    },
+    {
+      "id": "y-u18",
+      "name": "Youth U18",
+      "tier": "youth",
+      "region": "NA",
+      "team_count": 32,
+      "roster_size": 20,
+      "min_age": 15,
+      "max_age": 17,
+      "parent_league_id": null,
+      "play_now": false
+    }
+  ],
+  "teams": [
+    {
+      "id": "har",
+      "city": "Harbor",
+      "name": "Lanterns",
+      "code": "HAR",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "sum",
+      "city": "Summit",
+      "name": "Comets",
+      "code": "SUM",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-03",
+      "city": "Toronto",
+      "name": "Lynx",
+      "code": "H03",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-04",
+      "city": "Montreal",
+      "name": "Voyagers",
+      "code": "H04",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-05",
+      "city": "Vancouver",
+      "name": "Cascades",
+      "code": "H05",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-06",
+      "city": "Calgary",
+      "name": "Embers",
+      "code": "H06",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-07",
+      "city": "Edmonton",
+      "name": "Auroras",
+      "code": "H07",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-08",
+      "city": "Winnipeg",
+      "name": "Bison",
+      "code": "H08",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-09",
+      "city": "Ottawa",
+      "name": "Sentinels",
+      "code": "H09",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-10",
+      "city": "Quebec City",
+      "name": "Citadels",
+      "code": "H10",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-11",
+      "city": "Halifax",
+      "name": "Tides",
+      "code": "H11",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-12",
+      "city": "Boston",
+      "name": "Harriers",
+      "code": "H12",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-13",
+      "city": "New York",
+      "name": "Skylines",
+      "code": "H13",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-14",
+      "city": "Buffalo",
+      "name": "Forge",
+      "code": "H14",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-15",
+      "city": "Detroit",
+      "name": "Sparks",
+      "code": "H15",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-16",
+      "city": "Chicago",
+      "name": "Gales",
+      "code": "H16",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-17",
+      "city": "Pittsburgh",
+      "name": "Foundry",
+      "code": "H17",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-18",
+      "city": "Philadelphia",
+      "name": "Keystones",
+      "code": "H18",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-19",
+      "city": "Washington",
+      "name": "Ospreys",
+      "code": "H19",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-20",
+      "city": "Raleigh",
+      "name": "Copperheads",
+      "code": "H20",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-21",
+      "city": "Miami",
+      "name": "Sunbursts",
+      "code": "H21",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-22",
+      "city": "Tampa",
+      "name": "Squalls",
+      "code": "H22",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-23",
+      "city": "Nashville",
+      "name": "Chords",
+      "code": "H23",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-24",
+      "city": "Columbus",
+      "name": "Kestrels",
+      "code": "H24",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-25",
+      "city": "Minneapolis",
+      "name": "Frost",
+      "code": "H25",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-26",
+      "city": "St Louis",
+      "name": "Archers",
+      "code": "H26",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-27",
+      "city": "Dallas",
+      "name": "Outriders",
+      "code": "H27",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-28",
+      "city": "Denver",
+      "name": "Alpine",
+      "code": "H28",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-29",
+      "city": "Seattle",
+      "name": "Evergreens",
+      "code": "H29",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-30",
+      "city": "Portland",
+      "name": "Pioneers",
+      "code": "H30",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-31",
+      "city": "Los Angeles",
+      "name": "Solstice",
+      "code": "H31",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hl-32",
+      "city": "San Diego",
+      "name": "Breakers",
+      "code": "H32",
+      "league_id": "hl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "hda-01",
+      "city": "Kingston",
+      "name": "Ravens",
+      "code": "001",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "har"
+    },
+    {
+      "id": "hda-02",
+      "city": "Laval",
+      "name": "Wolves",
+      "code": "002",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "sum"
+    },
+    {
+      "id": "hda-03",
+      "city": "Victoria",
+      "name": "Herons",
+      "code": "003",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-03"
+    },
+    {
+      "id": "hda-04",
+      "city": "Red Deer",
+      "name": "Meteors",
+      "code": "004",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-04"
+    },
+    {
+      "id": "hda-05",
+      "city": "Lethbridge",
+      "name": "Badgers",
+      "code": "005",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-05"
+    },
+    {
+      "id": "hda-06",
+      "city": "Brandon",
+      "name": "Pines",
+      "code": "006",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-06"
+    },
+    {
+      "id": "hda-07",
+      "city": "Belleville",
+      "name": "Spires",
+      "code": "007",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-07"
+    },
+    {
+      "id": "hda-08",
+      "city": "Sherbrooke",
+      "name": "Otters",
+      "code": "008",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-08"
+    },
+    {
+      "id": "hda-09",
+      "city": "Moncton",
+      "name": "Cinders",
+      "code": "009",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-09"
+    },
+    {
+      "id": "hda-10",
+      "city": "Charlottetown",
+      "name": "Falcons",
+      "code": "010",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-10"
+    },
+    {
+      "id": "hda-11",
+      "city": "Saint John",
+      "name": "Elks",
+      "code": "011",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-11"
+    },
+    {
+      "id": "hda-12",
+      "city": "Portland Maine",
+      "name": "Quartz",
+      "code": "012",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-12"
+    },
+    {
+      "id": "hda-13",
+      "city": "Albany",
+      "name": "Waves",
+      "code": "013",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-13"
+    },
+    {
+      "id": "hda-14",
+      "city": "Rochester",
+      "name": "Hawks",
+      "code": "014",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-14"
+    },
+    {
+      "id": "hda-15",
+      "city": "Grand Rapids",
+      "name": "Rooks",
+      "code": "015",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-15"
+    },
+    {
+      "id": "hda-16",
+      "city": "Rockford",
+      "name": "Cedars",
+      "code": "016",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-16"
+    },
+    {
+      "id": "hda-17",
+      "city": "Erie",
+      "name": "Flares",
+      "code": "017",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-17"
+    },
+    {
+      "id": "hda-18",
+      "city": "Allentown",
+      "name": "Ibis",
+      "code": "018",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-18"
+    },
+    {
+      "id": "hda-19",
+      "city": "Norfolk",
+      "name": "Flints",
+      "code": "019",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-19"
+    },
+    {
+      "id": "hda-20",
+      "city": "Durham",
+      "name": "Clouds",
+      "code": "020",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-20"
+    },
+    {
+      "id": "hda-21",
+      "city": "Fort Myers",
+      "name": "Drifters",
+      "code": "021",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-21"
+    },
+    {
+      "id": "hda-22",
+      "city": "Orlando",
+      "name": "Beacons",
+      "code": "022",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-22"
+    },
+    {
+      "id": "hda-23",
+      "city": "Knoxville",
+      "name": "Garnets",
+      "code": "023",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-23"
+    },
+    {
+      "id": "hda-24",
+      "city": "Toledo",
+      "name": "Aspens",
+      "code": "024",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-24"
+    },
+    {
+      "id": "hda-25",
+      "city": "Duluth",
+      "name": "Whirlwinds",
+      "code": "025",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-25"
+    },
+    {
+      "id": "hda-26",
+      "city": "Springfield Missouri",
+      "name": "Cranes",
+      "code": "026",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-26"
+    },
+    {
+      "id": "hda-27",
+      "city": "Fort Worth",
+      "name": "Shales",
+      "code": "027",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-27"
+    },
+    {
+      "id": "hda-28",
+      "city": "Colorado Springs",
+      "name": "Larches",
+      "code": "028",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-28"
+    },
+    {
+      "id": "hda-29",
+      "city": "Tacoma",
+      "name": "Storms",
+      "code": "029",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-29"
+    },
+    {
+      "id": "hda-30",
+      "city": "Eugene",
+      "name": "Moons",
+      "code": "030",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-30"
+    },
+    {
+      "id": "hda-31",
+      "city": "Bakersfield",
+      "name": "Peaks",
+      "code": "031",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-31"
+    },
+    {
+      "id": "hda-32",
+      "city": "Palm Springs",
+      "name": "Dunes",
+      "code": "032",
+      "league_id": "hda",
+      "season": "2026-27",
+      "affiliate_of": "hl-32"
+    },
+    {
+      "id": "hdb-01",
+      "city": "Peterborough",
+      "name": "Ravens",
+      "code": "001",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-01"
+    },
+    {
+      "id": "hdb-02",
+      "city": "Trois-Rivieres",
+      "name": "Wolves",
+      "code": "002",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-02"
+    },
+    {
+      "id": "hdb-03",
+      "city": "Nanaimo",
+      "name": "Herons",
+      "code": "003",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-03"
+    },
+    {
+      "id": "hdb-04",
+      "city": "Medicine Hat",
+      "name": "Meteors",
+      "code": "004",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-04"
+    },
+    {
+      "id": "hdb-05",
+      "city": "Cranbrook",
+      "name": "Badgers",
+      "code": "005",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-05"
+    },
+    {
+      "id": "hdb-06",
+      "city": "Regina",
+      "name": "Pines",
+      "code": "006",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-06"
+    },
+    {
+      "id": "hdb-07",
+      "city": "North Bay",
+      "name": "Spires",
+      "code": "007",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-07"
+    },
+    {
+      "id": "hdb-08",
+      "city": "Saguenay",
+      "name": "Otters",
+      "code": "008",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-08"
+    },
+    {
+      "id": "hdb-09",
+      "city": "Fredericton",
+      "name": "Cinders",
+      "code": "009",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-09"
+    },
+    {
+      "id": "hdb-10",
+      "city": "Sydney",
+      "name": "Falcons",
+      "code": "010",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-10"
+    },
+    {
+      "id": "hdb-11",
+      "city": "St Johns",
+      "name": "Elks",
+      "code": "011",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-11"
+    },
+    {
+      "id": "hdb-12",
+      "city": "Worcester",
+      "name": "Quartz",
+      "code": "012",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-12"
+    },
+    {
+      "id": "hdb-13",
+      "city": "Utica",
+      "name": "Waves",
+      "code": "013",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-13"
+    },
+    {
+      "id": "hdb-14",
+      "city": "Elmira",
+      "name": "Hawks",
+      "code": "014",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-14"
+    },
+    {
+      "id": "hdb-15",
+      "city": "Kalamazoo",
+      "name": "Rooks",
+      "code": "015",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-15"
+    },
+    {
+      "id": "hdb-16",
+      "city": "Peoria",
+      "name": "Cedars",
+      "code": "016",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-16"
+    },
+    {
+      "id": "hdb-17",
+      "city": "Wheeling",
+      "name": "Flares",
+      "code": "017",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-17"
+    },
+    {
+      "id": "hdb-18",
+      "city": "Reading",
+      "name": "Ibis",
+      "code": "018",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-18"
+    },
+    {
+      "id": "hdb-19",
+      "city": "Roanoke",
+      "name": "Flints",
+      "code": "019",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-19"
+    },
+    {
+      "id": "hdb-20",
+      "city": "Greenville",
+      "name": "Clouds",
+      "code": "020",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-20"
+    },
+    {
+      "id": "hdb-21",
+      "city": "Savannah",
+      "name": "Drifters",
+      "code": "021",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-21"
+    },
+    {
+      "id": "hdb-22",
+      "city": "Jacksonville",
+      "name": "Beacons",
+      "code": "022",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-22"
+    },
+    {
+      "id": "hdb-23",
+      "city": "Huntsville",
+      "name": "Garnets",
+      "code": "023",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-23"
+    },
+    {
+      "id": "hdb-24",
+      "city": "Cincinnati",
+      "name": "Aspens",
+      "code": "024",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-24"
+    },
+    {
+      "id": "hdb-25",
+      "city": "Fargo",
+      "name": "Whirlwinds",
+      "code": "025",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-25"
+    },
+    {
+      "id": "hdb-26",
+      "city": "Tulsa",
+      "name": "Cranes",
+      "code": "026",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-26"
+    },
+    {
+      "id": "hdb-27",
+      "city": "Wichita",
+      "name": "Shales",
+      "code": "027",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-27"
+    },
+    {
+      "id": "hdb-28",
+      "city": "Boise",
+      "name": "Larches",
+      "code": "028",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-28"
+    },
+    {
+      "id": "hdb-29",
+      "city": "Spokane",
+      "name": "Storms",
+      "code": "029",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-29"
+    },
+    {
+      "id": "hdb-30",
+      "city": "Bend",
+      "name": "Moons",
+      "code": "030",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-30"
+    },
+    {
+      "id": "hdb-31",
+      "city": "Fresno",
+      "name": "Peaks",
+      "code": "031",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-31"
+    },
+    {
+      "id": "hdb-32",
+      "city": "Reno",
+      "name": "Dunes",
+      "code": "032",
+      "league_id": "hdb",
+      "season": "2026-27",
+      "affiliate_of": "hda-32"
+    },
+    {
+      "id": "j-west-01",
+      "city": "Vancouver",
+      "name": "Meteors",
+      "code": "001",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-02",
+      "city": "Victoria",
+      "name": "Badgers",
+      "code": "002",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-03",
+      "city": "Kelowna",
+      "name": "Pines",
+      "code": "003",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-04",
+      "city": "Kamloops",
+      "name": "Spires",
+      "code": "004",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-05",
+      "city": "Prince George",
+      "name": "Otters",
+      "code": "005",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-06",
+      "city": "Cranbrook",
+      "name": "Cinders",
+      "code": "006",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-07",
+      "city": "Medicine Hat",
+      "name": "Falcons",
+      "code": "007",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-08",
+      "city": "Lethbridge",
+      "name": "Elks",
+      "code": "008",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-09",
+      "city": "Calgary",
+      "name": "Quartz",
+      "code": "009",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-10",
+      "city": "Edmonton",
+      "name": "Waves",
+      "code": "010",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-11",
+      "city": "Red Deer",
+      "name": "Hawks",
+      "code": "011",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-12",
+      "city": "Saskatoon",
+      "name": "Rooks",
+      "code": "012",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-13",
+      "city": "Regina",
+      "name": "Cedars",
+      "code": "013",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-14",
+      "city": "Moose Jaw",
+      "name": "Flares",
+      "code": "014",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-15",
+      "city": "Swift Current",
+      "name": "Ibis",
+      "code": "015",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-16",
+      "city": "Prince Albert",
+      "name": "Flints",
+      "code": "016",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-17",
+      "city": "Brandon",
+      "name": "Clouds",
+      "code": "017",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-18",
+      "city": "Winnipeg",
+      "name": "Drifters",
+      "code": "018",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-19",
+      "city": "Seattle",
+      "name": "Beacons",
+      "code": "019",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-20",
+      "city": "Everett",
+      "name": "Garnets",
+      "code": "020",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-21",
+      "city": "Spokane",
+      "name": "Aspens",
+      "code": "021",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-22",
+      "city": "Portland",
+      "name": "Whirlwinds",
+      "code": "022",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-23",
+      "city": "Wenatchee",
+      "name": "Cranes",
+      "code": "023",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-west-24",
+      "city": "Penticton",
+      "name": "Shales",
+      "code": "024",
+      "league_id": "j-west",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-01",
+      "city": "Toronto",
+      "name": "Spires",
+      "code": "001",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-02",
+      "city": "Ottawa",
+      "name": "Otters",
+      "code": "002",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-03",
+      "city": "Kingston",
+      "name": "Cinders",
+      "code": "003",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-04",
+      "city": "Oshawa",
+      "name": "Falcons",
+      "code": "004",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-05",
+      "city": "Peterborough",
+      "name": "Elks",
+      "code": "005",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-06",
+      "city": "Belleville",
+      "name": "Quartz",
+      "code": "006",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-07",
+      "city": "Hamilton",
+      "name": "Waves",
+      "code": "007",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-08",
+      "city": "London",
+      "name": "Hawks",
+      "code": "008",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-09",
+      "city": "Windsor",
+      "name": "Rooks",
+      "code": "009",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-10",
+      "city": "Sarnia",
+      "name": "Cedars",
+      "code": "010",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-11",
+      "city": "Saginaw",
+      "name": "Flares",
+      "code": "011",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-12",
+      "city": "Flint",
+      "name": "Ibis",
+      "code": "012",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-13",
+      "city": "Sudbury",
+      "name": "Flints",
+      "code": "013",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-14",
+      "city": "North Bay",
+      "name": "Clouds",
+      "code": "014",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-15",
+      "city": "Barrie",
+      "name": "Drifters",
+      "code": "015",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-16",
+      "city": "Owen Sound",
+      "name": "Beacons",
+      "code": "016",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-17",
+      "city": "Kitchener",
+      "name": "Garnets",
+      "code": "017",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-18",
+      "city": "Guelph",
+      "name": "Aspens",
+      "code": "018",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-19",
+      "city": "Niagara",
+      "name": "Whirlwinds",
+      "code": "019",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-central-20",
+      "city": "Erie",
+      "name": "Cranes",
+      "code": "020",
+      "league_id": "j-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-01",
+      "city": "Quebec City",
+      "name": "Meteors",
+      "code": "001",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-02",
+      "city": "Montreal",
+      "name": "Badgers",
+      "code": "002",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-03",
+      "city": "Sherbrooke",
+      "name": "Pines",
+      "code": "003",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-04",
+      "city": "Drummondville",
+      "name": "Spires",
+      "code": "004",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-05",
+      "city": "Victoriaville",
+      "name": "Otters",
+      "code": "005",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-06",
+      "city": "Rimouski",
+      "name": "Cinders",
+      "code": "006",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-07",
+      "city": "Chicoutimi",
+      "name": "Falcons",
+      "code": "007",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-08",
+      "city": "Shawinigan",
+      "name": "Elks",
+      "code": "008",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-09",
+      "city": "Gatineau",
+      "name": "Quartz",
+      "code": "009",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-10",
+      "city": "Rouyn Noranda",
+      "name": "Waves",
+      "code": "010",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-11",
+      "city": "Vald Or",
+      "name": "Hawks",
+      "code": "011",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-12",
+      "city": "Halifax",
+      "name": "Rooks",
+      "code": "012",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-13",
+      "city": "Moncton",
+      "name": "Cedars",
+      "code": "013",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-14",
+      "city": "Saint John",
+      "name": "Flares",
+      "code": "014",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-15",
+      "city": "Charlottetown",
+      "name": "Ibis",
+      "code": "015",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-16",
+      "city": "Bathurst",
+      "name": "Flints",
+      "code": "016",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-17",
+      "city": "Sydney",
+      "name": "Clouds",
+      "code": "017",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-east-18",
+      "city": "Fredericton",
+      "name": "Drifters",
+      "code": "018",
+      "league_id": "j-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-01",
+      "city": "Chicago",
+      "name": "Wolves",
+      "code": "001",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-02",
+      "city": "Green Bay",
+      "name": "Herons",
+      "code": "002",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-03",
+      "city": "Madison",
+      "name": "Meteors",
+      "code": "003",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-04",
+      "city": "Milwaukee",
+      "name": "Badgers",
+      "code": "004",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-05",
+      "city": "Des Moines",
+      "name": "Pines",
+      "code": "005",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-06",
+      "city": "Waterloo",
+      "name": "Spires",
+      "code": "006",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-07",
+      "city": "Cedar Rapids",
+      "name": "Otters",
+      "code": "007",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-08",
+      "city": "Dubuque",
+      "name": "Cinders",
+      "code": "008",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-09",
+      "city": "Sioux City",
+      "name": "Falcons",
+      "code": "009",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-10",
+      "city": "Sioux Falls",
+      "name": "Elks",
+      "code": "010",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-11",
+      "city": "Omaha",
+      "name": "Quartz",
+      "code": "011",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-12",
+      "city": "Lincoln",
+      "name": "Waves",
+      "code": "012",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-13",
+      "city": "Fargo",
+      "name": "Hawks",
+      "code": "013",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-14",
+      "city": "Kearney",
+      "name": "Rooks",
+      "code": "014",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-15",
+      "city": "Youngstown",
+      "name": "Cedars",
+      "code": "015",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us-16",
+      "city": "Muskegon",
+      "name": "Flares",
+      "code": "016",
+      "league_id": "j-us",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-01",
+      "city": "Anchorage",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-02",
+      "city": "Fairbanks",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-03",
+      "city": "Kenai",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-04",
+      "city": "Soldotna",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-05",
+      "city": "Wasilla",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-06",
+      "city": "Juneau",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-07",
+      "city": "Bismarck",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-08",
+      "city": "Minot",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-09",
+      "city": "Aberdeen",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-10",
+      "city": "Jamestown",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-11",
+      "city": "Rochester Minnesota",
+      "name": "Waves",
+      "code": "011",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-12",
+      "city": "Austin Minnesota",
+      "name": "Hawks",
+      "code": "012",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-13",
+      "city": "Saint Cloud",
+      "name": "Rooks",
+      "code": "013",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-14",
+      "city": "Cloquet",
+      "name": "Cedars",
+      "code": "014",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-15",
+      "city": "Janesville",
+      "name": "Flares",
+      "code": "015",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-16",
+      "city": "Chippewa Falls",
+      "name": "Ibis",
+      "code": "016",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-17",
+      "city": "Eagle River",
+      "name": "Flints",
+      "code": "017",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-18",
+      "city": "Wausau",
+      "name": "Clouds",
+      "code": "018",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-19",
+      "city": "Springfield Illinois",
+      "name": "Drifters",
+      "code": "019",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-20",
+      "city": "Peoria",
+      "name": "Beacons",
+      "code": "020",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-21",
+      "city": "Johnstown",
+      "name": "Garnets",
+      "code": "021",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-22",
+      "city": "Danbury",
+      "name": "Aspens",
+      "code": "022",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-23",
+      "city": "Lewiston",
+      "name": "Whirlwinds",
+      "code": "023",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-24",
+      "city": "Springfield Massachusetts",
+      "name": "Cranes",
+      "code": "024",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-25",
+      "city": "Concord",
+      "name": "Shales",
+      "code": "025",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-26",
+      "city": "Trenton",
+      "name": "Larches",
+      "code": "026",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-27",
+      "city": "Philadelphia",
+      "name": "Storms",
+      "code": "027",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-28",
+      "city": "Baltimore",
+      "name": "Moons",
+      "code": "028",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-29",
+      "city": "Richmond",
+      "name": "Peaks",
+      "code": "029",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-30",
+      "city": "Albuquerque",
+      "name": "Dunes",
+      "code": "030",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-31",
+      "city": "Amarillo",
+      "name": "Sails",
+      "code": "031",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us2-32",
+      "city": "El Paso",
+      "name": "Owls",
+      "code": "032",
+      "league_id": "j-us2",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-01",
+      "city": "Bangor",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-02",
+      "city": "Burlington",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-03",
+      "city": "Boston",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-04",
+      "city": "Worcester",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-05",
+      "city": "Hartford",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-06",
+      "city": "New Haven",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-07",
+      "city": "Stamford",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-08",
+      "city": "Waterbury",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-09",
+      "city": "Albany",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-10",
+      "city": "Buffalo",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-11",
+      "city": "Syracuse",
+      "name": "Waves",
+      "code": "011",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-12",
+      "city": "Rochester New York",
+      "name": "Hawks",
+      "code": "012",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-13",
+      "city": "Utica",
+      "name": "Rooks",
+      "code": "013",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-14",
+      "city": "Plattsburgh",
+      "name": "Cedars",
+      "code": "014",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-15",
+      "city": "Jamestown New York",
+      "name": "Flares",
+      "code": "015",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-16",
+      "city": "Pittsburgh",
+      "name": "Ibis",
+      "code": "016",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-17",
+      "city": "Harrisburg",
+      "name": "Flints",
+      "code": "017",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-18",
+      "city": "Lancaster",
+      "name": "Clouds",
+      "code": "018",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-19",
+      "city": "York",
+      "name": "Drifters",
+      "code": "019",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-20",
+      "city": "Allentown",
+      "name": "Beacons",
+      "code": "020",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-21",
+      "city": "Reading",
+      "name": "Garnets",
+      "code": "021",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-22",
+      "city": "Newark",
+      "name": "Aspens",
+      "code": "022",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-23",
+      "city": "Morristown",
+      "name": "Whirlwinds",
+      "code": "023",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-24",
+      "city": "Red Bank",
+      "name": "Cranes",
+      "code": "024",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-25",
+      "city": "Edison",
+      "name": "Shales",
+      "code": "025",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-26",
+      "city": "Atlantic City",
+      "name": "Larches",
+      "code": "026",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-27",
+      "city": "Charlotte",
+      "name": "Storms",
+      "code": "027",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-28",
+      "city": "Raleigh",
+      "name": "Moons",
+      "code": "028",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-29",
+      "city": "Greenville",
+      "name": "Peaks",
+      "code": "029",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-30",
+      "city": "Charleston",
+      "name": "Dunes",
+      "code": "030",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-31",
+      "city": "Columbia",
+      "name": "Sails",
+      "code": "031",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-32",
+      "city": "Atlanta",
+      "name": "Owls",
+      "code": "032",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-33",
+      "city": "Savannah",
+      "name": "Foxes",
+      "code": "033",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-34",
+      "city": "Huntsville",
+      "name": "Stags",
+      "code": "034",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-35",
+      "city": "Birmingham",
+      "name": "Ravens",
+      "code": "035",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "j-us3-36",
+      "city": "Knoxville",
+      "name": "Wolves",
+      "code": "036",
+      "league_id": "j-us3",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-pacific-01",
+      "city": "Victoria",
+      "name": "Otters",
+      "code": "001",
+      "league_id": "ja-pacific",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-pacific-02",
+      "city": "Nanaimo",
+      "name": "Cinders",
+      "code": "002",
+      "league_id": "ja-pacific",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-pacific-03",
+      "city": "Duncan",
+      "name": "Falcons",
+      "code": "003",
+      "league_id": "ja-pacific",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-pacific-04",
+      "city": "Port Alberni",
+      "name": "Elks",
+      "code": "004",
+      "league_id": "ja-pacific",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-pacific-05",
+      "city": "Powell River",
+      "name": "Quartz",
+      "code": "005",
+      "league_id": "ja-pacific",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-pacific-06",
+      "city": "Chilliwack",
+      "name": "Waves",
+      "code": "006",
+      "league_id": "ja-pacific",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-pacific-07",
+      "city": "Langley",
+      "name": "Hawks",
+      "code": "007",
+      "league_id": "ja-pacific",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-pacific-08",
+      "city": "Surrey",
+      "name": "Rooks",
+      "code": "008",
+      "league_id": "ja-pacific",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-pacific-09",
+      "city": "Coquitlam",
+      "name": "Cedars",
+      "code": "009",
+      "league_id": "ja-pacific",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-pacific-10",
+      "city": "Penticton",
+      "name": "Flares",
+      "code": "010",
+      "league_id": "ja-pacific",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-pacific-11",
+      "city": "Salmon Arm",
+      "name": "Ibis",
+      "code": "011",
+      "league_id": "ja-pacific",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-pacific-12",
+      "city": "Trail",
+      "name": "Flints",
+      "code": "012",
+      "league_id": "ja-pacific",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-prairie-01",
+      "city": "Brooks",
+      "name": "Otters",
+      "code": "001",
+      "league_id": "ja-prairie",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-prairie-02",
+      "city": "Canmore",
+      "name": "Cinders",
+      "code": "002",
+      "league_id": "ja-prairie",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-prairie-03",
+      "city": "Drumheller",
+      "name": "Falcons",
+      "code": "003",
+      "league_id": "ja-prairie",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-prairie-04",
+      "city": "Okotoks",
+      "name": "Elks",
+      "code": "004",
+      "league_id": "ja-prairie",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-prairie-05",
+      "city": "Olds",
+      "name": "Quartz",
+      "code": "005",
+      "league_id": "ja-prairie",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-prairie-06",
+      "city": "Camrose",
+      "name": "Waves",
+      "code": "006",
+      "league_id": "ja-prairie",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-prairie-07",
+      "city": "Bonnyville",
+      "name": "Hawks",
+      "code": "007",
+      "league_id": "ja-prairie",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-prairie-08",
+      "city": "Grande Prairie",
+      "name": "Rooks",
+      "code": "008",
+      "league_id": "ja-prairie",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-prairie-09",
+      "city": "Whitecourt",
+      "name": "Cedars",
+      "code": "009",
+      "league_id": "ja-prairie",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-prairie-10",
+      "city": "Lloydminster",
+      "name": "Flares",
+      "code": "010",
+      "league_id": "ja-prairie",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-prairie-11",
+      "city": "Spruce Grove",
+      "name": "Ibis",
+      "code": "011",
+      "league_id": "ja-prairie",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-prairie-12",
+      "city": "Fort Mc Murray",
+      "name": "Flints",
+      "code": "012",
+      "league_id": "ja-prairie",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-central-01",
+      "city": "Winnipeg",
+      "name": "Otters",
+      "code": "001",
+      "league_id": "ja-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-central-02",
+      "city": "Selkirk",
+      "name": "Cinders",
+      "code": "002",
+      "league_id": "ja-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-central-03",
+      "city": "Steinbach",
+      "name": "Falcons",
+      "code": "003",
+      "league_id": "ja-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-central-04",
+      "city": "Winkler",
+      "name": "Elks",
+      "code": "004",
+      "league_id": "ja-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-central-05",
+      "city": "Portage",
+      "name": "Quartz",
+      "code": "005",
+      "league_id": "ja-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-central-06",
+      "city": "Brandon",
+      "name": "Waves",
+      "code": "006",
+      "league_id": "ja-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-central-07",
+      "city": "Dauphin",
+      "name": "Hawks",
+      "code": "007",
+      "league_id": "ja-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-central-08",
+      "city": "Neepawa",
+      "name": "Rooks",
+      "code": "008",
+      "league_id": "ja-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-central-09",
+      "city": "Swan River",
+      "name": "Cedars",
+      "code": "009",
+      "league_id": "ja-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-central-10",
+      "city": "Yorkton",
+      "name": "Flares",
+      "code": "010",
+      "league_id": "ja-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-central-11",
+      "city": "Estevan",
+      "name": "Ibis",
+      "code": "011",
+      "league_id": "ja-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-central-12",
+      "city": "Weyburn",
+      "name": "Flints",
+      "code": "012",
+      "league_id": "ja-central",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-ontario-01",
+      "city": "Toronto",
+      "name": "Otters",
+      "code": "001",
+      "league_id": "ja-ontario",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-ontario-02",
+      "city": "Ottawa",
+      "name": "Cinders",
+      "code": "002",
+      "league_id": "ja-ontario",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-ontario-03",
+      "city": "Brockville",
+      "name": "Falcons",
+      "code": "003",
+      "league_id": "ja-ontario",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-ontario-04",
+      "city": "Cornwall",
+      "name": "Elks",
+      "code": "004",
+      "league_id": "ja-ontario",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-ontario-05",
+      "city": "Pembroke",
+      "name": "Quartz",
+      "code": "005",
+      "league_id": "ja-ontario",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-ontario-06",
+      "city": "Renfrew",
+      "name": "Waves",
+      "code": "006",
+      "league_id": "ja-ontario",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-ontario-07",
+      "city": "Carleton Place",
+      "name": "Hawks",
+      "code": "007",
+      "league_id": "ja-ontario",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-ontario-08",
+      "city": "Smiths Falls",
+      "name": "Rooks",
+      "code": "008",
+      "league_id": "ja-ontario",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-ontario-09",
+      "city": "Nepean",
+      "name": "Cedars",
+      "code": "009",
+      "league_id": "ja-ontario",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-ontario-10",
+      "city": "Whitby",
+      "name": "Flares",
+      "code": "010",
+      "league_id": "ja-ontario",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-ontario-11",
+      "city": "Cobourg",
+      "name": "Ibis",
+      "code": "011",
+      "league_id": "ja-ontario",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-ontario-12",
+      "city": "Trenton",
+      "name": "Flints",
+      "code": "012",
+      "league_id": "ja-ontario",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-quebec-01",
+      "city": "Montreal",
+      "name": "Spires",
+      "code": "001",
+      "league_id": "ja-quebec",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-quebec-02",
+      "city": "Laval",
+      "name": "Otters",
+      "code": "002",
+      "league_id": "ja-quebec",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-quebec-03",
+      "city": "Longueuil",
+      "name": "Cinders",
+      "code": "003",
+      "league_id": "ja-quebec",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-quebec-04",
+      "city": "Terrebonne",
+      "name": "Falcons",
+      "code": "004",
+      "league_id": "ja-quebec",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-quebec-05",
+      "city": "Granby",
+      "name": "Elks",
+      "code": "005",
+      "league_id": "ja-quebec",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-quebec-06",
+      "city": "Saint Jerome",
+      "name": "Quartz",
+      "code": "006",
+      "league_id": "ja-quebec",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-quebec-07",
+      "city": "Saint Hyacinthe",
+      "name": "Waves",
+      "code": "007",
+      "league_id": "ja-quebec",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-quebec-08",
+      "city": "Valleyfield",
+      "name": "Hawks",
+      "code": "008",
+      "league_id": "ja-quebec",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-quebec-09",
+      "city": "Joliette",
+      "name": "Rooks",
+      "code": "009",
+      "league_id": "ja-quebec",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-quebec-10",
+      "city": "Gatineau",
+      "name": "Cedars",
+      "code": "010",
+      "league_id": "ja-quebec",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-quebec-11",
+      "city": "Sherbrooke",
+      "name": "Flares",
+      "code": "011",
+      "league_id": "ja-quebec",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-quebec-12",
+      "city": "Quebec City",
+      "name": "Ibis",
+      "code": "012",
+      "league_id": "ja-quebec",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-atlantic-01",
+      "city": "Halifax",
+      "name": "Cinders",
+      "code": "001",
+      "league_id": "ja-atlantic",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-atlantic-02",
+      "city": "Dartmouth",
+      "name": "Falcons",
+      "code": "002",
+      "league_id": "ja-atlantic",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-atlantic-03",
+      "city": "Truro",
+      "name": "Elks",
+      "code": "003",
+      "league_id": "ja-atlantic",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-atlantic-04",
+      "city": "Amherst",
+      "name": "Quartz",
+      "code": "004",
+      "league_id": "ja-atlantic",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-atlantic-05",
+      "city": "Yarmouth",
+      "name": "Waves",
+      "code": "005",
+      "league_id": "ja-atlantic",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-atlantic-06",
+      "city": "Bridgewater",
+      "name": "Hawks",
+      "code": "006",
+      "league_id": "ja-atlantic",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-atlantic-07",
+      "city": "Moncton",
+      "name": "Rooks",
+      "code": "007",
+      "league_id": "ja-atlantic",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-atlantic-08",
+      "city": "Fredericton",
+      "name": "Cedars",
+      "code": "008",
+      "league_id": "ja-atlantic",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-atlantic-09",
+      "city": "Summerside",
+      "name": "Flares",
+      "code": "009",
+      "league_id": "ja-atlantic",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-atlantic-10",
+      "city": "Charlottetown",
+      "name": "Ibis",
+      "code": "010",
+      "league_id": "ja-atlantic",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-atlantic-11",
+      "city": "St Johns",
+      "name": "Flints",
+      "code": "011",
+      "league_id": "ja-atlantic",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "ja-atlantic-12",
+      "city": "Gander",
+      "name": "Clouds",
+      "code": "012",
+      "league_id": "ja-atlantic",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-se-01",
+      "city": "Stockholm",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "eu-se",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-se-02",
+      "city": "Gothenburg",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "eu-se",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-se-03",
+      "city": "Malmo",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "eu-se",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-se-04",
+      "city": "Uppsala",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "eu-se",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-se-05",
+      "city": "Vasteras",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "eu-se",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-se-06",
+      "city": "Orebro",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "eu-se",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-se-07",
+      "city": "Linkoping",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "eu-se",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-se-08",
+      "city": "Norrkoping",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "eu-se",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-se-09",
+      "city": "Jonkoping",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "eu-se",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-se-10",
+      "city": "Vaxjo",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "eu-se",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-se-11",
+      "city": "Karlstad",
+      "name": "Waves",
+      "code": "011",
+      "league_id": "eu-se",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-se-12",
+      "city": "Gavle",
+      "name": "Hawks",
+      "code": "012",
+      "league_id": "eu-se",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-se-13",
+      "city": "Lulea",
+      "name": "Rooks",
+      "code": "013",
+      "league_id": "eu-se",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-se-14",
+      "city": "Skelleftea",
+      "name": "Cedars",
+      "code": "014",
+      "league_id": "eu-se",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-01",
+      "city": "Helsinki",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-02",
+      "city": "Espoo",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-03",
+      "city": "Tampere",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-04",
+      "city": "Turku",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-05",
+      "city": "Oulu",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-06",
+      "city": "Lahti",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-07",
+      "city": "Kuopio",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-08",
+      "city": "Pori",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-09",
+      "city": "Vaasa",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-10",
+      "city": "Jyvaskyla",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-11",
+      "city": "Lappeenranta",
+      "name": "Waves",
+      "code": "011",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-12",
+      "city": "Kouvola",
+      "name": "Hawks",
+      "code": "012",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-13",
+      "city": "Hameenlinna",
+      "name": "Rooks",
+      "code": "013",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-14",
+      "city": "Rauma",
+      "name": "Cedars",
+      "code": "014",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-15",
+      "city": "Mikkeli",
+      "name": "Flares",
+      "code": "015",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fi-16",
+      "city": "Joensuu",
+      "name": "Ibis",
+      "code": "016",
+      "league_id": "eu-fi",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-cz-01",
+      "city": "Prague",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "eu-cz",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-cz-02",
+      "city": "Brno",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "eu-cz",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-cz-03",
+      "city": "Ostrava",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "eu-cz",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-cz-04",
+      "city": "Plzen",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "eu-cz",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-cz-05",
+      "city": "Liberec",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "eu-cz",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-cz-06",
+      "city": "Olomouc",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "eu-cz",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-cz-07",
+      "city": "Pardubice",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "eu-cz",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-cz-08",
+      "city": "Zlin",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "eu-cz",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-cz-09",
+      "city": "Jihlava",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "eu-cz",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-cz-10",
+      "city": "Kladno",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "eu-cz",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-cz-11",
+      "city": "Most",
+      "name": "Waves",
+      "code": "011",
+      "league_id": "eu-cz",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-cz-12",
+      "city": "Chomutov",
+      "name": "Hawks",
+      "code": "012",
+      "league_id": "eu-cz",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-cz-13",
+      "city": "Trinec",
+      "name": "Rooks",
+      "code": "013",
+      "league_id": "eu-cz",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-cz-14",
+      "city": "Litvinov",
+      "name": "Cedars",
+      "code": "014",
+      "league_id": "eu-cz",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-de-01",
+      "city": "Berlin",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "eu-de",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-de-02",
+      "city": "Hamburg",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "eu-de",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-de-03",
+      "city": "Munich",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "eu-de",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-de-04",
+      "city": "Cologne",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "eu-de",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-de-05",
+      "city": "Mannheim",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "eu-de",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-de-06",
+      "city": "Augsburg",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "eu-de",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-de-07",
+      "city": "Ingolstadt",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "eu-de",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-de-08",
+      "city": "Nuremberg",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "eu-de",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-de-09",
+      "city": "Wolfsburg",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "eu-de",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-de-10",
+      "city": "Bremerhaven",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "eu-de",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-de-11",
+      "city": "Frankfurt",
+      "name": "Waves",
+      "code": "011",
+      "league_id": "eu-de",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-de-12",
+      "city": "Dusseldorf",
+      "name": "Hawks",
+      "code": "012",
+      "league_id": "eu-de",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-de-13",
+      "city": "Iserlohn",
+      "name": "Rooks",
+      "code": "013",
+      "league_id": "eu-de",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-de-14",
+      "city": "Dresden",
+      "name": "Cedars",
+      "code": "014",
+      "league_id": "eu-de",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-ch-01",
+      "city": "Zurich",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "eu-ch",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-ch-02",
+      "city": "Geneva",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "eu-ch",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-ch-03",
+      "city": "Bern",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "eu-ch",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-ch-04",
+      "city": "Lausanne",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "eu-ch",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-ch-05",
+      "city": "Lugano",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "eu-ch",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-ch-06",
+      "city": "Davos",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "eu-ch",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-ch-07",
+      "city": "Fribourg",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "eu-ch",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-ch-08",
+      "city": "Biel",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "eu-ch",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-ch-09",
+      "city": "Zug",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "eu-ch",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-ch-10",
+      "city": "Rapperswil",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "eu-ch",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-ch-11",
+      "city": "Kloten",
+      "name": "Waves",
+      "code": "011",
+      "league_id": "eu-ch",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-ch-12",
+      "city": "Langnau",
+      "name": "Hawks",
+      "code": "012",
+      "league_id": "eu-ch",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-ch-13",
+      "city": "Sierre",
+      "name": "Rooks",
+      "code": "013",
+      "league_id": "eu-ch",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-ch-14",
+      "city": "Neuchatel",
+      "name": "Cedars",
+      "code": "014",
+      "league_id": "eu-ch",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-sk-01",
+      "city": "Bratislava",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "eu-sk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-sk-02",
+      "city": "Kosice",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "eu-sk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-sk-03",
+      "city": "Nitra",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "eu-sk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-sk-04",
+      "city": "Zilina",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "eu-sk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-sk-05",
+      "city": "Trencin",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "eu-sk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-sk-06",
+      "city": "Zvolen",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "eu-sk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-sk-07",
+      "city": "Poprad",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "eu-sk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-sk-08",
+      "city": "Martin",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "eu-sk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-sk-09",
+      "city": "Presov",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "eu-sk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-sk-10",
+      "city": "Michalovce",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "eu-sk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-sk-11",
+      "city": "Liptovsky Mikulas",
+      "name": "Waves",
+      "code": "011",
+      "league_id": "eu-sk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-sk-12",
+      "city": "Banska Bystrica",
+      "name": "Hawks",
+      "code": "012",
+      "league_id": "eu-sk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-at-01",
+      "city": "Vienna",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "eu-at",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-at-02",
+      "city": "Salzburg",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "eu-at",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-at-03",
+      "city": "Innsbruck",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "eu-at",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-at-04",
+      "city": "Graz",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "eu-at",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-at-05",
+      "city": "Villach",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "eu-at",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-at-06",
+      "city": "Klagenfurt",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "eu-at",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-at-07",
+      "city": "Linz",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "eu-at",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-at-08",
+      "city": "Bolzano",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "eu-at",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-at-09",
+      "city": "Brunico",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "eu-at",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-at-10",
+      "city": "Ljubljana",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "eu-at",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-at-11",
+      "city": "Jesenice",
+      "name": "Waves",
+      "code": "011",
+      "league_id": "eu-at",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-at-12",
+      "city": "Fehervar",
+      "name": "Hawks",
+      "code": "012",
+      "league_id": "eu-at",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-at-13",
+      "city": "Vorarlberg",
+      "name": "Rooks",
+      "code": "013",
+      "league_id": "eu-at",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fr-01",
+      "city": "Paris",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "eu-fr",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fr-02",
+      "city": "Grenoble",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "eu-fr",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fr-03",
+      "city": "Rouen",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "eu-fr",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fr-04",
+      "city": "Amiens",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "eu-fr",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fr-05",
+      "city": "Angers",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "eu-fr",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fr-06",
+      "city": "Bordeaux",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "eu-fr",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fr-07",
+      "city": "Nice",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "eu-fr",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fr-08",
+      "city": "Gap",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "eu-fr",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fr-09",
+      "city": "Briancon",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "eu-fr",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fr-10",
+      "city": "Chamonix",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "eu-fr",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fr-11",
+      "city": "Cergy",
+      "name": "Waves",
+      "code": "011",
+      "league_id": "eu-fr",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-fr-12",
+      "city": "Strasbourg",
+      "name": "Hawks",
+      "code": "012",
+      "league_id": "eu-fr",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-gb-01",
+      "city": "London",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "eu-gb",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-gb-02",
+      "city": "Sheffield",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "eu-gb",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-gb-03",
+      "city": "Nottingham",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "eu-gb",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-gb-04",
+      "city": "Cardiff",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "eu-gb",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-gb-05",
+      "city": "Belfast",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "eu-gb",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-gb-06",
+      "city": "Glasgow",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "eu-gb",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-gb-07",
+      "city": "Coventry",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "eu-gb",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-gb-08",
+      "city": "Manchester",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "eu-gb",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-gb-09",
+      "city": "Guildford",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "eu-gb",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-gb-10",
+      "city": "Dundee",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "eu-gb",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-no-01",
+      "city": "Oslo",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "eu-no",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-no-02",
+      "city": "Bergen",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "eu-no",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-no-03",
+      "city": "Trondheim",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "eu-no",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-no-04",
+      "city": "Stavanger",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "eu-no",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-no-05",
+      "city": "Lillehammer",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "eu-no",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-no-06",
+      "city": "Hamar",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "eu-no",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-no-07",
+      "city": "Asker",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "eu-no",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-no-08",
+      "city": "Sarpsborg",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "eu-no",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-no-09",
+      "city": "Fredrikstad",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "eu-no",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-no-10",
+      "city": "Narvik",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "eu-no",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-dk-01",
+      "city": "Copenhagen",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "eu-dk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-dk-02",
+      "city": "Odense",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "eu-dk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-dk-03",
+      "city": "Aalborg",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "eu-dk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-dk-04",
+      "city": "Herning",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "eu-dk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-dk-05",
+      "city": "Esbjerg",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "eu-dk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-dk-06",
+      "city": "Frederikshavn",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "eu-dk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-dk-07",
+      "city": "Vojens",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "eu-dk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-dk-08",
+      "city": "Rodovre",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "eu-dk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-dk-09",
+      "city": "Herlev",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "eu-dk",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-pl-01",
+      "city": "Warsaw",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "eu-pl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-pl-02",
+      "city": "Krakow",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "eu-pl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-pl-03",
+      "city": "Katowice",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "eu-pl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-pl-04",
+      "city": "Gdansk",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "eu-pl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-pl-05",
+      "city": "Torun",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "eu-pl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-pl-06",
+      "city": "Tychy",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "eu-pl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-pl-07",
+      "city": "Bytom",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "eu-pl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-pl-08",
+      "city": "Oswiecim",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "eu-pl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-pl-09",
+      "city": "Nowy Targ",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "eu-pl",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-01",
+      "city": "Moscow",
+      "name": "Badgers",
+      "code": "001",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-02",
+      "city": "Saint Petersburg",
+      "name": "Pines",
+      "code": "002",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-03",
+      "city": "Kazan",
+      "name": "Spires",
+      "code": "003",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-04",
+      "city": "Omsk",
+      "name": "Otters",
+      "code": "004",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-05",
+      "city": "Novosibirsk",
+      "name": "Cinders",
+      "code": "005",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-06",
+      "city": "Chelyabinsk",
+      "name": "Falcons",
+      "code": "006",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-07",
+      "city": "Magnitogorsk",
+      "name": "Elks",
+      "code": "007",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-08",
+      "city": "Ufa",
+      "name": "Quartz",
+      "code": "008",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-09",
+      "city": "Yaroslavl",
+      "name": "Waves",
+      "code": "009",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-10",
+      "city": "Nizhny Novgorod",
+      "name": "Hawks",
+      "code": "010",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-11",
+      "city": "Cherepovets",
+      "name": "Rooks",
+      "code": "011",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-12",
+      "city": "Tolyatti",
+      "name": "Cedars",
+      "code": "012",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-13",
+      "city": "Vladivostok",
+      "name": "Flares",
+      "code": "013",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-14",
+      "city": "Khabarovsk",
+      "name": "Ibis",
+      "code": "014",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-15",
+      "city": "Sochi",
+      "name": "Flints",
+      "code": "015",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-16",
+      "city": "Minsk",
+      "name": "Clouds",
+      "code": "016",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-17",
+      "city": "Brest",
+      "name": "Drifters",
+      "code": "017",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-18",
+      "city": "Gomel",
+      "name": "Beacons",
+      "code": "018",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-19",
+      "city": "Astana",
+      "name": "Garnets",
+      "code": "019",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-20",
+      "city": "Almaty",
+      "name": "Aspens",
+      "code": "020",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-21",
+      "city": "Riga",
+      "name": "Whirlwinds",
+      "code": "021",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "eu-east-22",
+      "city": "Vilnius",
+      "name": "Cranes",
+      "code": "022",
+      "league_id": "eu-east",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-01",
+      "city": "Harbor",
+      "name": "Wolves",
+      "code": "001",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-02",
+      "city": "Summit",
+      "name": "Herons",
+      "code": "002",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-03",
+      "city": "Toronto",
+      "name": "Meteors",
+      "code": "003",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-04",
+      "city": "Montreal",
+      "name": "Badgers",
+      "code": "004",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-05",
+      "city": "Vancouver",
+      "name": "Pines",
+      "code": "005",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-06",
+      "city": "Calgary",
+      "name": "Spires",
+      "code": "006",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-07",
+      "city": "Edmonton",
+      "name": "Otters",
+      "code": "007",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-08",
+      "city": "Winnipeg",
+      "name": "Cinders",
+      "code": "008",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-09",
+      "city": "Ottawa",
+      "name": "Falcons",
+      "code": "009",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-10",
+      "city": "Quebec City",
+      "name": "Elks",
+      "code": "010",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-11",
+      "city": "Halifax",
+      "name": "Quartz",
+      "code": "011",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-12",
+      "city": "Boston",
+      "name": "Waves",
+      "code": "012",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-13",
+      "city": "New York",
+      "name": "Hawks",
+      "code": "013",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-14",
+      "city": "Buffalo",
+      "name": "Rooks",
+      "code": "014",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-15",
+      "city": "Detroit",
+      "name": "Cedars",
+      "code": "015",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-16",
+      "city": "Chicago",
+      "name": "Flares",
+      "code": "016",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-17",
+      "city": "Pittsburgh",
+      "name": "Ibis",
+      "code": "017",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-18",
+      "city": "Philadelphia",
+      "name": "Flints",
+      "code": "018",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-19",
+      "city": "Washington",
+      "name": "Clouds",
+      "code": "019",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-20",
+      "city": "Raleigh",
+      "name": "Drifters",
+      "code": "020",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-21",
+      "city": "Miami",
+      "name": "Beacons",
+      "code": "021",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-22",
+      "city": "Tampa",
+      "name": "Garnets",
+      "code": "022",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-23",
+      "city": "Nashville",
+      "name": "Aspens",
+      "code": "023",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-24",
+      "city": "Columbus",
+      "name": "Whirlwinds",
+      "code": "024",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-25",
+      "city": "Minneapolis",
+      "name": "Cranes",
+      "code": "025",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-26",
+      "city": "St Louis",
+      "name": "Shales",
+      "code": "026",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-27",
+      "city": "Dallas",
+      "name": "Larches",
+      "code": "027",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-28",
+      "city": "Denver",
+      "name": "Storms",
+      "code": "028",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-29",
+      "city": "Seattle",
+      "name": "Moons",
+      "code": "029",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-30",
+      "city": "Portland",
+      "name": "Peaks",
+      "code": "030",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-31",
+      "city": "Los Angeles",
+      "name": "Dunes",
+      "code": "031",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u9-32",
+      "city": "San Diego",
+      "name": "Sails",
+      "code": "032",
+      "league_id": "y-u9",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-01",
+      "city": "Harbor",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-02",
+      "city": "Summit",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-03",
+      "city": "Toronto",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-04",
+      "city": "Montreal",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-05",
+      "city": "Vancouver",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-06",
+      "city": "Calgary",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-07",
+      "city": "Edmonton",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-08",
+      "city": "Winnipeg",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-09",
+      "city": "Ottawa",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-10",
+      "city": "Quebec City",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-11",
+      "city": "Halifax",
+      "name": "Waves",
+      "code": "011",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-12",
+      "city": "Boston",
+      "name": "Hawks",
+      "code": "012",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-13",
+      "city": "New York",
+      "name": "Rooks",
+      "code": "013",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-14",
+      "city": "Buffalo",
+      "name": "Cedars",
+      "code": "014",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-15",
+      "city": "Detroit",
+      "name": "Flares",
+      "code": "015",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-16",
+      "city": "Chicago",
+      "name": "Ibis",
+      "code": "016",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-17",
+      "city": "Pittsburgh",
+      "name": "Flints",
+      "code": "017",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-18",
+      "city": "Philadelphia",
+      "name": "Clouds",
+      "code": "018",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-19",
+      "city": "Washington",
+      "name": "Drifters",
+      "code": "019",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-20",
+      "city": "Raleigh",
+      "name": "Beacons",
+      "code": "020",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-21",
+      "city": "Miami",
+      "name": "Garnets",
+      "code": "021",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-22",
+      "city": "Tampa",
+      "name": "Aspens",
+      "code": "022",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-23",
+      "city": "Nashville",
+      "name": "Whirlwinds",
+      "code": "023",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-24",
+      "city": "Columbus",
+      "name": "Cranes",
+      "code": "024",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-25",
+      "city": "Minneapolis",
+      "name": "Shales",
+      "code": "025",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-26",
+      "city": "St Louis",
+      "name": "Larches",
+      "code": "026",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-27",
+      "city": "Dallas",
+      "name": "Storms",
+      "code": "027",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-28",
+      "city": "Denver",
+      "name": "Moons",
+      "code": "028",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-29",
+      "city": "Seattle",
+      "name": "Peaks",
+      "code": "029",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-30",
+      "city": "Portland",
+      "name": "Dunes",
+      "code": "030",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-31",
+      "city": "Los Angeles",
+      "name": "Sails",
+      "code": "031",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u11-32",
+      "city": "San Diego",
+      "name": "Owls",
+      "code": "032",
+      "league_id": "y-u11",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-01",
+      "city": "Harbor",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-02",
+      "city": "Summit",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-03",
+      "city": "Toronto",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-04",
+      "city": "Montreal",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-05",
+      "city": "Vancouver",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-06",
+      "city": "Calgary",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-07",
+      "city": "Edmonton",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-08",
+      "city": "Winnipeg",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-09",
+      "city": "Ottawa",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-10",
+      "city": "Quebec City",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-11",
+      "city": "Halifax",
+      "name": "Waves",
+      "code": "011",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-12",
+      "city": "Boston",
+      "name": "Hawks",
+      "code": "012",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-13",
+      "city": "New York",
+      "name": "Rooks",
+      "code": "013",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-14",
+      "city": "Buffalo",
+      "name": "Cedars",
+      "code": "014",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-15",
+      "city": "Detroit",
+      "name": "Flares",
+      "code": "015",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-16",
+      "city": "Chicago",
+      "name": "Ibis",
+      "code": "016",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-17",
+      "city": "Pittsburgh",
+      "name": "Flints",
+      "code": "017",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-18",
+      "city": "Philadelphia",
+      "name": "Clouds",
+      "code": "018",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-19",
+      "city": "Washington",
+      "name": "Drifters",
+      "code": "019",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-20",
+      "city": "Raleigh",
+      "name": "Beacons",
+      "code": "020",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-21",
+      "city": "Miami",
+      "name": "Garnets",
+      "code": "021",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-22",
+      "city": "Tampa",
+      "name": "Aspens",
+      "code": "022",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-23",
+      "city": "Nashville",
+      "name": "Whirlwinds",
+      "code": "023",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-24",
+      "city": "Columbus",
+      "name": "Cranes",
+      "code": "024",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-25",
+      "city": "Minneapolis",
+      "name": "Shales",
+      "code": "025",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-26",
+      "city": "St Louis",
+      "name": "Larches",
+      "code": "026",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-27",
+      "city": "Dallas",
+      "name": "Storms",
+      "code": "027",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-28",
+      "city": "Denver",
+      "name": "Moons",
+      "code": "028",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-29",
+      "city": "Seattle",
+      "name": "Peaks",
+      "code": "029",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-30",
+      "city": "Portland",
+      "name": "Dunes",
+      "code": "030",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-31",
+      "city": "Los Angeles",
+      "name": "Sails",
+      "code": "031",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u13-32",
+      "city": "San Diego",
+      "name": "Owls",
+      "code": "032",
+      "league_id": "y-u13",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-01",
+      "city": "Harbor",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-02",
+      "city": "Summit",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-03",
+      "city": "Toronto",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-04",
+      "city": "Montreal",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-05",
+      "city": "Vancouver",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-06",
+      "city": "Calgary",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-07",
+      "city": "Edmonton",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-08",
+      "city": "Winnipeg",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-09",
+      "city": "Ottawa",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-10",
+      "city": "Quebec City",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-11",
+      "city": "Halifax",
+      "name": "Waves",
+      "code": "011",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-12",
+      "city": "Boston",
+      "name": "Hawks",
+      "code": "012",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-13",
+      "city": "New York",
+      "name": "Rooks",
+      "code": "013",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-14",
+      "city": "Buffalo",
+      "name": "Cedars",
+      "code": "014",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-15",
+      "city": "Detroit",
+      "name": "Flares",
+      "code": "015",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-16",
+      "city": "Chicago",
+      "name": "Ibis",
+      "code": "016",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-17",
+      "city": "Pittsburgh",
+      "name": "Flints",
+      "code": "017",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-18",
+      "city": "Philadelphia",
+      "name": "Clouds",
+      "code": "018",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-19",
+      "city": "Washington",
+      "name": "Drifters",
+      "code": "019",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-20",
+      "city": "Raleigh",
+      "name": "Beacons",
+      "code": "020",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-21",
+      "city": "Miami",
+      "name": "Garnets",
+      "code": "021",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-22",
+      "city": "Tampa",
+      "name": "Aspens",
+      "code": "022",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-23",
+      "city": "Nashville",
+      "name": "Whirlwinds",
+      "code": "023",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-24",
+      "city": "Columbus",
+      "name": "Cranes",
+      "code": "024",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-25",
+      "city": "Minneapolis",
+      "name": "Shales",
+      "code": "025",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-26",
+      "city": "St Louis",
+      "name": "Larches",
+      "code": "026",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-27",
+      "city": "Dallas",
+      "name": "Storms",
+      "code": "027",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-28",
+      "city": "Denver",
+      "name": "Moons",
+      "code": "028",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-29",
+      "city": "Seattle",
+      "name": "Peaks",
+      "code": "029",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-30",
+      "city": "Portland",
+      "name": "Dunes",
+      "code": "030",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-31",
+      "city": "Los Angeles",
+      "name": "Sails",
+      "code": "031",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u15-32",
+      "city": "San Diego",
+      "name": "Owls",
+      "code": "032",
+      "league_id": "y-u15",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-01",
+      "city": "Harbor",
+      "name": "Herons",
+      "code": "001",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-02",
+      "city": "Summit",
+      "name": "Meteors",
+      "code": "002",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-03",
+      "city": "Toronto",
+      "name": "Badgers",
+      "code": "003",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-04",
+      "city": "Montreal",
+      "name": "Pines",
+      "code": "004",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-05",
+      "city": "Vancouver",
+      "name": "Spires",
+      "code": "005",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-06",
+      "city": "Calgary",
+      "name": "Otters",
+      "code": "006",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-07",
+      "city": "Edmonton",
+      "name": "Cinders",
+      "code": "007",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-08",
+      "city": "Winnipeg",
+      "name": "Falcons",
+      "code": "008",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-09",
+      "city": "Ottawa",
+      "name": "Elks",
+      "code": "009",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-10",
+      "city": "Quebec City",
+      "name": "Quartz",
+      "code": "010",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-11",
+      "city": "Halifax",
+      "name": "Waves",
+      "code": "011",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-12",
+      "city": "Boston",
+      "name": "Hawks",
+      "code": "012",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-13",
+      "city": "New York",
+      "name": "Rooks",
+      "code": "013",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-14",
+      "city": "Buffalo",
+      "name": "Cedars",
+      "code": "014",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-15",
+      "city": "Detroit",
+      "name": "Flares",
+      "code": "015",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-16",
+      "city": "Chicago",
+      "name": "Ibis",
+      "code": "016",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-17",
+      "city": "Pittsburgh",
+      "name": "Flints",
+      "code": "017",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-18",
+      "city": "Philadelphia",
+      "name": "Clouds",
+      "code": "018",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-19",
+      "city": "Washington",
+      "name": "Drifters",
+      "code": "019",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-20",
+      "city": "Raleigh",
+      "name": "Beacons",
+      "code": "020",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-21",
+      "city": "Miami",
+      "name": "Garnets",
+      "code": "021",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-22",
+      "city": "Tampa",
+      "name": "Aspens",
+      "code": "022",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-23",
+      "city": "Nashville",
+      "name": "Whirlwinds",
+      "code": "023",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-24",
+      "city": "Columbus",
+      "name": "Cranes",
+      "code": "024",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-25",
+      "city": "Minneapolis",
+      "name": "Shales",
+      "code": "025",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-26",
+      "city": "St Louis",
+      "name": "Larches",
+      "code": "026",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-27",
+      "city": "Dallas",
+      "name": "Storms",
+      "code": "027",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-28",
+      "city": "Denver",
+      "name": "Moons",
+      "code": "028",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-29",
+      "city": "Seattle",
+      "name": "Peaks",
+      "code": "029",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-30",
+      "city": "Portland",
+      "name": "Dunes",
+      "code": "030",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-31",
+      "city": "Los Angeles",
+      "name": "Sails",
+      "code": "031",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    },
+    {
+      "id": "y-u18-32",
+      "city": "San Diego",
+      "name": "Owls",
+      "code": "032",
+      "league_id": "y-u18",
+      "season": "2026-27",
+      "affiliate_of": null
+    }
+  ]
+}
