@@ -1,0 +1,462 @@
+{
+  "date": "2026-10-20",
+  "base": "10a028d411b20e6bfc54ddca7911362e6a8900d6",
+  "work_branch": "chore/project-quality",
+  "integration_branch": "codex/game-modes",
+  "preserved_prototype": "d3cabacac1e3fa9ece1d5c1196084a821da5e606",
+  "installer": {
+    "returncode": 0,
+    "version": "4.6.3.stable.official.7d41c59c4",
+    "source": "https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/Godot_v4.6.3-stable_linux.x86_64.zip",
+    "checksum_source": "https://github.com/godotengine/godot-builds/releases/download/4.6.3-stable/SHA512-SUMS.txt",
+    "checksum": "SHA512 verified against committed official digest"
+  },
+  "full_local": {
+    "godot": "4.6.3.stable.official.7d41c59c4",
+    "counts": {
+      "passed": 42,
+      "failed": 0,
+      "skipped": 1
+    },
+    "checks": [
+      {
+        "name": "engine_version",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.017,
+        "log": "engine_version.log"
+      },
+      {
+        "name": "import",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 4.692,
+        "log": "import.log"
+      },
+      {
+        "name": "test_accessibility",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.398,
+        "log": "test_accessibility.log"
+      },
+      {
+        "name": "test_animation",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.976,
+        "log": "test_animation.log"
+      },
+      {
+        "name": "test_benches",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.12,
+        "log": "test_benches.log"
+      },
+      {
+        "name": "test_boards",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.659,
+        "log": "test_boards.log"
+      },
+      {
+        "name": "test_clipping",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.092,
+        "log": "test_clipping.log"
+      },
+      {
+        "name": "test_controller",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.026,
+        "log": "test_controller.log"
+      },
+      {
+        "name": "test_controls",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.819,
+        "log": "test_controls.log"
+      },
+      {
+        "name": "test_gear_graphics",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.231,
+        "log": "test_gear_graphics.log"
+      },
+      {
+        "name": "test_gm_checkpoint",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 18.846,
+        "log": "test_gm_checkpoint.log"
+      },
+      {
+        "name": "test_gm_management",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 50.854,
+        "log": "test_gm_management.log"
+      },
+      {
+        "name": "test_gm_navigation",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 59.657,
+        "log": "test_gm_navigation.log"
+      },
+      {
+        "name": "test_gm_rosters",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.121,
+        "log": "test_gm_rosters.log"
+      },
+      {
+        "name": "test_gm_scouting",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 16.705,
+        "log": "test_gm_scouting.log"
+      },
+      {
+        "name": "test_gm_season",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 9.355,
+        "log": "test_gm_season.log"
+      },
+      {
+        "name": "test_goal_celebration",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.029,
+        "log": "test_goal_celebration.log"
+      },
+      {
+        "name": "test_goal_net",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.821,
+        "log": "test_goal_net.log"
+      },
+      {
+        "name": "test_goalie_gear",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.308,
+        "log": "test_goalie_gear.log"
+      },
+      {
+        "name": "test_goalie_saves",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.791,
+        "log": "test_goalie_saves.log"
+      },
+      {
+        "name": "test_hockey_audio",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.937,
+        "log": "test_hockey_audio.log"
+      },
+      {
+        "name": "test_hockey_stop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.999,
+        "log": "test_hockey_stop.log"
+      },
+      {
+        "name": "test_ice",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 4.424,
+        "log": "test_ice.log"
+      },
+      {
+        "name": "test_kit_geometry",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.791,
+        "log": "test_kit_geometry.log"
+      },
+      {
+        "name": "test_kit_materials",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.07,
+        "log": "test_kit_materials.log"
+      },
+      {
+        "name": "test_lab",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.348,
+        "log": "test_lab.log"
+      },
+      {
+        "name": "test_lighting",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.033,
+        "log": "test_lighting.log"
+      },
+      {
+        "name": "test_match",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.117,
+        "log": "test_match.log"
+      },
+      {
+        "name": "test_match_loop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 19.5,
+        "log": "test_match_loop.log"
+      },
+      {
+        "name": "test_match_state",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.139,
+        "log": "test_match_state.log"
+      },
+      {
+        "name": "test_mocap",
+        "status": "skipped",
+        "reason": "Optional local motion-capture clips are absent",
+        "returncode": 0,
+        "seconds": 0.137,
+        "log": "test_mocap.log"
+      },
+      {
+        "name": "test_net_shooting",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.404,
+        "log": "test_net_shooting.log"
+      },
+      {
+        "name": "test_overtime_shootout",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.957,
+        "log": "test_overtime_shootout.log"
+      },
+      {
+        "name": "test_play_now",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 20.698,
+        "log": "test_play_now.log"
+      },
+      {
+        "name": "test_puck_flight",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.258,
+        "log": "test_puck_flight.log"
+      },
+      {
+        "name": "test_render_settings",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.024,
+        "log": "test_render_settings.log"
+      },
+      {
+        "name": "test_roster_database",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.136,
+        "log": "test_roster_database.log"
+      },
+      {
+        "name": "test_save_store",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.138,
+        "log": "test_save_store.log"
+      },
+      {
+        "name": "test_simulation",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.228,
+        "log": "test_simulation.log"
+      },
+      {
+        "name": "test_skate_stick",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.882,
+        "log": "test_skate_stick.log"
+      },
+      {
+        "name": "test_stride",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.349,
+        "log": "test_stride.log"
+      },
+      {
+        "name": "test_world_database",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 19.033,
+        "log": "test_world_database.log"
+      },
+      {
+        "name": "python",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.254,
+        "log": "python.log"
+      }
+    ],
+    "scope": "Headless regressions; not GPU, physical controller, human feel or release approval"
+  },
+  "final_smoke": {
+    "godot": "4.6.3.stable.official.7d41c59c4",
+    "counts": {
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0
+    },
+    "checks": [
+      {
+        "name": "engine_version",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.02,
+        "log": "engine_version.log"
+      },
+      {
+        "name": "import",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.594,
+        "log": "import.log"
+      },
+      {
+        "name": "test_roster_database",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.137,
+        "log": "test_roster_database.log"
+      },
+      {
+        "name": "test_controller",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.935,
+        "log": "test_controller.log"
+      },
+      {
+        "name": "test_match_state",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.136,
+        "log": "test_match_state.log"
+      },
+      {
+        "name": "test_save_store",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.136,
+        "log": "test_save_store.log"
+      },
+      {
+        "name": "test_play_now",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 20.787,
+        "log": "test_play_now.log"
+      },
+      {
+        "name": "test_accessibility",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.301,
+        "log": "test_accessibility.log"
+      },
+      {
+        "name": "python",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.257,
+        "log": "python.log"
+      }
+    ],
+    "scope": "Headless regressions; not GPU, physical controller, human feel or release approval"
+  },
+  "python_test_count": 31,
+  "runner_guard_tests": 7,
+  "yaml_validation": "All workflow/issue YAML parsed; expected event triggers, read-only permissions and 40-character action pins verified",
+  "remote_actions": "Workflow configured; hosted execution not observed",
+  "scope": "Developer/project workflow only. No new gameplay/art/screenshots, packaged export, release or hardware/platform validation claimed.",
+  "sources_sha256": {
+    "tools/check_project.py": "cb154d2c795ac8f1cd91e45839bd05107ae8ab1c5c138c34f50b30f0fd8df008",
+    "tools/ci/install_godot.sh": "407d336097752186710f4b8302d99226602e7b623e0577dee5dd5e1a92290b47",
+    ".github/workflows/project-checks.yml": "129e588caba74356164f0454c9ced5b7807875f6db4f65b0dcbdc8e38cf49077"
+  }
+}

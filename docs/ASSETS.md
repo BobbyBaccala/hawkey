@@ -46,7 +46,7 @@ Python preparation tools are development-only dependencies; obtain their licence
 - Designs are generic: no team marks, logos, manufacturer branding or EA assets.
 
 ## Presentation — 0.10
-- UI typeface: Bahnschrift, loaded from Windows at runtime (not shipped); falls back to other system fonts elsewhere.
+- Historical 0.10 typography used a Windows system font. Current shared UI bundles Barlow Regular and Barlow Condensed SemiBold under SIL OFL; source/license notices are in [assets/fonts/README.md](../assets/fonts/README.md).
 - Sponsor names on the boards (Northline, Glacier Cola, Ironwood Bank, Polar Air, Summit Tire, Bluewater, Maplefield, Rinkside) are invented and do not depict real companies.
 - Team identities use city names and generic colours only; no NHL or club logos.
 - Camera layouts and presentation were modelled on how EA's NHL games present hockey (camera families, score bug, banners) from public descriptions; no EA code, art or assets were used.

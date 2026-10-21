@@ -219,3 +219,25 @@ retaining the new skater breezers/materials. Clipping, goalie gear/save, kit
 geometry/material and render-setting rechecks pass. Full matrix, initial failure
 and rechecks: verification/sports-font-20261020.json. No new 3D visual approval
 or EA proprietary font/assets claim. No PR merge/release.
+
+
+## 2026-10-20 — project-quality workstream
+
+Owner: Codex, `chore/project-quality`, integrated into `codex/game-modes` / draft
+PR #2. No empty feature branches added. Replaced stale README controls/setup with
+current playable scope, existing genuine captures, roadmap and contributor guide;
+added issue forms/PR template. Added official SHA512-pinned Godot 4.6.3 Linux
+installer and shared smoke/full runner with bounded workers, timeout/script-error/
+unexpected-skip/empty-test guards and persistent JSON/JUnit/per-check logs. GitHub
+workflow uses read-only permissions and commit-pinned official actions, with logs
+retained as artifacts. No deployment, export, PR merge or game release configured.
+Documentation `.gdignore` excludes the progress archive from runtime asset scanning;
+Python caches ignored. Existing presentation head d3cabac remains preserved; no
+new gameplay or art change in this increment.
+Executed official installer successfully; full runner: 39 native suites pass,
+optional mocap skipped, 31 Python tests pass. Final smoke and seven runner guard
+tests pass. YAML parses/triggers/action pins checked. Remote Actions execution is
+not yet observed; a committed workflow is not evidence of a hosted green run.
+Evidence: verification/project-quality-20261020.json. Next player-facing work
+remains the shared player-stat ledger and deeper GM history; export/hardware/
+platform validation remains open.
