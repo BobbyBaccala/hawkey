@@ -139,6 +139,27 @@ func team_color(team: int) -> Color:
 func team_accent(team: int) -> Color:
 	return Color("#e8eef5") if team==0 else Color("#b3162c")
 
+## Horizontal direction from an actor to the centre of the net its team attacks.
+func net_facing(actor: CharacterBody3D) -> Vector3:
+	var net_:=Vector3(0,0,attack_direction(body_team(actor))*Arena.GOAL_LINE)
+	var d:=net_-actor.position
+	d.y=0
+	return d.normalized() if d.length()>0.05 else Vector3(0,0,attack_direction(body_team(actor)))
+
+## Shots go at the net the player faces. Aim (mouse / left stick) picks a spot
+## on the goal mouth: pointing left or right of the net moves the target toward
+## that post; aiming well away from the net still shoots on goal.
+func shot_direction() -> Vector3:
+	var to_net:=net_facing(player)
+	var net_:=Vector3(0,0,attack_direction(body_team(player))*Arena.GOAL_LINE)
+	var across:=Vector3(-to_net.z,0,to_net.x)
+	var side:=clampf(aim.dot(across)*2.0,-1.0,1.0)
+	# Goal mouth runs along x: move the target up to 0.7 m toward the aimed post.
+	var target:=net_+Vector3(signf(across.x) if absf(across.x)>0.05 else 1.0,0,0)*side*0.70
+	var d:=target-puck.position
+	d.y=0
+	return d.normalized() if d.length()>0.05 else to_net
+
 func attack_direction(team: int) -> float:
 	var direction := -1.0 if team==0 else 1.0
 	return direction if match_state.period%2==1 else -direction
@@ -379,7 +400,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.button_index==MOUSE_BUTTON_WHEEL_UP and event.pressed: zoom=clampf(zoom-0.08,0.55,1.5)
 		if event.button_index==MOUSE_BUTTON_WHEEL_DOWN and event.pressed: zoom=clampf(zoom+0.08,0.55,1.5)
 		if event.button_index==MOUSE_BUTTON_LEFT and not event.pressed:
-			strike(aim,lerpf(16,36,charge))
+			strike(shot_direction(),lerpf(16,36,charge))
 			charge=0
 		if event.button_index==MOUSE_BUTTON_RIGHT and event.pressed:
 			var target := pass_target(player,aim)
@@ -602,7 +623,10 @@ func control_player(delta: float) -> void:
 	player.velocity=velocity
 	player.move_and_slide()
 	var visual:=player.get_child(1)
-	visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-aim.x,-aim.z),6*delta)
+	# Tethered to the opposing net: whichever way the player skates, the body
+	# stays square to the net he attacks, so he can shoot at any moment.
+	var to_net:=net_facing(player)
+	visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-to_net.x,-to_net.z),8*delta)
 	visual.shot_charge=charge
 	visual.animate(player.velocity.length(),delta,0,intent.length_squared()>0.01,braking)
 	sync_skater_contacts(player)
@@ -728,9 +752,9 @@ func update_team_ai(delta: float) -> void:
 			actor.velocity=Skating.step(actor.velocity,intent,rating_,false,delta)
 		actor.move_and_slide()
 		var visual:=actor.get_child(1)
-		var face:=intent if intent.length()>0.1 else (puck.position-actor.position).normalized()
-		if actor==carrier: face=(Vector3(0,0,attack*Arena.GOAL_LINE)-actor.position).normalized()
-		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-face.x,-face.z),4.8*delta)
+		# Every skater's body is tethered to the net his team attacks.
+		var face:=net_facing(actor)
+		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-face.x,-face.z),6.0*delta)
 		visual.animate(actor.velocity.length(),delta,0,intent.length_squared()>0.01)
 		sync_skater_contacts(actor)
 		# Poke separation only within physical reach; AI uses the same puck object.
@@ -812,8 +836,18 @@ func update_goalkeepers(delta: float) -> void:
 		visual.goalie_save_height=move_toward(visual.goalie_save_height,desired_height,delta*2.8)
 		keeper.velocity=(goalie_targets[i]-keeper.position).limit_length(1)*3.8
 		keeper.move_and_slide()
-		var facing:=puck.position-keeper.position
-		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-facing.x,-facing.z)-keeper.rotation.y,delta*4)
+		# The goalie works off the middle of his net: he stays on the line from
+		# the net centre to the puck (goalie_targets) and keeps his chest square
+		# to the puck. When the puck goes behind the goal line he turns to follow
+		# it but no further than sideways along the line (hugging the post).
+		var base:=Vector3(0,0,end_*Arena.GOAL_LINE)
+		var facing:=puck.position-base
+		facing.y=0
+		var out_:=Vector3(0,0,-end_)
+		var angle:=out_.signed_angle_to(facing.normalized(),Vector3.UP) if facing.length()>0.05 else 0.0
+		angle=clampf(angle,-deg_to_rad(100),deg_to_rad(100))
+		facing=out_.rotated(Vector3.UP,angle)
+		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-facing.x,-facing.z)-keeper.rotation.y,delta*9)
 		visual.animate(keeper.velocity.length(),delta,0,false)
 		sync_goalie_contacts(keeper)
 		if puck.position.y<0.13 and puck.linear_velocity.length()<2 and keeper.position.distance_to(puck.position)<0.65 and cooldown<=0:
@@ -974,7 +1008,7 @@ func process_controller_edges() -> void:
 		if controller.poke_pressed: defensive_action(false)
 		if match_state.phase==MatchState.Phase.PLAY:
 			if controller.shoot_released:
-				strike(aim,lerpf(16,36,charge),false,controller.lift*0.32)
+				strike(shot_direction(),lerpf(16,36,charge),false,controller.lift*0.32)
 				charge=0
 			if controller.pass_pressed or controller.saucer_pressed:
 				var target:=pass_target(player,aim)
