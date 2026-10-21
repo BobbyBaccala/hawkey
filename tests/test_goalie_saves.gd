@@ -38,7 +38,8 @@ func run() -> void:
 	# Glove: catcher reaches toward a high glove-side shot.
 	settle(v, "glove", Vector2(0.8, 1.35))
 	var catcher: Vector3 = v.goalie_gloves[0].position
-	check(catcher.y > ready_catcher.y + 0.35 and catcher.x > ready_catcher.x + 0.1, "Glove rises and reaches out (%s -> %s)" % [ready_catcher, catcher])
+	var shot_line:=Vector3(0.8,1.38,0.655)
+	check(catcher.y > ready_catcher.y + 0.35 and catcher.x>=ready_catcher.x and catcher.distance_to(shot_line)<ready_catcher.distance_to(shot_line)*0.7, "Glove moves toward shot line from proportioned wide-ready stance (%s -> %s)" % [ready_catcher, catcher])
 	check(v.posed_wrists[0].distance_to(v.shoulder_of(0)) <= v.ARM_REACH + 0.01, "Glove reach stays within arm length")
 	var gear: Dictionary = v.get_goalie_gear()
 	check(gear.Catcher.transform.origin.y > 1.0, "Catcher collider follows the glove")

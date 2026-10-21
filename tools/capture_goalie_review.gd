@@ -62,6 +62,8 @@ func run() -> void:
 	await shot("pad",pad+Vector3(-0.45,0.25,-0.95),pad+Vector3(0,-0.03,0),38)
 	var glove: Vector3=visual.goalie_gloves[0].global_position
 	await shot("catcher",glove+Vector3(-0.30,0.18,-0.85),glove+Vector3(0,0.06,0),34)
+	var heel: Vector3=visual.rig.to_global(visual.goalie_heel.position)
+	await shot("heel",heel+Vector3(0.25,0.12,-0.65),heel+Vector3(0.04,0.02,0),38)
 	write_metadata()
 	quit()
 func write_metadata() -> void:

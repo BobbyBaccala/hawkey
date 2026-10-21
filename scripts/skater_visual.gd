@@ -404,6 +404,7 @@ func build_blade() -> MeshInstance3D:
 		var b:=float(i+1)/16
 		var p0:=blade_section(a,length_,height_,thickness)
 		var p1:=blade_section(b,length_,height_,thickness)
+		if goalie: mesh.surface_set_color(Gear.WHITE if a<0.25 else Color("#18212a"))
 		for side in range(4):
 			var next_:=posmod(side+1,4)
 			var normal:Vector3=(p1[side]-p0[side]).cross(p0[next_]-p0[side]).normalized()
@@ -411,6 +412,7 @@ func build_blade() -> MeshInstance3D:
 				mesh.surface_set_normal(normal)
 				mesh.surface_add_vertex(v)
 	for t in [0.0,1.0]:
+		if goalie: mesh.surface_set_color(Gear.WHITE if t==0 else Color("#18212a"))
 		var points:=blade_section(t,length_,height_,thickness)
 		for j in [0,1,2,0,2,3]:
 			mesh.surface_set_normal(Vector3.RIGHT if t>0 else Vector3.LEFT)
@@ -418,7 +420,10 @@ func build_blade() -> MeshInstance3D:
 	mesh.surface_end()
 	var instance:=MeshInstance3D.new()
 	instance.mesh=mesh
-	instance.material_override=material(Color("#18212a"),0.7)
+	instance.material_override=material(Color.WHITE if goalie else Color("#18212a"),0.7)
+	if goalie:
+		(instance.material_override as StandardMaterial3D).vertex_color_use_as_albedo=true
+		(instance.material_override as StandardMaterial3D).vertex_color_is_srgb=true
 	return instance
 
 func blade_section(t: float, length_: float, height_: float, thickness: float) -> Array[Vector3]:
