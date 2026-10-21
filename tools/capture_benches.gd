@@ -10,6 +10,8 @@ extends SceneTree
 ##           seat (walk1 just after landing, walk2 turning round at the seat)
 ##  walkstep - the same walk from inside the bench, mid-step (one skate up,
 ##           hips over the planted one)
+##  close  - the same player stopped in front of the seat, closing his stance
+##           with a last step before he sits
 ## xvfb-run -a -s "-screen 0 1728x1080x24" godot --rendering-method gl_compatibility --rendering-driver opengl3 --resolution 1728x1080 --script tools/capture_benches.gd
 ## Writes /tmp/hawkey-bench-<name>.png.
 const Arena = preload("res://scripts/arena.gd")
@@ -56,7 +58,10 @@ func run() -> void:
 	await shot(cam, Vector3(-w + 4.0, 2.4, 8.5), Vector3(-w - 1.4, 0.8, 4.6), 50, "/tmp/hawkey-bench-walk1.png")
 	for i in range(30): benches.update_figures(1.0 / 60.0)
 	await shot(cam, Vector3(-w + 4.0, 2.4, 8.5), Vector3(-w - 1.4, 0.8, 4.6), 50, "/tmp/hawkey-bench-walk2.png")
-	for i in range(260): benches.update_figures(1.0 / 60.0)
+	# Stopped in front of the seat: the closing step (second skate coming in).
+	for i in range(29): benches.update_figures(1.0 / 60.0)
+	await shot(cam, Vector3(-w + 0.6, 2.7, 2.9), Vector3(-w - 1.3, 0.35, 5.0), 46, "/tmp/hawkey-bench-close.png")
+	for i in range(231): benches.update_figures(1.0 / 60.0)
 	# Goal reaction: home bench on its feet, arms up; road bench slumped.
 	benches.watch_target = Vector3(0, 0, 20)
 	for i in range(120): benches.update_figures(1.0 / 60.0)
