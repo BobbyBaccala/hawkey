@@ -181,6 +181,7 @@ func roster(body: CharacterBody3D) -> Dictionary:
 func build_hud() -> void:
 	hud_node = BroadcastHud.new()
 	hud_node.gm_context=is_gm_match
+	hud_node.reduce_motion=reduce_motion
 	hud_node.team_colors.assign([Color("#164a9a"), Color("#b3162c")])
 	hud_layer = hud_node
 	for i in range(2):
@@ -189,6 +190,7 @@ func build_hud() -> void:
 	match_state.team_codes = hud_node.team_codes.duplicate()
 	match_state.team_names = hud_node.team_names.duplicate()
 	add_child(hud_node)
+	puck_marker=preload("res://scripts/puck_indicator.gd").new();hud_node.root_ui.add_child(puck_marker)
 	hud_node.configure_teams(database.teams, selected_team_ids, database.leagues)
 	hud_node.menu_requested.connect(func():
 		if is_gm_match:
@@ -220,6 +222,7 @@ func build_hud() -> void:
 	hud_node.practice_requested.connect(func(): get_tree().change_scene_to_file("res://practice.tscn"))
 
 func set_paused(on: bool) -> void:
+	if on and is_instance_valid(puck_marker): puck_marker.visible=false
 	if is_instance_valid(audio): audio.set_suspended(on)
 	if on: controller_pass_actor=null
 	paused = on
@@ -540,7 +543,7 @@ func _physics_process(delta: float) -> void:
 	if in_menu:
 		# Slow orbit over the arena behind the title screen.
 		camera.cull_mask=0xFFFFF & ~preload("res://scripts/arena_lighting.gd").RIGGING_LAYER
-		menu_time += delta
+		if not reduce_motion: menu_time += delta
 		var angle := menu_time * 0.08
 		camera.position = Vector3(sin(angle) * 22.0, 11.0, cos(angle) * 30.0)
 		camera.look_at(Vector3(0, 0.5, 0), Vector3.UP)
@@ -598,7 +601,7 @@ func _physics_process(delta: float) -> void:
 				var scorer_name:=""
 				if carrier!=null and body_team(carrier)==scoring_team: scorer_name=str(roster(carrier).name).to_upper()
 				# Red goal light behind this net, arena light pulse, jumbotron GOAL.
-				celebration.celebrate(end_, hud_node.team_colors[scoring_team], hud_node.team_names[scoring_team])
+				if not reduce_motion: celebration.celebrate(end_, hud_node.team_colors[scoring_team], hud_node.team_names[scoring_team])
 				hud_node.show_banner("GOAL", (hud_node.team_names[scoring_team]+("  ·  "+scorer_name if scorer_name!="" else "")), hud_node.team_colors[scoring_team], 2.4)
 				# Scorers celebrate with captured motion, sticks raised.
 				for actor in skaters:
@@ -625,6 +628,7 @@ func _physics_process(delta: float) -> void:
 	sync_puck_shadow()
 
 func sync_puck_shadow() -> void:
+	if is_instance_valid(puck_marker): puck_marker.track(camera,puck.global_position,show_puck_indicator and not paused and not in_menu and match_state.phase!=MatchState.Phase.FINAL)
 	if is_instance_valid(puck_shadow):
 		puck_shadow.position=Vector3(puck.position.x,0.003,puck.position.z)
 		var shadow_scale:=clampf(1+puck.position.y*0.15,1,1.8)
@@ -845,6 +849,9 @@ func update_goalkeepers(delta: float) -> void:
 			carrier=null
 
 func update_camera(delta: float) -> void:
+	if reduce_motion:
+		apply_comfort_camera()
+		return
 	if (match_state.is_shootout() or match_state.decision == "SO") and is_instance_valid(shootout_actor):
 		# Frame both shooter and goal immediately after each attempt teleport.
 		var end_: float=attack_direction(match_state.shootout_team)

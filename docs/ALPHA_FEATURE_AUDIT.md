@@ -41,8 +41,8 @@ Definitions: Missing = no implementation identified; Placeholder = stand-in; Par
 | Arena/presentation | Partial | Broadcast HUD, multiple cameras, arena/lighting work active | Presentation owner and menu interfaces | Readable puck/text, coherent menus/intermissions/results/replays | Actual render review and full navigation playtest |
 | Audio/crowd/chants | Partial | Original 33-cue procedural on-ice bank, bounded spatial routing/priority/pause and saved effects volume; crowd remains visual cutout foundation; HOCKEY_AUDIO.md | Original/licensed audio assets and event priorities | Varied context-aware spatial layers; chants respond without constant peaks | Mix/priority/event coverage and human listening tests |
 | Input/controller | Partial | Keyboard/mouse and mapped gamepad adapter; radial deadzone/disconnect code | Settings/remap and physical devices | Rebind/sensitivity/deadzones, correct prompts, hot-plug recovery | Synthetic checks plus physical controller sessions |
-| Accessibility | Missing | No complete accessibility settings flow identified | Settings and UI ownership | Text/puck cues, hold/toggle, reduced motion, audio/subtitles as needed | Accessibility checklist and user testing; feature-by-feature evidence |
-| Performance | Partial | 120 Hz physics; no current measured hardware baseline | Runtime and representative hardware | Published workload/hardware/frame-time and sim-throughput baseline | Full-match profiling with repeatable seeds; before/after evidence |
+| Accessibility | Partial | Persisted reduced-motion fixed view/flash suppression, optional puck indicator, explicit preferences focus loop, volume/dead zone; no full compliance/remapping claim; DEVELOPMENT_RESEARCH.md | Settings and UI ownership | Text/puck cues, hold/toggle, reduced motion, audio/subtitles as needed | Accessibility checklist and user testing; feature-by-feature evidence |
+| Performance | Partial | Reproducible cloud GM CPU profile identifies snapshot I/O/validation as a main-thread stall; league-day saves moved to data worker; no consumer/render FPS claim | Runtime and representative hardware | Published workload/hardware/frame-time and sim-throughput baseline | Full-match profiling with repeatable seeds; before/after evidence |
 | Multiplayer | Missing | No local/online multiplayer system identified | Separate authority/input/network design | Explicit local acceptance first; online separate scoped production stream | Multi-device/local ownership then latency/authority tests if authorized |
 | Build/platform/release | Partial | Godot project exists; no build verified in this session | Working runtime, CI, target hardware and rights inventory | Reproducible installable build, notices, recovery and platform checks | Clean-machine Windows build/playtest; official platform requirements |
 | Benchmark catalogue | Partial | 2K25/26 primary references in modes backlog; EA catalogue incomplete | Fresh official edition/platform sources | All benchmark categories cited and translated into original requirements | Source/edition/platform review; no unsupported current-edition claims |
@@ -151,3 +151,16 @@ runtime. A 128-bit diagnostic probe passed but did not establish a working game
 renderer; no fresh 3D photo or fixed-renderer claim. No PR merge/release.
 Next: human listening/mix iteration, more skating/crowd event layers, renderer
 native crash diagnosis, then remaining realistic controls/rules and GM systems.
+
+
+## 2026-10-20 — source-backed usability/performance increment
+
+Codex, codex/game-modes / PR #2, preserved prototype 3c324a4. Reviewed five official
+Godot 4.6 documentation sources at b10b7ed, not blocked public/XAG pages. Added
+preferences focus neighbors, reduced-motion camera/menu/banner/goal-flash behavior
+and optional black/white puck cue in match/Practice. Measured ~5.6 s full snapshot
+backup save versus ~13 ms season simulation; moved UI day checkpoint to isolated
+data worker with duplicate guards and failure preservation. Genuine JPEG before/
+after/in-progress/completed captures; see DEVELOPMENT_RESEARCH.md and verification
+/research-implementation-20261020.json. No new plugins needed, no art/animation
+replacement, no PR merge/release. Full 3D renderer/hardware comfort remain open.

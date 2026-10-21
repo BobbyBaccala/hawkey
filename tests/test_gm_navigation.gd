@@ -57,7 +57,7 @@ func run() -> void:
 	game.hud_node.menu_requested.emit();await settle()
 	check(Session.fixture_id.is_empty() and Session.pending_result.is_empty(),"Returning to GM retries and saves the pending result")
 	check(not current_scene.play_button.visible or current_scene.play_button.disabled,"Completed fixture cannot replay and double-count")
-	current_scene.advance_day()
+	await current_scene.advance_day()
 	check(Session.season.state.day==1,"Advance simulates other clubs after played fixture")
 	var standings: Array=Session.season.standings()
 	check(Session.resume() and Session.season.standings()==standings,"Resume reproduces complete league state")

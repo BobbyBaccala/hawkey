@@ -9,6 +9,7 @@ var teams: Array=[]
 var confirm: ConfirmationDialog
 var play_button: Button
 var sim_button: Button
+var checkpoint_job: RefCounted
 
 func _ready() -> void:
 	if not Session.pending_result.is_empty():
@@ -130,7 +131,37 @@ func standing_row(parent: HBoxContainer, club: String, stats: Array, selected: b
 		var cell:=UI.text(value,16,UI.ACCENT if selected else UI.MUTED);cell.custom_minimum_size.x=48;cell.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT;parent.add_child(cell)
 
 func advance_day() -> void:
-	Session.advance_day();rebuild()
+	if checkpoint_job!=null or Session.checkpoint_active: return
+	if not Session.pending_result.is_empty():
+		message.text="Save the pending result before advancing."
+		return
+	if Session.season.state.day>=62: return
+	checkpoint_job=preload("res://scripts/gm_checkpoint_job.gd").new()
+	if checkpoint_job.start(Session.season.state,Session.season.strengths,Session.slot_path)!=OK:
+		checkpoint_job=null;message.text="Could not start checkpoint. Previous save retained."
+		return
+	Session.checkpoint_active=true
+	for node in box.find_children("*","BaseButton",true,false): node.disabled=true
+	message.text="SIMULATING & SAVING — please wait. Your current save stays protected."
+	while is_inside_tree() and checkpoint_job!=null and not checkpoint_job.completed(): await get_tree().process_frame
+	if not is_inside_tree(): return
+	apply_checkpoint()
+	rebuild()
+
+func apply_checkpoint() -> void:
+	if checkpoint_job==null: return
+	var result: Dictionary=checkpoint_job.finish()
+	Session.checkpoint_active=false
+	if result.get("ok",false):
+		if Session.season!=null: Session.season.state=result.state
+		Session.notice="Day complete. All league results and standings saved."
+		Session.error=""
+	else: Session.error=result.get("error","Checkpoint failed; previous save retained.")
+	checkpoint_job=null
+
+func _exit_tree() -> void:
+	# An externally requested close waits for the finite atomic checkpoint.
+	apply_checkpoint()
 
 func play_game() -> void:
 	var fixture: Dictionary=Session.season.current_fixture()

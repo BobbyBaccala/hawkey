@@ -13,6 +13,7 @@ func run() -> void:
 	var start:=Time.get_ticks_usec()
 	if not model.new_season(world,"har",20261020): push_error(model.error);quit(1);return
 	result.new_season_ms=(Time.get_ticks_usec()-start)/1000.0
+	var opening_state: Dictionary=model.state.duplicate(true)
 	start=Time.get_ticks_usec()
 	for day in range(62):
 		if not model.simulate_day(): push_error(model.error);quit(1);return
@@ -27,6 +28,18 @@ func run() -> void:
 	if store.load_file(path,"gm-season",model.validate).is_empty(): push_error(store.error);quit(1);return
 	result.validated_load_ms=(Time.get_ticks_usec()-start)/1000.0
 	result.save_bytes=FileAccess.get_file_as_bytes(path).size()
+	var job=preload("res://scripts/gm_checkpoint_job.gd").new()
+	start=Time.get_ticks_usec()
+	if job.start(opening_state,model.strengths,path)!=OK: quit(1);return
+	result.async_main_thread_launch_ms=(Time.get_ticks_usec()-start)/1000.0
+	var callbacks:=0
+	while not job.completed():
+		await process_frame;callbacks+=1
+	var completed: Dictionary=job.finish()
+	if not completed.get("ok",false): push_error(completed.get("error","Worker failed"));quit(1);return
+	result.async_total_ms=(Time.get_ticks_usec()-start)/1000.0
+	result.uncapped_process_callbacks_during_worker=callbacks
+	result.async_note="Opening-day snapshot versus completed-season synchronous snapshot; same world, different fixture-result counts. Callbacks are not rendered FPS."
 	result.engine=Engine.get_version_info().string
 	result.environment="Linux cloud headless; CPU data workflow, not gameplay FPS"
 	result.processor=OS.get_processor_name();result.reported_processors=OS.get_processor_count()

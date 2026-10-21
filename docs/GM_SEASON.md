@@ -46,7 +46,9 @@ The one local slot is `user://gm/slot-1.json`; its previous validated version is
 Preferences live separately at `user://settings.json` and currently include
 match camera, stick dead zone (5–40%) and on-ice effects volume/mute. They apply
 to Play Now/GM matches; Practice consumes the saved dead zone and effects volume. Full remapping, sensitivity, audio,
-accessibility and presentation settings remain future work.
+broader accessibility and presentation settings remain future work. Reduced-motion
+fixed camera/goal-flash suppression and a high-contrast puck marker are now saved
+options; details: DEVELOPMENT_RESEARCH.md.
 
 `save_store.gd` uses a version-2 envelope containing serialized JSON payload and
 SHA-256 corruption check. Typed mode/settings validators run before staging and
@@ -59,7 +61,9 @@ fallback and overwrite to protect saves from a newer build. Version-1 envelopes
 are validated and migrated in memory; the next explicit save writes version 2.
 The checksum detects accidental damage, not tampering/authenticity.
 
-The implementation is synchronous and copies/validates the complete world. Cloud
+The complete world is copied/validated. League-day checkpoints now use an
+isolated data worker so the dashboard remains responsive; other creation/resume
+and save paths remain synchronous. Cloud
 software rendering and snapshot work do not establish consumer frame times or
 production save latency. OS rename/flush behavior was exercised on Linux only;
 there is no directory-fsync guarantee or proven protection against every hardware

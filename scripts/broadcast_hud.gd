@@ -12,6 +12,7 @@ signal menu_requested
 signal gm_requested
 signal settings_requested
 var gm_context:=false
+var reduce_motion:=false
 signal practice_requested
 
 const InterfaceFont = preload("res://scripts/interface_font.gd")
@@ -264,6 +265,11 @@ func show_banner(title: String, sub: String, color: Color, seconds := 2.6) -> vo
 	banner.scale = Vector2(0.92, 0.92)
 	if banner_tween: banner_tween.kill()
 	banner_tween = create_tween()
+	if reduce_motion:
+		banner.scale=Vector2.ONE;banner.modulate.a=1
+		banner_tween.tween_interval(seconds)
+		banner_tween.tween_callback(func(): banner.visible=false)
+		return
 	banner_tween.tween_property(banner, "modulate:a", 1.0, 0.18)
 	banner_tween.parallel().tween_property(banner, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	banner_tween.tween_interval(seconds)

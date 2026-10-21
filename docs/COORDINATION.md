@@ -152,3 +152,16 @@ runtime. A 128-bit diagnostic probe passed but did not establish a working game
 renderer; no fresh 3D photo or fixed-renderer claim. No PR merge/release.
 Next: human listening/mix iteration, more skating/crowd event layers, renderer
 native crash diagnosis, then remaining realistic controls/rules and GM systems.
+
+
+## 2026-10-20 — source-backed usability/performance increment
+
+Codex, codex/game-modes / PR #2, preserved prototype 3c324a4. Reviewed five official
+Godot 4.6 documentation sources at b10b7ed, not blocked public/XAG pages. Added
+preferences focus neighbors, reduced-motion camera/menu/banner/goal-flash behavior
+and optional black/white puck cue in match/Practice. Measured ~5.6 s full snapshot
+backup save versus ~13 ms season simulation; moved UI day checkpoint to isolated
+data worker with duplicate guards and failure preservation. Genuine JPEG before/
+after/in-progress/completed captures; see DEVELOPMENT_RESEARCH.md and verification
+/research-implementation-20261020.json. No new plugins needed, no art/animation
+replacement, no PR merge/release. Full 3D renderer/hardware comfort remain open.

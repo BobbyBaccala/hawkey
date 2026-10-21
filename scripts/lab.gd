@@ -31,6 +31,9 @@ var saves := 0
 var previous_puck := Vector3.ZERO
 var debug := false
 var paused := false
+var reduce_motion:=false
+var show_puck_indicator:=false
+var puck_marker: Control
 var rating := 85.0
 var zoom := 0.8
 var arena_title := "HAWKEY PRACTICE CENTRE"
@@ -76,6 +79,8 @@ func _ready() -> void:
 	var preferences=preload("res://scripts/game_settings.gd").new()
 	preferences.load_settings()
 	practice_input.deadzone=preferences.values.deadzone
+	reduce_motion=preferences.values.reduce_motion
+	show_puck_indicator=preferences.values.puck_indicator
 	if get_script().resource_path == "res://scripts/lab.gd": Input.joy_connection_changed.connect(on_practice_connection)
 	var world := WorldEnvironment.new()
 	world.environment = Environment.new()
@@ -205,6 +210,7 @@ func _ready() -> void:
 func build_hud() -> void:
 	var canvas := CanvasLayer.new()
 	add_child(canvas)
+	puck_marker=preload("res://scripts/puck_indicator.gd").new();canvas.add_child(puck_marker)
 	var top := PanelContainer.new()
 	top.position = Vector2(30,24)
 	top.size = Vector2(560,82)
@@ -334,6 +340,9 @@ func _on_puck_contact(body: Node) -> void:
 		audio.contact(body,puck.global_position,puck.linear_velocity.length())
 
 func update_camera(delta: float) -> void:
+	if reduce_motion:
+		apply_comfort_camera()
+		return
 	var focus := player.position * 0.65 + puck.position * 0.35
 	focus.x = clampf(focus.x,-7,7)
 	focus.z = clampf(focus.z,-21,21)
@@ -345,6 +354,7 @@ func update_camera(delta: float) -> void:
 	camera.look_at(camera_target + Vector3(0,0.3,-2))
 	camera.cull_mask = preload("res://scripts/arena_lighting.gd").camera_cull_mask(camera.position)
 	selection.position = player.position + Vector3(0,0.025,0)
+	if is_instance_valid(puck_marker): puck_marker.track(camera,puck.global_position,show_puck_indicator and not paused)
 
 func _physics_process(delta: float) -> void:
 	if practice_input.pause_pressed: paused=not paused
@@ -368,6 +378,7 @@ func _physics_process(delta: float) -> void:
 	practice_input.clear_edges()
 	puck.freeze = paused
 	if paused:
+		if is_instance_valid(puck_marker): puck_marker.visible=false
 		status.text = "PAUSED  /  Escape to resume"
 		return
 	elapsed += delta
@@ -573,3 +584,10 @@ func on_practice_connection(device: int, connected: bool) -> void:
 		practice_pass_actor=null
 		paused=true
 		charge=0
+
+func apply_comfort_camera() -> void:
+	camera.position=Vector3(0,51,35)
+	camera.look_at(Vector3(0,0.4,0),Vector3.UP)
+	camera.cull_mask=0xFFFFF & ~preload("res://scripts/arena_lighting.gd").RIGGING_LAYER
+	selection.position=player.position+Vector3(0,0.025,0)
+	if is_instance_valid(puck_marker): puck_marker.track(camera,puck.global_position,show_puck_indicator and not paused)

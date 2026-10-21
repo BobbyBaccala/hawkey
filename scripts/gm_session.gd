@@ -7,8 +7,12 @@ static var fixture_id:=""
 static var error:=""
 static var notice:=""
 static var pending_result: Dictionary={}
+static var checkpoint_active:=false
 
 static func save() -> bool:
+	if checkpoint_active:
+		error="Wait for the current checkpoint to finish."
+		return false
 	if season==null: return false
 	var store:=Store.new()
 	if not store.save_file(slot_path,"gm-season",season.state,season.validate):
@@ -18,6 +22,9 @@ static func save() -> bool:
 	return true
 
 static func resume() -> bool:
+	if checkpoint_active:
+		error="Wait for the current checkpoint to finish."
+		return false
 	var candidate:=Season.new()
 	var store:=Store.new()
 	var data:=store.load_file(slot_path,"gm-season",candidate.validate)
@@ -32,6 +39,9 @@ static func resume() -> bool:
 	return true
 
 static func create(club: String, seed_value: int=20261020) -> bool:
+	if checkpoint_active:
+		error="Wait for the current checkpoint to finish."
+		return false
 	var candidate:=Season.new()
 	if not candidate.new_season(FileAccess.get_file_as_string(Season.Database.DEFAULT_PATH),club,seed_value):
 		error=candidate.error
@@ -45,6 +55,9 @@ static func create(club: String, seed_value: int=20261020) -> bool:
 	return true
 
 static func advance_day() -> bool:
+	if checkpoint_active:
+		error="Wait for the current checkpoint to finish."
+		return false
 	if not pending_result.is_empty():
 		error="Save the pending played result before advancing."
 		return false
@@ -60,6 +73,9 @@ static func advance_day() -> bool:
 	return true
 
 static func finish_match(score: Array, decision: String) -> bool:
+	if checkpoint_active:
+		error="Wait for the current checkpoint to finish."
+		return false
 	if season==null or fixture_id.is_empty(): return false
 	var fixture: Dictionary=season.current_fixture()
 	if fixture.is_empty() or fixture.id!=fixture_id:
