@@ -1027,6 +1027,8 @@ func capture_replay(wipe_frame: bool) -> void:
 	# Software rendering runs this at ~1/30 real time: skip drawing the 3D
 	# world until just before the frame we want.
 	get_viewport().disable_3d=true
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--replay-angle="): replay.force_angle=arg.substr(15)
 	var end_:=attack_direction(0)
 	var net_z:=end_*Arena.GOAL_LINE
 	# A shooter walks in on the slot and lets a shot go at the far post.

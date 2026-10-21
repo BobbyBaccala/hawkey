@@ -14,6 +14,13 @@ extends Node
 ## 4-6 s). While playing() the match is frozen and calls step(delta) instead;
 ## at the end a second wipe covers the cut back to the live picture, which is
 ## restored exactly as it was (figures, puck, camera). skip() cuts it short.
+##
+## Each goal picks one of several broadcast angles (pick_angle()) from the shot:
+## "follow" (shooter cam riding behind the puck) for long shots, "ice" (low
+## ice-level camera inside the end boards beside the net) for close-range
+## goals, "overhead" (looking down on the crease) for plays that cross the slot,
+## otherwise "reverse" (above the end boards) - never the same angle twice in a
+## row. A skip prompt sits in the corner while it plays.
 
 const RATE := 30.0
 const KEEP := 8.0
@@ -26,6 +33,9 @@ const WIPE := 0.6
 const SLATE := Color("#0b1118")
 const ACCENT := Color("#e8b83a")
 const INK := Color("#f2f5f8")
+const ANGLES := ["reverse", "ice", "overhead", "follow"]
+const ANGLE_NAMES := {"reverse": "REVERSE ANGLE", "ice": "ICE LEVEL", "overhead": "OVERHEAD", "follow": "SHOOTER CAM"}
+const Arena := preload("res://scripts/arena.gd")
 
 var camera: Camera3D
 var puck: Node3D
@@ -50,11 +60,21 @@ var _side := 1.0
 var _clip_start := 0.0
 var _clip_end := 0.0
 var _wipe_t := -1.0
+## Camera angle of the current/last replay, and an override ("" = pick).
+var angle := "reverse"
+var last_angle := ""
+var force_angle := ""
+var _cam_pos := Vector3.ZERO
+var _shot_dir := Vector3.BACK
+var _release_t := 0.0
+var _release_pos := Vector3.ZERO
 
 var layer: CanvasLayer
 var wipe: Node2D
 var wipe_label: Label
 var tag: PanelContainer
+var angle_label: Label
+var skip_prompt: PanelContainer
 
 ## Seconds the replay runs on screen (clip at its playback speeds).
 static func clip_duration() -> float:
@@ -111,7 +131,19 @@ func begin() -> void:
 	var p0: Transform3D = sample(_clip_start).puck
 	_side = -signf(p0.origin.x) if absf(p0.origin.x) > 0.5 else 1.0
 	_look = Vector3(0, 0.3, end_sign * 22.0)
+	var net := Vector3(0, 0, end_sign * Arena.GOAL_LINE)
+	_release_t = release_time()
+	var shot_from: Vector3 = (sample(_release_t).puck as Transform3D).origin
+	_release_pos = shot_from
+	var early: Vector3 = (sample(goal_time - 1.2).puck as Transform3D).origin
+	var late: Vector3 = (sample(goal_time - 0.1).puck as Transform3D).origin
+	angle = force_angle if ANGLES.has(force_angle) else pick_angle(shot_from, net, absf(late.x - early.x), last_angle)
+	last_angle = angle
+	var away := Vector3(shot_from.x - net.x, 0, shot_from.z - net.z)
+	_shot_dir = away.normalized() if away.length() > 0.5 else Vector3(0, 0, -end_sign)
+	angle_label.text = ANGLE_NAMES[angle]
 	tag.visible = true
+	skip_prompt.visible = true
 	apply(sample(play_t))
 	aim_camera(0.0, true)
 
@@ -133,8 +165,35 @@ func step(delta: float) -> void:
 func skip() -> void:
 	if _playing and not _ending: _start_end()
 
+## Clip time the shot left the stick: the first moment in the 1.5 s before the
+## goal the puck moves faster than 12 m/s (goal - 0.45 s if none is found).
+func release_time() -> float:
+	var prev: Dictionary = {}
+	for f in frames:
+		var t := float(f.t)
+		if t < goal_time - 1.5 or t > goal_time: continue
+		if not prev.is_empty():
+			var v := (f.puck as Transform3D).origin.distance_to((prev.puck as Transform3D).origin) / maxf(t - float(prev.t), 0.001)
+			if v > 12.0 and v < 60.0: return float(prev.t)
+		prev = f
+	return goal_time - 0.45
+
+## Broadcast angle for a goal: shot taken from shot_from at the net, with the
+## puck moving `lateral` metres across the ice in the last second; never `last`.
+static func pick_angle(shot_from: Vector3, net: Vector3, lateral: float, last: String) -> String:
+	var d := Vector2(shot_from.x - net.x, shot_from.z - net.z).length()
+	var order: Array
+	if d > 9.0: order = ["follow", "reverse", "overhead", "ice"]
+	elif d < 4.5: order = ["ice", "overhead", "reverse", "follow"]
+	elif lateral > 3.0: order = ["overhead", "ice", "reverse", "follow"]
+	else: order = ["reverse", "ice", "follow", "overhead"]
+	for a in order:
+		if a != last: return a
+	return order[0]
+
 func _start_end() -> void:
 	_ending = true
+	skip_prompt.visible = false
 	_end_wait = WIPE * 0.5
 	_wipe_t = 0.0
 
@@ -148,22 +207,47 @@ func finish() -> void:
 	_ending = false
 	goal_time = -1.0
 	tag.visible = false
+	skip_prompt.visible = false
 	_live = {}
 
 func aim_camera(delta: float, snap: bool) -> void:
 	var p: Vector3 = puck.global_position
-	var net := Vector3(0, 0.5, end_sign * preload("res://scripts/arena.gd").GOAL_LINE)
-	# Frame the puck with the net low in the picture and the play coming at us.
-	var target := p.lerp(net, 0.25) - Vector3(0, 0, end_sign * 2.5)
-	target.y = 0.6
-	_look = target if snap else _look.lerp(target, 1.0 - exp(-delta * 4.0))
-	var half := preload("res://scripts/arena.gd").HALF_LENGTH
-	var pos := Vector3(_side * 3.0 + clampf(_look.x * 0.3, -2.0, 2.0), 5.2, end_sign * (half + 0.4))
+	var net := Vector3(0, 0.5, end_sign * Arena.GOAL_LINE)
+	var k := 1.0 if snap else 1.0 - exp(-delta * 4.0)
+	# 0 -> 1 as the play slows down at the net: every angle pushes in a little.
+	var slow := smoothstep(0.0, 1.0, clampf((play_t - (goal_time - SLOW_FROM)) / (SLOW_FROM + AFTER), 0.0, 1.0))
+	var pos: Vector3
+	match angle:
+		"ice":
+			# Low in the end-boards corner beside the net, looking out at the play.
+			_look = _look.lerp(Vector3(lerpf(p.x, net.x, 0.3), 0.35, lerpf(p.z, net.z, 0.3)), k)
+			pos = Vector3(_side * 4.2, 0.42, end_sign * (Arena.GOAL_LINE + 2.2))
+			camera.fov = lerpf(40.0, 30.0, slow)
+		"overhead":
+			# Straight down over the slot and crease, net at the top of the picture.
+			_look = _look.lerp(Vector3(lerpf(p.x, net.x, 0.45), 0.0, lerpf(p.z, net.z, 0.45)), k)
+			pos = _look + Vector3(0, 14.0, -end_sign * 2.2)
+			camera.fov = lerpf(54.0, 44.0, slow)
+		"follow":
+			# Ride behind the carrier along the shot line; from the release hold
+			# over the shooter's shoulder and watch the puck go in.
+			var anchor := p if play_t < _release_t else _release_pos
+			_look = _look.lerp(Vector3(lerpf(p.x, net.x, 0.35), 0.5, lerpf(p.z, net.z, 0.35)), k)
+			var want := anchor + _shot_dir * 4.5 + Vector3(0, 2.3, 0)
+			want.x = clampf(want.x, -(Arena.HALF_WIDTH - 0.6), Arena.HALF_WIDTH - 0.6)
+			want.z = clampf(want.z, -(Arena.HALF_LENGTH - 0.6), Arena.HALF_LENGTH - 0.6)
+			_cam_pos = want if snap else _cam_pos.lerp(want, 1.0 - exp(-delta * 3.0))
+			pos = _cam_pos
+			camera.fov = lerpf(55.0, 44.0, slow)
+		_:
+			# Reverse angle above the end boards: the play comes at us, net low in frame.
+			var target := p.lerp(net, 0.25) - Vector3(0, 0, end_sign * 2.5)
+			target.y = 0.6
+			_look = _look.lerp(target, k)
+			pos = Vector3(_side * 3.0 + clampf(_look.x * 0.3, -2.0, 2.0), 5.2, end_sign * (Arena.HALF_LENGTH + 0.4))
+			camera.fov = lerpf(52.0, 42.0, slow)
 	camera.global_position = pos
 	camera.look_at(_look, Vector3.UP)
-	# Push in a little as the play slows down at the net.
-	var slow := clampf((play_t - (goal_time - SLOW_FROM)) / (SLOW_FROM + AFTER), 0.0, 1.0)
-	camera.fov = lerpf(52.0, 42.0, smoothstep(0.0, 1.0, slow))
 	camera.cull_mask = preload("res://scripts/arena_lighting.gd").camera_cull_mask(camera.global_position)
 
 # ---------------------------------------------------------------- recording
@@ -311,19 +395,72 @@ func build_ui() -> void:
 	style.content_margin_top = 6
 	style.content_margin_bottom = 6
 	tag.add_theme_stylebox_override("panel", style)
+	var tag_box := VBoxContainer.new()
+	tag_box.add_theme_constant_override("separation", -4)
+	tag.add_child(tag_box)
 	var tag_label := Label.new()
 	tag_label.text = "REPLAY"
 	tag_label.add_theme_font_override("font", _font(800))
 	tag_label.add_theme_font_size_override("font_size", 30)
 	tag_label.add_theme_color_override("font_color", INK)
-	tag.add_child(tag_label)
+	tag_box.add_child(tag_label)
+	angle_label = Label.new()
+	angle_label.text = ANGLE_NAMES["reverse"]
+	angle_label.add_theme_font_override("font", _font(700))
+	angle_label.add_theme_font_size_override("font_size", 17)
+	angle_label.add_theme_color_override("font_color", ACCENT)
+	tag_box.add_child(angle_label)
 	tag.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	tag.offset_left = -200
+	tag.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	tag.offset_left = -36
 	tag.offset_right = -36
 	tag.offset_top = 28
 	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	tag.visible = false
 	layer.add_child(tag)
+	# Skip prompt, bottom right: "SKIP" next to a key cap.
+	skip_prompt = PanelContainer.new()
+	var pstyle := StyleBoxFlat.new()
+	pstyle.bg_color = Color(SLATE, 0.8)
+	pstyle.set_corner_radius_all(6)
+	pstyle.content_margin_left = 14
+	pstyle.content_margin_right = 14
+	pstyle.content_margin_top = 6
+	pstyle.content_margin_bottom = 6
+	skip_prompt.add_theme_stylebox_override("panel", pstyle)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	skip_prompt.add_child(row)
+	var cap := PanelContainer.new()
+	var cstyle := StyleBoxFlat.new()
+	cstyle.bg_color = INK
+	cstyle.set_corner_radius_all(4)
+	cstyle.content_margin_left = 9
+	cstyle.content_margin_right = 9
+	cap.add_theme_stylebox_override("panel", cstyle)
+	var key := Label.new()
+	key.text = "ENTER / A"
+	key.add_theme_font_override("font", _font(800))
+	key.add_theme_font_size_override("font_size", 18)
+	key.add_theme_color_override("font_color", SLATE)
+	cap.add_child(key)
+	row.add_child(cap)
+	var skip_label := Label.new()
+	skip_label.text = "SKIP REPLAY"
+	skip_label.add_theme_font_override("font", _font(700))
+	skip_label.add_theme_font_size_override("font_size", 20)
+	skip_label.add_theme_color_override("font_color", INK)
+	row.add_child(skip_label)
+	skip_prompt.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+	skip_prompt.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	skip_prompt.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	skip_prompt.offset_left = -36
+	skip_prompt.offset_right = -36
+	skip_prompt.offset_top = -96
+	skip_prompt.offset_bottom = -96
+	skip_prompt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	skip_prompt.visible = false
+	layer.add_child(skip_prompt)
 
 func _font(weight: int) -> Font:
 	var f := SystemFont.new()

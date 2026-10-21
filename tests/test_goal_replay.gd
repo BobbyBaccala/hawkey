@@ -16,6 +16,16 @@ func run() -> void:
 	var GoalReplay = preload("res://scripts/goal_replay.gd")
 	var d: float = GoalReplay.clip_duration()
 	check(d >= 4.0 and d <= 6.0, "Replay runs 4-6 s on screen (%.2f)" % d)
+	# Angle per goal: long shots get the shooter cam, close-range goals ice level,
+	# cross-slot plays overhead, otherwise the reverse angle; never twice running.
+	var net := Vector3(0, 0, 26.65)
+	check(GoalReplay.pick_angle(Vector3(2, 0, 12), net, 0.5, "") == "follow", "Long shot -> shooter cam")
+	check(GoalReplay.pick_angle(Vector3(1, 0, 23.5), net, 0.5, "") == "ice", "Close-range goal -> ice level")
+	check(GoalReplay.pick_angle(Vector3(1, 0, 20), net, 4.0, "") == "overhead", "Cross-slot play -> overhead")
+	check(GoalReplay.pick_angle(Vector3(1, 0, 20), net, 0.5, "") == "reverse", "Slot shot -> reverse angle")
+	for last in GoalReplay.ANGLES:
+		for from in [Vector3(2, 0, 12), Vector3(1, 0, 23.5), Vector3(1, 0, 20)]:
+			check(GoalReplay.pick_angle(from, net, 0.5, last) != last, "Never the same angle twice in a row (%s)" % last)
 	var scene = load("res://main.tscn").instantiate()
 	scene.get_script().skip_title = true
 	root.add_child(scene)
@@ -25,6 +35,7 @@ func run() -> void:
 	if r == null:
 		finish(scene)
 		return
+	r.force_angle = "reverse"
 	check(r.actors.size() == 14, "Tracks 10 skaters, 2 goalies, 2 officials (%d)" % r.actors.size())
 	scene.match_state.phase_timer = 0.05
 	for i in range(240):
@@ -55,6 +66,8 @@ func run() -> void:
 	check(r.wipe.visible, "Wipe band on screen at the cut")
 	check(r.wipe_label.text == "REPLAY", "Wipe reads REPLAY")
 	check(r.tag.visible, "REPLAY tag shown during playback")
+	check(r.skip_prompt.visible, "Skip prompt shown during playback")
+	check(r.angle == "reverse" and r.angle_label.text == "REVERSE ANGLE", "Forced angle used and named on the tag")
 	var live: Dictionary = r._live
 	var live_skater: Transform3D = live.actors[0].xf[0]
 	# Camera: above the end boards of the scored-on net, looking back up ice.
@@ -79,8 +92,36 @@ func run() -> void:
 	var t0: float = r.play_t
 	for i in range(int(0.5 * Engine.physics_ticks_per_second)): await physics_frame
 	check(absf((r.play_t - t0) - 0.5 * GoalReplay.SLOW) < 0.05, "Slow motion at the net (%.2f s clip in 0.5 s)" % (r.play_t - t0))
+	# The other angles frame the play from where they should.
+	var p: Vector3 = scene.puck.global_position
+	r.angle = "ice"
+	r.aim_camera(0.0, true)
+	check(cam.global_position.y < 1.0 and absf(cam.global_position.z) > Arena.GOAL_LINE and absf(cam.global_position.z) < Arena.HALF_LENGTH, "Ice-level camera low inside the end boards (%s)" % cam.global_position)
+	check(-cam.global_basis.z.z * end_sign < 0.0, "Ice-level camera looks out from the end")
+	r.angle = "overhead"
+	r.aim_camera(0.0, true)
+	check(cam.global_position.y > 10.0 and -cam.global_basis.z.y < -0.9, "Overhead camera high and looking down (%s)" % cam.global_position)
+	check(cam.cull_mask == preload("res://scripts/arena_lighting.gd").camera_cull_mask(cam.global_position), "Overhead camera hides the rigging")
+	r.angle = "follow"
+	r._shot_dir = Vector3(0, 0, -end_sign)
+	r._release_t = r.play_t + 1.0
+	r.aim_camera(0.0, true)
+	var rel: Vector3 = cam.global_position - p
+	check(rel.z * end_sign < -3.0 and rel.y > 1.5, "Shooter cam rides behind the puck (%s)" % rel)
+	check(absf(cam.global_position.z) < Arena.HALF_LENGTH and absf(cam.global_position.x) < Arena.HALF_WIDTH, "Shooter cam stays inside the rink")
+	var before: Vector3 = cam.global_position
+	r.aim_camera(1.0 / 120.0, false)
+	check(cam.global_position.distance_to(before) < 0.2, "Shooter cam moves smoothly")
+	# After the release it holds behind the shooter instead of chasing the puck.
+	r._release_pos = p - Vector3(0, 0, end_sign * 6.0)
+	r._release_t = r.play_t - 0.1
+	r.aim_camera(0.0, true)
+	check(cam.global_position.distance_to(r._release_pos + r._shot_dir * 4.5 + Vector3(0, 2.3, 0)) < 0.7, "Shooter cam holds over the shooter's shoulder after the release")
+	check(r.release_time() <= r.goal_time and r.release_time() >= r.goal_time - 1.5, "Release found in the 1.5 s before the goal")
+	r.angle = "reverse"
 	# Skip: wipe out, then the live picture comes back exactly.
 	r.skip()
+	check(not r.skip_prompt.visible, "Skip prompt goes once skipped")
 	var guard := 0
 	while r.playing() and guard < 400:
 		await physics_frame
