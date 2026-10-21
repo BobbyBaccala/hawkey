@@ -444,6 +444,11 @@ static func helmet_shell(color: Color) -> ShaderMaterial:
 		m.set_shader_parameter("albedo_variation", 0.03)
 		return m)
 
+## Matte woven nylon, distinct from the retention clips and painted shell.
+static func chinstrap() -> ShaderMaterial:
+	return cached("chinstrap", func() -> ShaderMaterial:
+		return _gear(ripstop_texture(),120.0,0.14,0.88,0.20))
+
 ## Hard plastic / rubber parts (vents, clips) with a light texture.
 static func plastic(color: Color, roughness := 0.45) -> ShaderMaterial:
 	return cached("plastic|%s|%s" % [color.to_html(), roughness], func() -> ShaderMaterial:

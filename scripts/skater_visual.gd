@@ -426,6 +426,9 @@ func build_helmet() -> void:
 	shell.name = "Shell"
 	var fittings := add_mesh(helmet,Gear.helmet_fittings())
 	fittings.material_override = Kit.plastic(Color("#0b1621"),0.6)
+	var strap := add_mesh(helmet,Gear.chinstrap())
+	strap.name = "Chinstrap"
+	strap.material_override = Kit.chinstrap()
 	var visor := add_mesh(helmet,Gear.visor())
 	visor.material_override = Kit.visor()
 	visor.name = "Visor"

@@ -1276,16 +1276,9 @@ static func helmet_fittings() -> ArrayMesh:
 		var ear := Vector3(s * 0.096, -0.062, 0.006)
 		b.add_rounded_box(ear, Vector3(0.010, 0.058, 0.046), 0.005, plastic, side)
 		b.add_rounded_box(ear + Vector3(s * 0.004, 0.004, 0), Vector3(0.006, 0.040, 0.030), 0.003, Color("#1c2a36"), side)
-		# Chin strap: from the ear guard's lower front, along the jaw and under the chin.
-		var pts := PackedVector3Array([
-			ear + Vector3(-s * 0.004, -0.028, 0.012),
-			Vector3(s * 0.078, -0.112, 0.040),
-			Vector3(s * 0.050, -0.136, 0.066),
-			Vector3(s * 0.016, -0.142, 0.078),
-			Vector3(0.0, -0.142, 0.080)])
-		b.add_tube(pts, 0.0045, Color("#26313a"), 8)
-	# Chin cup.
-	b.add_rounded_box(Vector3(0, -0.140, 0.081), Vector3(0.040, 0.012, 0.024), 0.006, Color("#26313a"))
+		# Small round press-stud at the strap anchor, not a large chin cup.
+		var snap := Vector3(s * 0.102, -0.078, 0.026)
+		b.add_tube(PackedVector3Array([snap, snap + Vector3(s * 0.0018, 0, 0)]), 0.0045, Color("#899299"), 16)
 	# Dark inserts set just under each vent so the slots read as openings.
 	for vt: Array in HELMET_VENTS:
 		var pts := PackedVector3Array()
@@ -1313,6 +1306,45 @@ static func helmet_fittings() -> ArrayMesh:
 	var occ := helmet_point(PI, 1.92)
 	b.add_rounded_box(occ + Vector3(0, 0.004, -0.004), Vector3(0.050, 0.014, 0.010), 0.004, plastic)
 	return b.to_mesh(0.4)
+
+## Unbranded retention webbing: flat 12 mm nylon, 1.4 mm thick, routed
+## under the chin. Coordinates remain in the existing head-attached frame.
+const CHINSTRAP_WIDTH := 0.012
+const CHINSTRAP_THICKNESS := 0.0014
+static var _chinstrap_mesh: ArrayMesh
+static func chinstrap_path() -> PackedVector3Array:
+	var controls := PackedVector3Array([
+		Vector3(-0.101,-0.078,0.026), Vector3(-0.085,-0.111,0.047),
+		Vector3(-0.057,-0.138,0.066), Vector3(-0.027,-0.148,0.071),
+		Vector3(0,-0.150,0.071), Vector3(0.027,-0.148,0.071),
+		Vector3(0.057,-0.138,0.066), Vector3(0.085,-0.111,0.047),
+		Vector3(0.101,-0.078,0.026)])
+	var result := PackedVector3Array()
+	for i in range(controls.size() - 1):
+		for k in range(4):
+			result.append(controls[i].cubic_interpolate(controls[i+1],controls[maxi(0,i-1)],controls[mini(controls.size()-1,i+2)],float(k)/4.0))
+	result.append(controls[-1])
+	return result
+
+static func chinstrap() -> ArrayMesh:
+	if _chinstrap_mesh != null: return _chinstrap_mesh
+	var b := MeshBuilder.new()
+	var points := chinstrap_path()
+	var rings := [];var colors := []
+	var profile := GearProfiles.rounded_rect(CHINSTRAP_WIDTH,CHINSTRAP_THICKNESS,[0.0005,0.0005,0.0005,0.0005],2,1)
+	for i in range(points.size()):
+		var axis := (points[mini(i+1,points.size()-1)]-points[maxi(i-1,0)]).normalized()
+		var out := Vector3(points[i].x/0.10,-0.30,0.15).normalized()
+		out = (out-axis*out.dot(axis)).normalized()
+		var width := axis.cross(out).normalized()
+		var ring := PackedVector3Array();var cols := PackedColorArray()
+		for p in profile:
+			ring.append(points[i]+width*p.x+out*p.y)
+			cols.append(Color("#050607"))
+		rings.append(ring);colors.append(cols)
+	b.add_loft(rings,colors)
+	_chinstrap_mesh=b.to_mesh(0.88)
+	return _chinstrap_mesh
 
 ## Curved half visor clipped at the temples: brow line to the nose tip,
 ## 2 cm off the face, cut up toward the sides.
