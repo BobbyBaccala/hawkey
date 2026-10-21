@@ -408,18 +408,17 @@ static func _band(y: float, at: float, half: float) -> float:
 ## knee sits at y = PAD_KNEE and the ankle at y = PAD_ANKLE.
 ## Like a real pad, the bottom rests on the skate (toe cap and blade show
 ## below it) and the boot channel stands off the laces.
-const PAD_LENGTH := 0.73
+const PAD_LENGTH := 0.86
 const PAD_WIDTH := 0.275
-const PAD_KNEE := 0.035
-const PAD_ANKLE := -0.395
+const PAD_KNEE := 0.075
+const PAD_ANKLE := -0.355
 ## Face and back planes of the pad block (local Z): about 12 cm thick.
 const FACE_Z := 0.068
 const BACK_Z := -0.044
-## The thigh-rise section hinges at this break above the knee.
+## Sewn flex line above the knee; production pads remain a single shell.
 const PAD_BREAK := PAD_KNEE + 0.115
 
-## Builds the pad between y_from and y_to (default: whole pad), so the
-## thigh rise can be a separate hinged piece.
+## Builds one continuous pad; optional range bounds support inspection/export.
 static func goalie_pad(side: float, kit: Color, accent: Color, y_from := -1.0, y_to := 1.0) -> ArrayMesh:
 	# Modern flat-face pad (after reference photos of current pro pads): a thick
 	# block with a flat face, square edges and full-height flat sidewalls; the
@@ -449,7 +448,7 @@ static func goalie_pad(side: float, kit: Color, accent: Color, y_from := -1.0, y
 		w -= smoothstep(top - 0.12, top, yy) * 0.02
 		w -= smoothstep(bottom + 0.08, bottom, yy) * 0.015
 		var front := FACE_Z + 0.008 * exp(-pow((yy - PAD_KNEE) / 0.07, 2))
-		var back := BACK_Z
+		var back := lerpf(BACK_Z,FACE_Z-0.014,smoothstep(boot_top+0.02,boot_top-0.04,yy))
 		var groove := 0.0
 		for g: Array in grooves:
 			groove = maxf(groove, _band(yy, g[0], g[1]))
@@ -461,7 +460,7 @@ static func goalie_pad(side: float, kit: Color, accent: Color, y_from := -1.0, y
 		elif yy < bottom + 0.025:
 			round_ = sqrt(maxf(0.05, 1.0 - pow((bottom + 0.025 - yy) / 0.025, 2)))
 		# The boot section kinks forward over the skate toe.
-		var toe := 0.075 * pow(smoothstep(boot_top + 0.02, bottom, yy), 1.2)
+		var toe := 0.105 * pow(smoothstep(boot_top + 0.02, bottom, yy), 1.2)
 		var boot := smoothstep(boot_top + 0.01, boot_top - 0.03, yy)
 		var d := (front - back) * round_
 		var mid := (front + back) * 0.5
@@ -512,7 +511,7 @@ static func goalie_pad(side: float, kit: Color, accent: Color, y_from := -1.0, y
 		for yy: float in ys:
 			if yy<bottom+0.03 or yy>top-0.03: continue
 			var half_w: float=(PAD_WIDTH-0.02*smoothstep(top-0.12,top,yy)-0.015*smoothstep(bottom+0.08,bottom,yy))*0.5
-			var toe: float=0.075*pow(smoothstep(boot_top+0.02,bottom,yy),1.2)
+			var toe: float=0.105*pow(smoothstep(boot_top+0.02,bottom,yy),1.2)
 			binding.append(Vector3(edge*side*(half_w-0.009),yy,FACE_Z+toe+0.002))
 		if binding.size()>1: b.add_tube(binding,0.0022,OFFWHITE,6)
 	var graphic := _cached("pad|%s|%s" % [kit.to_html(), accent.to_html()], func(): return _paint_pad(kit, accent))
@@ -642,7 +641,9 @@ static func _paint_blocker(kit: Color, accent: Color) -> Texture2D:
 
 # ---------------------------------------------------------------- catcher
 ## Origin at the hand; the pocket opens toward +Z; +X*side is the finger side.
-const CATCHER_SIZE := Vector3(0.28, 0.43, 0.11)
+const CATCHER_SIZE := Vector3(0.326, 0.353, 0.142)
+const CATCHER_CONTACT_CENTER := Vector3(0,0.045,-0.018)
+const CATCHER_POCKET_POINT := Vector3(0.020,0.117,0.010)
 
 ## Catcher shape, after reference photos of current pro gloves (frame: +x
 ## toward the fingers before mirroring, +y up the glove, +z to the shooter).
@@ -725,7 +726,7 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 	b.add_tube(thumb, 0.020, WHITE, 12)
 	# String web: a diamond lattice stretched across the pocket, slightly
 	# cupped, with the dark leather T behind it.
-	var pocket := PackedVector2Array(CATCHER_POCKET)
+	var pocket := catcher_pocket_outline()
 	var cup := func(q: Vector2) -> float:
 		return 0.022 - 0.020 * exp(-(q - POCKET_CENTER).length_squared() / 0.006)
 	for dir_ in [Vector2(1, 1).normalized(), Vector2(1, -1).normalized()]:
@@ -742,10 +743,10 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 					var q := a.lerp(c, m / 5.0)
 					pts.append(Vector3(q.x * side, q.y, cup.call(q)))
 				b.add_tube(pts, 0.0032, WHITE, 5)
-	b.add_rounded_box(Vector3(0.022 * side, 0.155, -0.002), Vector3(0.030, 0.17, 0.010), 0.004, DARK, Basis(Vector3.RIGHT, -0.30))
-	b.add_rounded_box(Vector3(0.022 * side, 0.236, 0.018), Vector3(0.15, 0.024, 0.010), 0.004, DARK)
+	b.add_rounded_box(Vector3(0.022 * side, 0.160, -0.026), Vector3(0.022, 0.10, 0.010), 0.004, DARK)
+	b.add_rounded_box(Vector3(0.022 * side, 0.207, -0.008), Vector3(0.11, 0.015, 0.010), 0.004, DARK)
 	# Cheater: the big flat cuff panel off the thumb side, angled out a little.
-	b.add_panel(Vector3(-0.185 * side, -0.040, -0.004), Vector2(0.155, 0.255), 0.052, 0.026, Basis(Vector3.BACK, 0.10 * side), WHITE, WHITE.darkened(0.05), OFFWHITE, CHEATER_UV)
+	b.add_panel(Vector3(-0.135 * side, -0.060, -0.004), Vector2(0.110, 0.190), 0.052, 0.026, Basis(Vector3.BACK, 0.10 * side), WHITE, WHITE.darkened(0.05), OFFWHITE, CHEATER_UV)
 	# Back of the hand: padded backhand plate with the finger section ridged
 	# across the top, and the wrist strap.
 	b.add_rounded_box(Vector3(0.02 * side, 0.02, -0.086), Vector3(0.20, 0.20, 0.025), 0.012, WHITE.darkened(0.03))
@@ -753,7 +754,7 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 		b.add_rounded_box(Vector3((0.035 + 0.04 * (k - 1)) * side, 0.17, -0.084), Vector3(0.034, 0.14, 0.028), 0.014, WHITE)
 	b.add_rounded_box(Vector3(0.02 * side, -0.115, -0.082), Vector3(0.16, 0.035, 0.015), 0.006, DARK)
 	var graphic := _cached("catcher|%s|%s" % [kit.to_html(), accent.to_html()], func(): return _paint_catcher(kit, accent))
-	return catcher_closure(goalie_leather(b.to_mesh(0.58, graphic), "catcher"),side)
+	return catcher_closure(goalie_leather(catcher_proportions(b.to_mesh(0.58, graphic)), "catcher"),side)
 
 ## Catcher graphic (one texture for palm and cheater): the palm shows the
 ## dark pocket leather behind the web and stitched palm panels; the cheater
@@ -763,7 +764,7 @@ static func _paint_catcher(kit: Color, accent: Color) -> Texture2D:
 	var to_uv := func(q: Vector2) -> Vector2: return Vector2(PALM_U * (q.x + 0.13) / 0.31, (q.y + 0.175) / 0.44)
 	# Pocket: dark leather seen through the web.
 	var pocket := []
-	for q: Vector2 in CATCHER_POCKET:
+	for q: Vector2 in catcher_pocket_outline():
 		pocket.append(to_uv.call(q + (q - POCKET_CENTER) * 0.08))
 	g.poly(pocket, Color("#24292e"))
 	# Palm panel seams and a kit accent across the heel of the palm.
@@ -1569,3 +1570,37 @@ static func goalie_tangents(mesh: ArrayMesh) -> ArrayMesh:
 	a[Mesh.ARRAY_TANGENT]=tangents
 	var result:=ArrayMesh.new();result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,a)
 	result.surface_set_material(0,mesh.surface_get_material(0));return result
+
+## Proportioned catching mitt: ~30 cm across including cuff, ~33 cm high.
+## Catching web is ~16 x 10 cm, rather than the entire upper half of the mitt.
+static func catcher_pocket_outline() -> PackedVector2Array:
+	var result:=PackedVector2Array()
+	for point: Vector2 in CATCHER_POCKET: result.append(POCKET_CENTER+(point-POCKET_CENTER)*Vector2(0.80,0.72))
+	return result
+
+static func catcher_proportions(mesh: ArrayMesh) -> ArrayMesh:
+	var a:=mesh.surface_get_arrays(0)
+	var vertices: PackedVector3Array=a[Mesh.ARRAY_VERTEX]
+	var normals: PackedVector3Array=a[Mesh.ARRAY_NORMAL]
+	var scale_:=Vector3(0.83,0.78,0.90)
+	for i in range(vertices.size()): vertices[i]*=scale_;normals[i]=(normals[i]/scale_).normalized()
+	a[Mesh.ARRAY_VERTEX]=vertices;a[Mesh.ARRAY_NORMAL]=normals
+	var result:=ArrayMesh.new();result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,a)
+	result.surface_set_material(0,mesh.surface_get_material(0));return result
+
+## A solid curved heel joins paddle and blade at their shared anchor. This is
+## real connecting geometry, not two boxes visually offset at the corner.
+static func goalie_stick_heel(up: Vector3,toe: Vector3) -> ArrayMesh:
+	var b:=MeshBuilder.new();var rings: Array=[];var colours: Array=[]
+	var plane:=toe.cross(up).normalized()
+	for i in range(13):
+		var t:=float(i)/12
+		var a:=up*0.080;var control:=up*0.010;var end:=toe*0.065
+		var point: Vector3=(1-t)*(1-t)*a+2*(1-t)*t*control+t*t*end
+		var tangent: Vector3=(2*(1-t)*(control-a)+2*t*(end-control)).normalized()
+		var across:=plane.cross(tangent).normalized()
+		var profile:=GearProfiles.rounded_rect(lerpf(0.088,0.082,t),lerpf(0.026,0.018,t),[0.006,0.006,0.006,0.006],4,2)
+		var ring:=PackedVector3Array();var cols:=PackedColorArray()
+		for q in profile: ring.append(point+across*q.x+plane*q.y);cols.append(WHITE)
+		rings.append(ring);colours.append(cols)
+	b.add_loft(rings,colours);return b.to_mesh(0.55)

@@ -63,8 +63,10 @@ var stick_shaft: MeshInstance3D
 var stick_blade: MeshInstance3D
 var grip_tape: MeshInstance3D
 var goalie_paddle: MeshInstance3D
+var goalie_heel: MeshInstance3D
+var heel_up:=Vector3.ZERO
 var knees: Array[Vector3] = [Vector3.ZERO,Vector3.ZERO]
-var pad_size := Vector3(0.28,0.73,0.14)
+var pad_size := Vector3(Gear.PAD_WIDTH,Gear.PAD_LENGTH,0.14)
 var stick_blade_length := 0.28
 var torso_pose := Transform3D.IDENTITY
 var number_label: Label3D
@@ -84,6 +86,7 @@ var shirt: Node3D
 var neck_guard: MeshInstance3D
 var sticks: Node3D
 var pads: Array[Node3D] = []
+## Legacy inspection handle; continuous pads no longer create detached rises.
 var thigh_rises: Array[Node3D] = []
 var pant_legs: Array[MeshInstance3D] = []
 var socks: Array[MeshInstance3D] = []
@@ -317,6 +320,7 @@ func _ready() -> void:
 	sticks.add_child(stick_blade)
 	if goalie:
 		goalie_paddle=block(sticks,Vector3(0.088,1,0.026),Vector3.ZERO,Color("#e3e7e9"))
+		goalie_heel=MeshInstance3D.new();sticks.add_child(goalie_heel)
 	grip_tape=block(sticks,Vector3(0.035,0.11,0.035),Vector3.ZERO,Color("#cad2d7"))
 	for side in [1.0,-1.0]:
 		var sleeve:=MeshInstance3D.new()
@@ -376,18 +380,9 @@ func build_skate(parent: Node3D) -> void:
 		skate_cuffs.append(cuff)
 
 func build_pad(parent: Node3D, side: float) -> void:
-	# Sculpted box-style pad: flat face, outer roll, knee/boot breaks, toe bridge.
-	add_mesh(parent,Gear.goalie_pad(side,kit,accent,-1.0,Gear.PAD_BREAK))
-	# Thigh rise hinges back along the thigh at the break above the knee.
-	var hinge := Node3D.new()
-	hinge.position = Vector3(0,Gear.PAD_BREAK,-0.04)
-	parent.add_child(hinge)
-	var upper := add_mesh(hinge,Gear.goalie_pad(side,kit,accent,Gear.PAD_BREAK,1.0))
-	upper.position = Vector3(0,-Gear.PAD_BREAK,0.04)
-	thigh_rises.append(hinge)
+	# One uninterrupted shell. A sewn flex groove is not a hinged second pad.
+	add_mesh(parent,Gear.goalie_pad(side,kit,accent))
 
-## Collision box over the part of the pad that faces the shooter: the whole
-## pad when standing, the shin-to-knee section once the thigh rise folds back.
 ## Stretches a unit-length limb shell between two joints, facing forward.
 func fit_limb(shell: MeshInstance3D, top: Vector3, bottom: Vector3, girth: float) -> void:
 	var axis:=top-bottom
@@ -396,9 +391,7 @@ func fit_limb(shell: MeshInstance3D, top: Vector3, bottom: Vector3, girth: float
 	shell.transform=Transform3D(Basis(up.cross(forward)*girth,up*axis.length(),forward*girth),top)
 
 func pad_box() -> Array:
-	var length:float=lerpf(Gear.PAD_LENGTH,Gear.PAD_BREAK+Gear.PAD_LENGTH*0.5,goalie_drop)
-	var center:float=lerpf(0.0,Gear.PAD_BREAK-length*0.5,goalie_drop)
-	return [Transform3D(Basis(),Vector3(0,center,0)),Vector3(pad_size.x,length,pad_size.z)]
+	return [Transform3D.IDENTITY,Vector3(pad_size.x,Gear.PAD_LENGTH,pad_size.z)]
 
 func build_blade() -> MeshInstance3D:
 	var mesh:=ImmediateMesh.new()
@@ -1035,7 +1028,7 @@ func pose(speed: float, turn: float) -> void:
 				ankle = hip+reach.normalized()*LEG_REACH
 				ankle.y = maxf(ankle.y,0.115)
 		# Goalie ready stance: feet a little wider than the shoulders, knees in.
-		if goalie: ankle = Vector3(side*lerpf(0.27,0.58,goalie_drop),0.115,lerpf(0.0,0.10,goalie_drop))
+		if goalie: ankle = Vector3(side*lerpf(0.27,0.64,goalie_drop),0.115,lerpf(0.0,0.03,goalie_drop))
 		if goalie and shuffle_weight>0.01:
 			# Lateral shuffle: captured strafe footwork, narrowed to stay in the stance.
 			var data:Dictionary=shuffle_data[0 if lateral>0 else 1]
@@ -1060,7 +1053,7 @@ func pose(speed: float, turn: float) -> void:
 		if goalie: knee.x=side*maxf(side*knee.x,Gear.PAD_WIDTH*0.5+0.036+0.035*shuffle_weight)
 		# Butterfly: knees together on the ice, shins flared out behind them.
 		if goalie:
-			knee=knee.lerp(Vector3(side*0.17,0.13,0.24),goalie_drop)
+			knee=knee.lerp(Vector3(side*0.30,0.13,0.22),goalie_drop)
 			# Shins flare as the knees drop, so the knees stay apart mid-drop.
 			knee.x+=side*0.045*sin(PI*goalie_drop)
 			# Pad extension: this leg kicks out along the ice to seal the post,
@@ -1100,7 +1093,7 @@ func pose(speed: float, turn: float) -> void:
 		override_pose("foot"+suffix,foot_pose)
 		skates[i].position = ankle+Vector3(0,-0.0525,0)
 		# Butterfly: skates turn out flat so the toes clear the pad backs.
-		skates[i].rotation = Vector3(0,side*lerpf(0.12,1.45,smoothstep(0.0,0.4,goalie_drop)),0) if goalie else boot
+		skates[i].rotation = Vector3(0,side*lerpf(0.12,2.65,smoothstep(0.0,0.6,goalie_drop)),0) if goalie else boot
 		if socks.size()>i:
 			# Sock and shin-guard knee cap overlap the bottom of the pants.
 			# The sock runs down the shin into the skate cuff (cuff top ~0.15 m).
@@ -1113,26 +1106,27 @@ func pose(speed: float, turn: float) -> void:
 			var cuff_pose:=Transform3D(Basis(up_.cross(fwd_),up_,fwd_),ankle)
 			skate_cuffs[i].transform=skates[i].transform.affine_inverse()*cuff_pose
 		if goalie:
-			# The pad rides the shin: +Y up the shin, face (+Z) toward the shooter.
+			# Standing shell follows the shin; in butterfly it rolls as one piece,
+			# face (+Z) toward the shooter and inner edge flat on the ice.
 			var shin:Vector3=(knee-ankle).normalized()
-			var face:Vector3=(Vector3.BACK-shin*shin.dot(Vector3.BACK)).normalized()
-			pads[i].basis=Basis(shin.cross(face),shin,face)
-			# Ride a few centimetres up the shin so the skate toe cap shows below.
-			# Standing, the pad is anchored to the ankle so it always clears the skate.
-			pads[i].position=(ankle+shin*0.48).lerp(knee-shin*(Gear.PAD_KNEE-0.065),goalie_drop)+face*0.09
-			# The thigh rise follows the thigh: it leans out toward the hip as it
-			# rises in the stance, and folds back along the thigh in the butterfly.
-			var thigh_local:Vector3=pads[i].basis.inverse()*(hip-knee).normalized()
-			var roll:float=clampf(atan2(-thigh_local.x,thigh_local.y),-0.6,0.6)
-			var standing:=Quaternion(Basis(Vector3.BACK,-roll*0.6-side*0.08)*Basis(Vector3.RIGHT,-0.12))
-			# Butterfly: the thigh rise folds flat along the thigh and its foam
-			# compresses where the two meet behind the wall of pads.
-			var folded:=Quaternion(Vector3.UP,thigh_local)
-			# Compress early in the drop so the halves never cross mid-transition.
-			var squash:=smoothstep(0.0,0.3,goalie_drop)
-			thigh_rises[i].position=Vector3(0,Gear.PAD_BREAK-0.08*squash,-0.04+0.05*squash)
-			thigh_rises[i].basis=Basis(standing.slerp(folded,smoothstep(0.0,0.6,goalie_drop))).scaled_local(Vector3(lerpf(1.0,0.42,squash),1,lerpf(1.0,0.7,squash)))
-			thigh_rises[i].set_meta("rest_basis",thigh_rises[i].basis)
+			var pad_up:=shin.slerp(Vector3(signf(shin.x),0,0),smoothstep(0.15,0.85,goalie_drop)).normalized()
+			var face:Vector3=(Vector3.BACK-pad_up*pad_up.dot(Vector3.BACK)).normalized()
+			pads[i].basis=Basis(pad_up.cross(face),pad_up,face)
+			# Ankle/boot-channel anchor, with room for the skate behind the face.
+			pads[i].position=ankle-shin*Gear.PAD_ANKLE+face*0.13
+			# Keep complete thigh rises side by side. Move the entire shell;
+			# never rotate or shrink a detached upper section to hide overlap.
+			var bounds: AABB=pads[i].get_child(0).mesh.get_aabb()
+			var inner:=INF
+			for c in range(8): inner=minf(inner,side*(pads[i].transform*bounds.get_endpoint(c)).x)
+			pads[i].position.x+=side*maxf(0,0.018-inner)
+			# In a wide extension the boot stays behind the pad toe instead of
+			# protruding past its end. Fit the shell, not a hidden/shortened skate.
+			var boot_end:=0.0
+			for foot_point in [Vector3(-0.045,0.04,0.21),Vector3(0.045,0.04,0.21)]:
+				var in_pad: Vector3=pads[i].transform.affine_inverse()*(skates[i].transform*foot_point)
+				boot_end=maxf(boot_end,-Gear.PAD_LENGTH*0.5+0.012-in_pad.y)
+			pads[i].position-=pad_up*boot_end*smoothstep(0.6,1.0,goalie_drop)
 			# Pad lower edges seal against the ice in butterfly.
 			var box:Array=pad_box()
 			var size_:Vector3=box[1]
@@ -1188,11 +1182,11 @@ func pose(speed: float, turn: float) -> void:
 			# Hands out in front of the body: catcher open to the shooter at the hip,
 			# blocker on the stick at the top of the paddle.
 			# Hands travel with the hips when a save slides the body sideways.
-			wrist=Vector3(0.47+posed_drop.x,0.83-goalie_drop*0.16+goalie_save_height,0.42) if i==0 else stick_grip()
+			wrist=Vector3(0.58+posed_drop.x,0.83-goalie_drop*0.16+0.10*sin(PI*goalie_drop)+goalie_save_height,0.62) if i==0 else stick_grip()
 			var catch_w: float = save_weights.glove
 			if i==0 and catch_w > 0.0:
 				# Glove save: the catcher shoots out to the puck's line, pocket open.
-				var aim := Vector3(clampf(save_target.x,0.22,1.0),clampf(save_target.y,0.35,1.65),0.40)
+				var aim := Vector3(clampf(save_target.x,0.22,1.0),clampf(save_target.y,0.35,1.65),0.62)
 				wrist = wrist.lerp(reach(shoulder,aim),catch_w)
 			if i==0:
 				goalie_gloves[i].position=wrist+Vector3(0.0,0.03,0.035)
@@ -1218,30 +1212,10 @@ func pose(speed: float, turn: float) -> void:
 		var wrist_pose: Transform3D = rest["wrist"+suffix]
 		wrist_pose.origin = wrist
 		override_pose("wrist"+suffix,wrist_pose)
-	if goalie: separate_thigh_rises()
 	rig.rotation.z = clampf(turn,-0.13,0.13)
 	# Stop: hips (and the whole rig) turn across the line of travel.
 	rig.rotation.y = PI+stop_yaw*stop_w
 	update_stick()
-
-## Rolls the two thigh rises outward until their inner edges clear each other,
-## whatever the knees, idle sway or shuffle footwork are doing.
-func separate_thigh_rises() -> void:
-	var extra := 0.0
-	for iteration in range(14):
-		var gap := INF
-		var rise:=Gear.PAD_LENGTH*0.5-Gear.PAD_BREAK
-		for height in [rise,rise*0.66,rise*0.33]:
-			for depth in [-0.04,0.04,0.11]:
-				var left_edge:Vector3=pads[0].transform*thigh_rises[0].transform*Vector3(-Gear.PAD_WIDTH*0.5,height,depth)
-				var right_edge:Vector3=pads[1].transform*thigh_rises[1].transform*Vector3(Gear.PAD_WIDTH*0.5,height,depth)
-				gap=minf(gap,left_edge.x-right_edge.x)
-		if gap>=0.045 or goalie_drop>0.3: return
-		extra+=0.05
-		for i in range(2):
-			var side:=1.0 if i==0 else -1.0
-			var rest_basis:Basis=thigh_rises[i].get_meta("rest_basis")
-			thigh_rises[i].basis=Basis(Vector3.BACK,-side*extra)*rest_basis
 
 ## Plays a captured clip over the procedural pose. Mask entries: "spine",
 ## "arms", "stick_up". Returns false when the clip file is not installed.
@@ -1359,7 +1333,7 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	brake_turn = move_toward(brake_turn,1.0 if braking and not goalie else 0.0,delta*6)
 	shot_follow = maxf(0,shot_follow-delta*3)
 	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
-	blade_position=Vector3(-0.02+goalie_drop*0.05,0.042,0.60-goalie_drop*0.04+0.035*sin(PI*goalie_drop)) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
+	blade_position=Vector3(-0.02+goalie_drop*0.05,0.042,0.76-goalie_drop*0.04+0.035*sin(PI*goalie_drop)) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
 	# Stop: the stick reaches out in front for balance.
 	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
 	# Board hop: lift the stick clear of the boards (blade rises first, so it
@@ -1456,7 +1430,7 @@ func set_nameplate(value: String) -> void:
 func stick_grip() -> Vector3:
 	if goalie:
 		# Mid-drop the stick is pushed out ahead of the closing pads.
-		var grip := Vector3(lerpf(-0.36,-0.24,goalie_drop)+posed_drop.x,0.60-goalie_drop*0.12,0.49+0.035*sin(PI*goalie_drop))
+		var grip := Vector3(lerpf(-0.36,-0.24,goalie_drop)+posed_drop.x,0.60-goalie_drop*0.12,0.65+0.035*sin(PI*goalie_drop))
 		var block_w: float = save_weights.blocker
 		if block_w > 0.0:
 			# Blocker save: the stick hand punches out to the puck's line and the
@@ -1595,7 +1569,8 @@ func update_stick() -> void:
 	# puck pocket, used by gameplay) stays mid-blade.
 	var toe_dir:=stick_toe_dir(top,blade_position)
 	toe_dir=stick_toe_dir(top,blade_position-toe_dir*stick_blade_length*0.48)
-	var bottom:=blade_position-toe_dir*stick_blade_length*0.48
+	var heel_fraction:=0.5 if goalie else 0.48
+	var bottom:=blade_position-toe_dir*stick_blade_length*heel_fraction
 	if goalie:
 		# The stick is rigid: a blocker punched up lifts the paddle off the ice
 		# instead of stretching the shaft.
@@ -1625,7 +1600,13 @@ func update_stick() -> void:
 		goalie_paddle.scale=Vector3(1,bottom.distance_to(paddle_top),1)
 	var flat:=Basis(toe_dir,Vector3.UP,toe_dir.cross(Vector3.UP))
 	stick_blade.basis=flat.slerp(stick_shaft.basis.orthonormalized(),maxf(raised_stick,stick_carry))
-	stick_blade.position=bottom+stick_blade.basis*Vector3(stick_blade_length*0.48,0,0)
+	stick_blade.position=bottom+stick_blade.basis*Vector3(stick_blade_length*heel_fraction,0,0)
+	if goalie:
+		goalie_heel.position=bottom
+		var up:=axis.normalized()
+		if heel_up.distance_to(up)>0.002 or goalie_heel.mesh==null:
+			goalie_heel.mesh=Gear.goalie_stick_heel(up,toe_dir)
+			heel_up=up
 	grip_tape.position=top+axis.normalized()*maxf(beyond-0.06,0.0)
 	grip_tape.basis=stick_shaft.basis
 
@@ -1654,6 +1635,12 @@ func stick_toe_dir(top: Vector3, heel: Vector3) -> Vector3:
 func get_blade_world() -> Vector3:
 	return rig.to_global(blade_position)
 
+func get_catch_pocket_world() -> Vector3:
+	return goalie_gloves[0].to_global(Gear.CATCHER_POCKET_POINT)
+
+func catch_contact_offset() -> Vector3:
+	return Gear.CATCHER_POCKET_POINT-Gear.CATCHER_CONTACT_CENTER
+
 func get_goalie_gear() -> Dictionary:
 	# Actor-local transforms: the physical and visible gear share one source.
 	var frame:=transform*rig.transform
@@ -1662,7 +1649,7 @@ func get_goalie_gear() -> Dictionary:
 		"Torso":{"transform":frame*torso_pose,"size":Vector3(0.56,0.59,0.33),"zone":"body","bounce":0.08},
 		"PadLeft":{"transform":frame*pads[0].transform*pad_box()[0],"size":pad_box()[1],"zone":"pad","bounce":0.20},
 		"PadRight":{"transform":frame*pads[1].transform*pad_box()[0],"size":pad_box()[1],"zone":"pad","bounce":0.20},
-		"Catcher":{"transform":frame*goalie_gloves[0].transform,"size":Vector3(0.26,0.40,0.10),"zone":"catcher","bounce":0.02},
+		"Catcher":{"transform":frame*goalie_gloves[0].transform*Transform3D(Basis(),Gear.CATCHER_CONTACT_CENTER),"size":Gear.CATCHER_SIZE,"zone":"catcher","bounce":0.02},
 		"Blocker":{"transform":frame*goalie_gloves[1].transform,"size":Vector3(0.205,0.385,0.05),"zone":"blocker","bounce":0.48},
 		"GoalieBlade":{"transform":frame*stick_blade.transform,"size":Vector3(0.39,0.08,0.036),"zone":"stick","bounce":0.40},
 		"Paddle":{"transform":frame*Transform3D(goalie_paddle.basis.orthonormalized(),goalie_paddle.position),"size":Vector3(0.088,goalie_paddle.scale.y,0.026),"zone":"stick","bounce":0.35}

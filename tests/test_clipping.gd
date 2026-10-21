@@ -132,10 +132,9 @@ func gear_solids(v) -> Dictionary:
 		for i in range(2):
 			var side := "L" if i == 0 else "R"
 			solids["pad" + side] = Solid.new("pad" + side, [v.pads[i].get_child(0)])
-			solids["thigh" + side] = Solid.new("thigh" + side, meshes(v.thigh_rises[i]))
 		solids["catcher"] = Solid.new("catcher", meshes(v.goalie_gloves[0]))
 		solids["blocker"] = Solid.new("blocker", meshes(v.goalie_gloves[1]))
-		solids["paddle"] = Solid.new("paddle", [v.goalie_paddle])
+		solids["paddle"] = Solid.new("paddle", [v.goalie_paddle,v.goalie_heel])
 	else:
 		solids["gloveL"] = Solid.new("gloveL", meshes(v.skater_gloves[0]))
 		solids["gloveR"] = Solid.new("gloveR", meshes(v.skater_gloves[1]))

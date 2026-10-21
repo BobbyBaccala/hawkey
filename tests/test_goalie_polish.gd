@@ -61,13 +61,13 @@ func run() -> void:
 	var m=current_scene;m.set_physics_process(false);m.set_process(false)
 	var keeper=m.goalkeepers[0];var catcher=keeper.get_node("Catcher")
 	var front: Vector3=catcher.global_basis.z
-	m.puck.global_position=catcher.global_position+front*0.06
+	m.puck.global_position=keeper.get_child(1).get_catch_pocket_world()+front*0.06
 	m.last_puck_velocity=-front*12;m.goalie_contact_timer=0;m.match_state.phase=m.MatchState.Phase.PLAY
 	m._on_puck_contact(catcher)
 	check(m.caught_by==keeper and keeper.get_child(1).catch_hold>0,"Actual pocket catch triggers visual closure")
 	for i in range(20): m._physics_process(1.0/60)
 	check(keeper.get_child(1).catch_close>0.99,"Whistle phase continues goalie catch animation")
-	var pocket: Vector3=keeper.get_child(1).goalie_gloves[0].to_global(Vector3(0.02,0.15,0.01))
+	var pocket: Vector3=keeper.get_child(1).get_catch_pocket_world()
 	check(m.puck.global_position.distance_to(pocket)<0.001,"Frozen caught puck stays with glove")
 	m.setup_faceoff()
 	check(m.caught_by==null and keeper.get_child(1).catch_hold==0,"Faceoff releases caught-puck ownership")

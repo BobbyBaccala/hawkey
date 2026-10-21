@@ -66,7 +66,7 @@ func run()->void:
 	match_.set_physics_process(false)
 	var catcher=match_.goalkeepers[0].get_node("Catcher")
 	var front:Vector3=catcher.global_basis.z
-	match_.puck.global_position=catcher.global_position+front*0.06
+	match_.puck.global_position=match_.goalkeepers[0].get_child(1).get_catch_pocket_world()+front*0.06
 	match_.last_puck_velocity=-front*12
 	match_.goalie_contact_timer=0
 	match_.match_state.phase=match_.MatchState.Phase.PLAY
@@ -77,6 +77,14 @@ func run()->void:
 	match_.goalie_contact_timer=0
 	match_._on_puck_contact(catcher)
 	check(match_.match_state.phase==match_.MatchState.Phase.PLAY,"Rear glove hit is not an automatic catch")
+	# A front hit on the palm outside the smaller real web must rebound, not catch.
+	match_.caught_by=null
+	match_.match_state.phase=match_.MatchState.Phase.PLAY
+	match_.goalie_contact_timer=0
+	match_.last_puck_velocity=-front*12
+	match_.puck.global_position=catcher.to_global(Vector3(0,-0.10,0.06))
+	match_._on_puck_contact(catcher)
+	check(match_.match_state.phase==match_.MatchState.Phase.PLAY and match_.caught_by==null,"Palm outside proportioned web is not an automatic catch")
 	match_.queue_free()
 	await process_frame
 	print("Goalie gear failures: ",failures)

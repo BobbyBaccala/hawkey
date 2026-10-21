@@ -575,7 +575,8 @@ func _on_puck_contact(body: Node) -> void:
 		if zone in ["body","pad"] and last_puck_velocity.length()>10:
 			# Captured body-block reaction through the torso.
 			actor.get_child(1).play_mocap("Goalkeeper_Body_Block",false,["spine"],1.5,0.9,0.45)
-		if zone=="catcher" and last_puck_velocity.length()<32 and front_entry and absf(pocket.x)<0.085 and absf(pocket.y)<0.10:
+		var web: Vector3=pocket-actor.get_child(1).catch_contact_offset()
+		if zone=="catcher" and last_puck_velocity.length()<32 and front_entry and absf(web.x)<0.065 and absf(web.y)<0.045:
 			match_state.phase=MatchState.Phase.STOPPAGE
 			match_state.phase_timer=2
 			match_state.event="Goalkeeper catch"
@@ -683,7 +684,7 @@ func _physics_process(delta: float) -> void:
 			visual.animate(0,delta,0,false)
 			sync_goalie_contacts(keeper)
 	if is_instance_valid(caught_by) and match_state.phase==MatchState.Phase.STOPPAGE:
-		puck.global_position=caught_by.get_child(1).goalie_gloves[0].to_global(Vector3(0.02,0.15,0.01))
+		puck.global_position=caught_by.get_child(1).get_catch_pocket_world()
 	last_puck_velocity=puck.linear_velocity
 	goals=match_state.score[0]
 	away_goals=match_state.score[1]
