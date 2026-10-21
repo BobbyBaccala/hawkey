@@ -38,6 +38,18 @@ const HAND_SIDE := 0.24
 ## CARRY_OUT as the skater steps away (skater_visual.gd stick_carry).
 const CARRY_IN := 0.22
 const CARRY_OUT := 0.22
+## Turn: the skater turns from his heading at the start of the hop to face the
+## boards over the first TURN_IN of the hop for a quarter turn, longer for a
+## bigger turn (up to TURN_MAX, a half turn, still done before the vault), so
+## he pivots into the gather rather than snapping round (turn_weight()).
+const TURN_IN := 0.2
+const TURN_MAX := 0.3
+
+## Blend (0..1) from the starting heading to sample().facing at hop progress u
+## for a turn of `angle` radians.
+static func turn_weight(u: float, angle: float) -> float:
+	var span := clampf(TURN_IN * absf(angle) / (PI * 0.5), TURN_IN, TURN_MAX)
+	return smooth(u / span)
 
 static func smooth(x: float) -> float:
 	x = clampf(x, 0.0, 1.0)

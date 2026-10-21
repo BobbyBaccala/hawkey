@@ -124,6 +124,12 @@ var hop_a := Vector3.ZERO
 var hop_b := Vector3.ZERO
 var hop_board_x := 0.0
 var hop_state := {}
+## Visual yaw when the hop started: the skater turns from it toward the hop
+## facing over the first BoardHop.TURN_IN of the hop instead of snapping.
+var hop_yaw0 := 0.0
+## Stick lift (0..1) that keeps the blade out of the boards during a hop
+## (board_clearance_carry(), rate-limited; -1 = take the first need as is).
+var hop_guard := -1.0
 ## How firmly the top hand is planted on the board cap (0..1) this frame.
 var hand_plant := 0.0
 ## Board hop stick carry (0..1, board_hop.gd "carry"): the stick is lifted off
@@ -1081,11 +1087,14 @@ func update_layers(delta: float) -> void:
 
 ## Starts a board hop from `a` to `b` (parent space, see board_hop.gd) over the
 ## board plane x = board_x; the body stays put while this visual travels.
-func start_hop(a: Vector3, b: Vector3, board_x: float) -> void:
+## `carried`: the stick is already up (a fresh player getting off the bench).
+func start_hop(a: Vector3, b: Vector3, board_x: float, carried := false) -> void:
 	hop_a = a
 	hop_b = b
 	hop_board_x = board_x
 	hop_u = 0.0
+	hop_yaw0 = rotation.y
+	hop_guard = 1.0 if carried else -1.0
 	hop_state = BoardHop.sample(0.0,a,b,board_x)
 	position = a
 
@@ -1121,7 +1130,8 @@ func update_hop(delta: float) -> void:
 	hop_state = BoardHop.sample(hop_u,hop_a,hop_b,hop_board_x)
 	position = hop_state.offset
 	var f: Vector3 = hop_state.facing
-	rotation.y = atan2(-f.x,-f.z)
+	var yaw := atan2(-f.x,-f.z)
+	rotation.y = lerp_angle(hop_yaw0,yaw,BoardHop.turn_weight(hop_u,angle_difference(hop_yaw0,yaw)))
 	if hop_u >= 1.0:
 		# Landed: stand normally where the hop ended.
 		hop_state = {}
@@ -1143,6 +1153,12 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	# Board hop: lift the stick clear of the boards (blade rises first, so it
 	# never sweeps through the dasher on the way up or down).
 	stick_carry = float(hop_state.get("carry",0.0)) if not goalie and not referee and not hop_state.is_empty() else 0.0
+	# Stood close to the boards (or facing them as the hop starts) the stick on
+	# the ice would reach into them: lift it at least as far as that needs.
+	if not goalie and not referee and not hop_state.is_empty():
+		var need := board_clearance_carry()
+		hop_guard = need if hop_guard < 0.0 else move_toward(hop_guard,need,STICK_GUARD_RATE*delta)
+		stick_carry = maxf(stick_carry,hop_guard)
 	if stick_carry>0.0:
 		var up := 1.0-pow(1.0-stick_carry,3.0)
 		var carried := carry_blade()
@@ -1248,6 +1264,36 @@ func stick_grip() -> Vector3:
 	grip.z = maxf(grip.z,shoulder_of(0).z+0.15)
 	# The top hand holds the stick in front of the jersey, never inside it.
 	return clear_hand(grip,0.075)
+
+## Board hop: how far the stick must be carried (0..1) so a blade left on the
+## ice does not reach into the dasher - the blade's distance past the face of
+## the boards on the side the skater is on, with a STICK_BOARD_MARGIN lead-in.
+## Checked at the current heading and, ahead of the turn into the boards, at
+## the hop's facing (lifted over STICK_LEAD_IN of the hop) so the stick is
+## already coming up as the turn swings the blade toward the boards.
+const STICK_BOARD_MARGIN := 0.35
+const STICK_LEAD_IN := 0.02
+const STICK_GUARD_RATE := 3.5
+func board_clearance_carry() -> float:
+	var need := blade_board_need(transform)
+	if hop_u < BoardHop.VAULT_START:
+		var f: Vector3 = hop_state.facing
+		var ahead := Transform3D(Basis(Vector3.UP,atan2(-f.x,-f.z)),position)
+		need = maxf(need,blade_board_need(ahead)*BoardHop.smooth(hop_u/STICK_LEAD_IN))
+	return need
+
+func blade_board_need(xf: Transform3D) -> float:
+	var mid := hop_board_x-BoardHop.BOARD_DEPTH*0.5
+	var side := signf(position.x-mid)
+	if side == 0.0: side = 1.0
+	var face := mid+side*BoardHop.BOARD_DEPTH*0.5
+	var reach := -INF
+	# Toe and heel of the blade on the ice, in the body's (parent) space.
+	var to_parent := xf*rig.transform
+	for k in [-0.5,0.5]:
+		var p: Vector3 = to_parent*(blade_position+Vector3(stick_blade_length*k,0,0))
+		reach = maxf(reach,(face-p.x)*side)
+	return BoardHop.smooth((reach+STICK_BOARD_MARGIN)/STICK_BOARD_MARGIN)
 
 ## Board hop carried stick: knob and mid-blade points (rig space).
 func carry_knob() -> Vector3:

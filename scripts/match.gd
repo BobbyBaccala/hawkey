@@ -634,7 +634,9 @@ func update_team_ai(delta: float) -> void:
 				# Fresh legs climb out a little further along the bench.
 				change_identity(actor,int(actor.get_meta("pending_id")))
 				var from_:Vector3=visual_.position+Vector3(0,0,-signf(target.z)*0.7)
-				visual_.start_hop(from_,Vector3.ZERO,-Arena.HALF_WIDTH-actor.position.x)
+				# A different player now: he gets up off the bench facing the ice, stick up.
+				visual_.rotation.y=-PI*0.5
+				visual_.start_hop(from_,Vector3.ZERO,-Arena.HALF_WIDTH-actor.position.x,true)
 				actor.set_meta("hop",2)
 				if actor==player: switch_player()
 			elif hop==2 and visual_.hop_finished():

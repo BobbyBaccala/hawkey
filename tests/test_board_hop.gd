@@ -57,6 +57,8 @@ func stick_in_boards(v) -> float:
 func check_stick(r: Dictionary, what: String) -> void:
 	check(r.stick_in < 0.005, "Stick carried clear of the boards %s (%.3f m inside)" % [what, r.stick_in])
 	check(r.max_stick_step < 0.16, "Stick lifts and lowers without popping %s (blade step %.3f m)" % [what, r.max_stick_step])
+	# Turns into the hop from the heading it had (no snap to face the boards).
+	check(r.max_yaw_step < 0.11, "Turns smoothly into the hop %s (largest yaw step %.3f rad)" % [what, r.max_yaw_step])
 
 func check_plant(r: Dictionary, what: String) -> void:
 	check(r.plant_peak > 0.99, "Top hand plants on the board cap %s (peak %.2f)" % [what, r.plant_peak])
@@ -67,11 +69,12 @@ func check_plant(r: Dictionary, what: String) -> void:
 	check(r.max_plant_step < 0.16, "Plant blends in and out smoothly %s (step %.3f)" % [what, r.max_plant_step])
 	check(r.max_hand_step < 0.06, "Glove never jumps %s (largest step %.3f m)" % [what, r.max_hand_step])
 
-func run_hop(v, body: Node3D, a: Vector3, b: Vector3) -> Dictionary:
-	v.start_hop(a, b, -Arena.HALF_WIDTH - body.position.x)
+func run_hop(v, body: Node3D, a: Vector3, b: Vector3, carried := false) -> Dictionary:
+	v.start_hop(a, b, -Arena.HALF_WIDTH - body.position.x, carried)
 	var result := {"clear": INF, "max_step": 0.0, "max_tuck_step": 0.0, "peak": 0.0, "frames": 0, "crossed": false,
-		"plant_peak": 0.0, "plant_frames": 0, "max_plant_step": 0.0, "hand_err": 0.0, "max_hand_step": 0.0, "stick_in": 0.0, "max_stick_step": 0.0}
+		"plant_peak": 0.0, "plant_frames": 0, "max_plant_step": 0.0, "hand_err": 0.0, "max_hand_step": 0.0, "stick_in": 0.0, "max_stick_step": 0.0, "max_yaw_step": 0.0}
 	var last_blade := Vector3.INF
+	var last_yaw: float = v.rotation.y
 	var last_plant := 0.0
 	var last_hand := Vector3.INF
 	var last: Vector3 = v.position
@@ -80,9 +83,9 @@ func run_hop(v, body: Node3D, a: Vector3, b: Vector3) -> Dictionary:
 		v.animate(0, DT, 0, false)
 		result.frames += 1
 		result.clear = minf(result.clear, lowest_over_boards(v))
-		# The stick may start the hop reaching into the boards (the skater stops
-		# facing them); once it is half way up it must stay clear of them.
-		if v.hop_u >= BoardHop.CARRY_IN * 0.5: result.stick_in = maxf(result.stick_in, stick_in_boards(v))
+		result.stick_in = maxf(result.stick_in, stick_in_boards(v))
+		result.max_yaw_step = maxf(result.max_yaw_step, absf(angle_difference(last_yaw, v.rotation.y)))
+		last_yaw = v.rotation.y
 		var blade: Vector3 = v.stick_blade.global_position
 		if last_blade != Vector3.INF: result.max_stick_step = maxf(result.max_stick_step, blade.distance_to(last_blade))
 		last_blade = blade
@@ -138,7 +141,10 @@ func run() -> void:
 	check(forward.x < -0.9, "Faces the bench going out")
 
 	# Fresh player back over onto the ice, ending on the body.
-	var back := run_hop(v, body, v.position + Vector3(0, 0, -0.7), Vector3.ZERO)
+	# He is a different player (match.gd swaps identity on the bench) and gets
+	# up off the bench facing the ice.
+	v.rotation.y = -PI * 0.5
+	var back := run_hop(v, body, v.position + Vector3(0, 0, -0.7), Vector3.ZERO, true)
 	check(back.clear > BoardHop.BOARD_TOP + 0.02, "Skates clear the boards coming back (lowest %.3f m)" % back.clear)
 	check(back.max_step < 0.05, "Return path is continuous (largest step %.3f m)" % back.max_step)
 	check_plant(back, "coming back")
@@ -151,6 +157,22 @@ func run() -> void:
 	v.animate(0, DT, 0, false)
 	check(v.hand_plant == 0.0, "Both hands back on the stick after the hop")
 	check(v.stick_carry == 0.0 and v.blade_position.y < 0.05, "Stick back down on the ice after the hop")
+
+	# Whatever heading the skater has when he starts the hop (skating along the
+	# boards either way, facing them, back to them) he turns smoothly into it
+	# and the stick never reaches into the boards.
+	for yaw in [PI, PI * 0.5, -PI * 0.5, PI * 0.25]:
+		v.rotation.y = yaw
+		for f in range(30): v.animate(0, DT, 0, false)
+		var r := run_hop(v, body, Vector3.ZERO, bench)
+		var what := "starting at yaw %.2f" % yaw
+		# Facing the boards from 0.75 m the blade is in them before the hop
+		# starts; it must come out at once and stay out.
+		check(r.stick_in < 0.005, "Stick clear of the boards %s (%.3f m inside)" % [what, r.stick_in])
+		check(r.max_yaw_step < 0.11, "Turns smoothly into the hop %s (largest yaw step %.3f rad)" % [what, r.max_yaw_step])
+		if yaw != PI * 0.5: check(r.max_stick_step < 0.16, "Stick lifts without popping %s (blade step %.3f m)" % [what, r.max_stick_step])
+		check(r.clear > BoardHop.BOARD_TOP + 0.02, "Skates clear the boards %s" % what)
+		v.cancel_hop()
 
 	# Pure path: offsets stay on the near side before take-off and the far side after landing.
 	for k in range(101):
