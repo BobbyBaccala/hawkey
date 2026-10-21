@@ -282,6 +282,17 @@ func check_seat_walk(benches, z0: float) -> void:
 	var max_step := 0.0
 	var min_pass := INF
 	var frames := int(rig.walk_time * 60.0) + 2
+	# Slice 8 step cycle: skates lift and plant alternately; a planted skate
+	# stays put on the floor (no gliding over the rubber).
+	var floor_y: float = v.skates[0].global_position.y
+	var last_foot: Array = [v.skates[0].global_position, v.skates[1].global_position]
+	var lifts := [0, 0]
+	var lifted := [false, false]
+	var max_lift := 0.0
+	var both_up := 0
+	var slip := 0.0
+	var touchdown := 0.0
+	var was_pinned := [false, false]
 	for i in range(frames):
 		benches.update_figures(1.0 / 60.0)
 		var h: Vector3 = v.helmet.global_position
@@ -295,6 +306,23 @@ func check_seat_walk(benches, z0: float) -> void:
 		for k in range(2):
 			var foot: Vector3 = v.skates[k].global_position
 			if foot.x > -Arena.HALF_WIDTH - 0.2 or foot.x < -Arena.HALF_WIDTH - Benches.DEPTH + 0.15: max_step = INF
+			var up: float = foot.y - floor_y
+			max_lift = maxf(max_lift, up)
+			var is_up := up > 0.02
+			if is_up and not lifted[k]: lifts[k] += 1
+			lifted[k] = is_up
+			var pinned: bool = v.walk_plants[k] != null and v.walk_amount > 0.99 and benches.is_walking(rig)
+			var d: Vector3 = foot - last_foot[k]
+			if pinned and was_pinned[k]: slip = maxf(slip, Vector2(d.x, d.z).length())
+			elif pinned: touchdown = maxf(touchdown, Vector2(d.x, d.z).length())
+			was_pinned[k] = pinned
+			last_foot[k] = foot
+		if lifted[0] and lifted[1]: both_up += 1
+	check(lifts[0] >= 2 and lifts[1] >= 2, "He steps: each skate lifts and plants again (%d / %d steps)" % [lifts[0], lifts[1]])
+	check(max_lift > 0.05 and max_lift < 0.12, "Skates clear the floor in the swing (%.3f m)" % max_lift)
+	check(both_up == 0, "Never both skates off the floor (%d frames)" % both_up)
+	check(slip < 0.002, "A planted skate stays put, no gliding (max %.3f m/frame)" % slip)
+	check(touchdown < 0.025, "Skates set down gently, slower than he walks (%.3f m/frame)" % touchdown)
 	check(max_step < 0.05, "Walk to the seat has no pops (max head step %.3f m/frame)" % max_step)
 	check(min_pass > 0.25, "He passes the player going out side by side (closest %.2f m)" % min_pass)
 	check(not benches.is_walking(rig), "He reaches the seat")

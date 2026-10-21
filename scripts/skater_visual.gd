@@ -163,6 +163,27 @@ var cheer_pump := 0.0
 ## Up off the bench to go out on a line change: standing tall (less crouch
 ## than the skating stance), leaning a little forward, hands on the stick.
 var stand_tall := 0.0
+## Walking on the bench floor in skates (arena_benches.gd seat walk, needs
+## stand_tall): walk_amount 0..1 blends the step in, walk_phase (radians,
+## advanced by distance walked: one cycle = WALK_CYCLE metres, two steps)
+## drives it, walk_dir is the direction of travel in rig space (x, z).
+var walk_amount := 0.0
+var walk_phase := 0.0
+var walk_dir := Vector2(0,1)
+const WALK_CYCLE := 0.72
+## Share of the cycle each skate is planted (both down at the hand-overs).
+const WALK_STANCE := 0.62
+const WALK_LIFT := 0.075
+const WALK_WIDTH := 0.13
+## World spot each planted skate is pinned to (null in the swing), and where
+## (rig space) it lifted off from, so a skate never glides over the floor -
+## even while he turns and curves.
+var walk_plants: Array = [null,null]
+var walk_lift_from: Array = [Vector3.ZERO,Vector3.ZERO]
+
+func walk_reset() -> void:
+	walk_phase = 0.0
+	walk_plants = [null,null]
 ## Hip joint drop from the standing rest pose to sitting on a 0.48 m seat
 ## (hip ~0.58 m up, 0.17 m behind the figure origin at the seat's front edge).
 const SEAT_DROP := Vector3(0,-0.38,-0.17)
@@ -835,6 +856,41 @@ func pose(speed: float, turn: float) -> void:
 			for key in ["yaw","pitch","edge","ext","lift"]: f[key] = float(f[key])*(1.0-seat)
 		drop = drop.lerp(Vector3(0,-0.05,0),maxf(cheer,stand_tall)*(1.0-seat)).lerp(SEAT_DROP,seat)
 		shoulder_turn = shoulder_turn*(1.0-maxf(seat,maxf(cheer,stand_tall)))
+		# Walking on the bench floor: alternate skate lifts and plants, the
+		# hips riding over the planted skate and highest as it passes under.
+		var walk := walk_amount*stand_tall*(1.0-seat)
+		if walk > 0.0:
+			var dir := Vector3(walk_dir.x,0,walk_dir.y).normalized()
+			# Smooth sway and bob, in step with the plants: over the left
+			# skate at its mid-stance, over the right half a cycle later; up
+			# at each mid-stance, down through the hand-overs.
+			var mid := fposmod(walk_phase/TAU-WALK_STANCE*0.5,1.0)*TAU
+			var shift := cos(mid)
+			var rise := cos(2.0*mid)
+			for i in range(2):
+				var side := 1.0 if i==0 else -1.0
+				var st := walk_step(walk_phase,i)
+				var f: Dictionary = stride[i]
+				var at := Vector3(side*WALK_WIDTH,0.115+float(st.lift),0.02)+dir*float(st.along)
+				var target := (f.ankle as Vector3).lerp(at,walk)
+				var to_rig := rig.global_transform.affine_inverse()
+				if float(st.lift) == 0.0:
+					# Planted: pinned where it touched down (blended back to the
+					# standing stance only as the walk fades out).
+					if walk_plants[i] == null: walk_plants[i] = rig.global_transform*target
+					var pinned: Vector3 = to_rig*(walk_plants[i] as Vector3)
+					pinned.y = target.y
+					f.ankle = target.lerp(pinned,walk)
+					walk_lift_from[i] = f.ankle
+				else:
+					# Swing: from where it lifted to its next landing spot.
+					walk_plants[i] = null
+					var w := float(st.swing)
+					var from: Vector3 = walk_lift_from[i]
+					f.ankle = from.lerp(target,smoothstep(0.0,0.3,w))
+					f.ankle.y = target.y
+				for key in ["yaw","pitch","edge","ext","lift"]: f[key] = float(f[key])*(1.0-walk)
+			drop += Vector3(shift*0.035,0.01*rise-0.01,0)*walk
 	var cap := {}
 	if mocap_weight>0 and not mocap.is_empty():
 		cap = Mocap.sample(mocap,mocap_time,mocap_loop)
@@ -1354,6 +1410,26 @@ func pose_seated() -> void:
 	if stick_carry>0.0: blade_position = blade_position.lerp(carry_blade(),stick_carry)
 	raised_stick = cheer if seat_stick else 0.0
 	pose(0,0)
+
+## One skate's place in the bench walk cycle: `along` (metres along the
+## direction of travel from under the hip), `lift` (blade height above the
+## floor) and `load` (1 while it carries the weight, eased at the hand-overs).
+## Planted, it slides back exactly as fast as the body moves forward, so it
+## stays put on the floor; in the swing it comes through low and lands ahead.
+static func walk_step(phase: float, i: int) -> Dictionary:
+	var c := fposmod(phase/TAU+float(i)*0.5,1.0)
+	var half := WALK_CYCLE*WALK_STANCE*0.5
+	if c < WALK_STANCE:
+		var u := c/WALK_STANCE
+		# Weight comes on just after the plant and goes as the other lands.
+		var load := smoothstep(0.0,0.2,u)*(1.0-smoothstep(0.8,1.0,u))
+		return {"along":lerpf(half,-half,u),"lift":0.0,"load":load,"swing":0.0}
+	var w := (c-WALK_STANCE)/(1.0-WALK_STANCE)
+	# Swing: the skate leaves and lands at rest on the floor (in the world),
+	# so along the body it starts and ends moving back at walking speed.
+	var body := WALK_CYCLE*(1.0-WALK_STANCE)
+	var along := -half+(2.0*half+body)*smoothstep(0.0,1.0,w)-body*w
+	return {"along":along,"lift":WALK_LIFT*sin(PI*w),"load":0.0,"swing":w}
 
 ## Board hop: how far the stick must be carried (0..1) so a blade left on the
 ## ice does not reach into the dasher - the blade's distance past the face of

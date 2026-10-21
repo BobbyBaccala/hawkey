@@ -220,10 +220,24 @@ func _place_walker(rig: Dictionary) -> void:
 	var b: Vector3 = rig.walk_mid
 	var c := Vector3(0, 0, RISE_STEP)
 	var p := a.lerp(b, t).lerp(b.lerp(c, t), t)
-	# Small step bob while moving.
-	p.y = absf(sin(rig.walk_t * 9.0)) * 0.018 * sin(PI * u)
+	p.y = 0.0
+	var before: Vector3 = v.global_position
+	var fresh: bool = rig.walk_t <= 0.0
 	v.position = p
 	v.rotation.y = lerp_angle(rig.walk_yaw, PI, smoothstep(0.35, 0.95, u))
+	# Step cycle (skater_visual.gd walk_step()): the phase advances with the
+	# distance walked so a planted skate stays put on the floor; steps fade in
+	# as he sets off and out as he stops in front of the seat.
+	var moved: Vector3 = v.global_position - before
+	moved.y = 0.0
+	if fresh:
+		v.walk_reset()
+		moved = Vector3.ZERO
+	v.walk_phase += moved.length() / float(v.WALK_CYCLE) * TAU
+	if moved.length() > 0.0005:
+		var d: Vector3 = v.rig.global_transform.basis.inverse() * moved
+		v.walk_dir = Vector2(d.x, d.z).normalized()
+	v.walk_amount = smoothstep(0.0, 0.1, u) * (1.0 - smoothstep(0.9, 1.0, u))
 
 func is_walking(rig: Dictionary) -> bool:
 	return rig.walk_t >= 0.0
@@ -272,7 +286,11 @@ func update_figures(delta: float) -> void:
 			if rig.walk_t >= rig.walk_time:
 				rig.walk_t = -1.0
 				rig.visual.rotation.y = PI
+				rig.visual.walk_amount = 0.0
 			else:
+				# Re-posed every frame for the step cycle (outside POSE_BUDGET:
+				# at most one walker per bench at a time).
+				_pose_rig(rig, true)
 				continue
 		if rig.rise_target > 0.0 and _time > rig.rise_until: rig.rise_target = 0.0
 		rig.rise = move_toward(rig.rise, rig.rise_target, delta * 1.6)

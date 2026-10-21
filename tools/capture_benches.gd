@@ -8,6 +8,8 @@ extends SceneTree
 ##  goout  - line change: one home player up off the seat, stick raised, to go out
 ##  walk   - the player who came off walking from his landing spot to the free
 ##           seat (walk1 just after landing, walk2 turning round at the seat)
+##  walkstep - the same walk from inside the bench, mid-step (one skate up,
+##           hips over the planted one)
 ## xvfb-run -a -s "-screen 0 1728x1080x24" godot --rendering-method gl_compatibility --rendering-driver opengl3 --resolution 1728x1080 --script tools/capture_benches.gd
 ## Writes /tmp/hawkey-bench-<name>.png.
 const Arena = preload("res://scripts/arena.gd")
@@ -48,7 +50,9 @@ func run() -> void:
 	await shot(cam, Vector3(-w + 5.0, 1.9, 9.5), Vector3(-w - 1.6, 0.9, 4.0), 50, "/tmp/hawkey-bench-goout.png")
 	# The player coming off lands at z 5 and walks to the free seat.
 	benches.go_out(0, "45", Vector3(-w - 0.85, 0, 5.0), Vector3(-1, 0, 0))
-	for i in range(25): benches.update_figures(1.0 / 60.0)
+	for i in range(18): benches.update_figures(1.0 / 60.0)
+	await shot(cam, Vector3(-w + 0.7, 2.5, 7.2), Vector3(-w - 1.0, 0.25, 4.7), 50, "/tmp/hawkey-bench-walkstep.png")
+	for i in range(7): benches.update_figures(1.0 / 60.0)
 	await shot(cam, Vector3(-w + 4.0, 2.4, 8.5), Vector3(-w - 1.4, 0.8, 4.6), 50, "/tmp/hawkey-bench-walk1.png")
 	for i in range(30): benches.update_figures(1.0 / 60.0)
 	await shot(cam, Vector3(-w + 4.0, 2.4, 8.5), Vector3(-w - 1.4, 0.8, 4.6), 50, "/tmp/hawkey-bench-walk2.png")
