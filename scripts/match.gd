@@ -3,6 +3,8 @@ const MatchState = preload("res://scripts/match_state.gd")
 const ControllerInput = preload("res://scripts/controller_input.gd")
 const PuckPhysics = preload("res://scripts/puck.gd")
 const BroadcastHud = preload("res://scripts/broadcast_hud.gd")
+const EventSession=preload("res://scripts/event_session.gd")
+var event_mode:=""
 const GMSession=preload("res://scripts/gm_session.gd")
 const Preferences=preload("res://scripts/game_settings.gd")
 var is_gm_match:=false
@@ -66,7 +68,8 @@ func _init() -> void:
 	arena_title = "HAWKEY ARENA"
 
 func _ready() -> void:
-	is_gm_match=GMSession.season!=null and not GMSession.fixture_id.is_empty()
+	event_mode=EventSession.mode
+	is_gm_match=event_mode.is_empty() and GMSession.season!=null and not GMSession.fixture_id.is_empty()
 	var preferences:=Preferences.new()
 	preferences.load_settings()
 	camera_mode=int(preferences.values.camera)
@@ -167,6 +170,10 @@ func _ready() -> void:
 		if arg.begins_with("--camera="): camera_mode = clampi(int(arg.substr(9)), 0, 3)
 	hud_node.show_title(in_menu)
 	hud_node.set_controls_text(controller.active)
+	if event_mode=="shootout":
+		match_state.start_shootout()
+		in_menu=false
+		hud_node.show_title(false)
 
 func team_color(team: int) -> Color:
 	# Fictional home and away palette; presentation remains owned by Claude.
@@ -188,6 +195,7 @@ func roster(body: CharacterBody3D) -> Dictionary:
 func build_hud() -> void:
 	hud_node = BroadcastHud.new()
 	hud_node.gm_context=is_gm_match
+	hud_node.event_context=event_mode
 	hud_node.reduce_motion=reduce_motion
 	hud_node.team_colors.assign([Color("#164a9a"), Color("#b3162c")])
 	hud_layer = hud_node
@@ -200,6 +208,10 @@ func build_hud() -> void:
 	puck_marker=preload("res://scripts/puck_indicator.gd").new();hud_node.root_ui.add_child(puck_marker)
 	hud_node.configure_teams(database.teams, selected_team_ids, database.leagues)
 	hud_node.menu_requested.connect(func():
+		if not event_mode.is_empty():
+			EventSession.mode=""
+			get_tree().change_scene_to_file("res://events.tscn")
+			return
 		if is_gm_match:
 			get_tree().change_scene_to_file("res://gm.tscn")
 			return
@@ -213,6 +225,10 @@ func build_hud() -> void:
 	hud_node.resume_requested.connect(func(): set_paused(false))
 	hud_node.camera_requested.connect(cycle_camera)
 	hud_node.restart_requested.connect(func():
+		if event_mode=="cup" and match_state.phase==MatchState.Phase.FINAL:
+			EventSession.mode=""
+			get_tree().change_scene_to_file("res://events.tscn")
+			return
 		if is_gm_match and match_state.phase==MatchState.Phase.FINAL:
 			get_tree().change_scene_to_file("res://gm.tscn")
 			return
@@ -220,6 +236,7 @@ func build_hud() -> void:
 		get_tree().reload_current_scene())
 	hud_node.quit_requested.connect(func(): get_tree().quit())
 	hud_node.play_requested.connect(start_from_title)
+	hud_node.events_requested.connect(func(): get_tree().change_scene_to_file("res://events.tscn"))
 	hud_node.gm_requested.connect(func():
 		return_to_title=true
 		get_tree().change_scene_to_file("res://gm.tscn"))
@@ -1017,6 +1034,9 @@ func update_match_hud() -> void:
 			if is_gm_match and not GMSession.fixture_id.is_empty():
 				gm_saved=GMSession.finish_match(match_state.score,match_state.decision)
 			hud_node.show_results(match_state.score, team_shots, match_state.decision, match_state.shootout_score)
+			if event_mode=="cup":
+				var saved:=EventSession.finish_match(match_state.score,match_state.decision)
+				hud_node.results_text.text+="\nCup result saved." if saved else "\nNot saved. Return to cup to retry."
 			if is_gm_match:
 				hud_node.results_text.text+="\nGM result saved." if gm_saved else "\nRESULT NOT SAVED — return to GM to retry."
 		elif " — " in e and (e.begins_with(hud_node.team_codes[0] + " — ") or e.begins_with(hud_node.team_codes[1] + " — ")):

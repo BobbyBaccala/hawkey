@@ -9,6 +9,8 @@ signal restart_requested
 signal quit_requested
 signal play_requested
 signal menu_requested
+signal events_requested
+var event_context:=""
 signal gm_requested
 signal settings_requested
 var gm_context:=false
@@ -428,7 +430,7 @@ func build_pause() -> void:
 	box.add_child(pause_camera_button)
 	box.add_child(menu_button("Controls", func(): controls_panel.visible = not controls_panel.visible))
 	box.add_child(menu_button("Restart game", func(): restart_requested.emit()))
-	box.add_child(menu_button("Return to GM season" if gm_context else "Return to menu", func(): menu_requested.emit()))
+	box.add_child(menu_button("Return to cup" if event_context=="cup" else ("More modes" if event_context=="shootout" else ("Return to GM season" if gm_context else "Return to menu")), func(): menu_requested.emit()))
 	box.add_child(menu_button("Quit", func(): quit_requested.emit()))
 	pause_panel.visible = false
 	root_ui.add_child(pause_panel)
@@ -488,7 +490,9 @@ func build_title() -> void:
 	box.add_child(gap)
 	title_play_button=menu_button("Play Now     →",func(): play_requested.emit())
 	box.add_child(title_play_button)
-	box.add_child(menu_button("GM Season",func(): gm_requested.emit()))
+	var competitions:=HBoxContainer.new();competitions.add_theme_constant_override("separation",12);box.add_child(competitions)
+	var gm_button:=menu_button("GM Season",func(): gm_requested.emit());gm_button.custom_minimum_size.x=232;competitions.add_child(gm_button)
+	var events_button:=menu_button("More modes",func(): events_requested.emit());events_button.custom_minimum_size.x=232;competitions.add_child(events_button)
 	box.add_child(menu_button("Practice",func(): practice_requested.emit()))
 	var utility:=HBoxContainer.new()
 	box.add_child(utility)
@@ -611,10 +615,10 @@ func show_results(scores: Array[int], shots: Array[int], decision: String = "REG
 	if decision == "SO" and shootout_scores.size()==2:
 		box.add_child(label("Shootout conversions: %d – %d" % [shootout_scores[0],shootout_scores[1]],16,MUTED,500))
 	var rematch := menu_button("Rematch", func(): restart_requested.emit())
-	rematch.visible=not gm_context
+	rematch.visible=not gm_context and event_context!="cup"
 	box.add_child(rematch)
-	box.add_child(menu_button("Return to GM season" if gm_context else "Return to menu", func(): menu_requested.emit()))
-	if not gm_context: rematch.grab_focus()
+	box.add_child(menu_button("Return to cup" if event_context=="cup" else ("More modes" if event_context=="shootout" else ("Return to GM season" if gm_context else "Return to menu")), func(): menu_requested.emit()))
+	if rematch.visible: rematch.grab_focus()
 	else: box.get_child(box.get_child_count()-1).grab_focus()
 
 func update_shootout(state, shooter_name: String) -> void:
