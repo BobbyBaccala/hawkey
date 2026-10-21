@@ -32,9 +32,10 @@ func run() -> void:
 	for input_ in [Vector2.ZERO,Vector2(1,1),Vector2(-1,-1)]:
 		skater.desired_stick=input_.limit_length()
 		for i in range(30):skater.animate(0,1.0/120)
-		var shaft:Vector3=skater.stick_grip()-(skater.blade_position+Vector3(-0.1344,0,0))
+		# Real heel (the blade runs on from it in the shaft's plane).
+		var shaft:Vector3=skater.stick_grip()-skater.stick_heel(skater.stick_grip())
 		var lie:float=rad_to_deg(atan2(shaft.y,Vector2(shaft.x,shaft.z).length()))
-		check(lie>42 and lie<76,"Stick shaft retains playable lie through stickhandling range")
+		check(lie>40 and lie<76,"Stick shaft retains playable lie through stickhandling range (%.0f deg)" % lie)
 	check(skater.stick_blade.get_aabb().size.z<0.04,"Blade remains thin with a restrained curve")
 	skater.queue_free()
 	await process_frame

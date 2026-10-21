@@ -13,9 +13,12 @@ var database := RosterDatabase.new()
 var selected_teams: Array = []
 
 const GoalCelebration = preload("res://scripts/goal_celebration.gd")
+const Benches = preload("res://scripts/arena_benches.gd")
 const CAMERA_NAMES := ["DYNAMIC", "OVERHEAD", "BROADCAST", "FULL RINK"]
 ## Bench gate (changing skaters head here) just inside the west side boards.
-const BENCH_X := -(Arena.HALF_WIDTH - 1.3)
+const BENCH_X := -(Arena.HALF_WIDTH - 0.75)
+## How far behind the board face a hopping skater lands on the bench floor.
+const HOP_BENCH_DEPTH := 0.85
 ## Restarting from the pause menu skips the title screen.
 static var skip_title := false
 var hud_node: CanvasLayer
@@ -270,6 +273,15 @@ func setup_faceoff() -> void:
 		var team := body_team(actor)
 		var sign_ := attack_direction(team)
 		var slot := int(actor.get_meta("slot"))
+		# A change caught by the whistle finishes on the stoppage.
+		if is_hopping(actor) or bool(actor.get_meta("changing",false)):
+			if bool(actor.get_meta("changing",false)) and int(actor.get_meta("pending_id",-1))>=0:
+				change_identity(actor,int(actor.get_meta("pending_id")))
+			actor.get_child(1).cancel_hop()
+			actor.set_meta("hop",0)
+			if bool(actor.get_meta("eligible",true)):
+				actor.collision_layer=2
+				set_puck_contacts_enabled(actor,true)
 		actor.position = spots[slot]
 		actor.position.z *= -sign_
 		actor.position+=next_faceoff
@@ -321,6 +333,17 @@ func sync_strength() -> void:
 					break
 				if active_count>=target_count: break
 
+## Mid board hop (line change): the body waits at the bench door while its
+## visual travels; it plays no part in play until it is back on the ice.
+func is_hopping(actor: CharacterBody3D) -> bool:
+	return int(actor.get_meta("hop",0))!=0
+
+## Where a changing skater in `slot` meets the boards: inside his own bench
+## front (team 0 at z > 0, team 1 at z < 0, arena_benches.gd), one spot per slot.
+func bench_spot(team: int, slot: int) -> Vector3:
+	var zsign:=1.0 if team==0 else -1.0
+	return Vector3(BENCH_X,0,zsign*(Benches.BENCH_GAP+1.0+slot*1.6))
+
 func roster_on_ice(team: int, roster_id: int) -> bool:
 	for actor in skaters:
 		if body_team(actor)==team and bool(actor.get_meta("eligible",true)) and int(actor.get_meta("roster_id"))==roster_id: return true
@@ -360,7 +383,7 @@ func switch_player() -> void:
 	var best: CharacterBody3D
 	var score_ := INF
 	for actor in skaters:
-		if body_team(actor)!=0 or not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")): continue
+		if body_team(actor)!=0 or not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")) or is_hopping(actor): continue
 		var distance_ := actor.position.distance_to(puck.position)
 		if actor==player: distance_ += 4
 		if actor==carrier: distance_ -= 10
@@ -664,7 +687,7 @@ func control_player(delta: float) -> void:
 		braking=Input.is_physical_key_pressed(KEY_CTRL)
 		player_visual.desired_stick=Vector2.ZERO
 		charge=0
-	if bool(player.get_meta("changing")): return
+	if bool(player.get_meta("changing")) or is_hopping(player): return
 	velocity=Skating.step(player.velocity,intent,float(roster(player).speed)*lerpf(0.65,1,float(roster(player).stamina)),effort,delta)
 	if braking: velocity=velocity.move_toward(Vector3.ZERO,22*delta)
 	player.velocity=velocity
@@ -700,23 +723,49 @@ func update_roster_stamina(delta: float) -> void:
 func update_team_ai(delta: float) -> void:
 	var nearest: Array[CharacterBody3D]=[null,null]
 	for actor in skaters:
-		if not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")): continue
+		if not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")) or is_hopping(actor): continue
 		var team:=body_team(actor)
 		if nearest[team]==null or actor.position.distance_squared_to(puck.position)<nearest[team].position.distance_squared_to(puck.position):
 			nearest[team]=actor
 	for actor in skaters:
 		if not bool(actor.get_meta("eligible")): continue
-		if actor==player and not bool(actor.get_meta("changing")): continue
+		if actor==player and not bool(actor.get_meta("changing")) and not is_hopping(actor): continue
 		var team:=body_team(actor)
 		var attack:=attack_direction(team)
 		var slot:=int(actor.get_meta("slot"))
 		var target:=Vector3.ZERO
 		var changing:=bool(actor.get_meta("changing"))
-		if changing:
-			target=Vector3(BENCH_X,0,(slot-1)*1.6+(4-team*8))   # own bench, at the end it defends in periods 1 and 3
-			if actor.position.distance_to(target)<0.9:
+		if changing or is_hopping(actor):
+			# Line change: skate to a door-side spot on the own bench front, hop
+			# the boards onto the bench floor (board_hop.gd), swap in the fresh
+			# player there, and he hops back over onto the ice.
+			target=bench_spot(team,slot)
+			var visual_:=actor.get_child(1)
+			var hop:=int(actor.get_meta("hop",0))
+			if hop==0 and changing and actor.position.distance_to(target)<0.9:
+				actor.velocity=Vector3.ZERO
+				var bench_floor:=Vector3(-(Arena.HALF_WIDTH+HOP_BENCH_DEPTH),0,actor.position.z)
+				visual_.start_hop(Vector3.ZERO,bench_floor-actor.position,-Arena.HALF_WIDTH-actor.position.x)
+				actor.set_meta("hop",1)
+				actor.collision_layer=0
+				set_puck_contacts_enabled(actor,false)
+				if carrier==actor: carrier=null
+			elif hop==1 and visual_.hop_finished():
+				# Fresh legs climb out a little further along the bench.
 				change_identity(actor,int(actor.get_meta("pending_id")))
+				var from_:Vector3=visual_.position+Vector3(0,0,-signf(target.z)*0.7)
+				visual_.start_hop(from_,Vector3.ZERO,-Arena.HALF_WIDTH-actor.position.x)
+				actor.set_meta("hop",2)
 				if actor==player: switch_player()
+			elif hop==2 and visual_.hop_finished():
+				visual_.cancel_hop()
+				actor.set_meta("hop",0)
+				actor.collision_layer=2
+				set_puck_contacts_enabled(actor,true)
+			if hop!=0:
+				actor.velocity=Vector3.ZERO
+				visual_.animate(0,delta,0,false)
+				continue
 		elif actor==carrier:
 			target=Vector3(clampf(actor.position.x*0.6,-5,5),0,attack*(Arena.GOAL_LINE-3.0))
 			var distance_to_goal:=actor.position.distance_to(Vector3(0,0,attack*Arena.GOAL_LINE))
@@ -780,7 +829,7 @@ func update_possession(delta: float) -> void:
 	if carrier==null and cooldown<=0 and puck.position.y<0.14:
 		var best:=1.15
 		for actor in skaters:
-			if not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")): continue
+			if not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")) or is_hopping(actor): continue
 			var distance_:=actor.position.distance_to(Vector3(puck.position.x,0,puck.position.z))
 			if distance_<best and (puck.linear_velocity-actor.velocity).length()<17:
 				best=distance_

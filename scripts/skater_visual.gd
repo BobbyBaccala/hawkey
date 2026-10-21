@@ -77,6 +77,8 @@ var skates: Array[Node3D] = []
 var skate_cuffs: Array[MeshInstance3D] = []
 var helmet: Node3D
 var shirt: Node3D
+## Cut-resistant neck guard (skaters): fills the collar up to the jaw.
+var neck_guard: MeshInstance3D
 var sticks: Node3D
 var pads: Array[Node3D] = []
 var thigh_rises: Array[Node3D] = []
@@ -114,6 +116,14 @@ const MAX_EDGE := 0.75                        # deepest edge roll (radians)     
 ## here from the speed passed to animate(), so lab.gd and match.gd need no
 ## extra calls.
 const SnowSpray = preload("res://scripts/snow_spray.gd")
+const BoardHop = preload("res://scripts/board_hop.gd")
+## Board hop (line change, board_hop.gd): progress 0..1 (-1 = not hopping),
+## path in the parent's space, and the current tuck / crouch / lean weights.
+var hop_u := -1.0
+var hop_a := Vector3.ZERO
+var hop_b := Vector3.ZERO
+var hop_board_x := 0.0
+var hop_state := {}
 const STOP_MIN_SPEED := 4.0      # m/s needed to start a stop
 const STOP_DECEL := 7.0          # m/s^2 (smoothed) that counts as a hard stop
 const STOP_ANGLE := 1.38         # hips turned this far from the travel (~79 deg)
@@ -182,6 +192,7 @@ func _ready() -> void:
 	uniform.set_shader_parameter("team_color",kit)
 	uniform.set_shader_parameter("hide_pants",not referee)
 	uniform.set_shader_parameter("hide_socks",not referee and not goalie)
+	uniform.set_shader_parameter("hide_neck",not referee and not goalie)
 	uniform.set_shader_parameter("skin_detail",Kit.skin_texture())
 	uniform.set_shader_parameter("has_skin_detail",true)
 	for child in skeleton.get_children():
@@ -193,6 +204,12 @@ func _ready() -> void:
 	shirt = Node3D.new()
 	rig.add_child(shirt)
 	build_jersey()
+	if not goalie and not referee:
+		neck_guard = MeshInstance3D.new()
+		neck_guard.name = "NeckGuard"
+		neck_guard.mesh = ArrayMesh.new()
+		neck_guard.material_override = Kit.plastic(Color("#141a21"),0.85)
+		rig.add_child(neck_guard)
 	sticks = Node3D.new()
 	rig.add_child(sticks)
 	stick_shaft=MeshInstance3D.new()
@@ -244,7 +261,7 @@ func _ready() -> void:
 				var spray := SnowSpray.new()
 				add_child(spray)
 				sprays.append(spray)
-	blade_position=Vector3(-0.02,0.042,0.60) if goalie else Vector3(-0.20,0.029,0.83)
+	blade_position=Vector3(-0.02,0.042,0.60) if goalie else Vector3(-0.36,0.029,1.05)
 	if referee: sticks.visible=false
 	pose(0,0)
 
@@ -346,9 +363,9 @@ func build_helmet() -> void:
 ## squared shoulder line; the hem hangs and flares over the pants.
 const JERSEY_HEM := 0.865
 const JERSEY_COLUMNS := 56
-const JERSEY_WIDTH := [[0.86,0.258],[0.95,0.240],[1.02,0.224],[1.10,0.221],[1.20,0.230],[1.28,0.246],[1.36,0.266],[1.42,0.282],[1.46,0.276],[1.49,0.250],[1.51,0.205],[1.53,0.140],[1.555,0.088]]
-const JERSEY_FRONT := [[0.86,0.180],[0.97,0.160],[1.08,0.154],[1.20,0.164],[1.30,0.176],[1.38,0.166],[1.45,0.140],[1.50,0.110],[1.555,0.072]]
-const JERSEY_BACK := [[0.86,0.180],[0.97,0.156],[1.08,0.150],[1.22,0.160],[1.34,0.172],[1.42,0.166],[1.48,0.140],[1.52,0.100],[1.555,0.072]]
+const JERSEY_WIDTH := [[0.86,0.258],[0.95,0.240],[1.02,0.224],[1.10,0.221],[1.20,0.230],[1.28,0.246],[1.36,0.266],[1.42,0.282],[1.46,0.276],[1.49,0.250],[1.51,0.200],[1.53,0.128],[1.555,0.072]]
+const JERSEY_FRONT := [[0.86,0.180],[0.97,0.160],[1.08,0.154],[1.20,0.164],[1.30,0.176],[1.38,0.166],[1.45,0.140],[1.50,0.104],[1.555,0.064]]
+const JERSEY_BACK := [[0.86,0.180],[0.97,0.156],[1.08,0.150],[1.22,0.160],[1.34,0.172],[1.42,0.166],[1.48,0.140],[1.52,0.094],[1.555,0.062]]
 var jersey: MeshInstance3D
 
 ## Rest-space point of the sweater surface at angle a (0 = +X, PI/2 = front)
@@ -739,6 +756,25 @@ func pose(speed: float, turn: float) -> void:
 		# turned a little toward where the skater was going.
 		drop = drop.lerp(Vector3(s*0.13,-0.30,-0.05),stop_w)
 		shoulder_turn = lerpf(shoulder_turn,-s*0.22,stop_w)
+	# Board hop: gather low, then knees tuck to the chest over the boards and
+	# the legs extend again for the landing (board_hop.gd sample()).
+	if not goalie and not hop_state.is_empty():
+		var tuck: float = hop_state.tuck
+		var crouch: float = hop_state.crouch
+		for i in range(2):
+			var side := 1.0 if i==0 else -1.0
+			var f: Dictionary = stride[i]
+			var base := Vector3(side*0.15,0.115,0.02)
+			f.ankle = (f.ankle as Vector3).lerp(base,maxf(crouch,tuck))
+			f.ankle = (f.ankle as Vector3).lerp(Vector3(side*0.13,BoardHop.TUCK_ANKLE_Y,0.20),tuck)
+			f.yaw = f.yaw*(1.0-tuck)
+			f.pitch = lerpf(f.pitch,-0.35,tuck)
+			f.edge = f.edge*(1.0-maxf(crouch,tuck))
+			f.ext = f.ext*(1.0-maxf(crouch,tuck))
+			f.lift = f.lift*(1.0-maxf(crouch,tuck))
+		drop = drop.lerp(Vector3(0,-0.31,-0.04),crouch)
+		drop = drop.lerp(Vector3(0,-0.10,-0.06),tuck)
+		shoulder_turn = shoulder_turn*(1.0-maxf(crouch,tuck))
 	var cap := {}
 	if mocap_weight>0 and not mocap.is_empty():
 		cap = Mocap.sample(mocap,mocap_time,mocap_loop)
@@ -757,6 +793,7 @@ func pose(speed: float, turn: float) -> void:
 	if shoulder_turn != 0.0: bend = Basis(Vector3.UP,shoulder_turn)*bend
 	# Stop: the upper body leans back against the skid.
 	if stop_w > 0.0: bend = Basis(Vector3.BACK,-stop_side*0.24*stop_w)*bend
+	if not hop_state.is_empty(): bend = Basis(Vector3.RIGHT,0.38*float(hop_state.lean))*bend
 	if goalie:
 		var reach_lean: float = save_weights.glove*clampf(save_target.x-0.45,0.0,0.5)-save_weights.blocker*clampf(-save_target.x-0.45,0.0,0.5)
 		var pad_lean: float = save_weights.pad_left-save_weights.pad_right
@@ -778,7 +815,8 @@ func pose(speed: float, turn: float) -> void:
 	var head_pose := head
 	head_pose.origin = posed_head
 	override_pose("head",head_pose)
-	helmet.position = posed_head+Vector3(0,0.095,0.015)
+	helmet.position = posed_head+(Vector3(0,0.095,0.015) if goalie else Gear.HELMET_OFFSET)
+	if neck_guard: update_neck_guard()
 	for i in range(2):
 		var side := 1.0 if i==0 else -1.0
 		var suffix := ".L" if i==0 else ".R"
@@ -893,7 +931,19 @@ func pose(speed: float, turn: float) -> void:
 		# Right-handed shot: the blade is on the skater's right (-x), so the right
 		# hand (i==1) is the bottom hand riding the shaft and the left hand holds
 		# the knob in front of the body. Neither arm has to reach across the chest.
-		var wrist := stick_grip().lerp(blade_position+Vector3(-stick_blade_length*0.48,0,0),0.30)+Vector3(0,0.02,0.05*maxf(0,stick_intent.y)) if i==1 else stick_grip()
+		var wrist := bottom_grip(shoulder) if i==1 else stick_grip()
+		var grip_point := wrist
+		if not goalie and not referee:
+			# The shaft runs through the closed fist, which sits 3.5 cm past the
+			# wrist joint (the glove origin): put the wrist on the elbow side of
+			# the grip point, within the arm's reach.
+			# Offset across the shaft (toward the arm), so the shaft crosses the palm.
+			var shaft_dir:=(stick_heel(stick_grip())-stick_grip()).normalized()
+			var to_arm:=shoulder-wrist
+			to_arm-=shaft_dir*shaft_dir.dot(to_arm)
+			wrist = wrist+to_arm.normalized()*GLOVE_FIST
+			if shoulder.distance_to(wrist)>STICK_ARM_REACH:
+				wrist = shoulder+(wrist-shoulder).normalized()*STICK_ARM_REACH
 		if referee: wrist=Vector3(side*0.32,0.96,0.03)
 		var captured_elbow := Vector3.ZERO
 		if not cap.is_empty() and "arms" in mocap_mask and not goalie:
@@ -918,15 +968,18 @@ func pose(speed: float, turn: float) -> void:
 			else:
 				goalie_gloves[i].position=wrist+Vector3(-0.085,0.06,0.04)
 				goalie_gloves[i].rotation=Vector3(-0.10,-0.28,0.06)
-		var pole := Vector3(side*0.6,-0.8,-0.1) if goalie else Vector3(side,0,-0.3)
+		# Elbows: the top-hand elbow points out and back a little; the bottom
+		# arm hangs nearly straight, elbow tucked in toward the body.
+		var pole := Vector3(side*0.6,-0.8,-0.1) if goalie else (Vector3(side*0.45,-0.25,-1.0) if i==0 else Vector3(side*0.5,-0.2,-0.8))
+		if referee: pole = Vector3(side,0,-0.3)
 		if captured_elbow != Vector3.ZERO:
 			pole = pole.lerp((captured_elbow-(shoulder+wrist)*0.5).normalized(),capture_weight)
 		# Bottom hand and glove stay on the outside of the jersey.
-		if not goalie and not referee and captured_elbow == Vector3.ZERO: wrist = clear_hand(wrist,0.075)
+		if not goalie and not referee and captured_elbow == Vector3.ZERO and i==0: wrist = clear_hand(wrist,0.075)
 		var elbow := clear_elbow(shoulder,wrist,pole)
 		posed_wrists[i]=wrist
 		posed_elbows[i]=elbow
-		if not goalie: fit_glove(i,wrist,elbow)
+		if not goalie: fit_glove(i,wrist,elbow,grip_point if not referee and captured_elbow==Vector3.ZERO else Vector3.INF)
 		update_cloth_sleeve(cloth_sleeves[i],shoulder,elbow,wrist)
 		align_bone("upperarm01"+suffix,"lowerarm01"+suffix,shoulder,elbow)
 		align_bone("lowerarm01"+suffix,"wrist"+suffix,elbow,wrist)
@@ -1005,13 +1058,52 @@ func update_layers(delta: float) -> void:
 			var stride:float=maxf(0.1,data.travel.length()*MOCAP_HIP_HEIGHT/data.length)
 			shuffle_time+=delta*absf(lateral)/stride
 
+## Starts a board hop from `a` to `b` (parent space, see board_hop.gd) over the
+## board plane x = board_x; the body stays put while this visual travels.
+func start_hop(a: Vector3, b: Vector3, board_x: float) -> void:
+	hop_a = a
+	hop_b = b
+	hop_board_x = board_x
+	hop_u = 0.0
+	hop_state = BoardHop.sample(0.0,a,b,board_x)
+	position = a
+
+func hopping() -> bool:
+	return hop_u >= 0.0 and hop_u < 1.0
+
+## True once a started hop has reached its end (until cancel_hop()).
+func hop_finished() -> bool:
+	return hop_u >= 1.0
+
+## Ends any hop and puts the visual back on its body.
+func cancel_hop() -> void:
+	hop_u = -1.0
+	hop_state = {}
+	position = Vector3.ZERO
+
+func update_hop(delta: float) -> void:
+	if hop_u < 0.0: return
+	hop_u = minf(hop_u+delta/BoardHop.DURATION,1.0)
+	hop_state = BoardHop.sample(hop_u,hop_a,hop_b,hop_board_x)
+	position = hop_state.offset
+	var f: Vector3 = hop_state.facing
+	rotation.y = atan2(-f.x,-f.z)
+	if hop_u >= 1.0:
+		# Landed: stand normally where the hop ended.
+		hop_state = {}
+
 func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, braking: bool = false) -> void:
+	update_hop(delta)
+	if hop_u >= 0.0:
+		speed = 0.0
+		pushing = false
+		braking = false
 	update_layers(delta)
 	update_stop(speed,delta,braking)
 	brake_turn = move_toward(brake_turn,1.0 if braking and not goalie else 0.0,delta*6)
 	shot_follow = maxf(0,shot_follow-delta*3)
 	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
-	blade_position=Vector3(-0.02+butterfly*0.05,0.042,0.60-butterfly*0.04+0.035*sin(PI*butterfly)) if goalie else Vector3(-(0.20+stick_intent.x*0.55),0.029,0.83-stick_intent.y*0.26)
+	blade_position=Vector3(-0.02+butterfly*0.05,0.042,0.60-butterfly*0.04+0.035*sin(PI*butterfly)) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
 	# Stop: the stick reaches out in front for balance.
 	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
 	var target := clampf(speed/5.0,0,1) if pushing and not braking and not goalie else 0.0
@@ -1103,11 +1195,40 @@ func stick_grip() -> Vector3:
 			var aim := Vector3(clampf(save_target.x,-1.0,-0.28),clampf(save_target.y,0.45,1.45),0.50)
 			grip = grip.lerp(reach(shoulder_of(1),aim),block_w)
 		return grip
-	var grip := Vector3(0.06-stick_intent.x*0.16-shot_follow*0.12,0.93+shot_charge*0.06,0.32-stick_intent.y*0.06-shot_charge*0.18+shot_follow*0.22)
+	# Top hand on the knob in front of the top-hand hip: upper arm down, elbow
+	# back beside the body, forearm roughly level so the shaft crosses the palm
+	# (not held end-on like a torch). Rides with the shoulders as the skater
+	# crouches, and moves with stickhandling and shots.
+	var grip := shoulder_of(0)+Vector3(-0.11-stick_intent.x*0.20-shot_follow*0.12,-0.235+shot_charge*0.06,0.15-stick_intent.y*0.05-shot_charge*0.12+shot_follow*0.22)
 	# Stop: hands come down with the hips and push the stick out front.
 	grip += Vector3(0,-0.10,0.06)*stop_blend()
+	# Pulling the stick in never drives the top hand into the hip pads.
+	grip.z = maxf(grip.z,shoulder_of(0).z+0.15)
 	# The top hand holds the stick in front of the jersey, never inside it.
 	return clear_hand(grip,0.075)
+
+## Heel of the blade (where the shaft meets it) for a top-hand position.
+func stick_heel(top: Vector3) -> Vector3:
+	var toe_dir:=stick_toe_dir(top,blade_position)
+	toe_dir=stick_toe_dir(top,blade_position-toe_dir*stick_blade_length*0.48)
+	return blade_position-toe_dir*stick_blade_length*0.48
+
+## Bottom hand: a point ON the shaft, 27-42 % of the way from the knob to the
+## heel (a real grip is two to three hand-widths apart), as low as the arm
+## comfortably reaches from this shoulder. The fist closes round the shaft.
+const GLOVE_FIST := 0.035
+## Shoulder to wrist joint with the elbow just short of locked.
+const STICK_ARM_REACH := 0.565
+const BOTTOM_REACH := STICK_ARM_REACH+GLOVE_FIST
+func bottom_grip(shoulder: Vector3) -> Vector3:
+	var top:=stick_grip()
+	var heel:=stick_heel(top)
+	var best:=top.lerp(heel,0.27)
+	for k in range(21):
+		var t:=lerpf(0.27,0.42,k/20.0)
+		var p:=top.lerp(heel,t)
+		if shoulder.distance_to(p)<=BOTTOM_REACH: best=p
+	return best
 
 func update_stick() -> void:
 	var top:=stick_grip()
@@ -1132,7 +1253,7 @@ func update_stick() -> void:
 	stick_shaft.position=(top+bottom)*0.5
 	stick_shaft.basis=Basis(Quaternion(Vector3.UP,axis.normalized()))
 	# A goalie's hand sits at the top of the paddle; the shaft runs on past it.
-	var beyond:=0.42 if goalie else 0.11
+	var beyond:=0.42 if goalie else 0.06
 	stick_shaft.scale=Vector3(1,axis.length()+beyond,1)
 	stick_shaft.position+=axis.normalized()*beyond*0.5
 	if goalie:
@@ -1192,27 +1313,80 @@ func build_player_glove(parent: Node3D) -> void:
 ## Closes glove i round the stick at the wrist: cuff (+Y) back along the
 ## forearm toward the elbow, shaft through the fist along local X, back of
 ## the hand (+Z) facing away from the body.
-func fit_glove(i: int, wrist: Vector3, elbow: Vector3) -> void:
+## Hole through the closed fist (glove space): the shaft runs through it.
+const GLOVE_HOLE := Vector3(0,-0.035,-0.005)
+func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF) -> void:
 	var up := (elbow-wrist).normalized()
-	var shaft := (stick_grip()-blade_position).normalized()
-	var x := shaft-up*up.dot(shaft)
-	if x.length_squared() < 0.0001: x = up.cross(Vector3.BACK)
-	x = x.normalized()
+	var shaft := (stick_grip()-stick_heel(stick_grip())).normalized()
+	var x: Vector3
+	if grip_point==Vector3.INF:
+		x = shaft-up*up.dot(shaft)
+		if x.length_squared() < 0.0001: x = up.cross(Vector3.BACK)
+		x = x.normalized()
+	else:
+		# The shaft runs diagonally across the palm (real grips are not square
+		# to the forearm): split the difference between the forearm-square
+		# fist and the shaft (40 % of the way), so the cuff stays on the forearm and the stick
+		# still lies in the fingers.
+		var square := shaft-up*up.dot(shaft)
+		square = square.normalized() if square.length_squared()>0.0001 else up.cross(Vector3.BACK).normalized()
+		x = square.slerp(shaft if shaft.dot(square)>0.0 else -shaft,0.4).normalized()
+		up = (up-x*x.dot(up))
+		up = up.normalized() if up.length_squared()>0.0001 else x.cross(Vector3.BACK).normalized()
 	var z := x.cross(up)
 	var away := wrist-torso_pose.origin
 	if z.dot(away) < 0.0:
 		x = -x
 		z = -z
-	skater_gloves[i].transform = Transform3D(Basis(x,up,z),wrist)
+	var basis_ := Basis(x,up,z)
+	# Seat the fist on the shaft: the hole through the fingers is on the grip point.
+	var origin := wrist if grip_point==Vector3.INF else grip_point-basis_*GLOVE_HOLE
+	skater_gloves[i].transform = Transform3D(basis_,origin)
 
 const SLEEVE_ROWS := 14
 const SLEEVE_SIDES := 22
+## Neck guard: a padded collar tube from inside the jersey neckline up under
+## the jaw, following the posed torso and head.
+func update_neck_guard() -> void:
+	var bottom: Vector3 = shirt.transform*Vector3(0,1.47,0.006)
+	var top: Vector3 = posed_head+Vector3(0,0.012,0.0)
+	var old:Array=neck_guard.get_meta("pose",[])
+	if old.size()==2 and bottom.is_equal_approx(old[0]) and top.is_equal_approx(old[1]):return
+	neck_guard.set_meta("pose",[bottom,top])
+	var axis:=(top-bottom).normalized()
+	var across:=axis.cross(Vector3.FORWARD).normalized()
+	if across.length_squared()<0.01: across=Vector3.RIGHT
+	var depth:=axis.cross(across).normalized()
+	var st:=SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	const SIDES:=20
+	const ROWS:=6
+	# Radius: flares into the collar, snug round the neck, rolled top edge.
+	var radii:=[0.105,0.090,0.077,0.070,0.068,0.068,0.064]
+	var rings:=[]
+	for r in range(ROWS+1):
+		var t:=float(r)/ROWS
+		var c:=bottom.lerp(top,t)
+		var ring:=[]
+		for k in range(SIDES+1):
+			var a:=TAU*k/SIDES
+			var radial:=across*cos(a)+depth*sin(a)*0.92
+			ring.append([c+radial*float(radii[r]),radial.normalized()])
+		rings.append(ring)
+	for r in range(ROWS):
+		for k in range(SIDES):
+			for v in [rings[r][k],rings[r+1][k],rings[r+1][k+1],rings[r][k],rings[r+1][k+1],rings[r][k+1]]:
+				st.set_normal(v[1])
+				st.add_vertex(v[0])
+	var mesh:ArrayMesh=neck_guard.mesh
+	mesh.clear_surfaces()
+	st.commit(mesh)
+
 func update_cloth_sleeve(instance: MeshInstance3D, shoulder: Vector3, elbow: Vector3, wrist: Vector3) -> void:
 	# A continuous curved cloth envelope follows the exact arm IK targets.
 	var old:Array=instance.get_meta("arm_pose",[])
 	if old.size()==3 and shoulder.is_equal_approx(old[0]) and elbow.is_equal_approx(old[1]) and wrist.is_equal_approx(old[2]):return
 	instance.set_meta("arm_pose",[shoulder,elbow,wrist])
-	var control:=elbow*2-(shoulder+wrist)*0.5
 	var vertices:=PackedVector3Array()
 	var normals:=PackedVector3Array()
 	var uvs:=PackedVector2Array()
@@ -1226,10 +1400,32 @@ func update_cloth_sleeve(instance: MeshInstance3D, shoulder: Vector3, elbow: Vec
 	var across:=Vector3.ZERO
 	var tuck:=(torso_pose.origin+Vector3(0,0.20,0)-shoulder)
 	tuck=tuck.normalized()*0.035 if tuck.length()>0.001 else Vector3.ZERO
+	# Path: straight upper arm and forearm joined by a short rounded elbow
+	# (not one long curve, which read as a bent noodle).
+	var l1:=shoulder.distance_to(elbow)
+	var l2:=elbow.distance_to(wrist)
+	var d1:=(elbow-shoulder)/maxf(l1,0.001)
+	var d2:=(wrist-elbow)/maxf(l2,0.001)
+	var fillet:=minf(0.055,minf(l1,l2)*0.4)
+	var total:=l1+l2
+	var elbow_t:=l1/maxf(total,0.001)
 	for row in range(rows+1):
 		var t:=float(row)/rows
-		var center:Vector3=(1-t)*(1-t)*shoulder+2*(1-t)*t*control+t*t*wrist
-		var axis:Vector3=(2*(1-t)*(control-shoulder)+2*t*(wrist-control)).normalized()
+		var arc:=t*total
+		var center:Vector3
+		var axis:Vector3
+		if arc<l1-fillet:
+			center=shoulder+d1*arc
+			axis=d1
+		elif arc>l1+fillet:
+			center=elbow+d2*(arc-l1)
+			axis=d2
+		else:
+			var q:=(arc-(l1-fillet))/(2.0*fillet)
+			var p0:=elbow-d1*fillet
+			var p2:=elbow+d2*fillet
+			center=(1-q)*(1-q)*p0+2*(1-q)*q*elbow+q*q*p2
+			axis=(2*(1-q)*(elbow-p0)+2*q*(p2-elbow)).normalized()
 		# The armhole starts in under the shoulder pad, so the sleeve grows out
 		# of the sweater instead of butting against it.
 		center+=tuck*(1.0-smoothstep(0.0,0.16,t))
@@ -1240,9 +1436,14 @@ func update_cloth_sleeve(instance: MeshInstance3D, shoulder: Vector3, elbow: Vec
 		else:
 			across=(across-axis*across.dot(axis)).normalized()
 		var depth:=axis.cross(across).normalized()
-		var radius_:float=lerpf(0.100,0.074,t*2) if t<=0.5 else lerpf(0.074,0.052,(t-0.5)*2)
-		# Elbow pad under the sleeve and a looser cuff gathering at the wrist.
-		radius_+=0.010*exp(-pow((t-0.5)/0.09,2))
+		# Sleeve over shoulder cap, upper arm, elbow pad and forearm: it flares
+		# into the armhole, follows the arm and ends loose inside the glove cuff.
+		var u:=t/maxf(elbow_t,0.01) if t<=elbow_t else 1.0+(t-elbow_t)/maxf(1.0-elbow_t,0.01)
+		var radius_:float
+		if u<=1.0: radius_=lerpf(0.074,0.060,smoothstep(0.0,0.45,u))
+		else: radius_=lerpf(0.058,0.050,u-1.0)
+		# Elbow pad under the sleeve.
+		radius_+=0.008*exp(-pow((u-1.0)/0.16,2))
 		if goalie: radius_*=1.2
 		for column in range(cols+1):
 			var angle:=TAU*column/cols

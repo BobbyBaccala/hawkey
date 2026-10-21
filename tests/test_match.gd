@@ -41,9 +41,25 @@ func run()->void:
 	for actor in scene.skaters:
 		if scene.body_team(actor)==0 and int(actor.get_meta("slot"))<3:
 			var slot=int(actor.get_meta("slot"))
-			actor.position=Vector3(scene.BENCH_X,0,(slot-1)*1.6+4)   # team 0 bench (z > 0)
+			actor.position=scene.bench_spot(0,slot)   # team 0 bench front (z > 0)
 	scene.update_team_ai(1.0/120)
-	check(int(scene.skaters[0].get_meta("roster_id"))==6,"Bench arrival must swap identity")
+	var changer=scene.skaters[0]
+	check(int(changer.get_meta("hop",0))==1,"Bench arrival must start a board hop")
+	check(int(changer.get_meta("roster_id"))!=6,"Identity swaps on the bench, not at the boards")
+	check(changer.collision_layer==0,"Hopping skater must not collide")
+	var furthest:=0.0
+	for i in range(240):
+		scene.update_team_ai(1.0/120)
+		furthest=minf(furthest,changer.get_child(1).global_position.x)
+		if int(changer.get_meta("hop",0))==2: break
+	check(furthest< -scene.Arena.HALF_WIDTH-0.5,"Tired skater lands on the bench floor behind the boards")
+	check(int(changer.get_meta("roster_id"))==6,"Bench arrival must swap identity")
+	for i in range(240):
+		scene.update_team_ai(1.0/120)
+		if int(changer.get_meta("hop",0))==0: break
+	check(int(changer.get_meta("hop",0))==0,"Fresh skater must finish hopping back on")
+	check(changer.get_child(1).position.length()<0.001,"Fresh skater's visual is back on its body")
+	check(changer.collision_layer==2,"Fresh skater collides again")
 	check(count_team(scene,0)==5,"Bench change must retain five skaters")
 	scene.update_camera(1)
 	check(absf(scene.camera.rotation.z)<0.0001,"Camera must have no roll")

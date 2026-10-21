@@ -9,6 +9,7 @@ uniform bool hide_socks = false;
 // since screen-space SSS is not available in gl_compatibility.
 uniform sampler2D skin_detail : filter_linear_mipmap_anisotropic, repeat_enable;
 uniform bool has_skin_detail = false;
+uniform bool hide_neck = false;
 uniform float skin_detail_tiles = 24.0;
 uniform float skin_wrap = 0.45;
 uniform vec3 scatter_color = vec3(0.75, 0.2, 0.1);
@@ -26,6 +27,9 @@ void fragment() {
 	if(region>0.5 && region<1.5) discard; // Continuous hockey shell and articulated sleeves cover torso/arms.
 	if(hide_pants && region>1.5 && region<2.5) discard;
 	if(hide_socks && region>2.5 && region<3.5) discard;
+	// Skaters wear a neck guard (skater_visual.gd): the base mesh's neck and
+	// upper chest skin under it would only poke through as jagged edges.
+	if(hide_neck && region<0.5 && rest_height<1.545) discard;
 	// Retain the continuous skinned undershirt at shoulders/armpits.
 	// Discarding it left visible gaps when the arms moved away from the shell.
 	vec3 navy = vec3(0.018,0.032,0.052);
