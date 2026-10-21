@@ -9,6 +9,10 @@ const Arena = preload("res://scripts/arena.gd")
 const Benches = preload("res://scripts/arena_benches.gd")
 var failures := 0
 
+## Fastest a skate may move in the bench walk: his straight-line swing peak
+## (~0.15 m/frame); turning round used to whip it to 0.17+.
+const SWING_STEP_MAX := 0.15
+
 func check(ok: bool, message: String) -> void:
 	if not ok:
 		push_error(message)
@@ -334,6 +338,11 @@ func check_seat_walk(benches, z0: float) -> void:
 	var foot_jump := 0.0
 	var closing_lifts := 0
 	var close_lifted := false
+	# Through the whole walk (including turning round to face the ice) a skate
+	# never moves faster than a natural step: swing targets stay in the world
+	# as the body turns, they do not whip round with it.
+	var swing_step := 0.0
+	var swing_at := 0.0
 	for i in range(frames):
 		benches.update_figures(1.0 / 60.0)
 		var h: Vector3 = v.helmet.global_position
@@ -353,8 +362,11 @@ func check_seat_walk(benches, z0: float) -> void:
 			# (Down for 2+ frames: the touchdown frame itself is the swing landing.)
 			if down and was_down[k] >= 2: floor_slide = maxf(floor_slide, Vector2(moved.x, moved.z).length())
 			was_down[k] = was_down[k] + 1 if down else 0
-			# (Mid-walk swings are fast as he turns round; check the set-off, stop and hand-over.)
+			# (The whole walk is checked below; here the set-off, stop and hand-over.)
 			if rig.walk_t < rig.walk_time * 0.2 or v.walk_close > 0.0 or not benches.is_walking(rig): foot_jump = maxf(foot_jump, moved.length())
+			if benches.is_walking(rig) and moved.length() > swing_step:
+				swing_step = moved.length()
+				swing_at = rig.walk_t / rig.walk_time
 			if v.walk_close > 0.0 and up > 0.02 and not close_lifted: closing_lifts += 1
 			if v.walk_close > 0.0: close_lifted = up > 0.02 if k == 1 else close_lifted or up > 0.02
 			max_lift = maxf(max_lift, up)
@@ -383,6 +395,7 @@ func check_seat_walk(benches, z0: float) -> void:
 	check(f1.dot(Vector3(1, 0, 0)) > 0.9, "turned round to face the ice (%.2f)" % f1.dot(Vector3(1, 0, 0)))
 	check(floor_slide < 0.002, "No skate slides on the floor setting off, stopping or closing (max %.4f m/frame)" % floor_slide)
 	check(foot_jump < 0.03, "Skates never jump setting off or stopping (max %.3f m/frame)" % foot_jump)
+	check(swing_step < SWING_STEP_MAX, "Skates never whip round as he turns to face the ice (max %.3f m/frame at u %.2f)" % [swing_step, swing_at])
 	check(closing_lifts >= 1, "He closes his stance with a step when he stops (%d)" % closing_lifts)
 	var sk0: Vector3 = v.skates[0].global_position
 	var sk1: Vector3 = v.skates[1].global_position

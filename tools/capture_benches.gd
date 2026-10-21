@@ -9,7 +9,8 @@ extends SceneTree
 ##           boards (mid-step)
 ##  goout  - he waits at the boards, stick raised, to go out
 ##  walk   - the player who came off walking from his landing spot to the free
-##           seat (walk1 just after landing, walk2 turning round at the seat)
+##           seat (walk1 just after landing, walkturn mid-turn from inside the
+##           bench, walk2 turning round at the seat)
 ##  walkstep - the same walk from inside the bench, mid-step (one skate up,
 ##           hips over the planted one)
 ##  close  - the same player stopped in front of the seat, closing his stance
@@ -66,7 +67,11 @@ func run() -> void:
 	await shot(cam, Vector3(-w + 0.7, 2.5, 7.2), Vector3(-w - 1.0, 0.25, 4.7), 50, "/tmp/hawkey-bench-walkstep.png")
 	for i in range(7): benches.update_figures(1.0 / 60.0)
 	await shot(cam, Vector3(-w + 4.0, 2.4, 8.5), Vector3(-w - 1.4, 0.8, 4.6), 50, "/tmp/hawkey-bench-walk1.png")
-	for i in range(30): benches.update_figures(1.0 / 60.0)
+	# Turning round to face the ice mid-walk: the swinging skate lands on a
+	# world spot (no whip round with the body).
+	for i in range(16): benches.update_figures(1.0 / 60.0)
+	await shot(cam, Vector3(-w + 0.7, 2.5, 7.2), Vector3(-w - 1.0, 0.25, 4.9), 50, "/tmp/hawkey-bench-walkturn.png")
+	for i in range(14): benches.update_figures(1.0 / 60.0)
 	await shot(cam, Vector3(-w + 4.0, 2.4, 8.5), Vector3(-w - 1.4, 0.8, 4.6), 50, "/tmp/hawkey-bench-walk2.png")
 	# Stopped in front of the seat: the closing step (second skate coming in).
 	for i in range(29): benches.update_figures(1.0 / 60.0)

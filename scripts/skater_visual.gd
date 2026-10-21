@@ -181,6 +181,19 @@ const WALK_WIDTH := 0.13
 ## even while he turns and curves.
 var walk_plants: Array = [null,null]
 var walk_lift_from: Array = [Vector3.ZERO,Vector3.ZERO]
+## World spot each swinging skate lands on (picked at lift-off, null while
+## planted), and the body turn while walking (rig yaw per radian of
+## walk_phase, smoothed) the landing is aimed ahead by (at most
+## WALK_TURN_LEAD_MAX rad).
+var walk_land: Array = [null,null]
+var _walk_land_w: Array = [0.0,0.0]
+## Turn rate (rad of yaw per rad of walk_phase) at which a swing fully lands
+## on its world spot instead of the rig-space target.
+const WALK_TURN_WORLD := 0.15
+var _walk_turn_rate := 0.0
+var _walk_last_yaw := 0.0
+var _walk_last_phase := -1.0
+const WALK_TURN_LEAD_MAX := 1.2
 ## Closing steps (0..1) once the walk has stopped (walk_phase frozen, body
 ## still, walk_amount still 1): each skate that is not already where it stands
 ## lifts and sets down in its standing spot, one after the other (a skate left
@@ -196,6 +209,9 @@ var _walk_fresh: Array = [true,true]
 func walk_reset() -> void:
 	walk_phase = 0.0
 	walk_plants = [null,null]
+	walk_land = [null,null]
+	_walk_turn_rate = 0.0
+	_walk_last_phase = -1.0
 	walk_close = 0.0
 	_closing = false
 	_walk_fresh = [true,true]
@@ -898,6 +914,13 @@ func pose(speed: float, turn: float) -> void:
 			var rise := cos(2.0*mid)
 			var close := clampf(walk_close,0.0,1.0)
 			var to_rig := rig.global_transform.affine_inverse()
+			var bz := rig.global_transform.basis.z
+			var yaw_now := atan2(bz.x,bz.z)
+			if _walk_last_phase >= 0.0 and walk_phase-_walk_last_phase > 0.0001:
+				var rate := wrapf(yaw_now-_walk_last_yaw,-PI,PI)/(walk_phase-_walk_last_phase)
+				_walk_turn_rate = lerpf(_walk_turn_rate,rate,0.35)
+			_walk_last_yaw = yaw_now
+			_walk_last_phase = walk_phase
 			if close > 0.0 and not _closing:
 				# Walk over: note where each skate is; one in the air (or else
 				# the one further from where it stands) steps in first.
@@ -930,14 +953,18 @@ func pose(speed: float, turn: float) -> void:
 					var side := 1.0 if i==0 else -1.0
 					var st := walk_step(walk_phase,i)
 					var f: Dictionary = stride[i]
-					var at := Vector3(side*WALK_WIDTH,0.115+float(st.lift),0.02)+dir*float(st.along)
+					var stance_at := Vector3(side*WALK_WIDTH,0.115,0.02)
+					var at := stance_at+Vector3(0,float(st.lift),0)+dir*float(st.along)
 					var target := (f.ankle as Vector3).lerp(at,walk)
 					if float(st.lift) == 0.0:
 						# His first step leaves from where the skate stood.
 						if walk_plants[i] == null and _walk_fresh[i]: walk_plants[i] = rig.global_transform*(f.ankle as Vector3)
 						# Planted: pinned where it touched down - from the very
 						# first step (it starts planted where he stood).
-						if walk_plants[i] == null: walk_plants[i] = rig.global_transform*target
+						if walk_plants[i] == null:
+							walk_plants[i] = rig.global_transform*target
+							if walk_land[i] != null: walk_plants[i] = (walk_plants[i] as Vector3).lerp(walk_land[i],float(_walk_land_w[i]))
+						walk_land[i] = null
 						var pinned: Vector3 = to_rig*(walk_plants[i] as Vector3)
 						pinned.y = target.y
 						f.ankle = pinned
@@ -950,7 +977,21 @@ func pose(speed: float, turn: float) -> void:
 						# (Leaves from where it was planted in the world, so it does
 						# not drag along the floor with the body as it lifts.)
 						var from: Vector3 = to_rig*(walk_lift_from[i] as Vector3)
-						f.ankle = from.lerp(target,smoothstep(0.0,1.0,w))
+						# Lands on a world spot picked at lift-off: where the stance
+						# will want it when he gets there (the body's travel and turn
+						# carried forward). A rig-space target would swing round with
+						# the body as he turns to face the ice and whip the skate.
+						if walk_land[i] == null:
+							var left := (1.0-w)*(1.0-WALK_STANCE)
+							var lead := clampf(_walk_turn_rate*left*TAU,-WALK_TURN_LEAD_MAX,WALK_TURN_LEAD_MAX)
+							var land_at := Vector3(side*WALK_WIDTH,0.115,0.02).rotated(Vector3.UP,lead)+dir.rotated(Vector3.UP,lead)*(WALK_CYCLE*WALK_STANCE*0.5)
+							walk_land[i] = rig.global_transform*land_at+rig.global_transform.basis*dir*(left*WALK_CYCLE)
+							# (Walking straight, the rig-space target is already steady
+							# and lets the first step ease out with the body; the world
+							# spot takes over as he turns.)
+							_walk_land_w[i] = clampf(absf(_walk_turn_rate)/WALK_TURN_WORLD,0.0,1.0)*walk
+						var land: Vector3 = to_rig*(walk_land[i] as Vector3)
+						f.ankle = from.lerp(target.lerp(land,float(_walk_land_w[i])),smoothstep(0.0,1.0,w))
 						f.ankle.y = target.y
 					for key in ["yaw","pitch","edge","ext","lift"]: f[key] = float(f[key])*(1.0-walk)
 					_walk_ankle[i] = f.ankle
