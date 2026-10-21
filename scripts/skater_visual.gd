@@ -176,14 +176,33 @@ const WALK_STANCE := 0.62
 const WALK_LIFT := 0.075
 const WALK_WIDTH := 0.13
 ## World spot each planted skate is pinned to (null in the swing), and where
-## (rig space) it lifted off from, so a skate never glides over the floor -
+## (world) it lifted off from, so a skate never glides over the floor -
 ## even while he turns and curves.
 var walk_plants: Array = [null,null]
 var walk_lift_from: Array = [Vector3.ZERO,Vector3.ZERO]
+## Closing steps (0..1) once the walk has stopped (walk_phase frozen, body
+## still, walk_amount still 1): each skate that is not already where it stands
+## lifts and sets down in its standing spot, one after the other (a skate left
+## in the air goes first), so the walk ends on two planted skates in the
+## standing stance instead of sliding them there.
+var walk_close := 0.0
+var _close_from: Array = [Vector3.ZERO,Vector3.ZERO]
+var _close_first := 0
+var _closing := false
+var _walk_ankle: Array = [Vector3.ZERO,Vector3.ZERO]
+var _walk_fresh: Array = [true,true]
 
 func walk_reset() -> void:
 	walk_phase = 0.0
 	walk_plants = [null,null]
+	walk_close = 0.0
+	_closing = false
+	_walk_fresh = [true,true]
+
+## Closing step for skate `i`: 0..1 progress at walk_close `c` (first skate
+## over the first half, the other over the second).
+static func close_step(c: float, first: bool) -> float:
+	return clampf(c*2.0 if first else c*2.0-1.0,0.0,1.0)
 ## Hip joint drop from the standing rest pose to sitting on a 0.48 m seat
 ## (hip ~0.58 m up, 0.17 m behind the figure origin at the seat's front edge).
 const SEAT_DROP := Vector3(0,-0.38,-0.17)
@@ -882,30 +901,65 @@ func pose(speed: float, turn: float) -> void:
 			var mid := fposmod(walk_phase/TAU-WALK_STANCE*0.5,1.0)*TAU
 			var shift := cos(mid)
 			var rise := cos(2.0*mid)
-			for i in range(2):
-				var side := 1.0 if i==0 else -1.0
-				var st := walk_step(walk_phase,i)
-				var f: Dictionary = stride[i]
-				var at := Vector3(side*WALK_WIDTH,0.115+float(st.lift),0.02)+dir*float(st.along)
-				var target := (f.ankle as Vector3).lerp(at,walk)
-				var to_rig := rig.global_transform.affine_inverse()
-				if float(st.lift) == 0.0:
-					# Planted: pinned where it touched down (blended back to the
-					# standing stance only as the walk fades out).
-					if walk_plants[i] == null: walk_plants[i] = rig.global_transform*target
-					var pinned: Vector3 = to_rig*(walk_plants[i] as Vector3)
-					pinned.y = target.y
-					f.ankle = target.lerp(pinned,walk)
-					walk_lift_from[i] = f.ankle
-				else:
-					# Swing: from where it lifted to its next landing spot.
-					walk_plants[i] = null
-					var w := float(st.swing)
-					var from: Vector3 = walk_lift_from[i]
-					f.ankle = from.lerp(target,smoothstep(0.0,0.3,w))
-					f.ankle.y = target.y
-				for key in ["yaw","pitch","edge","ext","lift"]: f[key] = float(f[key])*(1.0-walk)
-			drop += Vector3(shift*0.035,0.01*rise-0.01,0)*walk
+			var close := clampf(walk_close,0.0,1.0)
+			var to_rig := rig.global_transform.affine_inverse()
+			if close > 0.0 and not _closing:
+				# Walk over: note where each skate is; one in the air (or else
+				# the one further from where it stands) steps in first.
+				_closing = true
+				var far := [0.0,0.0]
+				for i in range(2):
+					var st := walk_step(walk_phase,i)
+					_close_from[i] = _walk_ankle[i]
+					far[i] = Vector2(_walk_ankle[i].x-stride[i].ankle.x,_walk_ankle[i].z-stride[i].ankle.z).length()+(10.0 if float(st.lift) > 0.0 else 0.0)
+				_close_first = 0 if far[0] >= far[1] else 1
+			if _closing:
+				for i in range(2):
+					var f: Dictionary = stride[i]
+					var stance: Vector3 = f.ankle
+					var from: Vector3 = _close_from[i]
+					var s := close_step(close,i == _close_first)
+					var gap := Vector2(from.x-stance.x,from.z-stance.z).length()
+					var e := smoothstep(0.0,1.0,s)
+					# Up before it moves over, over before it comes down.
+					f.ankle = from.lerp(stance,smoothstep(0.12,0.85,s))
+					f.ankle.y = lerpf(from.y,stance.y,e)
+					# Lifted over the step (lower for a short one); one that is
+					# already in place just settles.
+					if gap > 0.01: f.ankle.y += WALK_LIFT*clampf(gap/0.12,0.4,1.0)*sin(PI*e)
+					for key in ["yaw","pitch","edge","ext","lift"]: f[key] = float(f[key])*(1.0-walk*(1.0-e))
+				var settle := 1.0-smoothstep(0.0,1.0,close)
+				drop += Vector3(shift*0.035,0.01*rise-0.01,0)*walk*settle
+			else:
+				for i in range(2):
+					var side := 1.0 if i==0 else -1.0
+					var st := walk_step(walk_phase,i)
+					var f: Dictionary = stride[i]
+					var at := Vector3(side*WALK_WIDTH,0.115+float(st.lift),0.02)+dir*float(st.along)
+					var target := (f.ankle as Vector3).lerp(at,walk)
+					if float(st.lift) == 0.0:
+						# His first step leaves from where the skate stood.
+						if walk_plants[i] == null and _walk_fresh[i]: walk_plants[i] = rig.global_transform*(f.ankle as Vector3)
+						# Planted: pinned where it touched down - from the very
+						# first step (it starts planted where he stood).
+						if walk_plants[i] == null: walk_plants[i] = rig.global_transform*target
+						var pinned: Vector3 = to_rig*(walk_plants[i] as Vector3)
+						pinned.y = target.y
+						f.ankle = pinned
+						walk_lift_from[i] = walk_plants[i]
+					else:
+						# Swing: from where it lifted to its next landing spot.
+						walk_plants[i] = null
+						_walk_fresh[i] = false
+						var w := float(st.swing)
+						# (Leaves from where it was planted in the world, so it does
+						# not drag along the floor with the body as it lifts.)
+						var from: Vector3 = to_rig*(walk_lift_from[i] as Vector3)
+						f.ankle = from.lerp(target,smoothstep(0.0,1.0,w))
+						f.ankle.y = target.y
+					for key in ["yaw","pitch","edge","ext","lift"]: f[key] = float(f[key])*(1.0-walk)
+					_walk_ankle[i] = f.ankle
+				drop += Vector3(shift*0.035,0.01*rise-0.01,0)*walk
 	var cap := {}
 	if mocap_weight>0 and not mocap.is_empty():
 		cap = Mocap.sample(mocap,mocap_time,mocap_loop)

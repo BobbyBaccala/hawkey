@@ -53,6 +53,9 @@ const SEAT_RETURN := 0.5
 ## by side instead of walking through each other.
 const WALK_SPEED := 1.3
 const WALK_MIN := 0.6
+## When he stops in front of the seat he closes his stance with a step or two
+## (skater_visual.gd walk_close) over CLOSE_TIME s before he sits.
+const CLOSE_TIME := 0.5
 const PASS_GAP := 0.85
 
 ## Team 0 (home) bench and box at z > 0, team 1 at z < 0: each bench is at the
@@ -223,11 +226,14 @@ func _place_walker(rig: Dictionary) -> void:
 	p.y = 0.0
 	var before: Vector3 = v.global_position
 	var fresh: bool = rig.walk_t <= 0.0
+	# Stopped: closing steps into the standing stance (phase frozen).
+	v.walk_close = clampf((rig.walk_t - rig.walk_time) / CLOSE_TIME, 0.0, 1.0)
 	v.position = p
 	v.rotation.y = lerp_angle(rig.walk_yaw, PI, smoothstep(0.35, 0.95, u))
 	# Step cycle (skater_visual.gd walk_step()): the phase advances with the
-	# distance walked so a planted skate stays put on the floor; steps fade in
-	# as he sets off and out as he stops in front of the seat.
+	# distance walked so a planted skate stays put on the floor; he sets off
+	# from both skates planted where he stood, and when he stops in front of the
+	# seat the closing steps bring them back side by side (no sliding).
 	var moved: Vector3 = v.global_position - before
 	moved.y = 0.0
 	if fresh:
@@ -237,7 +243,7 @@ func _place_walker(rig: Dictionary) -> void:
 	if moved.length() > 0.0005:
 		var d: Vector3 = v.rig.global_transform.basis.inverse() * moved
 		v.walk_dir = Vector2(d.x, d.z).normalized()
-	v.walk_amount = smoothstep(0.0, 0.1, u) * (1.0 - smoothstep(0.9, 1.0, u))
+	v.walk_amount = smoothstep(0.0, 0.1, u)
 
 func is_walking(rig: Dictionary) -> bool:
 	return rig.walk_t >= 0.0
@@ -283,10 +289,11 @@ func update_figures(delta: float) -> void:
 			# Walking from the landing to his seat: on his feet until he gets there.
 			rig.walk_t += delta
 			_place_walker(rig)
-			if rig.walk_t >= rig.walk_time:
+			if rig.walk_t >= rig.walk_time + CLOSE_TIME:
 				rig.walk_t = -1.0
 				rig.visual.rotation.y = PI
 				rig.visual.walk_amount = 0.0
+				rig.visual.walk_reset()
 			else:
 				# Re-posed every frame for the step cycle (outside POSE_BUDGET:
 				# at most one walker per bench at a time).

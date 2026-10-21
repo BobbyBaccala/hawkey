@@ -281,7 +281,7 @@ func check_seat_walk(benches, z0: float) -> void:
 	var prev: Vector3 = v.helmet.global_position
 	var max_step := 0.0
 	var min_pass := INF
-	var frames := int(rig.walk_time * 60.0) + 2
+	var frames := int((rig.walk_time + Benches.CLOSE_TIME) * 60.0) + 2
 	# Slice 8 step cycle: skates lift and plant alternately; a planted skate
 	# stays put on the floor (no gliding over the rubber).
 	var floor_y: float = v.skates[0].global_position.y
@@ -293,6 +293,13 @@ func check_seat_walk(benches, z0: float) -> void:
 	var slip := 0.0
 	var touchdown := 0.0
 	var was_pinned := [false, false]
+	# Slice 9: from the first frame to the last (setting off, stopping and the
+	# closing steps) a skate on the floor never slides; it only moves lifted.
+	var floor_slide := 0.0
+	var was_down := [0, 0]
+	var foot_jump := 0.0
+	var closing_lifts := 0
+	var close_lifted := false
 	for i in range(frames):
 		benches.update_figures(1.0 / 60.0)
 		var h: Vector3 = v.helmet.global_position
@@ -300,18 +307,27 @@ func check_seat_walk(benches, z0: float) -> void:
 		prev = h
 		var q: Vector3 = v.global_position
 		q.y = 0
-		if i < frames / 2:
+		if i < int(rig.walk_time * 30.0):
 			var seg := Geometry3D.get_closest_point_to_segment(q, Vector3(fresh_a.x, 0, fresh_a.z), fresh_b)
 			min_pass = minf(min_pass, q.distance_to(seg))
 		for k in range(2):
 			var foot: Vector3 = v.skates[k].global_position
 			if foot.x > -Arena.HALF_WIDTH - 0.2 or foot.x < -Arena.HALF_WIDTH - Benches.DEPTH + 0.15: max_step = INF
 			var up: float = foot.y - floor_y
+			var down := up < 0.004
+			var moved: Vector3 = foot - last_foot[k]
+			# (Down for 2+ frames: the touchdown frame itself is the swing landing.)
+			if down and was_down[k] >= 2: floor_slide = maxf(floor_slide, Vector2(moved.x, moved.z).length())
+			was_down[k] = was_down[k] + 1 if down else 0
+			# (Mid-walk swings are fast as he turns round; check the set-off, stop and hand-over.)
+			if rig.walk_t < rig.walk_time * 0.2 or v.walk_close > 0.0 or not benches.is_walking(rig): foot_jump = maxf(foot_jump, moved.length())
+			if v.walk_close > 0.0 and up > 0.02 and not close_lifted: closing_lifts += 1
+			if v.walk_close > 0.0: close_lifted = up > 0.02 if k == 1 else close_lifted or up > 0.02
 			max_lift = maxf(max_lift, up)
 			var is_up := up > 0.02
 			if is_up and not lifted[k]: lifts[k] += 1
 			lifted[k] = is_up
-			var pinned: bool = v.walk_plants[k] != null and v.walk_amount > 0.99 and benches.is_walking(rig)
+			var pinned: bool = v.walk_plants[k] != null and v.walk_amount > 0.99 and v.walk_close == 0.0 and benches.is_walking(rig)
 			var d: Vector3 = foot - last_foot[k]
 			if pinned and was_pinned[k]: slip = maxf(slip, Vector2(d.x, d.z).length())
 			elif pinned: touchdown = maxf(touchdown, Vector2(d.x, d.z).length())
@@ -331,6 +347,21 @@ func check_seat_walk(benches, z0: float) -> void:
 	check(Vector2(p1.x - seat_spot.x, p1.z - seat_spot.z).length() < 0.05, "and stands in front of the free seat")
 	var f1: Vector3 = -v.global_transform.basis.z
 	check(f1.dot(Vector3(1, 0, 0)) > 0.9, "turned round to face the ice (%.2f)" % f1.dot(Vector3(1, 0, 0)))
+	check(floor_slide < 0.002, "No skate slides on the floor setting off, stopping or closing (max %.4f m/frame)" % floor_slide)
+	check(foot_jump < 0.03, "Skates never jump setting off or stopping (max %.3f m/frame)" % foot_jump)
+	check(closing_lifts >= 1, "He closes his stance with a step when he stops (%d)" % closing_lifts)
+	var sk0: Vector3 = v.skates[0].global_position
+	var sk1: Vector3 = v.skates[1].global_position
+	check(absf(sk0.y - floor_y) < 0.004 and absf(sk1.y - floor_y) < 0.004, "and ends on both skates")
+	# Sitting down from there moves the skates smoothly (no snap from the walk).
+	var sit_jump := 0.0
+	var lf: Array = [sk0, sk1]
+	for i in range(30):
+		benches.update_figures(1.0 / 60.0)
+		for k in range(2):
+			sit_jump = maxf(sit_jump, v.skates[k].global_position.distance_to(lf[k]))
+			lf[k] = v.skates[k].global_position
+	check(sit_jump < 0.03, "No skate snap as the walk hands over to sitting (%.3f m/frame)" % sit_jump)
 	for i in range(120): benches.update_figures(1.0 / 60.0)
 	seat_head = v.helmet.global_position.y
 	check(seat_head < 1.25 and benches.rising_count(0) == 0, "then sits down (head %.2f)" % seat_head)
