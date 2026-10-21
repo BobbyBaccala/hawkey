@@ -115,3 +115,5 @@ and attribution notes in [ASSETS.md](docs/ASSETS.md) and the
 and are not redistributed; see [motion capture](docs/MOTION_CAPTURE.md).
 A project-wide redistribution license has not yet been selected. Adding an asset
 or reference does not replace the need to preserve its own applicable notices.
+
+Team coaching: [selectable on-ice systems and verification](docs/TEAM_TACTICS.md).

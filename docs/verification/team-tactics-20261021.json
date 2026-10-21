@@ -1,0 +1,487 @@
+{
+  "date": "2026-10-21",
+  "source_commit": "c39da69470e27503013f86a11aa9b19708a34939",
+  "base": "44fe8393e70c6b3458f428e58929c46cd693c705",
+  "preserved_claude": "85fd7918d03287db327258b10e46f8a804c9ba23",
+  "scope": [
+    "Six independent tactical categories per team; 18 options",
+    "Actual zone/forecheck/breakout/PP/PK targets through shared skating",
+    "Legal manpower, bench exclusions, onside entry support, reduced-skater safety",
+    "Lane-aware physical passes, shots and shorthanded clear decisions",
+    "Native pause coaching controls; process-local preferences only"
+  ],
+  "broad_regression": {
+    "godot": "4.6.3.stable.official.7d41c59c4",
+    "counts": {
+      "passed": 52,
+      "failed": 0,
+      "skipped": 1
+    },
+    "checks": [
+      {
+        "name": "engine_version",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.028,
+        "log": "engine_version.log"
+      },
+      {
+        "name": "import",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 4.903,
+        "log": "import.log"
+      },
+      {
+        "name": "test_accessibility",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 8.536,
+        "log": "test_accessibility.log"
+      },
+      {
+        "name": "test_animation",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.406,
+        "log": "test_animation.log"
+      },
+      {
+        "name": "test_benches",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 16.465,
+        "log": "test_benches.log"
+      },
+      {
+        "name": "test_board_hop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.051,
+        "log": "test_board_hop.log"
+      },
+      {
+        "name": "test_boards",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 211.276,
+        "log": "test_boards.log"
+      },
+      {
+        "name": "test_clipping",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 5.017,
+        "log": "test_clipping.log"
+      },
+      {
+        "name": "test_controller",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 8.185,
+        "log": "test_controller.log"
+      },
+      {
+        "name": "test_controls",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 7.996,
+        "log": "test_controls.log"
+      },
+      {
+        "name": "test_event_modes",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 21.468,
+        "log": "test_event_modes.log"
+      },
+      {
+        "name": "test_gear_graphics",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.438,
+        "log": "test_gear_graphics.log"
+      },
+      {
+        "name": "test_gm_checkpoint",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 25.967,
+        "log": "test_gm_checkpoint.log"
+      },
+      {
+        "name": "test_gm_management",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 77.309,
+        "log": "test_gm_management.log"
+      },
+      {
+        "name": "test_gm_navigation",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 102.066,
+        "log": "test_gm_navigation.log"
+      },
+      {
+        "name": "test_gm_rosters",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 4.556,
+        "log": "test_gm_rosters.log"
+      },
+      {
+        "name": "test_gm_scouting",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 34.737,
+        "log": "test_gm_scouting.log"
+      },
+      {
+        "name": "test_gm_season",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 17.136,
+        "log": "test_gm_season.log"
+      },
+      {
+        "name": "test_goal_celebration",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 9.268,
+        "log": "test_goal_celebration.log"
+      },
+      {
+        "name": "test_goal_net",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 9.198,
+        "log": "test_goal_net.log"
+      },
+      {
+        "name": "test_goalie_gear",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 10.897,
+        "log": "test_goalie_gear.log"
+      },
+      {
+        "name": "test_goalie_saves",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.465,
+        "log": "test_goalie_saves.log"
+      },
+      {
+        "name": "test_helmet_arm_fit",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.746,
+        "log": "test_helmet_arm_fit.log"
+      },
+      {
+        "name": "test_helmet_retention",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.671,
+        "log": "test_helmet_retention.log"
+      },
+      {
+        "name": "test_helmet_surface",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.559,
+        "log": "test_helmet_surface.log"
+      },
+      {
+        "name": "test_hockey_audio",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 8.029,
+        "log": "test_hockey_audio.log"
+      },
+      {
+        "name": "test_hockey_stop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.51,
+        "log": "test_hockey_stop.log"
+      },
+      {
+        "name": "test_ice",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 15.933,
+        "log": "test_ice.log"
+      },
+      {
+        "name": "test_jersey_collar",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.755,
+        "log": "test_jersey_collar.log"
+      },
+      {
+        "name": "test_kit_geometry",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.042,
+        "log": "test_kit_geometry.log"
+      },
+      {
+        "name": "test_kit_materials",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.13,
+        "log": "test_kit_materials.log"
+      },
+      {
+        "name": "test_knockout_cup",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.893,
+        "log": "test_knockout_cup.log"
+      },
+      {
+        "name": "test_lab",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.335,
+        "log": "test_lab.log"
+      },
+      {
+        "name": "test_lighting",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.968,
+        "log": "test_lighting.log"
+      },
+      {
+        "name": "test_match",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 13.773,
+        "log": "test_match.log"
+      },
+      {
+        "name": "test_match_loop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 79.801,
+        "log": "test_match_loop.log"
+      },
+      {
+        "name": "test_match_state",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.283,
+        "log": "test_match_state.log"
+      },
+      {
+        "name": "test_mocap",
+        "status": "skipped",
+        "reason": "Optional local motion-capture clips are absent",
+        "returncode": 0,
+        "seconds": 0.271,
+        "log": "test_mocap.log"
+      },
+      {
+        "name": "test_net_shooting",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 11.168,
+        "log": "test_net_shooting.log"
+      },
+      {
+        "name": "test_overtime_shootout",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 17.955,
+        "log": "test_overtime_shootout.log"
+      },
+      {
+        "name": "test_play_now",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 53.953,
+        "log": "test_play_now.log"
+      },
+      {
+        "name": "test_player_surfaces",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.19,
+        "log": "test_player_surfaces.log"
+      },
+      {
+        "name": "test_puck_flight",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 8.259,
+        "log": "test_puck_flight.log"
+      },
+      {
+        "name": "test_render_settings",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 7.915,
+        "log": "test_render_settings.log"
+      },
+      {
+        "name": "test_roster_database",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.269,
+        "log": "test_roster_database.log"
+      },
+      {
+        "name": "test_save_store",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.274,
+        "log": "test_save_store.log"
+      },
+      {
+        "name": "test_simulation",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.647,
+        "log": "test_simulation.log"
+      },
+      {
+        "name": "test_skate_stick",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.262,
+        "log": "test_skate_stick.log"
+      },
+      {
+        "name": "test_stride",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.804,
+        "log": "test_stride.log"
+      },
+      {
+        "name": "test_tactics_match",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 9.319,
+        "log": "test_tactics_match.log"
+      },
+      {
+        "name": "test_team_tactics",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.548,
+        "log": "test_team_tactics.log"
+      },
+      {
+        "name": "test_world_database",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 26.787,
+        "log": "test_world_database.log"
+      },
+      {
+        "name": "python",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.96,
+        "log": "python.log"
+      }
+    ],
+    "scope": "Headless regressions; not GPU, physical controller, human feel or release approval"
+  },
+  "run_order": "Broad suite started during development. Final forecheck support/reduced-skater/UI refinements were subsequently checked by final pure and match suites (including breakout pass/PK clear). The broad runner also ran those final two suite files, confirming 494 and 15 checks. Earlier broad suites are not claimed as an atomic final-tree rerun.",
+  "native_suites_passed": 49,
+  "python_tests": 31,
+  "final_new_tests": {
+    "test_team_tactics": {
+      "checks": 494,
+      "failures": 0,
+      "log": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nTeam tactics: 494 checks; 0 failures\n"
+    },
+    "test_tactics_match": {
+      "checks": 15,
+      "failures": 0,
+      "log": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nTactics match: 15 checks; 0 failures\n"
+    }
+  },
+  "capture": {
+    "adapter": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "engine": "4.6.2-stable (official)",
+    "source": "Direct Godot viewport JPEGs. Real match pause coaching UI; special-teams image explicitly staged at actual planner targets, with temporary inspection labels. No photo manipulation."
+  },
+  "images": {
+    "tactics-coaching-20261021.jpg": {
+      "sha256": "6efa8620521a5432f0ea50ea27f6c59c353937e3386a56f892910197aa7345dc",
+      "bytes": 292163
+    },
+    "tactics-special-teams-20261021.jpg": {
+      "sha256": "053360bd60c22ae78067a27f4a4d83bc5bd62f397688a9d6392c2d95df9288b0",
+      "bytes": 503334
+    }
+  },
+  "remaining": [
+    "Human/controller timing and balance tuning",
+    "Continuous cycle rotations, set plays and tactical hysteresis",
+    "Opponent adaptation and coach/club profiles",
+    "Persistent GM tactical plans; aggregate simulation does not use planner",
+    "Hardware performance and Forward+ verification"
+  ],
+  "release": false,
+  "plugins_required": false
+}

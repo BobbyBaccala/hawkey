@@ -205,3 +205,12 @@ See GAME_MODES.md for actual scope, independent save safety and remaining Career
 GM postseason, online and structured-drill gaps. These are functional bounded modes,
 not completion of all AAA mode requirements. Source 57946b9; Claude through85fd791
 preserved. Evidence/captures: verification/collar-cup-20261021.json.
+
+### On-ice tactical AI — 2026-10-21
+
+Implemented six selectable strategy categories (18 options) in native match pause
+UI. Zone support/coverage, forecheck layers, breakout outlets, PP/PK formations,
+onside entries and lane-aware physical puck decisions now run in match.gd.
+See TEAM_TACTICS.md. Applies to played matches, not aggregate simulations. Persisted
+GM coach plans, continuous rotations/adaptation and human/controller tuning remain
+open; do not mark team tactics or AAA AI complete.

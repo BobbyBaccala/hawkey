@@ -313,3 +313,24 @@ Broad local47native suites and31Python pass, optional mocap skip; post-merge8 an
 final material-profile5 suites pass, plus actual GPU positive/negative checks.
 Verification/capture provenance and initial fixes: verification/collar-cup-20261021.json.
 No PR merge, game release, hardware FPS or all-modes-complete claim.
+
+## Advanced tactical AI — active Codex ownership
+
+Owner requests functional team strategies. Codex owns new pure tactical planner,
+match.gd update_team_ai/pass decisions and narrow broadcast_hud.gd pause coaching
+controls. Preserve bench/hop/visual code; no equipment or animation edits. Both
+teams use the same physical skating/puck constraints. Strategy choices initially
+persist across rematches in process, not in GM saves. Evidence follows below.
+
+Implemented source c39da69. Native pause controls independently set six categories
+for either team; planner feeds existing skating and physical puck release. Actual
+legal manpower activates special teams (bench transit does not). No changes to
+Claude bench/hop/visual blocks. Two new suites pass 494 pure planner checks and 15
+native match checks, including actual outlet passing/PK clearing. JPEGs are direct
+Godot 4.6.2 diagnostic viewport captures; formation view explicitly stages actual
+planner stations. Production/testing remain 4.6.3. Remaining scope/evidence in
+TEAM_TACTICS.md; CX-20261021-009 outgoing, no reply inferred.
+Broad regression completed: 52 passed, 0 failed, 1 optional mocap skip (49 native
+suites plus engine/import/Python checks; 31 Python unit tests). Final new suites
+report 494 and 15 checks. Timing of final refinements versus broad checks is recorded
+explicitly in verification/team-tactics-20261021.json.

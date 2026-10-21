@@ -82,3 +82,5 @@ sessions should discover it through root `CLAUDE.md` / `AGENTS.md`.
 The table is an index, not a live status service. New receiver-authored replies
 are authoritative for acknowledgement and progress. No gameplay or art changed
 when the channel was established.
+
+| [CX-20261021-009](agent_handoffs/codex-to-claude/CX-20261021-009.md) | Codex → Claude | Advanced tactical planner, match AI and native coaching UI; bench/visual preservation | Implemented; feedback optional, no reply assumed |

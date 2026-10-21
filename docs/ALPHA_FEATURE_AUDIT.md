@@ -24,7 +24,7 @@ Definitions: Missing = no implementation identified; Placeholder = stand-in; Par
 | Overtime/shootout | Validated (shared HL prototype preset) | Sudden-death 3v3 OT, playable three-round/paired sudden-death shootout; see CONTROLS_AND_TIEBREAKS.md | Rules/phase flow/HUD | League-specific tie resolution and final result exactly once | Tied regulation, sudden death, shootout, playoff variants |
 | Empty net/timeouts/late tactics | Missing | No management flow identified | Goalie substitution and coach policy | Legal pull/return, timeout limits, score/time-aware risk | Late-game and delayed-penalty cases |
 | Match statistics/results | Partial | Score, shots and simple event displays | Event ledger and player IDs | Accurate player/team stats, period summary, final report/rematch | Reconcile event ledger, score and displayed totals |
-| Team tactics/difficulty | Partial | Primary pursuer, support lanes and simple pass/shot choices | Tactical state and debug intentions | Distinct forecheck/breakout/coverage/PP/PK decisions within fair physics | Formation scenarios, assignments, difficulty comparisons |
+| Team tactics/difficulty | Partial | Selectable zone/forecheck/breakout/PP/PK planner and lane-aware carrier decisions | Sustained rotations, adaptation and gameplay tuning | Distinct forecheck/breakout/coverage/PP/PK decisions within fair physics | Formation scenarios, assignments, difficulty comparisons |
 | Player ratings/tendencies | Placeholder | Loaded fictional speed estimates drive skating; acceleration/agility and goalie model integration/calibration remain open | Roster loader and rating model | Attributes affect measured outcomes; uncertainty transparent | Attribute isolation and held-out calibration tests |
 | Signature abilities | Missing | No original trait system identified | Ratings/event hooks | Explicit trigger/effect/limits/counterplay/UI; no guaranteed outcomes | Trigger boundaries, counterplay and balance tests |
 | Roster data/import | Validated (original league-world data/exhibition slice) | Version-2 HL world: 33 leagues, 643 teams, 14,745 players; complete rosters and reference/age/rights validation; league-filtered Play Now. Version-1 fixture retained; see HL_WORLD.md for final checks | Native validation and complete fixture | Stable IDs and tagged identities/estimates reach match without broken references | Invalid imports plus native end-to-end roster selection |
@@ -193,3 +193,10 @@ implements GM playoffs, Career or online play; those remain missing/partial as
 above. Equipment art remains **Partial**: collar/neck guard fit and the matching
 cloth trim shader are repaired, not release-ready anatomy. See GAME_MODES.md and
 verification/collar-cup-20261021.json for exact checks and genuine JPEG provenance.
+
+## Team tactics checkpoint — 2026-10-21
+
+Six selectable tactical categories now affect actual on-ice AI targets and puck
+decisions. See TEAM_TACTICS.md for scope, screenshots, evidence and remaining
+advanced behavior. This improves the partial tactics row; it does not complete
+AAA-level AI, simulator tactics or persistent GM coaching.
