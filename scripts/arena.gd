@@ -39,6 +39,32 @@ var emblem_wear: MeshInstance3D
 var _paint_by_color := {}
 var _paint_shader: Shader
 var _wear_shader: Shader
+## Players mirrored in the ice (scripts/ice_reflection.gd): a mirror-camera
+## render of the skaters, sampled at the mirrored screen position with a soft
+## vertical smear, Fresnel-weighted and weaker where the ice is cut. Returns
+## (radiance to add, how much of the diffuse ice it replaces). Shared by the
+## ice sheet and the painted markings so the mirror image runs across lines.
+const REFLECT_COMMON := """
+uniform sampler2D reflection_tex:source_color,filter_linear,repeat_disable,hint_default_transparent;
+uniform float reflection_strength = 0.0;
+uniform float reflection_blur = 0.003;
+// The mirror image is of undersides that the real ice sees lit by its own
+// bounce; brighten it so kit colours read in the smear instead of grey.
+uniform float reflection_gain = 3.0;
+vec4 ice_reflection(vec2 suv, vec3 n, vec3 v, float cut, float fresh_){
+	if(reflection_strength<=0.0) return vec4(0.0);
+	vec2 ruv=vec2(1.0-suv.x,suv.y);
+	float b=reflection_blur;
+	vec4 r=texture(reflection_tex,ruv)*0.30;
+	r+=texture(reflection_tex,ruv+vec2(0.0,b))*0.22;
+	r+=texture(reflection_tex,ruv-vec2(0.0,b))*0.22;
+	r+=texture(reflection_tex,ruv+vec2(b*0.5,b*2.4))*0.13;
+	r+=texture(reflection_tex,ruv-vec2(b*0.5,b*2.4))*0.13;
+	float fres=0.35+0.65*pow(1.0-clamp(dot(n,v),0.0,1.0),3.0);
+	float k=reflection_strength*fres*(1.0-0.75*cut)*(0.85+0.3*fresh_);
+	return vec4(r.rgb*k*reflection_gain,r.a*k);
+}
+"""
 ## Shared by the paint and emblem-wear shaders: same channels and response as
 ## the ice shader (R = scratches, G = wear haze), mapped from world x/z.
 const CUT_COMMON := """
@@ -66,7 +92,7 @@ func paint(color: Color) -> ShaderMaterial:
 	if _paint_by_color.has(key): return _paint_by_color[key]
 	if _paint_shader == null:
 		_paint_shader = Shader.new()
-		_paint_shader.code = "shader_type spatial; render_mode cull_disabled;\nuniform vec4 paint_color:source_color;" + CUT_COMMON + """
+		_paint_shader.code = "shader_type spatial; render_mode cull_disabled;\nuniform vec4 paint_color:source_color;" + CUT_COMMON + REFLECT_COMMON + """
 void fragment(){
 	vec2 cm=texture(cut_tex,rink_uv).rg;
 	float scratch=clamp(cm.r*1.6,0.0,1.0);
@@ -74,7 +100,9 @@ void fragment(){
 	float cut=clamp(scratch+haze*0.8,0.0,1.0);
 	vec3 a=mix(paint_color.rgb,FROST,haze*0.55);
 	a=mix(a,FROST*0.78,clamp(scratch*0.85,0.0,0.8));
-	ALBEDO=a*(1.0-0.06*fresh);
+	vec4 refl=ice_reflection(SCREEN_UV,NORMAL,VIEW,cut,fresh);
+	ALBEDO=a*(1.0-0.06*fresh)*(1.0-refl.a);
+	EMISSION=refl.rgb;
 	ROUGHNESS=clamp(mix(0.22,0.6,cut)-0.17*fresh,0.05,1.0);
 	SPECULAR=mix(0.5,0.3,haze)+0.25*fresh;
 }"""
@@ -105,6 +133,14 @@ void fragment(){
 	m.render_priority = 1   # always over the Label3D text at the same depth
 	paint_materials.append(m)
 	return m
+
+## Hands the skaters' mirror image (ice_reflection.gd) to the ice and the
+## painted markings.
+func set_reflection(texture: Texture2D, strength: float, blur: float) -> void:
+	for m in [ice_surface_material] + paint_materials:
+		m.set_shader_parameter("reflection_tex", texture)
+		m.set_shader_parameter("reflection_strength", strength)
+		m.set_shader_parameter("reflection_blur", blur)
 
 ## Hands the skate-cut map to the ice and every painted marking.
 func set_cut_map(texture: Texture2D) -> void:
@@ -382,6 +418,7 @@ uniform sampler2D cut_tex:filter_linear_mipmap,repeat_disable,hint_default_black
 uniform float fresh = 0.0;
 uniform vec2 half_size = vec2(12.954, 30.0);
 uniform float corner_radius = 8.5344;
+""" + REFLECT_COMMON + """
 float board_distance(vec2 p){vec2 inner=half_size-vec2(corner_radius);vec2 d=abs(p)-inner;return corner_radius-(length(max(d,vec2(0.0)))+min(max(d.x,d.y),0.0));}
 void fragment(){
 	vec3 tex=texture(ice_tex,UV*vec2(2.6,6.0)).rgb;float grain=dot(tex,vec3(0.3,0.59,0.11));
@@ -398,6 +435,9 @@ void fragment(){
 	albedo=mix(albedo,vec3(0.78,0.74,0.55),dasher*0.32*mirror);
 	albedo=mix(albedo,vec3(0.30,0.35,0.46),stands*0.30*mirror);
 	ALBEDO=albedo*(1.0-0.06*fresh);
+	vec4 refl=ice_reflection(SCREEN_UV,NORMAL,VIEW,cut,fresh);
+	ALBEDO*=1.0-refl.a;
+	EMISSION=refl.rgb;
 	ROUGHNESS=clamp(mix(0.22,0.6,cut)-0.17*fresh,0.05,1.0);
 	SPECULAR=mix(0.5,0.3,haze)+0.25*fresh;
 }"""

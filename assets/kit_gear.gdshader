@@ -85,7 +85,7 @@ void fragment() {
 		strength = mix(strength, 0.5, trim);
 	}
 	vec3 on = normalize(obj_n);
-	vec4 t = kit_triplanar(detail_tex, obj_pos * detail_tiles, on, strength);
+	vec4 t = kit_triplanar(detail_tex, obj_pos * detail_tiles, on, strength * kit_detail_fade(VERTEX));
 	vec3 n = normalize((VIEW_MATRIX * vec4(MODEL_NORMAL_MATRIX * t.xyz, 0.0)).xyz);
 	// Supplied normals point outward; light the side facing the camera.
 	n = dot(n, VIEW) < -0.15 ? -n : n;
@@ -95,9 +95,13 @@ void fragment() {
 	float ndv = clamp(dot(n, VIEW), 0.0, 1.0);
 	float fres = pow(1.0 - ndv, 4.0);
 	col += (col + 0.03) * fres * sheen * 0.3;
-	ALBEDO = mix(col, col * 1.25, metal);
+	// Overhead arena key: lit tops, darker undersides (reads at distance).
+	vec3 wn = normalize((INV_VIEW_MATRIX * vec4(n, 0.0)).xyz);
+	float over = kit_overhead(wn);
+	ALBEDO = mix(col, col * 1.25, metal) * over;
+	AO = min(over, 1.0);
 	METALLIC = metal;
-	ROUGHNESS = mix(rough, 0.16, metal);
+	ROUGHNESS = kit_spec_aa(n, mix(rough, 0.16, metal));
 	SPECULAR = specular;
 	RIM = sheen * 0.35;
 	RIM_TINT = 0.8;

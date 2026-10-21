@@ -98,6 +98,10 @@ func _ready() -> void:
 	ice_marks.name = "IceMarks"
 	add_child(ice_marks)
 	arena.set_cut_map(ice_marks.texture)   # ice plus painted lines and emblem
+	# Skaters mirrored in the polished ice (scripts/ice_reflection.gd).
+	var reflection = preload("res://scripts/ice_reflection.gd").new()
+	add_child(reflection)
+	reflection.attach(arena, world.environment)
 	ice_marks.material = arena.ice_surface_material
 	ice_marks.paint_materials = arena.paint_materials
 	player = make_skater(Vector3(0,0,0),Color("#116c9e"),"17")
