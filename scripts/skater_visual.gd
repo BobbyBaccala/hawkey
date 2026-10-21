@@ -209,7 +209,7 @@ func _ready() -> void:
 		rig.add_child(sleeve)
 		cloth_sleeves.append(sleeve)
 		if not referee:
-			var pants := add_mesh(rig,Gear.pants_leg(side,kit,Color("#151c24")))
+			var pants := add_mesh(rig,Gear.pants_leg(side,kit,Color("#151c24"),0.0 if goalie else 1.0))
 			pant_legs.append(pants)
 			if not goalie:
 				socks.append(add_mesh(rig,Gear.sock(kit,Color("#e4e8ea"))))
@@ -320,57 +320,166 @@ func build_helmet() -> void:
 		var mask := add_mesh(helmet,Gear.goalie_mask(kit,accent))
 		mask.position = Vector3(0,-0.035,0.01)
 		return
-	var mesh := ImmediateMesh.new()
-	mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES,material(Color("#c6ced4") if goalie else Color("#132434"),0.27))
-	for row in range(10):
-		for column in range(32):
-			var vertices: Array[Vector3] = []
-			for ij in [Vector2(row,column),Vector2(row+1,column),Vector2(row+1,column+1),Vector2(row,column),Vector2(row+1,column+1),Vector2(row,column+1)]:
-				var a: float = ij.x / 10 * PI * 0.59
-				var b: float = ij.y / 32 * TAU
-				var normal := Vector3(sin(a)*cos(b),cos(a),sin(a)*sin(b))
-				mesh.surface_set_normal(normal)
-				mesh.surface_add_vertex(Vector3(normal.x*0.115,normal.y*0.13,normal.z*0.135))
-	mesh.surface_end()
-	var shell := MeshInstance3D.new()
-	shell.mesh = mesh
-	helmet.add_child(shell)
-	var visor := block(helmet,Vector3(0.19,0.065,0.018),Vector3(0,-0.018,0.128),Color("#91b9c7"))
+	# Sculpted shell (raised crown, vents, ear pieces, occipital lock) with the
+	# same glossy material as before, fittings and a curved visor.
+	var shell := add_mesh(helmet,Gear.skater_helmet())
+	shell.material_override = material(Color("#132434"),0.27)
+	shell.name = "Shell"
+	var fittings := add_mesh(helmet,Gear.helmet_fittings())
+	fittings.material_override = material(Color("#0b1621"),0.45)
+	var visor := add_mesh(helmet,Gear.visor())
 	var glass := material(Color(0.55,0.75,0.82,0.25),0.15)
 	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	visor.material_override = glass
+	visor.name = "Visor"
+
+## Torso of the sweater in rest (shirt) space: half-width and front/back
+## half-depths by height. Shoulder pads under the sweater give the wide,
+## squared shoulder line; the hem hangs and flares over the pants.
+const JERSEY_HEM := 0.865
+const JERSEY_COLUMNS := 56
+const JERSEY_WIDTH := [[0.86,0.258],[0.95,0.240],[1.02,0.224],[1.10,0.221],[1.20,0.230],[1.28,0.246],[1.36,0.266],[1.42,0.282],[1.46,0.276],[1.49,0.250],[1.51,0.205],[1.53,0.140],[1.555,0.088]]
+const JERSEY_FRONT := [[0.86,0.180],[0.97,0.160],[1.08,0.154],[1.20,0.164],[1.30,0.176],[1.38,0.166],[1.45,0.140],[1.50,0.110],[1.555,0.072]]
+const JERSEY_BACK := [[0.86,0.180],[0.97,0.156],[1.08,0.150],[1.22,0.160],[1.34,0.172],[1.42,0.166],[1.48,0.140],[1.52,0.100],[1.555,0.072]]
+var jersey: MeshInstance3D
+
+## Rest-space point of the sweater surface at angle a (0 = +X, PI/2 = front)
+## and height y, with static cloth folds.
+func jersey_point(a: float, y: float, scale_: float = 1.0) -> Vector3:
+	var Prof = Gear.GearProfiles
+	var w: float = Prof.curve(JERSEY_WIDTH,y)*scale_
+	var front: float = Prof.curve(JERSEY_FRONT,y)*scale_
+	var back: float = Prof.curve(JERSEY_BACK,y)*scale_
 	if goalie:
-		visor.visible=false
-		for x in [-0.08,0.0,0.08]:
-			segment(helmet,Vector3(x,0.035,0.14),Vector3(x,-0.12,0.16),0.005,Color("#56646d"))
-		for y in [0.02,-0.04,-0.10]:
-			segment(helmet,Vector3(-0.10,y,0.15),Vector3(0.10,y,0.15),0.005,Color("#56646d"))
-		ellipsoid(helmet,Vector3(0.14,0.075,0.06),Vector3(0,-0.12,0.13),Color("#c5cdd2"))
-	for x in [-0.055,0.0,0.055]:
-		block(helmet,Vector3(0.018,0.008,0.065),Vector3(x,0.123,-0.02),Color("#050d16"))
-	segment(helmet,Vector3(-0.09,-0.02,0.03),Vector3(0,-0.13,0.1),0.009,Color("#adb9c4"))
-	segment(helmet,Vector3(0.09,-0.02,0.03),Vector3(0,-0.13,0.1),0.009,Color("#adb9c4"))
+		w *= 1.08
+		front *= 1.12
+		back *= 1.10
+	# Rounder at the waist, squarer across the shoulder pads.
+	var square := 1.0+0.10*smoothstep(1.18,1.42,y)*pow(sin(2.0*a),2)
+	var c := cos(a)
+	var s := sin(a)
+	var x := c*square*w
+	var z := s*square*(front if s>0 else back)
+	var radial := Vector2(x,z).normalized()
+	var fold := 0.0
+	# Hem: loose vertical folds that open up toward the bottom edge.
+	var hem := smoothstep(1.06,JERSEY_HEM,y)
+	fold += hem*(0.0075*sin(7.0*a+0.6)+0.0045*sin(13.0*a+2.1)+0.003*sin(19.0*a+0.3))
+	# Under the arms: horizontal creases where the sweater bunches at the sides.
+	var side_ := smoothstep(0.70,0.95,absf(c))
+	fold -= side_*smoothstep(1.16,1.24,y)*smoothstep(1.40,1.32,y)*0.0055*(0.5+0.5*sin((y-1.16)*95.0+a*2.0))
+	# Diagonal pull folds across the back from the shoulder pads.
+	if s < 0:
+		fold -= 0.004*smoothstep(0.2,0.8,-s)*smoothstep(1.15,1.25,y)*smoothstep(1.42,1.32,y)*(0.5+0.5*sin((y*38.0+absf(c)*14.0)))
+	return Vector3(x+radial.x*fold,y,z+radial.y*fold-0.02)
+
+## Top edge of the sweater: a V-neck at the front, a round collar elsewhere.
+func jersey_neck(a: float) -> float:
+	var front := maxf(0.0,sin(a))
+	return 1.56-0.095*pow(front,10.0)-0.014*front
+
+## Skin weights for a rest-space point: the hem follows the hips, the body
+## the spine chain up to the chest, the shoulder pads partly the upper arms.
+func jersey_weights(p: Vector3) -> Array:
+	var root_w := 0.45*smoothstep(1.10,0.90,p.y)
+	var chain := [[1.0,"spine05"],[1.10,"spine04"],[1.18,"spine03"],[1.26,"spine02"],[1.34,"spine01"]]
+	var lower: String = chain[0][1]
+	var upper: String = chain[0][1]
+	var t := 0.0
+	if p.y >= chain[-1][0]:
+		lower = chain[-1][1]
+		upper = lower
+	elif p.y > chain[0][0]:
+		for k in range(chain.size()-1):
+			if p.y <= chain[k+1][0]:
+				lower = chain[k][1]
+				upper = chain[k+1][1]
+				t = (p.y-chain[k][0])/(chain[k+1][0]-chain[k][0])
+				break
+	var arm_w := 0.35*smoothstep(0.17,0.28,absf(p.x))*smoothstep(1.37,1.45,p.y)
+	var rest_w := 1.0-root_w-arm_w
+	var out := {"root":root_w}
+	out[lower] = out.get(lower,0.0)+rest_w*(1.0-t)
+	out[upper] = out.get(upper,0.0)+rest_w*t
+	if arm_w > 0.0: out["upperarm01.L" if p.x>0 else "upperarm01.R"] = arm_w
+	return [out.keys(),out.values()]
 
 func build_jersey() -> void:
-	var mesh := ImmediateMesh.new()
 	var sections := [Vector3(0.24,0.98,0.16),Vector3(0.22,1.10,0.155),Vector3(0.25,1.31,0.17),Vector3(0.27,1.44,0.14),Vector3(0.11,1.50,0.09)]
 	if goalie:
 		# Oversized sweater over a chest protector with shoulder floaters.
 		sections = [Vector3(0.255,0.95,0.17),Vector3(0.25,1.10,0.185),Vector3(0.28,1.30,0.20),Vector3(0.30,1.44,0.17),Vector3(0.13,1.53,0.10)]
 	jersey_sections = sections
-	mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
-	for row in range(sections.size()-1):
-		for column in range(32):
-			for ij in [Vector2(row,column),Vector2(row+1,column),Vector2(row+1,column+1),Vector2(row,column),Vector2(row+1,column+1),Vector2(row,column+1)]:
-				var section: Vector3 = sections[int(ij.x)]
-				var a: float = ij.y / 32 * TAU
-				var normal := Vector3(cos(a),0,sin(a))
-				mesh.surface_set_normal(normal)
-				mesh.surface_set_uv(Vector2(ij.y/32,section.y))
-				mesh.surface_add_vertex(Vector3(section.x*cos(a),section.y,section.z*sin(a)-0.02))
-	mesh.surface_end()
+	# One continuous sweater: rolled hem inside, hem, body, shoulders, V-neck
+	# and a rolled collar, as rings of JERSEY_COLUMNS points.
+	var b = Gear.MeshBuilder.new()
+	var rings := []
+	var ring_colors := []
+	var ring_uvs := []
+	var levels := []  # [y or -1 for neck rows, v along the neck rise, scale, dy, uv_y]
+	var hem := JERSEY_HEM-(0.03 if goalie else 0.0)
+	levels.append([hem+0.03,0.0,0.965,0.0,0.97])
+	levels.append([hem-0.004,0.0,1.004,0.0,0.975])
+	var body_rows := 24
+	for k in range(body_rows+1):
+		var y := lerpf(hem,1.40,float(k)/body_rows)
+		levels.append([y,0.0,1.0,0.0,0.98+(y-hem)])
+	for k in range(1,7):
+		levels.append([-1.0,float(k)/6.0,1.0,0.0,0.0])
+	levels.append([-1.0,1.0,1.06,0.006,1.02])
+	levels.append([-1.0,1.0,1.08,-0.008,1.02])
+	levels.append([-1.0,1.0,0.97,-0.018,1.02])
+	for level: Array in levels:
+		var ring := PackedVector3Array()
+		var uv_ring := PackedVector2Array()
+		var cols := PackedColorArray()
+		for j in range(JERSEY_COLUMNS):
+			var a := TAU*j/JERSEY_COLUMNS
+			var y: float = level[0]
+			if y < 0.0: y = lerpf(1.40,jersey_neck(a),level[1])
+			var p := jersey_point(a,y)
+			var centre := Vector3(0,p.y,-0.02)
+			p = centre+(p-centre)*float(level[2])+Vector3(0,level[3],0)
+			ring.append(p)
+			# Symmetric u so the referee's vertical stripes have no seam.
+			var u := absf(wrapf(a-PI*0.5,-PI,PI))/PI
+			uv_ring.append(Vector2(0.075 if level[4]>=1.02 and referee else u,(0.98+(y-hem)) if level[0] < 0.0 and level[4]==0.0 else level[4]))
+			cols.append(Color.WHITE)
+		rings.append(ring)
+		ring_uvs.append(uv_ring)
+		ring_colors.append(cols)
+	b.add_loft(rings,ring_colors,false,false,ring_uvs)
+	var bones := PackedInt32Array()
+	var weights := PackedFloat32Array()
+	var skin := Skin.new()
+	var bind_names: Array[String] = ["root","spine05","spine04","spine03","spine02","spine01","upperarm01.L","upperarm01.R"]
+	for bone_name in bind_names:
+		skin.add_named_bind(bone_name,(rest[bone_name] as Transform3D).affine_inverse())
+	for v: Vector3 in b.vertices:
+		var bw := jersey_weights(v)
+		for k in range(4):
+			if k < bw[0].size():
+				bones.append(bind_names.find(bw[0][k]))
+				weights.append(bw[1][k])
+			else:
+				bones.append(0)
+				weights.append(0.0)
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = b.vertices
+	arrays[Mesh.ARRAY_NORMAL] = b.normals
+	arrays[Mesh.ARRAY_TEX_UV] = b.uvs
+	arrays[Mesh.ARRAY_BONES] = bones
+	arrays[Mesh.ARRAY_WEIGHTS] = weights
+	arrays[Mesh.ARRAY_INDEX] = b.indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
 	var instance := MeshInstance3D.new()
+	instance.name = "Jersey"
 	instance.mesh = mesh
+	instance.skin = skin
+	instance.skeleton = NodePath("..")
+	jersey = instance
 	var shader := Shader.new()
 	shader.code = "shader_type spatial; render_mode cull_disabled; uniform vec4 kit:source_color; uniform vec4 stripe_color:source_color=vec4(0.68,0.68,0.68,1.0); void fragment(){float stripe=(step(1.005,UV.y)-step(1.035,UV.y))+(step(1.05,UV.y)-step(1.064,UV.y));float weave=sin(UV.x*700.0)*sin(UV.y*700.0)*0.003;ALBEDO=mix(kit.rgb,stripe_color.rgb,stripe)+weave;ROUGHNESS=0.86;SPECULAR=0.18;}"
 	var m := ShaderMaterial.new()
@@ -382,13 +491,8 @@ func build_jersey() -> void:
 		ref_shader.code="shader_type spatial; render_mode cull_disabled; void fragment(){float stripe=step(0.0,sin(UV.x*62.83));ALBEDO=mix(vec3(0.015),vec3(0.7),stripe);ROUGHNESS=0.8;}"
 		m.shader=ref_shader
 	instance.material_override = m
-	shirt.add_child(instance)
-	# Shoulder pads (or a goalie's shoulder floaters) shape the sweater.
-	if not referee:
-		var cap:=Vector3(0.18,0.12,0.20) if goalie else Vector3(0.16,0.10,0.18)
-		for x in [-1.0,1.0]:
-			var shoulder_cap:=ellipsoid(shirt,cap,Vector3(x*(0.20 if goalie else 0.185),1.425,-0.01),kit)
-			shoulder_cap.material_override=material(kit,0.86)
+	# Skinned to the rig's skeleton: bends and twists with the posed torso.
+	skeleton.add_child(instance)
 	var jersey_number := Label3D.new()
 	number_label = jersey_number
 	jersey_number.text = number
@@ -821,9 +925,6 @@ func pose(speed: float, turn: float) -> void:
 			else:
 				goalie_gloves[i].position=wrist+Vector3(-0.085,0.06,0.04)
 				goalie_gloves[i].rotation=Vector3(-0.10,-0.28,0.06)
-		else:
-			skater_gloves[i].position=wrist
-			skater_gloves[i].basis=Basis(Quaternion(Vector3.UP,(stick_grip()-blade_position).normalized()))
 		var pole := Vector3(side*0.6,-0.8,-0.1) if goalie else Vector3(side,0,-0.3)
 		if captured_elbow != Vector3.ZERO:
 			pole = pole.lerp((captured_elbow-(shoulder+wrist)*0.5).normalized(),capture_weight)
@@ -832,6 +933,7 @@ func pose(speed: float, turn: float) -> void:
 		var elbow := clear_elbow(shoulder,wrist,pole)
 		posed_wrists[i]=wrist
 		posed_elbows[i]=elbow
+		if not goalie: fit_glove(i,wrist,elbow)
 		update_cloth_sleeve(cloth_sleeves[i],shoulder,elbow,wrist)
 		align_bone("upperarm01"+suffix,"lowerarm01"+suffix,shoulder,elbow)
 		align_bone("lowerarm01"+suffix,"wrist"+suffix,elbow,wrist)
@@ -1089,8 +1191,27 @@ func get_goalie_gear() -> Dictionary:
 	}
 
 func build_player_glove(parent: Node3D) -> void:
-	add_mesh(parent,Gear.skater_glove(kit))
+	# Thumbs on opposite sides so each hand is a mirror of the other.
+	add_mesh(parent,Gear.skater_glove(kit,1.0 if skater_gloves.size()==0 else -1.0))
 
+## Closes glove i round the stick at the wrist: cuff (+Y) back along the
+## forearm toward the elbow, shaft through the fist along local X, back of
+## the hand (+Z) facing away from the body.
+func fit_glove(i: int, wrist: Vector3, elbow: Vector3) -> void:
+	var up := (elbow-wrist).normalized()
+	var shaft := (stick_grip()-blade_position).normalized()
+	var x := shaft-up*up.dot(shaft)
+	if x.length_squared() < 0.0001: x = up.cross(Vector3.BACK)
+	x = x.normalized()
+	var z := x.cross(up)
+	var away := wrist-torso_pose.origin
+	if z.dot(away) < 0.0:
+		x = -x
+		z = -z
+	skater_gloves[i].transform = Transform3D(Basis(x,up,z),wrist)
+
+const SLEEVE_ROWS := 14
+const SLEEVE_SIDES := 22
 func update_cloth_sleeve(instance: MeshInstance3D, shoulder: Vector3, elbow: Vector3, wrist: Vector3) -> void:
 	# A continuous curved cloth envelope follows the exact arm IK targets.
 	var old:Array=instance.get_meta("arm_pose",[])
@@ -1100,23 +1221,47 @@ func update_cloth_sleeve(instance: MeshInstance3D, shoulder: Vector3, elbow: Vec
 	var vertices:=PackedVector3Array()
 	var normals:=PackedVector3Array()
 	var indices:=PackedInt32Array()
-	for row in range(9):
-		var t:=float(row)/8
+	var rows:=SLEEVE_ROWS
+	var cols:=SLEEVE_SIDES
+	# Bend direction at the elbow: the sleeve bunches on the inside of the bend.
+	var bend_dir:=(elbow-(shoulder+wrist)*0.5)
+	var bent:=clampf(bend_dir.length()/0.12,0.0,1.0)
+	bend_dir=bend_dir.normalized() if bend_dir.length()>0.001 else Vector3.ZERO
+	var across:=Vector3.ZERO
+	var tuck:=(torso_pose.origin+Vector3(0,0.20,0)-shoulder)
+	tuck=tuck.normalized()*0.035 if tuck.length()>0.001 else Vector3.ZERO
+	for row in range(rows+1):
+		var t:=float(row)/rows
 		var center:Vector3=(1-t)*(1-t)*shoulder+2*(1-t)*t*control+t*t*wrist
 		var axis:Vector3=(2*(1-t)*(control-shoulder)+2*t*(wrist-control)).normalized()
-		var across:=axis.cross(Vector3.FORWARD).normalized()
-		if across.length_squared()<0.01:across=axis.cross(Vector3.RIGHT).normalized()
+		# The armhole starts in under the shoulder pad, so the sleeve grows out
+		# of the sweater instead of butting against it.
+		center+=tuck*(1.0-smoothstep(0.0,0.16,t))
+		# Parallel-transport the ring frame so the sleeve never twists.
+		if row==0:
+			across=axis.cross(Vector3.FORWARD).normalized()
+			if across.length_squared()<0.01:across=axis.cross(Vector3.RIGHT).normalized()
+		else:
+			across=(across-axis*across.dot(axis)).normalized()
 		var depth:=axis.cross(across).normalized()
-		var radius_:float=lerpf(0.105,0.078,t*2) if t<=0.5 else lerpf(0.078,0.060,(t-0.5)*2)
+		var radius_:float=lerpf(0.100,0.074,t*2) if t<=0.5 else lerpf(0.074,0.052,(t-0.5)*2)
+		# Elbow pad under the sleeve and a looser cuff gathering at the wrist.
+		radius_+=0.010*exp(-pow((t-0.5)/0.09,2))
 		if goalie: radius_*=1.2
-		for column in range(17):
-			var angle:=TAU*column/16
+		for column in range(cols+1):
+			var angle:=TAU*column/cols
 			var radial:Vector3=across*cos(angle)+depth*sin(angle)
-			vertices.append(center+radial*radius_)
+			var r:=radius_
+			# Folds: rings of creases on the inside of the elbow bend, light
+			# lengthwise drape folds elsewhere.
+			var inner:=maxf(0.0,-radial.dot(bend_dir))
+			r-=0.006*bent*inner*exp(-pow((t-0.5)/0.12,2))*(0.5+0.5*sin(t*70.0))
+			r+=0.0025*sin(angle*5.0+t*3.0)*(1.0-exp(-pow((t-0.5)/0.1,2)))
+			vertices.append(center+radial*r)
 			normals.append(radial)
-			if row<8 and column<16:
-				var a:=row*17+column
-				indices.append_array(PackedInt32Array([a,a+17,a+18,a,a+18,a+1]))
+			if row<rows and column<cols:
+				var a:=row*(cols+1)+column
+				indices.append_array(PackedInt32Array([a,a+cols+1,a+cols+2,a,a+cols+2,a+1]))
 	var arrays:=[]
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX]=vertices
