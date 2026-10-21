@@ -498,11 +498,13 @@ func strike(direction: Vector3, speed: float, is_pass: bool = false, elevation: 
 func emit_net_shot(actor: CharacterBody3D, placement: Vector2, slap: bool = false) -> void:
 	var ratings: Dictionary = roster(actor).ratings
 	release_velocity(actor,NetShooting.launch(puck.position,attack_direction(body_team(actor)),placement,float(ratings.get("shot_power",75)),slap))
+	actor.get_child(1).play_release("slap" if slap else "shot",puck.linear_velocity)
 	audio.cue("slap" if slap else "wrist",puck.global_position,clampf(puck.linear_velocity.length()/38,0.35,1))
 
 func release_puck(actor: CharacterBody3D, direction: Vector3, speed: float, elevation: float = 0.0) -> void:
 	# Passing/clearances retain directional flight; shots use emit_net_shot.
-	release_velocity(actor,PuckPhysics.launch(direction,speed,elevation)+actor.velocity*0.2)
+	release_velocity(actor,PuckPhysics.launch(direction,clampf(speed*0.75,6.0,18.0),elevation)+actor.velocity*0.2)
+	actor.get_child(1).play_release("pass",puck.linear_velocity)
 	audio.cue("pass",puck.global_position,clampf(speed/24,0.25,1))
 
 func release_velocity(actor: CharacterBody3D, launch_velocity: Vector3) -> void:
@@ -512,7 +514,6 @@ func release_velocity(actor: CharacterBody3D, launch_velocity: Vector3) -> void:
 	carrier=null
 	pickup_owner=false
 	cooldown=0.42
-	actor.get_child(1).shot_follow=1.0
 	actor.get_child(1).shot_charge=0
 
 func defensive_action(body_check: bool) -> void:
@@ -930,14 +931,14 @@ func update_goalkeepers(delta: float) -> void:
 			var end_:=signf(keeper.position.z)
 			var goal_center:=Vector3(0,0,end_*Arena.GOAL_LINE)
 			var sight:=Vector3(puck.position.x,0,puck.position.z)-goal_center
-			var depth:=clampf(sight.length()*0.065,0.35,1.6)
+			var depth:=clampf(sight.length()*0.065,1.18,1.6)
 			var incoming:=puck.linear_velocity.z*end_>3
 			var predicted:=Vector3(puck.position.x,0,puck.position.z)
 			if incoming: predicted+=Vector3(puck.linear_velocity.x,0,puck.linear_velocity.z)*0.10
 			var ray:Vector3=(predicted-goal_center).normalized()
 			goalie_targets[i]=goal_center+ray*depth
 			goalie_targets[i].x=clampf(goalie_targets[i].x,-0.78,0.78)
-			goalie_targets[i].z=clampf(goalie_targets[i].z,Arena.GOAL_LINE-1.6,Arena.GOAL_LINE-0.35) if end_>0 else clampf(goalie_targets[i].z,-(Arena.GOAL_LINE-0.35),-(Arena.GOAL_LINE-1.6))
+			goalie_targets[i].z=clampf(goalie_targets[i].z,Arena.GOAL_LINE-1.6,Arena.GOAL_LINE-1.18) if end_>0 else clampf(goalie_targets[i].z,-(Arena.GOAL_LINE-1.18),-(Arena.GOAL_LINE-1.6))
 	for i in range(2):
 		var keeper:=goalkeepers[i]
 		var visual:=keeper.get_child(1)
@@ -965,8 +966,9 @@ func update_goalkeepers(delta: float) -> void:
 		visual.goalie_save_height=move_toward(visual.goalie_save_height,desired_height,delta*2.8)
 		keeper.velocity=(goalie_targets[i]-keeper.position).limit_length(1)*3.8
 		keeper.move_and_slide()
-		var facing:=puck.position-keeper.position
-		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-facing.x,-facing.z)-keeper.rotation.y,delta*4)
+		var facing:=Vector3(puck.position.x,0,puck.position.z)-Vector3(0,0,end_*Arena.GOAL_LINE)
+		if facing.length_squared()<0.0001: facing=Vector3(0,0,-end_)
+		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-facing.x,-facing.z)-keeper.rotation.y,delta*9)
 		visual.animate(keeper.velocity.length(),delta,0,false)
 		sync_goalie_contacts(keeper)
 		if puck.position.y<0.13 and puck.linear_velocity.length()<2 and keeper.position.distance_to(puck.position)<0.65 and cooldown<=0:

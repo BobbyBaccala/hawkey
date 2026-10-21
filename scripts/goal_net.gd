@@ -451,6 +451,19 @@ void fragment(){
 ## Thin convex slabs following the netting: puck and sticks stop on the net.
 ## Built from the undraped frame-to-frame surface (gameplay unchanged).
 func _build_collision() -> void:
+	# Closed volume for goalkeepers only: puck mask excludes layer 32, so the
+	# goal mouth stays open for shots. Equipment must not enter the net cavity.
+	var guard := StaticBody3D.new()
+	guard.name = "GoalieNetGuard"
+	guard.collision_layer = 32
+	guard.collision_mask = 0
+	var guard_shape := CollisionShape3D.new()
+	var guard_box := BoxShape3D.new()
+	guard_box.size = Vector3(2.12,1.5,BASE_DEPTH+0.12)
+	guard_shape.shape = guard_box
+	guard_shape.position = Vector3(0,0.75,-BASE_DEPTH*0.5)
+	guard.add_child(guard_shape)
+	add_child(guard)
 	var body := StaticBody3D.new()
 	body.name = "NetCollision"
 	var pm := PhysicsMaterial.new()

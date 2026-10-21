@@ -77,7 +77,7 @@ func run() -> void:
 	cpu.position=Vector3(0,0,-18*attack)
 	m.carrier=cpu;m.puck.position=cpu.position;m.cooldown=0;cpu.set_meta("decision",0.0)
 	m.update_team_ai(1.0/60)
-	check(m.carrier==null and m.puck.linear_velocity.z*attack>15,"PK carrier clears up ice when no safe outlet exists")
+	check(m.carrier==null and m.puck.linear_velocity.z*attack>12 and m.puck.linear_velocity.y>3,"PK carrier clears up ice when no safe outlet exists")
 	m.match_state.penalties.clear()
 	T.choices=[T.defaults(),T.defaults()]
 	change_scene_to_file("res://events.tscn");await process_frame

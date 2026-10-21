@@ -52,7 +52,7 @@ func make_skater(pos: Vector3, color: Color, jersey: String, is_goalie: bool = f
 	body.position = pos
 	body.motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
 	body.collision_layer = 2
-	body.collision_mask = 19
+	body.collision_mask = 19 | (32 if is_goalie else 0)
 	var collision := CollisionShape3D.new()
 	var shape := CapsuleShape3D.new()
 	shape.radius = 0.34 if not is_goalie else 0.58
@@ -304,7 +304,9 @@ func strike(direction: Vector3, speed: float, is_pass: bool = false, loft: float
 	if paused or player.position.distance_to(puck.position) > 1.8 or cooldown > 0 or puck.position.y>0.22:
 		return false
 	direction.y = 0
+	if is_pass: speed=clampf(speed*0.75,6.0,18.0)
 	puck.linear_velocity = direction.normalized() * speed + velocity * 0.25 if is_pass else NetShooting.launch(puck.position,-1,practice_input.left_stick if practice_input.active else mouse_net_placement(-1),75,practice_input.slap_requested if practice_input.active else Input.is_physical_key_pressed(KEY_ALT))
+	player_visual.play_release("pass" if is_pass else ("slap" if (practice_input.slap_requested if practice_input.active else Input.is_physical_key_pressed(KEY_ALT)) else "shot"),puck.linear_velocity)
 	if is_pass: puck.linear_velocity.y=speed*loft
 	pickup_owner = false
 	cooldown = 0.42
@@ -460,10 +462,13 @@ func update_goalkeepers(delta: float) -> void:
 	for i in range(goalkeepers.size()):
 		var goalie := goalkeepers[i]
 		var end_ := -1.0 if i == 0 else 1.0
-		var depth := clampf(absf(puck.position.z - end_ * Arena.GOAL_LINE) * 0.05,0.35,1.4)
+		var depth := clampf(absf(puck.position.z - end_ * Arena.GOAL_LINE) * 0.05,1.18,1.4)
 		var target := Vector3(clampf(puck.position.x * 0.13,-0.75,0.75),0,end_ * (Arena.GOAL_LINE - depth))
 		goalie.velocity = (target - goalie.position).limit_length(1) * 3.8
 		goalie.move_and_slide()
+		var facing:=Vector3(puck.position.x,0,puck.position.z-end_*Arena.GOAL_LINE)
+		if facing.length_squared()<0.0001: facing=Vector3(0,0,-end_)
+		goalie_visuals[i].rotation.y=rotate_toward(goalie_visuals[i].rotation.y,atan2(-facing.x,-facing.z)-goalie.rotation.y,delta*9)
 		goalie_visuals[i].animate(goalie.velocity.length(),delta)
 		sync_goalie_contacts(goalie)
 

@@ -44,6 +44,39 @@ var catch_hold := 0.0
 var catch_close := 0.0
 var shot_follow := 0.0
 var shot_charge := 0.0
+## Release starts at puck contact. Smooth attack, follow-through and recovery;
+## skating continues underneath, and both hands remain solved onto one shaft.
+var release_kind := ""
+var release_age := 0.0
+var release_duration := 0.6
+var release_direction := Vector3.FORWARD
+var release_weight := 0.0
+
+func play_release(kind: String, world_direction: Vector3) -> void:
+	if goalie or referee: return
+	release_kind=kind
+	release_age=0.0
+	release_duration=0.44 if kind=="pass" else (0.82 if kind=="slap" else 0.66)
+	release_direction=(rig.global_basis.inverse()*Vector3(world_direction.x,0,world_direction.z)).normalized()
+	release_weight=0.0
+
+func update_release(delta: float) -> void:
+	if release_kind.is_empty():
+		release_weight=0.0
+		return
+	release_age=minf(release_age+delta,release_duration)
+	var u:=release_age/release_duration
+	# Contact starts from the normal stick pose, peaks early, then settles.
+	var peak:=0.28
+	release_weight=smoothstep(0.0,peak,u) if u<peak else 1.0-smoothstep(peak,1.0,u)
+	if u>=1.0: release_kind=""
+
+func release_blade_offset() -> Vector3:
+	var pass_action:=release_kind=="pass"
+	var height:=0.065 if pass_action else (0.66 if release_kind=="slap" else 0.38)
+	var sweep:=0.23 if pass_action else 0.46
+	return (release_direction*sweep+Vector3(0,height,0))*release_weight
+
 var desired_stick := Vector2.ZERO
 var stick_intent := Vector2.ZERO
 var goalie_save_height := 0.0
@@ -982,6 +1015,8 @@ func pose(speed: float, turn: float) -> void:
 	root_pose.origin += drop
 	override_pose("root",root_pose)
 	bend = Basis(Vector3.RIGHT,lerpf(0.52,0.26,goalie_drop) if goalie else 0.50+minf(speed/40,0.18))
+	if not goalie and not referee:
+		bend=Basis(Vector3.UP,(0.12 if release_kind=="pass" else 0.32)*release_weight)*bend
 	if shoulder_turn != 0.0: bend = Basis(Vector3.UP,shoulder_turn)*bend
 	# Stop: the upper body leans back against the skid.
 	if stop_w > 0.0: bend = Basis(Vector3.BACK,-stop_side*0.24*stop_w)*bend
@@ -1336,9 +1371,11 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	update_layers(delta)
 	update_stop(speed,delta,braking)
 	brake_turn = move_toward(brake_turn,1.0 if braking and not goalie else 0.0,delta*6)
-	shot_follow = maxf(0,shot_follow-delta*3)
+	update_release(delta)
+	shot_follow = release_weight
 	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
 	blade_position=Vector3(-0.02+goalie_drop*0.05,0.042,0.76-goalie_drop*0.04+0.035*sin(PI*goalie_drop)) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
+	if not goalie and not referee: blade_position+=release_blade_offset()
 	# Stop: the stick reaches out in front for balance.
 	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
 	# Board hop: lift the stick clear of the boards (blade rises first, so it
