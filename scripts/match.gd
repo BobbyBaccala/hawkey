@@ -489,12 +489,22 @@ func assess_penalty(actor: CharacterBody3D, reason: String) -> void:
 		if actor==player: switch_player()
 		beep(900)
 
+## Crowd reaction to a save (0 = none): only shots heading at the net, from
+## 0 at 14 m/s up to 0.55 for a 32 m/s blast.
+static func save_reaction(puck_velocity: Vector3, goalie_z: float) -> float:
+	if signf(puck_velocity.z)!=signf(goalie_z): return 0.0
+	return clampf((puck_velocity.length()-14.0)/18.0,0.0,1.0)*0.55
+
 func _on_puck_contact(body: Node) -> void:
 	var actor:=hit_actor(body)
 	if actor is CharacterBody3D and actor in goalkeepers and goalie_contact_timer<=0:
 		goalie_contact_timer=0.25
 		saves+=1
 		if absf(last_puck_velocity.z)>6: team_shots[0 if attack_direction(0)==signf(actor.position.z) else 1]+=1
+		# A hard shot stopped: the crowd comes up off its seats (arena_dressing.gd).
+		var save_dressing:=arena.get_node_or_null("Dressing")
+		var save_roar:=save_reaction(last_puck_velocity,actor.position.z)
+		if save_dressing!=null and save_roar>0.05: save_dressing.crowd_react(save_roar,signf(actor.position.z),0.5)
 		cooldown=0.2
 		carrier=null
 		# Engine contact normals/materials resolve rebound direction and vertical speed.

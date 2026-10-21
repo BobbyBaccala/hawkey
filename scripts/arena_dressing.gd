@@ -6,6 +6,12 @@ extends Node3D
 const Arena = preload("res://scripts/arena.gd")
 const Benches = preload("res://scripts/arena_benches.gd")
 const CROWD = preload("res://assets/crowd-spectators-v1.png")
+const CROWD_SHADER = preload("res://assets/crowd.gdshader")
+## Crowd reaction (assets/crowd.gdshader): the bowl rises toward the cheer
+## target in about a quarter second, holds it for crowd_react()'s hold time,
+## then settles back over a few seconds.
+const CHEER_RISE := 4.0
+const CHEER_FALL := 0.32
 const SPONSORS := [
 	["NORTHLINE", Color("#0f2f5c"), Color("#f2f5f8")],
 	["GLACIER COLA", Color("#c8102e"), Color("#ffffff")],
@@ -35,6 +41,16 @@ var led_ribbons: Array[MeshInstance3D] = []
 var scoreboard_hold := false
 var scoreboard_text: Array[String] = ["TOR  0     MTL  0", "1ST   20:00"]
 var arena_name := "HAWKEY ARENA"
+## Shared crowd card materials and reaction state (crowd_react()).
+var crowd_materials: Array[ShaderMaterial] = []
+var crowd_cards := 0
+var crowd_clock := 0.0
+var cheer := 0.0
+var cheer_target := 0.0
+var cheer_hold := 0.0
+var cheer_end := 0.0
+## In-play fidget amount; 1 during play (the match may lower it at stoppages).
+var crowd_shimmer := 1.0
 
 func _ready() -> void:
 	helper = Arena.new()
@@ -136,18 +152,15 @@ func build_bowl() -> void:
 func build_crowd() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 2207
-	var shared: Array[StandardMaterial3D] = []
+	var shared: Array[ShaderMaterial] = []
 	for i in range(6):
-		var m := StandardMaterial3D.new()
-		m.albedo_texture = CROWD
+		var m := ShaderMaterial.new()
+		m.shader = CROWD_SHADER
+		m.set_shader_parameter("crowd_tex", CROWD)
 		var v := rng.randf_range(0.24, 0.42)
-		m.albedo_color = Color(v, v * 1.02, v * 1.1)
-		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
-		m.alpha_scissor_threshold = 0.4
-		m.cull_mode = BaseMaterial3D.CULL_DISABLED
-		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		m.set_shader_parameter("tint", Color(v, v * 1.02, v * 1.1))
 		shared.append(m)
+	crowd_materials = shared
 	var quad := QuadMesh.new()
 	quad.size = Vector2(4.5, 1.5)
 	for r in range(ROWS):
@@ -168,6 +181,7 @@ func build_crowd() -> void:
 				card.rotation.y = -side * PI / 2
 				card.scale.x = -1 if flip else 1
 				add_child(card)
+				crowd_cards += 1
 			# Ends.
 			var end_count := int((Arena.HALF_WIDTH * 2.0 + r * 2 * ROW_RUN) / 4.5)
 			for k in range(end_count):
@@ -179,6 +193,35 @@ func build_crowd() -> void:
 				card.rotation.y = 0.0 if side < 0 else PI
 				card.scale.x = -1 if rng.randf() > 0.5 else 1
 				add_child(card)
+				crowd_cards += 1
+
+## The crowd reacts: amount 1 is a goal roar, ~0.5 a big save. end_sign is
+## the z sign of the end where it happened (0 = whole bowl); hold is how long
+## they stay up before settling. A smaller reaction never cuts a bigger one short.
+func crowd_react(amount: float, end_sign := 0.0, hold := 1.0) -> void:
+	amount = clampf(amount, 0.0, 1.0)
+	if amount < cheer_target and cheer_hold > 0.0: return
+	cheer_target = amount
+	cheer_hold = hold
+	cheer_end = end_sign
+
+func _process(delta: float) -> void:
+	advance_crowd(delta)
+
+## Steps the crowd reaction and pushes it to the card materials.
+func advance_crowd(delta: float) -> void:
+	crowd_clock += delta
+	if cheer_hold > 0.0:
+		cheer_hold = maxf(0.0, cheer_hold - delta)
+		cheer = move_toward(cheer, cheer_target, delta * CHEER_RISE)
+	else:
+		cheer_target = 0.0
+		cheer = move_toward(cheer, 0.0, delta * CHEER_FALL)
+	for m in crowd_materials:
+		m.set_shader_parameter("clock", crowd_clock)
+		m.set_shader_parameter("cheer", cheer)
+		m.set_shader_parameter("cheer_end", cheer_end)
+		m.set_shader_parameter("shimmer", crowd_shimmer)
 
 func build_fascia() -> void:
 	var top := ROWS * ROW_RISE + 1.2

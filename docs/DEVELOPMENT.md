@@ -24,7 +24,7 @@ Godot 4.6 standard/GDScript was selected because its editor and headless runtime
 - Rink size is NHL: arena.gd HALF_WIDTH (85 ft sheet), HALF_LENGTH (60 m), CORNER_RADIUS (28 ft); everything that depends on the rink width reads these rather than literals. Overhead rigging is on arena_lighting.gd RIGGING_LAYER, hidden by any camera above RIGGING_CLEARANCE over the sheet (arena_lighting.gd camera_cull_mask()).
 - Rink markings use NHL proportions from constants in arena.gd (GOAL_LINE, BLUE_LINE, END_DOT_Z, DOT_X...); gameplay code reads Arena.GOAL_LINE rather than literal distances.
 - scripts/skater_visual.gd: CC0 skinned human foundation, original kit and two-bone lateral push/glide posing.
-- scripts/crowd.gd: alpha-cutout generated crowd artwork in seating rows.
+- scripts/crowd.gd: alpha-cutout generated crowd artwork in seating rows (practice lab). The match bowl's crowd cards (arena_dressing.gd build_crowd()) use assets/crowd.gdshader: per-fan in-play fidget and shimmer, and crowd_react(amount, end_sign, hold) stands them up on goals (goal_celebration.gd) and hard saves (match.gd save_reaction()). Render review: tools/capture_crowd.gd.
 - assets/: shipped human mesh, generated crowd/ice textures and uniform shader; provenance in docs/ASSETS.md.
 - scripts/skating.gd: deterministic velocity update and directional goal-mouth crossing.
 - tests/test_simulation.gd: executable regression scenarios.

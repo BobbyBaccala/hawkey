@@ -13,6 +13,7 @@ const ArenaLighting = preload("res://scripts/arena_lighting.gd")
 const LAMP_TIME := 4.0        # goal light spins this long
 const FLASH_TIME := 3.0       # arena light pulse, decaying
 const BOARD_TIME := 4.0       # jumbotron GOAL animation
+const CROWD_HOLD := 3.5       # the crowd stays on its feet this long, then settles
 const BOARD_NAME_AT := 2.3    # jumbotron switches from GOAL to the team name
 const SPIN_RATE := TAU * 1.6  # beacon reflector, rad/s (~96 rpm, like a real beacon)
 const LAMP_RED := Color("#ff1208")
@@ -79,7 +80,10 @@ func celebrate(end_sign: float, color: Color, scoring_name: String) -> void:
 	# Warm white wash with a hint of the team colour; never a coloured flood.
 	flash_color = FLASH_WARM.lerp(color.lightened(0.4), 0.18)
 	board_left = BOARD_TIME
-	if dressing: dressing.scoreboard_hold = true
+	if dressing:
+		dressing.scoreboard_hold = true
+		# The bowl stands and roars (assets/crowd.gdshader).
+		if dressing.has_method("crowd_react"): dressing.crowd_react(1.0, end_sign, CROWD_HOLD)
 	advance(0.0)
 
 func is_active() -> bool:
