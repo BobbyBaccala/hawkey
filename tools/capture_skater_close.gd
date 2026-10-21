@@ -35,6 +35,7 @@ func run() -> void:
 	visual.kit = Color("#185c73")
 	visual.number = "17"
 	scene.add_child(visual)
+	visual.set_nameplate("Larsen")
 	visual.position = Vector3(0, 0, 0)
 	visual.rotation.y = -PI / 2      # skating toward +x
 	for k in range(120): visual.animate(speed, 1.0 / 120, 0, speed > 0.5)

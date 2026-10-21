@@ -5,6 +5,7 @@ const Uniform = preload("res://assets/uniform.gdshader")
 const Arena = preload("res://scripts/arena.gd")
 const Gear = preload("res://scripts/gear_builder.gd")
 const Mocap = preload("res://scripts/mocap.gd")
+const Kit = preload("res://scripts/kit_materials.gd")
 const MOCAP_HIP_HEIGHT := 0.958
 # Captured clip blended over the procedural pose (celebrations, save reactions).
 var mocap := {}
@@ -34,6 +35,8 @@ var number := "17"
 var goalie := false
 var referee := false
 var nameplate: Label3D
+## Surname sewn on the back (twill in the jersey shader).
+var nameplate_text := ""
 var phase := 0.0
 var butterfly := 0.0
 var shot_follow := 0.0
@@ -179,6 +182,8 @@ func _ready() -> void:
 	uniform.set_shader_parameter("team_color",kit)
 	uniform.set_shader_parameter("hide_pants",not referee)
 	uniform.set_shader_parameter("hide_socks",not referee and not goalie)
+	uniform.set_shader_parameter("skin_detail",Kit.skin_texture())
+	uniform.set_shader_parameter("has_skin_detail",true)
 	for child in skeleton.get_children():
 		if child is MeshInstance3D:
 			child.material_override = uniform
@@ -205,14 +210,17 @@ func _ready() -> void:
 	for side in [1.0,-1.0]:
 		var sleeve:=MeshInstance3D.new()
 		sleeve.mesh=ArrayMesh.new()
-		sleeve.material_override=material(kit,0.87)
+		sleeve.material_override=Kit.sleeve(kit,accent,referee)
 		rig.add_child(sleeve)
 		cloth_sleeves.append(sleeve)
 		if not referee:
 			var pants := add_mesh(rig,Gear.pants_leg(side,kit,Color("#151c24"),0.0 if goalie else 1.0))
+			pants.material_override=Kit.breezers()
 			pant_legs.append(pants)
 			if not goalie:
-				socks.append(add_mesh(rig,Gear.sock(kit,Color("#e4e8ea"))))
+				var sock := add_mesh(rig,Gear.sock(kit,Color("#e4e8ea")))
+				sock.material_override=Kit.socks(kit,Color("#e4e8ea"))
+				socks.append(sock)
 		var skate := Node3D.new()
 		rig.add_child(skate)
 		build_skate(skate)
@@ -247,11 +255,12 @@ func add_mesh(parent: Node3D, mesh: Mesh) -> MeshInstance3D:
 	return instance
 
 func build_skate(parent: Node3D) -> void:
-	add_mesh(parent,Gear.skate(goalie,goalie))
+	add_mesh(parent,Gear.skate(goalie,goalie)).material_override=Kit.skate_boot()
 	if not goalie:
 		# Ankle cuff follows the shin (posed in pose()), so the leg always
 		# enters the boot.
 		var cuff := add_mesh(parent,Gear.skate_cuff())
+		cuff.material_override=Kit.skate_boot()
 		cuff.name = "Cuff"
 		skate_cuffs.append(cuff)
 
@@ -323,14 +332,13 @@ func build_helmet() -> void:
 	# Sculpted shell (raised crown, vents, ear pieces, occipital lock) with the
 	# same glossy material as before, fittings and a curved visor.
 	var shell := add_mesh(helmet,Gear.skater_helmet())
-	shell.material_override = material(Color("#132434"),0.27)
+	# Painted shell with a clearcoat; plastic/webbing fittings; clear visor.
+	shell.material_override = Kit.helmet_shell(Color("#132434"))
 	shell.name = "Shell"
 	var fittings := add_mesh(helmet,Gear.helmet_fittings())
-	fittings.material_override = material(Color("#0b1621"),0.45)
+	fittings.material_override = Kit.plastic(Color("#0b1621"),0.6)
 	var visor := add_mesh(helmet,Gear.visor())
-	var glass := material(Color(0.55,0.75,0.82,0.25),0.15)
-	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	visor.material_override = glass
+	visor.material_override = Kit.visor()
 	visor.name = "Visor"
 
 ## Torso of the sweater in rest (shirt) space: half-width and front/back
@@ -469,6 +477,12 @@ func build_jersey() -> void:
 	arrays[Mesh.ARRAY_VERTEX] = b.vertices
 	arrays[Mesh.ARRAY_NORMAL] = b.normals
 	arrays[Mesh.ARRAY_TEX_UV] = b.uvs
+	# UV2 for the kit shader's layout: u = angle round the body (0.75 = centre
+	# back, unmirrored so numbers read correctly), v = rest height in metres.
+	var uv2 := PackedVector2Array()
+	for v: Vector3 in b.vertices:
+		uv2.append(Vector2(fposmod(atan2(v.z+0.02,v.x),TAU)/TAU,v.y))
+	arrays[Mesh.ARRAY_TEX_UV2] = uv2
 	arrays[Mesh.ARRAY_BONES] = bones
 	arrays[Mesh.ARRAY_WEIGHTS] = weights
 	arrays[Mesh.ARRAY_INDEX] = b.indices
@@ -480,39 +494,18 @@ func build_jersey() -> void:
 	instance.skin = skin
 	instance.skeleton = NodePath("..")
 	jersey = instance
-	var shader := Shader.new()
-	shader.code = "shader_type spatial; render_mode cull_disabled; uniform vec4 kit:source_color; uniform vec4 stripe_color:source_color=vec4(0.68,0.68,0.68,1.0); void fragment(){float stripe=(step(1.005,UV.y)-step(1.035,UV.y))+(step(1.05,UV.y)-step(1.064,UV.y));float weave=sin(UV.x*700.0)*sin(UV.y*700.0)*0.003;ALBEDO=mix(kit.rgb,stripe_color.rgb,stripe)+weave;ROUGHNESS=0.86;SPECULAR=0.18;}"
-	var m := ShaderMaterial.new()
-	m.shader = shader
-	m.set_shader_parameter("kit",kit)
-	m.set_shader_parameter("stripe_color",accent)
-	if referee:
-		var ref_shader:=Shader.new()
-		ref_shader.code="shader_type spatial; render_mode cull_disabled; void fragment(){float stripe=step(0.0,sin(UV.x*62.83));ALBEDO=mix(vec3(0.015),vec3(0.7),stripe);ROUGHNESS=0.8;}"
-		m.shader=ref_shader
-	instance.material_override = m
+	# Knit polyester sweater: sewn hem/sleeve stripes, collar and twill
+	# number/nameplate drawn in the fabric (scripts/kit_materials.gd).
+	apply_jersey_material()
 	# Skinned to the rig's skeleton: bends and twists with the posed torso.
 	skeleton.add_child(instance)
-	var jersey_number := Label3D.new()
-	number_label = jersey_number
-	jersey_number.text = number
-	jersey_number.font_size = 64
-	jersey_number.pixel_size = 0.004
-	jersey_number.position = Vector3(0,1.31,-0.195)
-	jersey_number.rotation.y = PI
-	jersey_number.modulate = Color("#d0dbe2")
-	jersey_number.outline_size = 2
-	jersey_number.visible = not referee
-	nameplate = Label3D.new()
-	nameplate.text = ""
-	nameplate.font_size = 48
-	nameplate.pixel_size = 0.0018
-	nameplate.outline_size = 1
-	nameplate.position = Vector3(0,1.44,-0.17)
-	nameplate.rotation.y = PI
-	nameplate.modulate = Color("#d0dbe2")
-	shirt.add_child(nameplate)
-	shirt.add_child(jersey_number)
+
+## Jersey material for the current number and nameplate (shared per colourway,
+## number and name; the generated textures are shared by everyone).
+func apply_jersey_material() -> void:
+	if not is_instance_valid(jersey): return
+	var hem := JERSEY_HEM-(0.03 if goalie else 0.0)
+	jersey.material_override = Kit.jersey(kit,accent,number,nameplate_text,referee,hem,0.0)
 
 func override_pose(name: String, transform_: Transform3D) -> void:
 	var bone := skeleton.find_bone(name)
@@ -1093,10 +1086,11 @@ func update_spray(speed: float) -> void:
 
 func set_number(value: String) -> void:
 	number=value
-	if is_instance_valid(number_label): number_label.text=value
+	apply_jersey_material()
 
 func set_nameplate(value: String) -> void:
-	if is_instance_valid(nameplate): nameplate.text=value.to_upper()
+	nameplate_text=value.to_upper()
+	apply_jersey_material()
 
 func stick_grip() -> Vector3:
 	if goalie:
@@ -1192,7 +1186,7 @@ func get_goalie_gear() -> Dictionary:
 
 func build_player_glove(parent: Node3D) -> void:
 	# Thumbs on opposite sides so each hand is a mirror of the other.
-	add_mesh(parent,Gear.skater_glove(kit,1.0 if skater_gloves.size()==0 else -1.0))
+	add_mesh(parent,Gear.skater_glove(kit,1.0 if skater_gloves.size()==0 else -1.0)).material_override=Kit.gloves()
 
 ## Closes glove i round the stick at the wrist: cuff (+Y) back along the
 ## forearm toward the elbow, shaft through the fist along local X, back of
@@ -1220,6 +1214,7 @@ func update_cloth_sleeve(instance: MeshInstance3D, shoulder: Vector3, elbow: Vec
 	var control:=elbow*2-(shoulder+wrist)*0.5
 	var vertices:=PackedVector3Array()
 	var normals:=PackedVector3Array()
+	var uvs:=PackedVector2Array()
 	var indices:=PackedInt32Array()
 	var rows:=SLEEVE_ROWS
 	var cols:=SLEEVE_SIDES
@@ -1259,6 +1254,7 @@ func update_cloth_sleeve(instance: MeshInstance3D, shoulder: Vector3, elbow: Vec
 			r+=0.0025*sin(angle*5.0+t*3.0)*(1.0-exp(-pow((t-0.5)/0.1,2)))
 			vertices.append(center+radial*r)
 			normals.append(radial)
+			uvs.append(Vector2(float(column)/cols,t))
 			if row<rows and column<cols:
 				var a:=row*(cols+1)+column
 				indices.append_array(PackedInt32Array([a,a+cols+1,a+cols+2,a,a+cols+2,a+1]))
@@ -1266,6 +1262,7 @@ func update_cloth_sleeve(instance: MeshInstance3D, shoulder: Vector3, elbow: Vec
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX]=vertices
 	arrays[Mesh.ARRAY_NORMAL]=normals
+	arrays[Mesh.ARRAY_TEX_UV]=uvs
 	arrays[Mesh.ARRAY_INDEX]=indices
 	var mesh:ArrayMesh=instance.mesh
 	mesh.clear_surfaces()
