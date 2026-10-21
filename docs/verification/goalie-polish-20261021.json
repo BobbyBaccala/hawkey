@@ -1,0 +1,690 @@
+{
+  "date": "2026-10-21",
+  "source_commit": "df15aee",
+  "base": "668d99aeb118c0e8a1599fc42b5448d804df5a42",
+  "preserved_claude": "85fd7918d03287db327258b10e46f8a804c9ba23",
+  "scope": [
+    "Compatibility constant-atlas-UV filtering artifact fallback",
+    "Flatter pad face, subtle binding and smoother catcher roll",
+    "Shared mipmapped leather normal/roughness maps with finite tangent frames",
+    "Eased butterfly pose and frame-rate-independent save blends",
+    "Procedural lateral shuffle without optional motion-capture clips",
+    "Regulation contact-gated catcher fold, continued whistle animation and frozen-puck follow"
+  ],
+  "broad_regression": {
+    "godot": "4.6.3.stable.official.7d41c59c4",
+    "counts": {
+      "passed": 53,
+      "failed": 0,
+      "skipped": 1
+    },
+    "checks": [
+      {
+        "name": "engine_version",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.026,
+        "log": "engine_version.log"
+      },
+      {
+        "name": "import",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 4.919,
+        "log": "import.log"
+      },
+      {
+        "name": "test_accessibility",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 8.086,
+        "log": "test_accessibility.log"
+      },
+      {
+        "name": "test_animation",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.925,
+        "log": "test_animation.log"
+      },
+      {
+        "name": "test_benches",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 16.094,
+        "log": "test_benches.log"
+      },
+      {
+        "name": "test_board_hop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.603,
+        "log": "test_board_hop.log"
+      },
+      {
+        "name": "test_boards",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 202.3,
+        "log": "test_boards.log"
+      },
+      {
+        "name": "test_clipping",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 5.015,
+        "log": "test_clipping.log"
+      },
+      {
+        "name": "test_controller",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.49,
+        "log": "test_controller.log"
+      },
+      {
+        "name": "test_controls",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 7.421,
+        "log": "test_controls.log"
+      },
+      {
+        "name": "test_event_modes",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 24.743,
+        "log": "test_event_modes.log"
+      },
+      {
+        "name": "test_gear_graphics",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.718,
+        "log": "test_gear_graphics.log"
+      },
+      {
+        "name": "test_gm_checkpoint",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 25.766,
+        "log": "test_gm_checkpoint.log"
+      },
+      {
+        "name": "test_gm_management",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 72.022,
+        "log": "test_gm_management.log"
+      },
+      {
+        "name": "test_gm_navigation",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 90.454,
+        "log": "test_gm_navigation.log"
+      },
+      {
+        "name": "test_gm_rosters",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 4.346,
+        "log": "test_gm_rosters.log"
+      },
+      {
+        "name": "test_gm_scouting",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 22.193,
+        "log": "test_gm_scouting.log"
+      },
+      {
+        "name": "test_gm_season",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 13.708,
+        "log": "test_gm_season.log"
+      },
+      {
+        "name": "test_goal_celebration",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 7.637,
+        "log": "test_goal_celebration.log"
+      },
+      {
+        "name": "test_goal_net",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 7.887,
+        "log": "test_goal_net.log"
+      },
+      {
+        "name": "test_goalie_gear",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 9.386,
+        "log": "test_goalie_gear.log"
+      },
+      {
+        "name": "test_goalie_polish",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 8.082,
+        "log": "test_goalie_polish.log"
+      },
+      {
+        "name": "test_goalie_saves",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.735,
+        "log": "test_goalie_saves.log"
+      },
+      {
+        "name": "test_helmet_arm_fit",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.753,
+        "log": "test_helmet_arm_fit.log"
+      },
+      {
+        "name": "test_helmet_retention",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.276,
+        "log": "test_helmet_retention.log"
+      },
+      {
+        "name": "test_helmet_surface",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.346,
+        "log": "test_helmet_surface.log"
+      },
+      {
+        "name": "test_hockey_audio",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.223,
+        "log": "test_hockey_audio.log"
+      },
+      {
+        "name": "test_hockey_stop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 5.007,
+        "log": "test_hockey_stop.log"
+      },
+      {
+        "name": "test_ice",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 13.103,
+        "log": "test_ice.log"
+      },
+      {
+        "name": "test_jersey_collar",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.281,
+        "log": "test_jersey_collar.log"
+      },
+      {
+        "name": "test_kit_geometry",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.365,
+        "log": "test_kit_geometry.log"
+      },
+      {
+        "name": "test_kit_materials",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.043,
+        "log": "test_kit_materials.log"
+      },
+      {
+        "name": "test_knockout_cup",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.57,
+        "log": "test_knockout_cup.log"
+      },
+      {
+        "name": "test_lab",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 5.652,
+        "log": "test_lab.log"
+      },
+      {
+        "name": "test_lighting",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.133,
+        "log": "test_lighting.log"
+      },
+      {
+        "name": "test_match",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 11.807,
+        "log": "test_match.log"
+      },
+      {
+        "name": "test_match_loop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 66.301,
+        "log": "test_match_loop.log"
+      },
+      {
+        "name": "test_match_state",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.164,
+        "log": "test_match_state.log"
+      },
+      {
+        "name": "test_mocap",
+        "status": "skipped",
+        "reason": "Optional local motion-capture clips are absent",
+        "returncode": 0,
+        "seconds": 0.161,
+        "log": "test_mocap.log"
+      },
+      {
+        "name": "test_net_shooting",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 9.108,
+        "log": "test_net_shooting.log"
+      },
+      {
+        "name": "test_overtime_shootout",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 15.436,
+        "log": "test_overtime_shootout.log"
+      },
+      {
+        "name": "test_play_now",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 50.314,
+        "log": "test_play_now.log"
+      },
+      {
+        "name": "test_player_surfaces",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.579,
+        "log": "test_player_surfaces.log"
+      },
+      {
+        "name": "test_puck_flight",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 9.611,
+        "log": "test_puck_flight.log"
+      },
+      {
+        "name": "test_render_settings",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 8.02,
+        "log": "test_render_settings.log"
+      },
+      {
+        "name": "test_roster_database",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.259,
+        "log": "test_roster_database.log"
+      },
+      {
+        "name": "test_save_store",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.279,
+        "log": "test_save_store.log"
+      },
+      {
+        "name": "test_simulation",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.647,
+        "log": "test_simulation.log"
+      },
+      {
+        "name": "test_skate_stick",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.066,
+        "log": "test_skate_stick.log"
+      },
+      {
+        "name": "test_stride",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.711,
+        "log": "test_stride.log"
+      },
+      {
+        "name": "test_tactics_match",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 8.846,
+        "log": "test_tactics_match.log"
+      },
+      {
+        "name": "test_team_tactics",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.536,
+        "log": "test_team_tactics.log"
+      },
+      {
+        "name": "test_world_database",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 27.891,
+        "log": "test_world_database.log"
+      },
+      {
+        "name": "python",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.966,
+        "log": "python.log"
+      }
+    ],
+    "scope": "Headless regressions; not GPU, physical controller, human feel or release approval"
+  },
+  "native_suites_passed": 50,
+  "python_tests": 31,
+  "final_new_suite": {
+    "checks": 26,
+    "failures": 0,
+    "log": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoalie polish: 26 checks; 0 failures\n",
+    "note": "Final follow-up explicitly restores ready stance before testing no-clip shuffle and checks both feet remain within compact stance bounds."
+  },
+  "run_order": "Broad runner started after runtime changes/tangents. The final catch fold weight mask was refined after early broad tests; final goalie tests and an additional new-suite run verify it. Final new-suite-only change strengthens its ready-stance fixture; no later runtime change. No atomic final-tree broad rerun is claimed.",
+  "filter_control": {
+    "source": "Actual neutral before vs filter-only probe; same geometry, camera and lighting",
+    "engine": "4.6.2 Compatibility/llvmpipe",
+    "near_black_threshold": "max RGB < 35, full 960x960 catcher JPEG; diagnostic pixel count only, not a realism score",
+    "before_pixels": 34276,
+    "filter_only_pixels": 19346
+  },
+  "baseline_original_gear_matches_668d99a": true,
+  "captures": {
+    "goalie-before": {
+      "captures": [
+        {
+          "camera": "(0.0, 0.95, -3.5)",
+          "error": 0,
+          "fov": 35.0,
+          "path": "res://build/model-review-goalie-before-front.jpg",
+          "target": "(0.0, 0.73, 0.0)"
+        },
+        {
+          "camera": "(2.0, 1.2, -3.1)",
+          "error": 0,
+          "fov": 35.0,
+          "path": "res://build/model-review-goalie-before-quarter.jpg",
+          "target": "(0.0, 0.73, 0.0)"
+        },
+        {
+          "camera": "(-0.621352, 0.756649, -1.224553)",
+          "error": 0,
+          "fov": 38.0,
+          "path": "res://build/model-review-goalie-before-pad.jpg",
+          "target": "(-0.171352, 0.476649, -0.274553)"
+        },
+        {
+          "camera": "(-0.77, 1.04, -1.305)",
+          "error": 0,
+          "fov": 34.0,
+          "path": "res://build/model-review-goalie-before-catcher.jpg",
+          "target": "(-0.47, 0.92, -0.455)"
+        }
+      ],
+      "engine": "4.6.2-stable (official)",
+      "goalkeeper": true,
+      "pose": "idle",
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "size": "960x960",
+      "source": "Actual isolated Godot 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay",
+      "stage": "goalie-before",
+      "visual_script": "res://scripts/skater_visual.gd"
+    },
+    "goalie-filter-probe": {
+      "captures": [
+        {
+          "camera": "(0.0, 0.95, -3.5)",
+          "error": 0,
+          "fov": 35.0,
+          "path": "res://build/model-review-goalie-filter-probe-front.jpg",
+          "target": "(0.0, 0.73, 0.0)"
+        },
+        {
+          "camera": "(2.0, 1.2, -3.1)",
+          "error": 0,
+          "fov": 35.0,
+          "path": "res://build/model-review-goalie-filter-probe-quarter.jpg",
+          "target": "(0.0, 0.73, 0.0)"
+        },
+        {
+          "camera": "(-0.621352, 0.756649, -1.224553)",
+          "error": 0,
+          "fov": 38.0,
+          "path": "res://build/model-review-goalie-filter-probe-pad.jpg",
+          "target": "(-0.171352, 0.476649, -0.274553)"
+        },
+        {
+          "camera": "(-0.77, 1.04, -1.305)",
+          "error": 0,
+          "fov": 34.0,
+          "path": "res://build/model-review-goalie-filter-probe-catcher.jpg",
+          "target": "(-0.47, 0.92, -0.455)"
+        }
+      ],
+      "engine": "4.6.2-stable (official)",
+      "goalkeeper": true,
+      "pose": "idle",
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "size": "960x960",
+      "source": "Actual isolated Godot 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay",
+      "stage": "goalie-filter-probe",
+      "visual_script": "res://scripts/skater_visual.gd"
+    },
+    "goalie-final": {
+      "captures": [
+        {
+          "camera": "(0.0, 0.95, -3.5)",
+          "error": 0,
+          "fov": 35.0,
+          "path": "res://build/model-review-goalie-final-front.jpg",
+          "target": "(0.0, 0.73, 0.0)"
+        },
+        {
+          "camera": "(2.0, 1.2, -3.1)",
+          "error": 0,
+          "fov": 35.0,
+          "path": "res://build/model-review-goalie-final-quarter.jpg",
+          "target": "(0.0, 0.73, 0.0)"
+        },
+        {
+          "camera": "(-0.621352, 0.756649, -1.224553)",
+          "error": 0,
+          "fov": 38.0,
+          "path": "res://build/model-review-goalie-final-pad.jpg",
+          "target": "(-0.171352, 0.476649, -0.274553)"
+        },
+        {
+          "camera": "(-0.77, 1.04, -1.305)",
+          "error": 0,
+          "fov": 34.0,
+          "path": "res://build/model-review-goalie-final-catcher.jpg",
+          "target": "(-0.47, 0.92, -0.455)"
+        }
+      ],
+      "engine": "4.6.2-stable (official)",
+      "goalkeeper": true,
+      "pose": "idle",
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "size": "960x960",
+      "source": "Actual isolated Godot 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay",
+      "stage": "goalie-final",
+      "visual_script": "res://scripts/skater_visual.gd"
+    },
+    "goalie-catch-final": {
+      "captures": [
+        {
+          "camera": "(0.0, 0.95, -3.5)",
+          "error": 0,
+          "fov": 35.0,
+          "path": "res://build/model-review-goalie-catch-final-front.jpg",
+          "target": "(0.0, 0.73, 0.0)"
+        },
+        {
+          "camera": "(2.0, 1.2, -3.1)",
+          "error": 0,
+          "fov": 35.0,
+          "path": "res://build/model-review-goalie-catch-final-quarter.jpg",
+          "target": "(0.0, 0.73, 0.0)"
+        },
+        {
+          "camera": "(-0.621352, 0.756649, -1.224553)",
+          "error": 0,
+          "fov": 38.0,
+          "path": "res://build/model-review-goalie-catch-final-pad.jpg",
+          "target": "(-0.171352, 0.476649, -0.274553)"
+        },
+        {
+          "camera": "(-0.923892, 1.456081, -1.181126)",
+          "error": 0,
+          "fov": 34.0,
+          "path": "res://build/model-review-goalie-catch-final-catcher.jpg",
+          "target": "(-0.623892, 1.336081, -0.331126)"
+        }
+      ],
+      "engine": "4.6.2-stable (official)",
+      "goalkeeper": true,
+      "pose": "catch",
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "size": "960x960",
+      "source": "Actual isolated Godot 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay",
+      "stage": "goalie-catch-final",
+      "visual_script": "res://scripts/skater_visual.gd"
+    },
+    "arena": {
+      "engine": "4.6.2-stable (official)",
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "source": "Actual main.tscn; frozen goalie inspection camera, HUD hidden, posed with production save functions. Direct viewport JPEGs, not normal gameplay footage."
+    }
+  },
+  "images": {
+    "goalie-arena-butterfly-20261021.jpg": {
+      "sha256": "ae2cba1f880a32807b074a3d184d0520dd649a639b03e441f6f124581e782638",
+      "bytes": 518806
+    },
+    "goalie-arena-ready-20261021.jpg": {
+      "sha256": "712cf572c8c36f19c5187d3c3a76dbace3fea29e25ed7080013e5ff4ce88481f",
+      "bytes": 506174
+    },
+    "goalie-before-catcher-20261021.jpg": {
+      "sha256": "801ebef059f53b430bffe20c7587ea23a579ba711fa70a4acdd526aa392b4e9a",
+      "bytes": 338893
+    },
+    "goalie-before-quarter-20261021.jpg": {
+      "sha256": "0978b6cc7eb41a38b35e926cc55dcc49fc71168ef64e3cc67ef0dfebb4abe4d7",
+      "bytes": 130253
+    },
+    "goalie-filter-probe-catcher-20261021.jpg": {
+      "sha256": "ce8e5e57787d7bfa1f56c40eb5ab97eee682cdcfedf823dcf7c211ee1a95eb70",
+      "bytes": 228135
+    },
+    "goalie-final-catcher-20261021.jpg": {
+      "sha256": "02f5b6b2bce9adaa90d2f8391dee377aae6a5f91e641da1e26f49b9fe0b1d40d",
+      "bytes": 236059
+    },
+    "goalie-final-pad-20261021.jpg": {
+      "sha256": "78952a31e91ee8fb9050bd0e8871cdd402aa09915adcbda4c7f76865cfdbbd34",
+      "bytes": 213354
+    },
+    "goalie-final-quarter-20261021.jpg": {
+      "sha256": "c8889f1128882bc7d834fdc91f2f9e1200022cff2a491ade34e6271bec2682d8",
+      "bytes": 113711
+    },
+    "goalie-secured-catch-20261021.jpg": {
+      "sha256": "4f827ff4ea4dc4f8591af4bb38319e6ac5c3fd2d5981e09ef2e413002d9dc983",
+      "bytes": 201540
+    }
+  },
+  "remaining": [
+    "Thigh-rise hinge construction/fit",
+    "Mask shell opening, separate cage/material work and anatomy",
+    "More natural finger/web deformation and exact mesh collision",
+    "Post/RVH transitions and planted recovery/T-pushes",
+    "Physical-controller/hardware visual/performance review",
+    "Shootout-specific catch-and-hold choreography"
+  ],
+  "release": false,
+  "plugins_required": false,
+  "external_review": "Claude remote checked, no new receiver-authored reply or visual approval inferred"
+}

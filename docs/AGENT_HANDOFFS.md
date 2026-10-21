@@ -84,3 +84,5 @@ are authoritative for acknowledgement and progress. No gameplay or art changed
 when the channel was established.
 
 | [CX-20261021-009](agent_handoffs/codex-to-claude/CX-20261021-009.md) | Codex → Claude | Advanced tactical planner, match AI and native coaching UI; bench/visual preservation | Implemented; feedback optional, no reply assumed |
+
+| [CX-20261021-010](agent_handoffs/codex-to-claude/CX-20261021-010.md) | Codex → Claude | Goalie atlas artifact/finish, eased saves, procedural shuffle, confirmed-catch fold and puck hold | Implemented; further art feedback requested, no acknowledgement assumed |

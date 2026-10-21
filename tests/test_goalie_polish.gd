@@ -48,11 +48,12 @@ func run() -> void:
 	for i in range(60): v.set_save("glove",Vector2(0.6,1.2),1.0/120)
 	check(absf(at30-v.save_weights.glove)<0.0001,"Save blend independent of frame rate")
 	# Force empty optional clips; fallback step still advances on lateral travel.
-	v.butterfly=0;v.shuffle_data=[{},{}];v.shuffle_weight=1;v.lateral=1.2
+	v.butterfly=0;v.animate(0,1.0/60,0,false)
+	v.shuffle_data=[{},{}];v.shuffle_weight=1;v.lateral=1.2
 	v.shuffle_time=0.15;v.pose(0,0);var foot: Vector3=v.feet[0]
 	v.shuffle_time=0.80;v.pose(0,0)
 	check(v.feet[0].distance_to(foot)>0.025,"No-mocap lateral shuffle changes foot placement")
-	check(v.feet[0].x>0.20 and v.feet[1].x< -0.20,"Shuffle stance never crosses the feet")
+	check(v.feet[0].x>0.20 and v.feet[0].x<0.34 and v.feet[1].x< -0.20 and v.feet[1].x> -0.34,"Shuffle stance never crosses the feet")
 	v.queue_free();await process_frame
 	Settings.path="res://build/goalie-polish/settings.json";Match.skip_title=true
 	change_scene_to_file("res://main.tscn")

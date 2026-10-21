@@ -334,3 +334,23 @@ Broad regression completed: 52 passed, 0 failed, 1 optional mocap skip (49 nativ
 suites plus engine/import/Python checks; 31 Python unit tests). Final new suites
 report 494 and 15 checks. Timing of final refinements versus broad checks is recorded
 explicitly in verification/team-tactics-20261021.json.
+
+## Goalie equipment/animation — active owner-directed Codex scope
+
+User explicitly asks Codex to improve goalie graphics and animations. Checked
+Claude remote: still 85fd791, preserved. Narrow edits reserved in goalie-only gear
+builders and goalie pose/layer branches in skater_visual.gd; no skater helmet,
+visor, bench or tactical UI changes. Capture original 668d99a before changing
+runtime source, review actual neutral renders, then verify animated collider fit.
+
+Goalie checkpoint source df15aee: Compatibility filtering-only probe removed
+constant-atlas-UV speckling; normal/roughness maps and finite tangents, flatter pad
+finish and smoother catcher roll. Eased shared drop pose, exponential save blend,
+procedural no-clip shuffle and contact-gated regulation catcher fold/puck follow
+are implemented. Existing helmet/visor, tactics and Claude bench code preserved.
+Full regression: 53 passed, 0 failed, 1 optional mocap skip (50 native suites and 31
+Python tests). Final 26-check goalie-polish follow-up also passed after strengthening
+its ready-shuffle fixture. Run order/provenance/limits:
+verification/goalie-polish-20261021.json and GOALIE_EQUIPMENT_POLISH.md.
+CX-20261021-010 records remaining hinge/mask/recovery art feedback request; no
+receiver acknowledgement, visual approval, hardware FPS or release claim.

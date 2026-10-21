@@ -200,3 +200,12 @@ Six selectable tactical categories now affect actual on-ice AI targets and puck
 decisions. See TEAM_TACTICS.md for scope, screenshots, evidence and remaining
 advanced behavior. This improves the partial tactics row; it does not complete
 AAA-level AI, simulator tactics or persistent GM coaching.
+
+## Goalie equipment/motion checkpoint — 2026-10-21
+
+Goaltending remains **Partial**. Added Compatibility atlas-filter artifact repair,
+flatter pad construction/binding, goalie leather finish/tangents, eased drop/save
+motion, no-clip shuffle fallback and regulation contact-gated catcher fold with
+frozen-puck follow through the whistle. Mask/hinge/anatomy and post/recovery work
+remain open. GOALIE_EQUIPMENT_POLISH.md distinguishes actual engine inspection
+captures, tests and remaining limitations; no AAA goalie realism claim.
