@@ -9,6 +9,7 @@ uniform bool hide_socks = false;
 // since screen-space SSS is not available in gl_compatibility.
 uniform sampler2D skin_detail : filter_linear_mipmap_anisotropic, repeat_enable;
 uniform bool has_skin_detail = false;
+uniform bool lip_surface = false;
 uniform bool hide_neck = false;
 uniform float skin_detail_tiles = 24.0;
 uniform float skin_wrap = 0.45;
@@ -47,6 +48,18 @@ void fragment() {
 		color = navy;
 	}
 	skin = region < 0.5 ? 1.0 : 0.0;
+	if (skin > 0.5) {
+		if (lip_surface) color *= vec3(1.02, 0.93, 0.92);
+		// Original subtle facial albedo, located in stable bind-pose UV space.
+		// Distinguish lips/brows without painting lighting into the skin.
+		float face_u = UV.x - 0.5;
+		float lip = exp(-pow((rest_height - 1.601) / 0.008, 2.0) - pow(face_u / 0.029, 4.0));
+		color = mix(color, color * vec3(1.08, 0.72, 0.73), lip * 0.15);
+		float brow_u = (abs(face_u) - 0.036) / 0.020;
+		float brow_y = 1.703 + 0.004 * (1.0 - brow_u * brow_u);
+		float brow = exp(-pow((rest_height - brow_y) / 0.0028, 2.0) - pow(brow_u, 6.0));
+		color *= 1.0 - 0.65 * brow;
+	}
 	if (skin > 0.5 && has_skin_detail) {
 		vec4 d = texture(skin_detail, UV * skin_detail_tiles);
 		// Mottled, slightly uneven skin tone; redder in the low spots.
@@ -75,8 +88,8 @@ void fragment() {
 		float from_ice = 0.5 - 0.5 * wn.y;
 		EMISSION = color * (scatter_color * 0.035 + vec3(0.04 + 0.12 * from_ice));
 	}
-	ROUGHNESS = region < 0.5 ? 0.55 : 0.85;
-	SPECULAR = region < 0.5 ? 0.35 : 0.22;
+	ROUGHNESS = region < 0.5 ? 0.68 : 0.85;
+	SPECULAR = region < 0.5 ? 0.28 : 0.22;
 }
 void light() {
 	float ndl = dot(NORMAL, LIGHT);
@@ -93,9 +106,9 @@ void light() {
 	DIFFUSE_LIGHT += diffuse * ATTENUATION * LIGHT_COLOR / PI;
 	// Soft, broad skin/cloth highlight (normalised Blinn-Phong).
 	vec3 h = normalize(VIEW + LIGHT);
-	float r = skin > 0.5 ? 0.5 : 0.8;
+	float r = skin > 0.5 ? 0.68 : 0.8;
 	float shin = 2.0 / max(r * r * r * r, 0.002) - 2.0;
 	float fres = 0.04 + 0.96 * pow(1.0 - max(dot(h, VIEW), 0.0), 5.0);
 	float spec = pow(max(dot(NORMAL, h), 0.0), shin) * (shin + 8.0) / (8.0 * PI) * fres * max(ndl, 0.0);
-	SPECULAR_LIGHT += spec * ATTENUATION * LIGHT_COLOR * (skin > 0.5 ? 0.6 : 0.3);
+	SPECULAR_LIGHT += spec * ATTENUATION * LIGHT_COLOR * (skin > 0.5 ? 0.45 : 0.3);
 }

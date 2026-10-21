@@ -400,8 +400,8 @@ static func _gear(detail: Texture2D, tiles: float, strength: float, roughness: f
 ## are shared by every team (socks: one per colourway).
 static func breezers() -> ShaderMaterial:
 	return cached("breezers", func() -> ShaderMaterial:
-		var m := _gear(ripstop_texture(), 50.0, 0.12, 0.5, 0.45)
-		m.set_shader_parameter("sheen", 0.55)
+		var m := _gear(ripstop_texture(), 50.0, 0.32, 0.86, 0.24)
+		m.set_shader_parameter("sheen", 0.20)
 		m.set_shader_parameter("albedo_variation", 0.10)
 		m.set_shader_parameter("quilting", 1.0)
 		return m)
@@ -418,7 +418,7 @@ static func socks(kit: Color, stripe: Color) -> ShaderMaterial:
 
 static func gloves() -> ShaderMaterial:
 	return cached("gloves", func() -> ShaderMaterial:
-		var m := _gear(leather_texture(), 40.0, 0.7, 0.55, 0.45)
+		var m := _gear(leather_texture(), 40.0, 0.55, 0.68, 0.32)
 		m.set_shader_parameter("sheen", 0.25)
 		m.set_shader_parameter("albedo_variation", 0.12)
 		m.set_shader_parameter("quilting", 0.6)

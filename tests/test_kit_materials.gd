@@ -90,9 +90,10 @@ func run() -> void:
 	# Skin keeps garment hiding and gains detail.
 	var body: MeshInstance3D = null
 	for child in a.skeleton.get_children():
-		if child is MeshInstance3D and child != a.jersey: body = child
-	check(param(body, "has_skin_detail") == true and param(body, "skin_detail") is Texture2D, "Skin has pore detail")
-	check(param(body, "hide_pants") == true and param(body, "hide_socks") == true, "Skin shader still hides the body's pants and socks")
+		if child is MeshInstance3D and child.mesh.get_surface_count()==6: body = child
+	var skin_material: ShaderMaterial=body.get_surface_override_material(0)
+	check(skin_material.get_shader_parameter("has_skin_detail") == true and skin_material.get_shader_parameter("skin_detail") is Texture2D, "Skin has pore detail")
+	check(skin_material.get_shader_parameter("hide_pants") == true and skin_material.get_shader_parameter("hide_socks") == true, "Skin shader still hides the body's pants and socks")
 
 	# Caching: textures generated once, materials shared within a colourway.
 	check(param(a.jersey, "knit_tex") == param(b.jersey, "knit_tex"), "Two skaters share the knit texture")

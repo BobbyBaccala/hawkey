@@ -197,7 +197,7 @@ func _ready() -> void:
 	uniform.set_shader_parameter("has_skin_detail",true)
 	for child in skeleton.get_children():
 		if child is MeshInstance3D:
-			child.material_override = uniform
+			preload("res://scripts/player_surface_materials.gd").apply(child,uniform)
 	helmet = Node3D.new()
 	rig.add_child(helmet)
 	build_helmet()
@@ -357,6 +357,8 @@ func build_helmet() -> void:
 	var visor := add_mesh(helmet,Gear.visor())
 	visor.material_override = Kit.visor()
 	visor.name = "Visor"
+	# Clear polycarbonate must not become an opaque shadow mask over the face.
+	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 ## Torso of the sweater in rest (shirt) space: half-width and front/back
 ## half-depths by height. Shoulder pads under the sweater give the wide,

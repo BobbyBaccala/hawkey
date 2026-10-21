@@ -47,7 +47,7 @@ vec3 srgb_to_linear(vec3 c) {
 
 void fragment() {
 	vec3 col = base_color.rgb;
-	if (use_vertex_color) col *= srgb_to_linear(COLOR.rgb);
+	if (use_vertex_color) col *= OUTPUT_IS_SRGB ? COLOR.rgb : srgb_to_linear(COLOR.rgb);
 	if (sock_stripes) {
 		float aa = fwidth(limb_t) * 0.7 + 0.001;
 		float s = smoothstep(0.30 - aa, 0.30 + aa, limb_t) - smoothstep(0.40 - aa, 0.40 + aa, limb_t);
@@ -60,8 +60,9 @@ void fragment() {
 	float strength = detail_strength;
 	float groove = 0.0;
 	if (metal_from_grey) {
-		float hi = max(col.r, max(col.g, col.b));
-		float lo = min(col.r, min(col.g, col.b));
+		vec3 linear_col = OUTPUT_IS_SRGB ? srgb_to_linear(col) : col;
+		float hi = max(linear_col.r, max(linear_col.g, linear_col.b));
+		float lo = min(linear_col.r, min(linear_col.g, linear_col.b));
 		// sRGB ~0.6-0.72 neutral grey = runner steel (holder plastic is lighter).
 		metal = smoothstep(0.30, 0.34, lo) * (1.0 - smoothstep(0.50, 0.56, hi));
 		// Plastic holder: smooth, semi-gloss, no leather grain.
