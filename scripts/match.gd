@@ -3,6 +3,8 @@ const MatchState = preload("res://scripts/match_state.gd")
 const ControllerInput = preload("res://scripts/controller_input.gd")
 const PuckPhysics = preload("res://scripts/puck.gd")
 const BroadcastHud = preload("res://scripts/broadcast_hud.gd")
+const TeamTactics=preload("res://scripts/team_tactics.gd")
+var tactical_plans: Array = [{},{}]
 const EventSession=preload("res://scripts/event_session.gd")
 var event_mode:=""
 const GMSession=preload("res://scripts/gm_session.gd")
@@ -737,13 +739,37 @@ func update_roster_stamina(delta: float) -> void:
 			if total/maxi(count_,1)<0.70 and puck.position.z*attack_direction(team)>-8:
 				request_line(team,active_lines[team]+1)
 
+func lane_clear(from_: Vector3,to_: Vector3,team: int,margin: float=1.2) -> bool:
+	var segment:=to_-from_
+	var length_sq:=segment.length_squared()
+	if length_sq<0.01: return false
+	for opponent in skaters:
+		if body_team(opponent)==team or not bool(opponent.get_meta("eligible")) or bool(opponent.get_meta("changing")) or is_hopping(opponent): continue
+		var t:=clampf((opponent.position-from_).dot(segment)/length_sq,0,1)
+		if t>0.05 and t<0.98 and opponent.position.distance_to(from_+segment*t)<margin: return false
+	return true
+
+func tactical_pass_target(actor: CharacterBody3D) -> CharacterBody3D:
+	var best: CharacterBody3D
+	var score:=-INF
+	var team:=body_team(actor)
+	var attack:=attack_direction(team)
+	for other in skaters:
+		if other==actor or body_team(other)!=team or not bool(other.get_meta("eligible")) or bool(other.get_meta("changing")) or is_hopping(other): continue
+		var gap:=actor.position.distance_to(other.position)
+		if gap<2.5 or gap>24 or not lane_clear(actor.position,other.position+other.velocity*0.25,team): continue
+		var candidate:=minf(closest_opponent_distance(other),6)*1.8+(other.position.z-actor.position.z)*attack*0.22-gap*0.06
+		if candidate>score: score=candidate;best=other
+	return best
+
 func update_team_ai(delta: float) -> void:
-	var nearest: Array[CharacterBody3D]=[null,null]
+	var groups: Array=[[],[]]
 	for actor in skaters:
 		if not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")) or is_hopping(actor): continue
-		var team:=body_team(actor)
-		if nearest[team]==null or actor.position.distance_squared_to(puck.position)<nearest[team].position.distance_squared_to(puck.position):
-			nearest[team]=actor
+		groups[body_team(actor)].append({"id":actor.get_instance_id(),"slot":int(actor.get_meta("slot")),"position":actor.position})
+	for team in range(2):
+		var owner: int=carrier.get_instance_id() if carrier!=null and body_team(carrier)==team else -1
+		tactical_plans[team]=TeamTactics.plan(groups[team],groups[1-team],puck.position,owner,attack_direction(team),TeamTactics.choices[team],Vector2i(match_state.count(team),match_state.count(1-team)))
 	for actor in skaters:
 		if not bool(actor.get_meta("eligible")): continue
 		if actor==player and not bool(actor.get_meta("changing")) and not is_hopping(actor): continue
@@ -800,33 +826,32 @@ func update_team_ai(delta: float) -> void:
 				visual_.animate(0,delta,0,false)
 				continue
 		elif actor==carrier:
-			target=Vector3(clampf(actor.position.x*0.6,-5,5),0,attack*(Arena.GOAL_LINE-3.0))
+			target=tactical_plans[team].get(actor.get_instance_id(),{"target":actor.position}).target
 			var distance_to_goal:=actor.position.distance_to(Vector3(0,0,attack*Arena.GOAL_LINE))
 			var timer:=float(actor.get_meta("decision"))-delta
 			if timer<=0 and cooldown<=0:
 				actor.set_meta("decision",0.4)
 				var pressure:=closest_opponent_distance(actor)
-				if distance_to_goal<16 and distance_to_goal>3:
+				var other:=tactical_pass_target(actor)
+				var killing: bool=match_state.count(team)<match_state.count(1-team)
+				if killing and other!=null and (other.position.z-actor.position.z)*attack<3: other=null
+				var shot_lane: bool=lane_clear(actor.position,Vector3(0,0,attack*Arena.GOAL_LINE),team,0.9)
+				if other!=null and (pressure<3.2 or actor.position.z*attack< -Arena.BLUE_LINE or killing or not shot_lane):
+					release_puck(actor,other.position+other.velocity*0.25-puck.position,17)
+				elif killing and actor.position.z*attack<0:
+					release_puck(actor,Vector3(attack*0.15,0,attack),23,0.6)
+				elif distance_to_goal<16 and distance_to_goal>3 and shot_lane:
 					var goalie:=goalkeeper_at_end(attack)
 					var target_x:float= -0.65 if goalie.position.x>=0 else 0.65
 					emit_net_shot(actor,Vector2(clampf(target_x/(-attack*0.78),-1,1),-0.5))
 					roster(actor).shots+=1
-				elif pressure<2.6:
-					var other:=pass_target(actor,Vector3(0,0,attack))
-					if other!=null: release_puck(actor,other.position+other.velocity*0.25-puck.position,17)
 			else: actor.set_meta("decision",timer)
-		elif nearest[team]==actor:
-			target=Vector3(puck.position.x,0,puck.position.z)+Vector3(puck.linear_velocity.x,0,puck.linear_velocity.z)*0.08
 		else:
-			var possession:=carrier!=null and body_team(carrier)==team
-			var x_slots: Array[float]=[0,-6,6,-5,5]
-			var z_offset: Array[float]=[3,1,1,-8,-8]
-			if possession:
-				target=Vector3(clampf(puck.position.x*0.25+x_slots[slot],-(Arena.HALF_WIDTH-1.5),Arena.HALF_WIDTH-1.5),0,clampf(puck.position.z+attack*z_offset[slot],-(Arena.GOAL_LINE-2.0),Arena.GOAL_LINE-2.0))
-			else:
-				var own_goal:float= -attack*Arena.GOAL_LINE
-				var defended_z:float=lerpf(puck.position.z,own_goal,0.35 if slot>=3 else 0.1)
-				target=Vector3(clampf(puck.position.x*0.3+x_slots[slot],-(Arena.HALF_WIDTH-2.0),Arena.HALF_WIDTH-2.0),0,clampf(defended_z,-(Arena.GOAL_LINE-2.0),Arena.GOAL_LINE-2.0))
+			var assignment: Dictionary=tactical_plans[team].get(actor.get_instance_id(),{"target":actor.position,"role":"Recover","phase":"Transition"})
+			target=assignment.target
+			actor.set_meta("tactical_role",assignment.role)
+			actor.set_meta("tactical_phase",assignment.phase)
+		actor.set_meta("tactical_target",target)
 		var to_target:=target-actor.position
 		var intent:=to_target.limit_length(1)
 		if to_target.length()<0.6: intent=Vector3.ZERO

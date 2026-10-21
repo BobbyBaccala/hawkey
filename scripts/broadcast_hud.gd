@@ -17,6 +17,9 @@ var gm_context:=false
 var reduce_motion:=false
 signal practice_requested
 
+const TeamTactics=preload("res://scripts/team_tactics.gd")
+var coaching_team: OptionButton
+var coaching_choices: Dictionary={}
 const InterfaceFont = preload("res://scripts/interface_font.gd")
 const INK := Color("#f2f5f8")
 const MUTED := Color("#aabbd0")
@@ -432,8 +435,37 @@ func build_pause() -> void:
 	box.add_child(menu_button("Restart game", func(): restart_requested.emit()))
 	box.add_child(menu_button("Return to cup" if event_context=="cup" else ("More modes" if event_context=="shootout" else ("Return to GM season" if gm_context else "Return to menu")), func(): menu_requested.emit()))
 	box.add_child(menu_button("Quit", func(): quit_requested.emit()))
+	build_coaching()
 	pause_panel.visible = false
 	root_ui.add_child(pause_panel)
+
+func build_coaching() -> void:
+	var panel:=PanelContainer.new()
+	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
+	panel.offset_left=-650;panel.offset_right=-60;panel.offset_top=-370;panel.offset_bottom=370
+	var style:=StyleBoxFlat.new();style.bg_color=SLATE;style.set_corner_radius_all(12)
+	style.content_margin_left=24;style.content_margin_right=24;style.content_margin_top=20;style.content_margin_bottom=20
+	panel.add_theme_stylebox_override("panel",style)
+	pause_panel.add_child(panel)
+	var scroll:=ScrollContainer.new();scroll.follow_focus=true;panel.add_child(scroll)
+	var rows:=VBoxContainer.new();rows.size_flags_horizontal=Control.SIZE_EXPAND_FILL;rows.add_theme_constant_override("separation",4);scroll.add_child(rows)
+	rows.add_child(label("TEAM STRATEGIES",28,INK,700))
+	coaching_team=OptionButton.new();style_choice(coaching_team)
+	for team in range(2): coaching_team.add_item(team_names[team])
+	rows.add_child(coaching_team)
+	coaching_team.item_selected.connect(func(_index): refresh_coaching())
+	var captions:={"offense":"Offensive zone", "defense":"Defensive coverage", "forecheck":"Forecheck / neutral zone", "breakout":"Breakout support", "powerplay":"Power play", "penaltykill":"Penalty kill"}
+	for key in TeamTactics.OPTIONS:
+		rows.add_child(label(captions[key],17,MUTED,500))
+		var choice:=OptionButton.new();style_choice(choice)
+		for option in TeamTactics.OPTIONS[key]: choice.add_item(option)
+		choice.item_selected.connect(func(index): TeamTactics.set_choice(coaching_team.selected,key,index))
+		coaching_choices[key]=choice;rows.add_child(choice)
+	rows.add_child(label("Applies on resume • Manpower selects PP / PK automatically",14,MUTED,400))
+	refresh_coaching()
+
+func refresh_coaching() -> void:
+	for key in coaching_choices: coaching_choices[key].select(TeamTactics.choices[coaching_team.selected][key])
 
 func show_pause(on: bool, camera_name: String) -> void:
 	pause_panel.visible = on
