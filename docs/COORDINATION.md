@@ -241,3 +241,8 @@ not yet observed; a committed workflow is not evidence of a hosted green run.
 Evidence: verification/project-quality-20261020.json. Next player-facing work
 remains the shared player-stat ledger and deeper GM history; export/hardware/
 platform validation remains open.
+
+Hosted verification follow-up: GitHub push run 39532101283 for 441f2b0 succeeded
+in 3m23s and retained one report artifact. Its Node 20 action warning prompted
+verified official Node 24 pins for checkout/upload-artifact; updated workflow
+syntax and action inputs/runtime checked. The updated hosted run is pending.

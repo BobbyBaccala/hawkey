@@ -452,11 +452,19 @@
   "python_test_count": 31,
   "runner_guard_tests": 7,
   "yaml_validation": "All workflow/issue YAML parsed; expected event triggers, read-only permissions and 40-character action pins verified",
-  "remote_actions": "Workflow configured; hosted execution not observed",
+  "remote_actions": {
+    "baseline_run": "https://github.com/BobbyBaccala/hawkey/actions/runs/39532101283",
+    "baseline_commit": "441f2b07eb37367e842db4f7db6b48c121ef2e50",
+    "status": "Success",
+    "duration": "3m 23s",
+    "artifacts": 1,
+    "warning": "Initial actions declared Node 20; updated official commit pins now declare Node 24",
+    "latest_pin_update_status": "Configured and source-verified; hosted rerun pending"
+  },
   "scope": "Developer/project workflow only. No new gameplay/art/screenshots, packaged export, release or hardware/platform validation claimed.",
   "sources_sha256": {
     "tools/check_project.py": "cb154d2c795ac8f1cd91e45839bd05107ae8ab1c5c138c34f50b30f0fd8df008",
     "tools/ci/install_godot.sh": "407d336097752186710f4b8302d99226602e7b623e0577dee5dd5e1a92290b47",
-    ".github/workflows/project-checks.yml": "129e588caba74356164f0454c9ced5b7807875f6db4f65b0dcbdc8e38cf49077"
+    ".github/workflows/project-checks.yml": "0c4fd2beec958e86b92fb95e60e0c1ccb0a6cdb383436f080cff7318bb8a9c00"
   }
 }
