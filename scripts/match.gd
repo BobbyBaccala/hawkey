@@ -10,6 +10,9 @@ const CAMERA_NAMES := ["DYNAMIC", "OVERHEAD", "BROADCAST", "FULL RINK"]
 const BENCH_X := -(Arena.HALF_WIDTH - 0.75)
 ## How far behind the board face a hopping skater lands on the bench floor.
 const HOP_BENCH_DEPTH := 0.85
+## Longest the tired player waits on the bench floor for a teammate to get up
+## (hop 3) before the fresh player goes out anyway.
+const HOP_WAIT_MAX := 1.2
 ## Restarting from the pause menu skips the title screen.
 static var skip_title := false
 var hud_node: CanvasLayer
@@ -255,6 +258,31 @@ func sync_strength() -> void:
 					active_count += 1
 					break
 				if active_count>=target_count: break
+
+## Line change, bench side: the tired player has stepped down onto the bench;
+## the fresh player (a new identity on the same body) goes out over the boards
+## from where the bench player who got up stands, and the tired one walks to
+## the free seat (arena_benches.gd go_out()).
+func hop_out(actor: CharacterBody3D, team: int, target: Vector3, visual_: Node3D) -> void:
+	# Fresh legs climb out a little further along the bench.
+	var tired_number:String=visual_.number
+	# Where he stepped down onto the bench: he walks on from there to the free seat.
+	var landing:Vector3=visual_.global_position
+	var landing_face:Vector3=-visual_.global_transform.basis.z
+	change_identity(actor,int(actor.get_meta("pending_id")))
+	var from_:Vector3=visual_.position+Vector3(0,0,-signf(target.z)*0.7)
+	# The one who got up goes out from where he stands; the player
+	# who came off takes his seat (arena_benches.gd go_out()).
+	var out_benches=arena.get_node_or_null("Benches")
+	var out_at=out_benches.go_out(team,tired_number,landing,landing_face) if out_benches!=null else null
+	if out_at is Vector3:
+		from_=actor.to_local(out_at)
+		from_.y=visual_.position.y
+	# A different player now: he gets up off the bench facing the ice, stick up.
+	visual_.rotation.y=-PI*0.5
+	visual_.start_hop(from_,Vector3.ZERO,-Arena.HALF_WIDTH-actor.position.x,true)
+	actor.set_meta("hop",2)
+	if actor==player: switch_player()
 
 ## Mid board hop (line change): the body waits at the bench door while its
 ## visual travels; it plays no part in play until it is back on the ice.
@@ -634,25 +662,22 @@ func update_team_ai(delta: float) -> void:
 				set_puck_contacts_enabled(actor,false)
 				if carrier==actor: carrier=null
 			elif hop==1 and visual_.hop_finished():
-				# Fresh legs climb out a little further along the bench.
-				var tired_number:String=visual_.number
-				# Where he stepped down onto the bench: he walks on from there to the free seat.
-				var landing:Vector3=visual_.global_position
-				var landing_face:Vector3=-visual_.global_transform.basis.z
-				change_identity(actor,int(actor.get_meta("pending_id")))
-				var from_:Vector3=visual_.position+Vector3(0,0,-signf(target.z)*0.7)
-				# The one who got up goes out from where he stands; the player
-				# who came off takes his seat (arena_benches.gd go_out()).
-				var out_benches=arena.get_node_or_null("Benches")
-				var out_at=out_benches.go_out(team,tired_number,landing,landing_face) if out_benches!=null else null
-				if out_at is Vector3:
-					from_=actor.to_local(out_at)
-					from_.y=visual_.position.y
-				# A different player now: he gets up off the bench facing the ice, stick up.
-				visual_.rotation.y=-PI*0.5
-				visual_.start_hop(from_,Vector3.ZERO,-Arena.HALF_WIDTH-actor.position.x,true)
-				actor.set_meta("hop",2)
-				if actor==player: switch_player()
+				# Nobody up to go out (stand_up() found nobody when he started,
+				# or the one who got up sat back down): a player gets up now,
+				# quickly, while the tired one waits on the bench floor (hop 3),
+				# rather than the fresh player appearing beside him.
+				var wait_benches=arena.get_node_or_null("Benches")
+				if wait_benches!=null and not wait_benches.has_riser(team) and wait_benches.stand_up(team,visual_.global_position.z,true):
+					actor.set_meta("hop",3)
+					actor.set_meta("hop_wait",0.0)
+				else:
+					hop_out(actor,team,target,visual_)
+			elif hop==3:
+				var wait_:=float(actor.get_meta("hop_wait",0.0))+delta
+				actor.set_meta("hop_wait",wait_)
+				var wait_benches=arena.get_node_or_null("Benches")
+				if wait_benches==null or wait_benches.has_riser(team,true) or not wait_benches.has_riser(team) or wait_>HOP_WAIT_MAX:
+					hop_out(actor,team,target,visual_)
 			elif hop==2 and visual_.hop_finished():
 				visual_.cancel_hop()
 				actor.set_meta("hop",0)

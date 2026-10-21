@@ -12,6 +12,10 @@ extends SceneTree
 ##           hips over the planted one)
 ##  close  - the same player stopped in front of the seat, closing his stance
 ##           with a last step before he sits
+##  wait1/wait2 - a real match line change with nobody up to go out when the
+##           tired player lands: he waits on the bench floor while a teammate
+##           gets up (wait1), then the fresh player goes out from there and the
+##           tired one walks on to the seat (wait2)
 ## xvfb-run -a -s "-screen 0 1728x1080x24" godot --rendering-method gl_compatibility --rendering-driver opengl3 --resolution 1728x1080 --script tools/capture_benches.gd
 ## Writes /tmp/hawkey-bench-<name>.png.
 const Arena = preload("res://scripts/arena.gd")
@@ -69,5 +73,41 @@ func run() -> void:
 	for i in range(70): benches.update_figures(1.0 / 60.0)
 	await shot(cam, Vector3(-w + 6.5, 2.2, 0.0), Vector3(-w - 1.5, 0.9, 0.0), 62, "/tmp/hawkey-bench-cheer.png")
 	await shot(cam, Vector3(-w - 2.55, 2.3, 1.6), Vector3(-w - 1.7, 0.7, 5.0), 60, "/tmp/hawkey-bench-backs.png")
+	# Line change with nobody up when the tired player lands (match.gd hop 3).
+	for i in range(300): benches.update_figures(1.0 / 60.0)
+	scene.match_state.phase = scene.MatchState.Phase.PLAY
+	scene.request_line(0, 1)
+	var changer = null
+	for a in scene.skaters:
+		if scene.body_team(a) == 0 and bool(a.get_meta("changing", false)):
+			a.position = scene.bench_spot(0, int(a.get_meta("slot")))
+			if changer == null:
+				changer = a
+				a.visible = true
+			else:
+				# Keep one change in the picture.
+				a.set_meta("changing", false)
+	scene.update_team_ai(1.0 / 120.0)
+	for rig in benches._rigs:
+		if rig.team == 0: rig.rise_until = -1.0
+	var guard := 0
+	while int(changer.get_meta("hop", 0)) != 3 and guard < 400:
+		scene.update_team_ai(1.0 / 120.0)
+		benches.update_figures(1.0 / 120.0)
+		guard += 1
+	for i in range(24):
+		scene.update_team_ai(1.0 / 120.0)
+		benches.update_figures(1.0 / 120.0)
+	var at: Vector3 = changer.get_child(1).global_position
+	await shot(cam, Vector3(-w + 2.4, 2.1, at.z + 3.0), Vector3(-w - 1.4, 0.75, at.z - 0.4), 50, "/tmp/hawkey-bench-wait1.png")
+	guard = 0
+	while int(changer.get_meta("hop", 0)) != 2 and guard < 400:
+		scene.update_team_ai(1.0 / 120.0)
+		benches.update_figures(1.0 / 120.0)
+		guard += 1
+	for i in range(40):
+		scene.update_team_ai(1.0 / 120.0)
+		benches.update_figures(1.0 / 120.0)
+	await shot(cam, Vector3(-w + 2.4, 2.1, at.z + 3.0), Vector3(-w - 1.4, 0.75, at.z - 0.4), 50, "/tmp/hawkey-bench-wait2.png")
 	print("bench capture done")
 	quit()

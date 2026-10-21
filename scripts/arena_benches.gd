@@ -46,6 +46,10 @@ const CHEER_TIME := 4.5
 ## player who came off (sitting down).
 const RISE_STEP := 0.30
 const SEAT_RETURN := 0.5
+## Getting up off the seat: rise per second (stand_up()); HURRY_RISE when the
+## player coming off is already standing on the bench floor waiting for him.
+const RISE_RATE := 1.6
+const HURRY_RISE := 2.6
 ## The player who comes off walks from where he landed on the bench floor to
 ## the free seat (go_out() with a landing) at WALK_SPEED m/s, turning round to
 ## face the ice on the way, then sits. The one who goes out is picked about
@@ -146,7 +150,9 @@ func is_cheering(team: int) -> bool:
 ## bench): the seated player nearest world z `z` on `team`'s bench gets up
 ## off the seat, stick raised, ready to go over the boards. Returns false if
 ## nobody is free to get up (everyone already up or the bench empty).
-func stand_up(team: int, z: float) -> bool:
+## `hurry`: he gets up quicker (HURRY_RISE) - the tired player is already on
+## the bench waiting for him (match.gd hop 3, nobody was up when he landed).
+func stand_up(team: int, z: float, hurry := false) -> bool:
 	var best = null
 	var best_score := INF
 	for rig in _rigs:
@@ -159,6 +165,7 @@ func stand_up(team: int, z: float) -> bool:
 			best_score = score
 	if best == null: return false
 	best.rise_target = 1.0
+	best.rise_rate = HURRY_RISE if hurry else RISE_RATE
 	best.carry_scale = 1.0
 	# A whistle can call the change off: if nobody takes him out, sit back down.
 	best.rise_until = _time + 3.5
@@ -175,8 +182,13 @@ func stand_up(team: int, z: float) -> bool:
 ## vanish: from that frame he stands at the landing, walks to the free seat
 ## (curving back off the boards first, turning to face the ice) and sits.
 func go_out(team: int, number: String, landing: Variant = null, facing := Vector3.ZERO) -> Variant:
-	for rig in _rigs:
-		if rig.team != team or rig.rise_target <= 0.0 or not rig.fig.visible: continue
+	# The one furthest up goes (several can be getting up on a full line change).
+	var best = null
+	for r in _rigs:
+		if r.team != team or r.rise_target <= 0.0 or not r.fig.visible: continue
+		if best == null or r.rise > best.rise: best = r
+	if best != null:
+		var rig: Dictionary = best
 		var at: Vector3 = rig.visual.global_position
 		at.y = rig.fig.global_position.y
 		if landing is Vector3:
@@ -205,6 +217,7 @@ func _start_walk(rig: Dictionary, landing: Vector3, facing: Vector3, number: Str
 	rig.walk_yaw = atan2(-d.x, -d.z) if Vector2(d.x, d.z).length() > 0.01 else PI
 	rig.rise = 1.0
 	rig.rise_target = 0.0
+	rig.rise_rate = RISE_RATE
 	# He carries his stick as he stepped down (on the floor ahead, not raised),
 	# and holds it once seated.
 	rig.carry_scale = 0.0
@@ -244,6 +257,15 @@ func _place_walker(rig: Dictionary) -> void:
 		var d: Vector3 = v.rig.global_transform.basis.inverse() * moved
 		v.walk_dir = Vector2(d.x, d.z).normalized()
 	v.walk_amount = smoothstep(0.0, 0.1, u)
+
+## A player of `team` is up to go out (stand_up() and not yet gone out);
+## with `ready`, only once he is fully on his feet.
+func has_riser(team: int, ready := false) -> bool:
+	for rig in _rigs:
+		if rig.team != team or rig.rise_target <= 0.0 or not rig.fig.visible: continue
+		if String(rig.fig.name).begins_with("PenaltySeat"): continue
+		if not ready or rig.rise >= 0.98: return true
+	return false
 
 func is_walking(rig: Dictionary) -> bool:
 	return rig.walk_t >= 0.0
@@ -300,7 +322,7 @@ func update_figures(delta: float) -> void:
 				_pose_rig(rig, true)
 				continue
 		if rig.rise_target > 0.0 and _time > rig.rise_until: rig.rise_target = 0.0
-		rig.rise = move_toward(rig.rise, rig.rise_target, delta * 1.6)
+		rig.rise = move_toward(rig.rise, rig.rise_target, delta * float(rig.get("rise_rate", RISE_RATE)))
 		var on_bench := not String(fig.name).begins_with("PenaltySeat")
 		var cheer: bool = on_bench and _time + rig.lag < _cheer_until[team] and _time > _cheer_until[team] - CHEER_TIME + rig.lag
 		var slump: bool = on_bench and _time < _slump_until[team]

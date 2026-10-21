@@ -249,6 +249,24 @@ func check_line_change(m, benches) -> void:
 	benches.stand_up(1, -5.0)
 	for i in range(int(4.5 * 60)): benches.update_figures(1.0 / 60.0)
 	check(benches.rising_count(1) == 0, "A player left standing sits back down")
+	# Slice 10: the tired player is already waiting - a hurried rise, still eased.
+	check(not benches.has_riser(1) and benches.stand_up(1, -5.0, true), "A player gets up in a hurry")
+	var hr: Dictionary = {}
+	for r in benches._rigs:
+		if r.team == 1 and r.rise_target > 0.0: hr = r
+	var hprev: float = hr.visual.helmet.global_position.y
+	var hsmooth := true
+	var frames := 0
+	while not benches.has_riser(1, true) and frames < 120:
+		benches.update_figures(1.0 / 60.0)
+		var hh: float = hr.visual.helmet.global_position.y
+		if absf(hh - hprev) > 0.04: hsmooth = false
+		hprev = hh
+		frames += 1
+	check(frames < 30 and hsmooth, "Hurried rise is quick and eased (%d frames)" % frames)
+	benches.go_out(1, "12", hr.visual.global_position, Vector3(1, 0, 0))
+	for i in range(int(4.0 * 60)): benches.update_figures(1.0 / 60.0)
+	check(benches.rising_count(1) == 0 and not benches.has_riser(1), "and he is replaced and seated after")
 	var src := FileAccess.get_file_as_string("res://scripts/match.gd")
 	check(src.contains("hop_benches.stand_up(") and src.contains(".go_out(team,tired_number,landing,landing_face)"), "match.gd line change drives the bench")
 

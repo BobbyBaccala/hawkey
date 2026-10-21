@@ -61,6 +61,7 @@ func run()->void:
 	check(changer.get_child(1).position.length()<0.001,"Fresh skater's visual is back on its body")
 	check(changer.collision_layer==2,"Fresh skater collides again")
 	check(count_team(scene,0)==5,"Bench change must retain five skaters")
+	check_change_nobody_up(scene)
 	scene.update_camera(1)
 	check(absf(scene.camera.rotation.z)<0.0001,"Camera must have no roll")
 	check(absf(scene.camera.position.x-scene.camera_target.x)<0.0001,"Camera must have no lateral offset")
@@ -84,3 +85,74 @@ func run()->void:
 	await process_frame
 	print("Match integration failures: ",failures)
 	quit(failures)
+
+
+## Backlog: bench pass 3 slice 10. When nobody is up to go out as the tired
+## player lands (the one who got up sat back down, or nobody was free), a
+## bench player gets up then (quickly) while the tired one waits on the bench
+## floor in his own number (hop 3); the fresh player then goes out from where
+## that player stands and the tired one walks to the seat from his landing.
+## Before, the fresh player appeared 0.7 m along and the tired one turned into him.
+func check_change_nobody_up(scene) -> void:
+	var benches = scene.arena.get_node_or_null("Benches")
+	if benches == null:
+		check(false, "Benches present for the no-riser change")
+		return
+	for i in range(400): benches.update_figures(1.0/60)   # earlier risers settle
+	scene.match_state.phase=scene.MatchState.Phase.PLAY
+	check(scene.request_line(0,0),"Second on-the-fly change")
+	var changers:=[]
+	for actor in scene.skaters:
+		if scene.body_team(actor)==0 and bool(actor.get_meta("changing",false)):
+			actor.position=scene.bench_spot(0,int(actor.get_meta("slot")))
+			changers.append(actor)
+	scene.update_team_ai(1.0/120)
+	var changer=changers[0]
+	check(int(changer.get_meta("hop",0))==1,"Second change hops onto the bench")
+	# The ones who got up sit back down before the tired players land.
+	for rig in benches._rigs:
+		if rig.team==0: rig.rise_until=-1.0
+	for i in range(60): benches.update_figures(1.0/60)
+	check(not benches.has_riser(0),"Nobody is up to go out")
+	var tired_id:=int(changer.get_meta("roster_id"))
+	var v=changer.get_child(1)
+	var tired_number:String=v.number
+	var landing:=Vector3.ZERO
+	var waited:=0
+	var steady:=true
+	var hop3:=false
+	for i in range(600):
+		var before:Vector3=v.global_position
+		var h:=int(changer.get_meta("hop",0))
+		scene.update_team_ai(1.0/120)
+		benches.update_figures(1.0/120)
+		var now:=int(changer.get_meta("hop",0))
+		if now==3:
+			if not hop3: landing=v.global_position
+			hop3=true
+			waited+=1
+			if v.global_position.distance_to(before)>0.01: steady=false
+			if int(changer.get_meta("roster_id"))!=tired_id or v.number!=tired_number: steady=false
+		if h==3 and now==2: break
+		if now==2 and not hop3: break
+	check(hop3,"With nobody up, the tired player waits on the bench (hop 3)")
+	check(steady,"He stays put in his own number while he waits")
+	var wait_s:=waited/120.0
+	print("no-riser change: waited %.2f s, start x %.2f" % [wait_s, v.global_position.x])
+	check(wait_s>0.2 and wait_s<scene.HOP_WAIT_MAX,"A bench player gets up quickly for him (%.2f s)" % wait_s)
+	check(int(changer.get_meta("hop",0))==2 and int(changer.get_meta("roster_id"))!=tired_id,"The fresh player then goes out")
+	# The tired one is the bench figure walking from his landing in his number.
+	var walker=null
+	for rig in benches._rigs:
+		if rig.team==0 and benches.is_walking(rig) and rig.visual.number==tired_number: walker=rig
+	check(walker!=null,"The tired player walks to the seat in his own number")
+	if walker!=null:
+		var wp:Vector3=walker.visual.global_position
+		check(Vector2(wp.x-landing.x,wp.z-landing.z).length()<0.12,"He walks on from where he landed (%.2f m)" % Vector2(wp.x-landing.x,wp.z-landing.z).length())
+	# The fresh player starts from the one who got up, not 0.7 m along from the landing.
+	var start:Vector3=v.global_position
+	check(start.x< -scene.Arena.HALF_WIDTH-0.9,"Fresh player goes out from the bench, behind the landing (x %.2f)" % start.x)
+	for i in range(600):
+		scene.update_team_ai(1.0/120)
+		if int(changer.get_meta("hop",0))==0: break
+	check(int(changer.get_meta("hop",0))==0 and changer.collision_layer==2,"Fresh player is back on the ice")
