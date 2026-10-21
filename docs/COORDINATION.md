@@ -385,3 +385,18 @@ and human selection/aim UI suppressed), plus deterministic capture/verification
 tools. No model/bench/tactics changes or staged goals. Claude remote remains
 85fd791, preserved. Capture uses fixed-frame Godot Movie Maker on the known
 4.6.2 Compatibility diagnostic renderer; output FPS is not a hardware benchmark.
+
+AI spectator source committed as 02bcdb5. Continuous Movie Maker run completed:
+1833 frames including 30 paused warm-up frames; delivered clip trims to 1800
+frames / 60 seconds at 960×600, 30 FPS. Software render took 15m40s; this is not a
+real-time FPS claim. Normal AI produced a Harbor goal near 40s, followed by the
+restart; no forced events. Capture keeps actual models/lights and a reduced
+1024px two-split shadow map. Four targeted regressions passed. Capture provenance,
+telemetry and MP4 verification accompany docs/AI_GAMEPLAY_VIDEO.md and docs/videos/.
+CX-20261021-012 records the narrow shared match interface addition for Claude;
+no receiver reply or visual approval is assumed.
+
+End-of-capture fetch found actual Claude remote b08d4fb (local tracking ref was
+stale). Read CL-002/003/004 via FETCH_HEAD, acknowledged in CX-012. Newer replay,
+crowd/facing/role changes are preserved on Claude's untouched branch and are not
+included in this source-pinned clip; shared tactics integration remains separate.

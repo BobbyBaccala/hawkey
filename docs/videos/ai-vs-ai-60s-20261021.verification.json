@@ -1,0 +1,1218 @@
+{
+  "video": "ai-vs-ai-60s-20261021.mp4",
+  "sha256": "4bf378c6399bf72c377aef9d4d2dbef24707ebe5cff5de898d35b6394f28c869",
+  "bytes": 22809052,
+  "duration_seconds": 60.0,
+  "frames": 1800,
+  "resolution": [
+    960,
+    600
+  ],
+  "fps": "30/1",
+  "codecs": [
+    "h264",
+    "aac"
+  ],
+  "full_decode_errors": "",
+  "regression_tests": [
+    {
+      "name": "test_ai_spectator",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_tactics_match",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_play_now",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_overtime_shootout",
+      "returncode": 0,
+      "script_error": false
+    }
+  ],
+  "capture": {
+    "ai_vs_ai": true,
+    "camera": "Production Broadcast camera",
+    "capture_profile": "960x600, no MSAA or screen AA; 1024px two-split key shadows. Production models, arena, lights and physics preserved.",
+    "engine": "4.6.2-stable (official)",
+    "output_fps": 30,
+    "render_frames_seen": 1830,
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "rendering": "Fixed-frame offline Movie Maker render; output FPS is not measured real-time hardware performance.",
+    "samples": [
+      {
+        "ai_actors_with_targets": 0,
+        "clock": 1200.0,
+        "phase": 0,
+        "puck": [
+          0.0,
+          0.0163194444030523,
+          0.0
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 0.0
+      },
+      {
+        "ai_actors_with_targets": 0,
+        "clock": 1200.0,
+        "phase": 0,
+        "puck": [
+          0.0,
+          0.0163194444030523,
+          0.0
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 1.0
+      },
+      {
+        "ai_actors_with_targets": 0,
+        "clock": 1200.0,
+        "phase": 0,
+        "puck": [
+          0.0,
+          0.0163194444030523,
+          0.0
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 2.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1196.03333333334,
+        "phase": 1,
+        "puck": [
+          2.9396014213562,
+          0.012699999846518,
+          -9.68298625946045
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 3.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1192.03333333334,
+        "phase": 1,
+        "puck": [
+          12.2095327377319,
+          0.012699999846518,
+          -12.7317495346069
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 4.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1188.03333333334,
+        "phase": 1,
+        "puck": [
+          10.8954181671143,
+          0.0141004621982574,
+          -10.8181848526001
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 5.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1184.03333333335,
+        "phase": 1,
+        "puck": [
+          -0.198317885398865,
+          0.0127227818593383,
+          -0.249243468046188
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 6.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1180.03333333335,
+        "phase": 1,
+        "puck": [
+          -11.0386810302734,
+          0.0127227818593383,
+          10.0782270431519
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 7.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1176.03333333336,
+        "phase": 1,
+        "puck": [
+          -7.97550630569458,
+          0.012699999846518,
+          18.4927272796631
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 8.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1172.03333333336,
+        "phase": 1,
+        "puck": [
+          -2.37437629699707,
+          0.012699999846518,
+          26.3098640441895
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 9.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1168.03333333336,
+        "phase": 1,
+        "puck": [
+          2.48339653015137,
+          0.012699999846518,
+          27.7247047424316
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 10.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1164.03333333337,
+        "phase": 1,
+        "puck": [
+          5.66847467422485,
+          0.012699999846518,
+          19.9571933746338
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 11.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1160.03333333337,
+        "phase": 1,
+        "puck": [
+          6.07499170303345,
+          0.0127227818593383,
+          1.59221613407135
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 12.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1156.03333333337,
+        "phase": 1,
+        "puck": [
+          6.47376251220703,
+          0.0127227818593383,
+          -16.4228019714355
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 13.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1152.03333333338,
+        "phase": 1,
+        "puck": [
+          5.95510673522949,
+          0.0401183106005192,
+          -28.8884162902832
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 14.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1148.03333333338,
+        "phase": 1,
+        "puck": [
+          2.9690375328064,
+          0.0127186020836234,
+          -26.6133594512939
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 15.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1144.03333333338,
+        "phase": 1,
+        "puck": [
+          0.259329944849014,
+          0.0127186020836234,
+          -24.548864364624
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 16.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1140.03333333339,
+        "phase": 1,
+        "puck": [
+          2.83031702041626,
+          0.0127186020836234,
+          -22.6884117126465
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 17.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1136.03333333339,
+        "phase": 1,
+        "puck": [
+          9.14977645874023,
+          0.012699999846518,
+          -20.5591278076172
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 18.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1132.0333333334,
+        "phase": 1,
+        "puck": [
+          -1.27593851089478,
+          0.012699999846518,
+          -29.1613578796387
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 19.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1128.0333333334,
+        "phase": 1,
+        "puck": [
+          -9.11571598052979,
+          0.012699999846518,
+          -23.4228458404541
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 20.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1124.0333333334,
+        "phase": 1,
+        "puck": [
+          -10.3015785217285,
+          0.012699999846518,
+          -17.9972248077393
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 21.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1120.03333333341,
+        "phase": 1,
+        "puck": [
+          -5.64930009841919,
+          0.012699999846518,
+          -12.9135847091675
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 22.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1116.03333333341,
+        "phase": 1,
+        "puck": [
+          1.69017028808594,
+          0.012699999846518,
+          -6.33304357528687
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 23.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1112.03333333341,
+        "phase": 1,
+        "puck": [
+          10.3499689102173,
+          0.012699999846518,
+          4.63913583755493
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 24.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1108.03333333342,
+        "phase": 1,
+        "puck": [
+          0.707849979400635,
+          0.012699999846518,
+          15.3657217025757
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 25.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1104.03333333342,
+        "phase": 1,
+        "puck": [
+          -8.70023441314697,
+          0.012699999846518,
+          25.8320007324219
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 26.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1100.03333333342,
+        "phase": 1,
+        "puck": [
+          -7.27824020385742,
+          0.012699999846518,
+          23.1209106445312
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 27.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1096.03333333343,
+        "phase": 1,
+        "puck": [
+          -4.00040864944458,
+          0.0128826042637229,
+          17.2652244567871
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 28.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1092.03333333343,
+        "phase": 1,
+        "puck": [
+          10.245922088623,
+          0.0127227818593383,
+          24.4975814819336
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 29.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1088.03333333344,
+        "phase": 1,
+        "puck": [
+          9.45127868652344,
+          0.0127227818593383,
+          24.485860824585
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 30.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1084.03333333344,
+        "phase": 1,
+        "puck": [
+          9.43801498413086,
+          0.0127186020836234,
+          13.0578804016113
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 31.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1080.03333333344,
+        "phase": 1,
+        "puck": [
+          7.5247631072998,
+          0.0127131538465619,
+          2.85938906669617
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 32.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1076.03333333345,
+        "phase": 1,
+        "puck": [
+          -9.07052230834961,
+          0.0127131538465619,
+          4.62278938293457
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 33.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1072.03333333345,
+        "phase": 1,
+        "puck": [
+          -11.8071126937866,
+          0.0135242389515042,
+          5.38734674453735
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 34.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1068.03333333345,
+        "phase": 1,
+        "puck": [
+          -5.18888187408447,
+          0.0127227818593383,
+          3.38763165473938
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 35.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1064.03333333346,
+        "phase": 1,
+        "puck": [
+          7.67954158782959,
+          0.0127227818593383,
+          -5.04848623275757
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 36.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1060.03333333346,
+        "phase": 1,
+        "puck": [
+          10.31383228302,
+          0.0127131538465619,
+          -11.0051498413086
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 37.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1056.03333333346,
+        "phase": 1,
+        "puck": [
+          6.30795192718506,
+          0.0127131538465619,
+          -15.1970348358154
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 38.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1052.03333333347,
+        "phase": 1,
+        "puck": [
+          4.23749732971191,
+          0.0127131538465619,
+          -19.0391693115234
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 39.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1050.13333333347,
+        "phase": 2,
+        "puck": [
+          -0.841309368610382,
+          0.841242372989655,
+          -26.9474124908447
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 40.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1050.13333333347,
+        "phase": 2,
+        "puck": [
+          -0.841309368610382,
+          0.841242372989655,
+          -26.9474124908447
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 41.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1050.13333333347,
+        "phase": 2,
+        "puck": [
+          -0.841309368610382,
+          0.841242372989655,
+          -26.9474124908447
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 42.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1050.13333333347,
+        "phase": 0,
+        "puck": [
+          0.0,
+          0.017000000923872,
+          0.0
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 43.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1050.13333333347,
+        "phase": 0,
+        "puck": [
+          0.0,
+          0.017000000923872,
+          0.0
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 44.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1048.10000000014,
+        "phase": 1,
+        "puck": [
+          -0.649139523506165,
+          0.0127131538465619,
+          -1.08335745334625
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 45.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1044.10000000014,
+        "phase": 1,
+        "puck": [
+          1.49724769592285,
+          0.0127131538465619,
+          -1.49567151069641
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 46.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1040.10000000015,
+        "phase": 1,
+        "puck": [
+          11.375636100769,
+          0.0127131538465619,
+          10.2646732330322
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 47.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1036.10000000015,
+        "phase": 1,
+        "puck": [
+          11.3161945343018,
+          0.0127372005954385,
+          18.3392524719238
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 48.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1032.10000000015,
+        "phase": 1,
+        "puck": [
+          9.63958072662354,
+          0.0127227818593383,
+          25.5233783721924
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 49.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1028.10000000016,
+        "phase": 1,
+        "puck": [
+          1.26597666740417,
+          0.0127227818593383,
+          24.5261516571045
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 50.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1024.10000000016,
+        "phase": 1,
+        "puck": [
+          -4.12124300003052,
+          0.0127227818593383,
+          25.0495777130127
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 51.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1020.10000000016,
+        "phase": 1,
+        "puck": [
+          -7.39245176315308,
+          0.0127227818593383,
+          22.7048015594482
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 52.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1016.10000000017,
+        "phase": 1,
+        "puck": [
+          -6.58155918121338,
+          0.0127227818593383,
+          20.871639251709
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 53.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1012.10000000017,
+        "phase": 1,
+        "puck": [
+          6.54327821731567,
+          0.0127227818593383,
+          25.0238857269287
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 54.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1008.10000000017,
+        "phase": 1,
+        "puck": [
+          10.9028072357178,
+          0.0339569337666035,
+          23.7850742340088
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 55.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1004.10000000018,
+        "phase": 1,
+        "puck": [
+          1.03452384471893,
+          0.0127882100641727,
+          28.2388858795166
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 56.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1000.10000000018,
+        "phase": 1,
+        "puck": [
+          -8.4668140411377,
+          0.0386337265372276,
+          28.7643527984619
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 57.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 996.100000000185,
+        "phase": 1,
+        "puck": [
+          -12.7711887359619,
+          0.0205604881048203,
+          21.5488586425781
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 58.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 992.100000000189,
+        "phase": 1,
+        "puck": [
+          -12.7954740524292,
+          0.0127227818593383,
+          13.2222175598145
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 59.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 988.100000000193,
+        "phase": 1,
+        "puck": [
+          -12.7773475646973,
+          0.0127227818593383,
+          5.24554347991943
+        ],
+        "roster_shots": [
+          1,
+          0
+        ],
+        "score": [
+          1,
+          0
+        ],
+        "second": 60.0
+      }
+    ],
+    "simulation": "Normal production rules, skating, puck, goalie and team AI; no forced game events. Normal match clock_rate=4.0.",
+    "source_sha": "02bcdb5",
+    "warmup_frames": 30
+  },
+  "audio_validation": {
+    "peak_db": -18.1,
+    "non_silent": true
+  },
+  "visual_review": "Inspected decoded early, midpoint and goal frames; live telemetry confirms puck motion, clock progression, a goal and restart."
+}

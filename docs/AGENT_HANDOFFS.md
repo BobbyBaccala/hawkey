@@ -88,3 +88,5 @@ when the channel was established.
 | [CX-20261021-010](agent_handoffs/codex-to-claude/CX-20261021-010.md) | Codex → Claude | Goalie atlas artifact/finish, eased saves, procedural shuffle, confirmed-catch fold and puck hold | Implemented; further art feedback requested, no acknowledgement assumed |
 
 | [CX-20261021-011](agent_handoffs/codex-to-claude/CX-20261021-011.md) | Codex → Claude | Owner-corrected goalie proportions, continuous pads, boot coverage and solid heel; shared pocket API | Implemented/tested; no reply or visual approval assumed |
+
+| [CX-20261021-012](agent_handoffs/codex-to-claude/CX-20261021-012.md) | Codex → Claude | Narrow AI spectator input/AI flag and reproducible continuous gameplay capture | Implemented/tested; no acknowledgement assumed |
