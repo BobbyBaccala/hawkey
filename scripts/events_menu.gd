@@ -26,7 +26,7 @@ func rebuild() -> void:
 	if not Session.ensure_database():
 		outer.add_child(UI.text(Session.error));outer.add_child(UI.button("Return to menu",return_to_menu));return
 	teams=Session.database.teams.filter(func(t): return t.league_id=="hl")
-	var scroll:=ScrollContainer.new();scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;outer.add_child(scroll)
+	var scroll:=ScrollContainer.new();scroll.follow_focus=true;scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL;outer.add_child(scroll)
 	var content:=VBoxContainer.new();content.size_flags_horizontal=Control.SIZE_EXPAND_FILL;content.add_theme_constant_override("separation",18);scroll.add_child(content)
 	if Session.cup!=null: build_bracket(content)
 	var cards:=HBoxContainer.new();cards.add_theme_constant_override("separation",18);content.add_child(cards)
