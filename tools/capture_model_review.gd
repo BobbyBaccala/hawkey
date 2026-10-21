@@ -4,6 +4,7 @@ const Visual=preload("res://scripts/skater_visual.gd")
 var stage:="baseline"
 var goalkeeper:=false
 var pose_name:="idle"
+var helmet_only:=false
 var captures: Array=[]
 var camera: Camera3D
 var visual: Node3D
@@ -19,6 +20,7 @@ func run() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--stage="): stage=arg.trim_prefix("--stage=").validate_filename()
 		if arg=="--goalie": goalkeeper=true
+		if arg=="--helmet-only": helmet_only=true
 		if arg.begins_with("--pose="): pose_name=arg.trim_prefix("--pose=")
 	DirAccess.make_dir_recursive_absolute("res://build")
 	root.size=Vector2i(960,960);root.content_scale_size=Vector2i(960,960)
@@ -44,6 +46,11 @@ func run() -> void:
 			visual.set_save("pad_right",Vector2(-0.95,0.1),1.0/60.0)
 			visual.animate(0,1.0/60.0)
 	await process_frame
+	if helmet_only:
+		var h: Vector3=visual.helmet.global_position
+		for view in [["front",Vector3(0,0.04,-0.75)],["quarter",Vector3(0.4,0.08,-0.65)],["side",Vector3(0.75,0.06,0)],["rear",Vector3(0.35,0.18,0.65)]]:
+			await shot(view[0],h+view[1],h+Vector3(0,-0.025,0),32)
+		write_metadata();quit();return
 	await shot("back",Vector3(0,0.9,3.5),Vector3(0,0.75,0))
 	await shot("three-quarter",Vector3(2.2,1.2,-3.0),Vector3(0,0.75,0))
 	await shot("side",Vector3(3.5,0.9,0),Vector3(0,0.75,0))
@@ -52,6 +59,8 @@ func run() -> void:
 	if not goalkeeper:
 		var glove: Vector3=visual.skater_gloves[0].global_position
 		await shot("glove",glove+Vector3(0.4,0.15,-0.55),glove,32)
-	var metadata: Dictionary={"source":"Actual isolated Godot 4.6.3 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay","stage":stage,"goalkeeper":goalkeeper,"pose":pose_name,"renderer":RenderingServer.get_video_adapter_name(),"captures":captures,"size":"960x960"}
-	var file:=FileAccess.open("res://build/model-review-"+stage+".json",FileAccess.WRITE);file.store_string(JSON.stringify(metadata,"\t"));file.close()
+	write_metadata()
 	quit()
+func write_metadata() -> void:
+	var metadata: Dictionary={"engine":Engine.get_version_info().string,"source":"Actual isolated Godot 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay","stage":stage,"goalkeeper":goalkeeper,"pose":pose_name,"renderer":RenderingServer.get_video_adapter_name(),"captures":captures,"size":"960x960"}
+	var file:=FileAccess.open("res://build/model-review-"+stage+".json",FileAccess.WRITE);file.store_string(JSON.stringify(metadata,"\t"));file.close()

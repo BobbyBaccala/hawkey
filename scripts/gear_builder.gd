@@ -1139,12 +1139,13 @@ static func helmet_point(a: float, phi: float, inset := 0.0) -> Vector3:
 	var c := cos(phi)
 	var front := maxf(0.0, cos(a))
 	var back := maxf(0.0, -cos(a))
-	# Plan: rounded rectangle-ish (superellipse), a touch longer at the back.
+	# Plan: smooth oval, a touch longer at the back.
 	var ca := cos(a)
 	var sa := sin(a)
-	var e := 0.82
-	var px := signf(sa) * pow(absf(sa), e)
-	var pz := signf(ca) * pow(absf(ca), e)
+	# Smooth oval, with a modest broadening toward the temples. Fractional
+	# signed powers made the derivatives singular on the front/rear axes.
+	var px := sa * (1.0 + 0.08 * ca * ca)
+	var pz := ca
 	var d := HELMET_D * (1.0 + 0.04 * back)
 	# Crown slightly flattened; sides fall nearly vertical below the equator.
 	var cy := signf(c) * pow(absf(c), 1.15)
@@ -1153,16 +1154,14 @@ static func helmet_point(a: float, phi: float, inset := 0.0) -> Vector3:
 	var out := Vector3(sa, 0, ca)
 	# Brow: the front edge turns slightly out over the visor clip line.
 	p += out * 0.004 * pow(front, 4) * smoothstep(1.35, 1.6, phi)
-	# Two-piece shell: the rear/lower piece stands 3 mm proud along a line
+	# Two-piece shell: the rear/lower piece stands 1.5 mm proud along a line
 	# that sweeps from the temples up over the back.
 	var step_line := lerpf(1.25, 0.85, back)
-	p += out * 0.003 * smoothstep(step_line - 0.02, step_line + 0.02, phi) * (1.0 - front)
+	p += out * 0.0015 * smoothstep(step_line - 0.10, step_line + 0.10, phi) * (1.0 - front)
 	# Occipital tuck under the back of the skull.
 	p -= out * 0.012 * back * smoothstep(1.75, 2.05, phi)
-	# Vent slots: a recess with a crisp edge.
-	var vent := helmet_vent(a, phi)
-	p -= out * 0.005 * vent
-	p.y -= 0.005 * vent * c
+	# Vent openings are cut from the topology below. Do not dent the shell:
+	# even shallow displaced slots produce unrealistic pinched reflections.
 	return p
 
 ## 0..1: how far (a, phi) lies inside a vent slot.
@@ -1172,7 +1171,7 @@ static func helmet_vent(a: float, phi: float) -> float:
 		var da := wrapf(a - float(vt[0]), -PI, PI) * sin(phi)
 		var dp := phi - float(vt[1])
 		var r := Vector2(dp / float(vt[2]), da / float(vt[3])).length()
-		v = maxf(v, smoothstep(1.0, 0.8, r))
+		v = maxf(v, 1.0 - smoothstep(0.55, 1.15, r))
 	return v
 
 ## Lower edge of the shell (phi) round the head: brow at the front just above
@@ -1183,15 +1182,33 @@ static func helmet_edge(a: float) -> float:
 	var side := absf(sin(a))
 	return 1.80 + 0.18 * back + 0.10 * side * side - 0.20 * pow(front, 3)
 
+static func helmet_inside_vent(a: float, phi: float, radius: float) -> bool:
+	for vent: Array in HELMET_VENTS:
+		var da := wrapf(a - float(vent[0]), -PI, PI) * sin(phi)
+		var dp := phi - float(vent[1])
+		if Vector2(dp / float(vent[2]), da / float(vent[3])).length() < radius:
+			return true
+	return false
+
+static var _helmet_mesh: ArrayMesh
+static func helmet_normal(a: float, phi: float) -> Vector3:
+	if phi < 0.015: return Vector3.UP
+	# Derivatives of the continuous surface, independent of triangle diagonal.
+	var delta := 0.0005
+	var around := helmet_point(a + delta, phi) - helmet_point(a - delta, phi)
+	var down := helmet_point(a, phi + delta) - helmet_point(a, phi - delta)
+	return down.cross(around).normalized()
+
 static func skater_helmet() -> ArrayMesh:
+	if _helmet_mesh != null: return _helmet_mesh
 	var b := MeshBuilder.new()
-	var cols_n := 64
-	var rows := 24
+	var cols_n := 96
+	var rows := 36
 	var rings := []
 	var ring_colors := []
 	var shell := Color("#132434")
 	# Rolled lip on the inside first, then up the shell to the crown.
-	for r in range(-2, rows + 1):
+	for r in range(-2, 1):
 		var ring := PackedVector3Array()
 		var cols := PackedColorArray()
 		for j in range(cols_n):
@@ -1207,8 +1224,44 @@ static func skater_helmet() -> ArrayMesh:
 			cols.append(shell)
 		rings.append(ring)
 		ring_colors.append(cols)
-	b.add_loft(rings, ring_colors, true, true)
-	return b.to_mesh(0.27)
+	# Keep the rolled rim separate. The outer shell uses sampled rounded vent
+	# boundaries, rather than deleting coarse grid triangles (sawtooth edges).
+	b.add_loft(rings.slice(0, 3), ring_colors.slice(0, 3), true, false)
+	var domain := PackedVector2Array()
+	for r in range(rows + 1):
+		for j in range(cols_n + 1):
+			var uv := Vector2(float(j) / cols_n, float(r) / rows)
+			var a := uv.x * TAU - PI / 2.0
+			var phi := helmet_edge(a) * (1.0 - uv.y)
+			if not helmet_inside_vent(a, phi, 1.025): domain.append(uv)
+	for vent: Array in HELMET_VENTS:
+		for j in range(40):
+			var angle := TAU * j / 40.0
+			var phi: float = vent[1] + vent[2] * cos(angle)
+			var a: float = vent[0] + vent[3] * sin(angle) / sin(phi)
+			a = wrapf(a, -PI / 2.0, TAU - PI / 2.0)
+			domain.append(Vector2((a + PI / 2.0) / TAU, 1.0 - phi / helmet_edge(a)))
+	var base := b.vertices.size()
+	for uv in domain:
+		var a := uv.x * TAU - PI / 2.0
+		var phi := helmet_edge(a) * (1.0 - uv.y)
+		b.vertices.append(helmet_point(a, phi))
+		b.normals.append(helmet_normal(a, phi))
+		b.colors.append(shell);b.uvs.append(BLANK_UV)
+	var triangles := Geometry2D.triangulate_delaunay(domain)
+	for t in range(0, triangles.size(), 3):
+		var ia := triangles[t];var ib := triangles[t + 1];var ic := triangles[t + 2]
+		var uv := (domain[ia] + domain[ib] + domain[ic]) / 3.0
+		var a := uv.x * TAU - PI / 2.0
+		if helmet_inside_vent(a, helmet_edge(a) * (1.0 - uv.y), 0.999): continue
+		var normal := (b.vertices[base + ib] - b.vertices[base + ia]).cross(b.vertices[base + ic] - b.vertices[base + ia])
+		if normal.length_squared() < 1e-18: continue
+		if normal.dot(b.normals[base + ia]) > 0:
+			b.indices.append_array(PackedInt32Array([base + ia, base + ic, base + ib]))
+		else:
+			b.indices.append_array(PackedInt32Array([base + ia, base + ib, base + ic]))
+	_helmet_mesh = b.to_mesh(0.27)
+	return _helmet_mesh
 
 ## Ear guards, vent inserts, occipital adjuster and chin strap.
 ## Head landmarks (helmet space): ears at x = +-0.082, y = -0.06, z = -0.01;
@@ -1238,8 +1291,24 @@ static func helmet_fittings() -> ArrayMesh:
 		var pts := PackedVector3Array()
 		for k in range(7):
 			var phi: float = float(vt[1]) + lerpf(-0.75, 0.75, k / 6.0) * float(vt[2])
-			pts.append(helmet_point(float(vt[0]), phi, 0.006))
-		b.add_tube(pts, 0.006, Color("#05090d"), 8)
+			pts.append(helmet_point(float(vt[0]), phi, 0.0025))
+		b.add_tube(pts, 0.0022, Color("#05090d"), 8)
+	# Curved impact-liner backing under each aperture. A tube alone leaves
+	# scalp visible at oblique angles; the patch overlaps the rounded opening.
+	for vent: Array in HELMET_VENTS:
+		var liner_rings := []
+		var liner_colors := []
+		for radius: float in [1.6, 0.01]:
+			var ring := PackedVector3Array()
+			var cols := PackedColorArray()
+			for j in range(40):
+				var angle := TAU * j / 40.0
+				var phi: float = vent[1] + vent[2] * cos(angle) * radius
+				var a: float = vent[0] + vent[3] * sin(angle) * radius / sin(phi)
+				ring.append(helmet_point(a, phi, 0.003))
+				cols.append(Color("#05090d"))
+			liner_rings.append(ring);liner_colors.append(cols)
+		b.add_loft(liner_rings, liner_colors, false, true)
 	# Occipital lock adjuster on the back of the shell.
 	var occ := helmet_point(PI, 1.92)
 	b.add_rounded_box(occ + Vector3(0, 0.004, -0.004), Vector3(0.050, 0.014, 0.010), 0.004, plastic)

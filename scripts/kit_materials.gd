@@ -435,10 +435,10 @@ static func skate_boot() -> ShaderMaterial:
 ## Painted helmet shell: uniform colour, clearcoat over an orange-peel base.
 static func helmet_shell(color: Color) -> ShaderMaterial:
 	return cached("helmet|%s" % color.to_html(), func() -> ShaderMaterial:
-		var m := _gear(paint_texture(), 30.0, 0.03, 0.3, 0.5)
+		var m := _gear(paint_texture(), 30.0, 0.015, 0.38, 0.42)
 		m.set_shader_parameter("use_vertex_color", false)
 		m.set_shader_parameter("base_color", color)
-		m.set_shader_parameter("clearcoat", 1.0)
+		m.set_shader_parameter("clearcoat", 0.45)
 		# The sculpted shell has real vents and ridges; no painted grooves.
 		m.set_shader_parameter("helmet_panels", false)
 		m.set_shader_parameter("albedo_variation", 0.03)

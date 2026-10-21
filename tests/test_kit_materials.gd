@@ -84,7 +84,7 @@ func run() -> void:
 	var skate: MeshInstance3D = a.skates[0].get_child(0)
 	check(param(skate, "detail_tex") is Texture2D and param(skate, "metal_from_grey") == true, "Skates have boot grain and steel runner")
 	var shell: MeshInstance3D = a.helmet.get_node("Shell")
-	check(float(param(shell, "clearcoat")) > 0.5 and param(shell, "detail_tex") is Texture2D, "Helmet shell has a clearcoat over painted detail")
+	check(float(param(shell, "clearcoat")) > 0.0 and float(param(shell, "clearcoat")) < 1.0 and param(shell, "detail_tex") is Texture2D, "Helmet shell has a clearcoat over painted detail")
 	check(a.helmet.get_node("Visor").material_override == Kit.visor(), "Visor uses the clear Fresnel visor shader")
 
 	# Skin keeps garment hiding and gains detail.
