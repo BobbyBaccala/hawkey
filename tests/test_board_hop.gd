@@ -37,9 +37,21 @@ func lowest_over_boards(v) -> float:
 			low = minf(low, b.position.y)
 	return low
 
+func check_plant(r: Dictionary, what: String) -> void:
+	check(r.plant_peak > 0.99, "Top hand plants on the board cap %s (peak %.2f)" % [what, r.plant_peak])
+	check(r.plant_frames >= 15, "Hand stays planted at least 0.125 s %s (%d frames)" % [what, r.plant_frames])
+	check(r.hand_err < 0.03, "Planted glove sits on the cap %s (off by %.3f m)" % [what, r.hand_err])
+	# The hand comes off quickly (~0.1 s) as the body rises into the vault; the
+	# glove-step check below is what keeps that from reading as a pop.
+	check(r.max_plant_step < 0.16, "Plant blends in and out smoothly %s (step %.3f)" % [what, r.max_plant_step])
+	check(r.max_hand_step < 0.06, "Glove never jumps %s (largest step %.3f m)" % [what, r.max_hand_step])
+
 func run_hop(v, body: Node3D, a: Vector3, b: Vector3) -> Dictionary:
 	v.start_hop(a, b, -Arena.HALF_WIDTH - body.position.x)
-	var result := {"clear": INF, "max_step": 0.0, "max_tuck_step": 0.0, "peak": 0.0, "frames": 0, "crossed": false}
+	var result := {"clear": INF, "max_step": 0.0, "max_tuck_step": 0.0, "peak": 0.0, "frames": 0, "crossed": false,
+		"plant_peak": 0.0, "plant_frames": 0, "max_plant_step": 0.0, "hand_err": 0.0, "max_hand_step": 0.0}
+	var last_plant := 0.0
+	var last_hand := Vector3.INF
 	var last: Vector3 = v.position
 	var last_tuck := 0.0
 	while v.hopping():
@@ -52,6 +64,21 @@ func run_hop(v, body: Node3D, a: Vector3, b: Vector3) -> Dictionary:
 		result.peak = maxf(result.peak, tuck)
 		last = v.position
 		last_tuck = tuck
+		# Top hand on the board cap: planted firmly for part of the hop, right on
+		# the cap (not floating, not sunk into it) while planted, blended in and
+		# out without the glove jumping.
+		var plant: float = v.hand_plant
+		result.plant_peak = maxf(result.plant_peak, plant)
+		result.max_plant_step = maxf(result.max_plant_step, absf(plant - last_plant))
+		# Where the fist closes (the glove's hole), which rests on the cap.
+		var hand: Vector3 = v.rig.global_transform * (v.skater_gloves[0].transform * v.GLOVE_HOLE)
+		if plant > 0.95:
+			result.plant_frames += 1
+			var cap: Vector3 = body.global_transform * (v.hop_state.hand as Vector3)
+			result.hand_err = maxf(result.hand_err, hand.distance_to(cap))
+		if last_hand != Vector3.INF: result.max_hand_step = maxf(result.max_hand_step, hand.distance_to(last_hand))
+		last_hand = hand
+		last_plant = plant
 		if result.frames > 1000: break
 	return result
 
@@ -74,6 +101,7 @@ func run() -> void:
 	check(out.peak > 0.9, "Knees tuck over the boards (%.2f)" % out.peak)
 	check(out.max_step < 0.05, "Hop path is continuous (largest step %.3f m)" % out.max_step)
 	check(out.max_tuck_step < 0.08, "Tuck blends smoothly (largest step %.3f)" % out.max_tuck_step)
+	check_plant(out, "going over")
 	check(v.global_position.distance_to(body.position + bench) < 0.01, "Lands on the bench floor")
 	check(absf(v.global_position.y) < 0.001, "Stands on the bench floor after landing")
 	# Facing the bench while going out: game forward (-Z of the visual) points -x.
@@ -84,11 +112,14 @@ func run() -> void:
 	var back := run_hop(v, body, v.position + Vector3(0, 0, -0.7), Vector3.ZERO)
 	check(back.clear > BoardHop.BOARD_TOP + 0.02, "Skates clear the boards coming back (lowest %.3f m)" % back.clear)
 	check(back.max_step < 0.05, "Return path is continuous (largest step %.3f m)" % back.max_step)
+	check_plant(back, "coming back")
 	check(v.position.length() < 0.001, "Return hop ends on the body")
 	forward = -v.global_basis.z
 	check(forward.x > 0.9, "Faces the ice coming back")
 	v.cancel_hop()
 	check(not v.hopping() and v.hop_state.is_empty() and v.position == Vector3.ZERO, "cancel_hop() resets the visual")
+	v.animate(0, DT, 0, false)
+	check(v.hand_plant == 0.0, "Both hands back on the stick after the hop")
 
 	# Pure path: offsets stay on the near side before take-off and the far side after landing.
 	for k in range(101):
@@ -97,6 +128,8 @@ func run() -> void:
 		if u < BoardHop.VAULT_START: check(s.offset.x >= BoardHop.TAKEOFF - 0.001, "Near side before take-off (u=%.2f)" % u)
 		if u > BoardHop.VAULT_END: check(s.offset.x <= -BoardHop.BOARD_DEPTH - BoardHop.TAKEOFF + 0.001, "Far side after landing (u=%.2f)" % u)
 		if u < BoardHop.VAULT_START - 0.06 or u > BoardHop.VAULT_END + 0.04: check(s.tuck == 0.0, "No tuck while skating (u=%.2f)" % u)
+		if u <= BoardHop.PLANT_START or u >= BoardHop.PLANT_END: check(s.plant == 0.0, "Hand off the boards outside the plant (u=%.2f)" % u)
+		check(absf(s.hand.x + BoardHop.BOARD_DEPTH * 0.5) < 0.001 and absf(s.hand.y - BoardHop.BOARD_TOP - BoardHop.HAND_ABOVE_CAP) < 0.001, "Hand point is on the middle of the cap (u=%.2f)" % u)
 	body.queue_free()
 	await process_frame
 	print("Board hop failures: ", failures)

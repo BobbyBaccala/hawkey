@@ -25,6 +25,13 @@ const LIFT := 0.64
 const TUCK_ANKLE_Y := 0.74
 ## Dasher top (arena.gd board cap at 1.07 m, 0.08 m tall).
 const BOARD_TOP := 1.11
+## Hand plant on the board cap: when the top hand reaches / leaves the cap
+## (hop fractions), how far the wrist sits above the cap (glove thickness)
+## and how far to the skater's left of the crossing point.
+const PLANT_START := 0.12
+const PLANT_END := 0.44
+const HAND_ABOVE_CAP := 0.055
+const HAND_SIDE := 0.24
 
 static func smooth(x: float) -> float:
 	x = clampf(x, 0.0, 1.0)
@@ -69,4 +76,10 @@ static func sample(u: float, a: Vector3, b: Vector3, board_x: float) -> Dictiona
 	var tuck := smooth((u - VAULT_START + 0.05) / 0.17) * smooth((VAULT_END + 0.03 - u) / 0.17)
 	var crouch := maxf(bump(u, VAULT_START, 0.12), bump(u, VAULT_END + 0.04, 0.14))
 	var facing := Vector3(-near_side, 0.0, (b.z - a.z) * 0.15).normalized()
-	return {"offset": p, "facing": facing, "tuck": tuck, "crouch": crouch, "lean": maxf(tuck, crouch) * 0.8}
+	# The top (left) hand lets go of the stick, plants on the board cap beside
+	# the crossing point through the gather and push-off, and lifts off before
+	# the landing. skater_visual.gd fades it further when out of arm's reach.
+	var plant := smooth((u - PLANT_START) / 0.14) * smooth((PLANT_END - u) / 0.10)
+	var left := Vector3.UP.cross(facing)
+	var hand := Vector3(mid, BOARD_TOP + HAND_ABOVE_CAP, lerpf(a.z, b.z, 0.5) + left.z * HAND_SIDE)
+	return {"offset": p, "facing": facing, "tuck": tuck, "crouch": crouch, "lean": maxf(tuck, crouch) * 0.8, "plant": plant, "hand": hand}
