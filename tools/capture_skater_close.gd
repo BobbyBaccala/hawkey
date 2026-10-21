@@ -56,4 +56,9 @@ func run() -> void:
 	var glove: Vector3 = visual.skater_gloves[0].global_position
 	await shot(cam, glove + Vector3(0.35, 0.18, 0.35), glove, 35, out + "-glove.png")
 	await shot(cam, Vector3(2.6, 1.1, 0.2), Vector3(0, 0.8, 0), 40, out + "-front.png")
+	# Blade and hosel: forehand side, low, and from above the toe.
+	var heel_w: Vector3 = visual.stick_blade.global_transform * Vector3(-visual.stick_blade_length * 0.48, 0, 0)
+	var fore: Vector3 = -visual.stick_blade.global_basis.z
+	await shot(cam, heel_w + fore * 0.55 + Vector3(0, 0.22, 0) + visual.stick_blade.global_basis.x * 0.12, heel_w + visual.stick_blade.global_basis.x * 0.10 + Vector3(0, 0.05, 0), 38, out + "-blade.png")
+	await shot(cam, heel_w + visual.stick_blade.global_basis.x * 0.75 + Vector3(0, 0.30, 0) + fore * 0.25, heel_w + Vector3(0, 0.04, 0), 40, out + "-blade-toe.png")
 	quit()

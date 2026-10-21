@@ -3,6 +3,7 @@ extends Node3D
 const Human = preload("res://assets/player-base-v1.glb")
 const Uniform = preload("res://assets/uniform.gdshader")
 const Arena = preload("res://scripts/arena.gd")
+const StickModel = preload("res://scripts/stick_model.gd")
 const Gear = preload("res://scripts/gear_builder.gd")
 const Mocap = preload("res://scripts/mocap.gd")
 const Kit = preload("res://scripts/kit_materials.gd")
@@ -304,13 +305,22 @@ func _ready() -> void:
 	sticks = Node3D.new()
 	rig.add_child(sticks)
 	stick_shaft=MeshInstance3D.new()
-	var shaft_mesh:=BoxMesh.new()
-	shaft_mesh.size=Vector3(0.018,1,0.012)
-	stick_shaft.mesh=shaft_mesh
-	stick_shaft.material_override=material(Color("#171f28"),0.35)
+	if goalie:
+		var shaft_mesh:=BoxMesh.new()
+		shaft_mesh.size=Vector3(0.018,1,0.012)
+		stick_shaft.mesh=shaft_mesh
+		stick_shaft.material_override=material(Color("#171f28"),0.35)
+	else:
+		stick_shaft.mesh=StickModel.shaft_mesh()
+		stick_shaft.material_override=StickModel.material()
 	sticks.add_child(stick_shaft)
 	stick_blade_length=0.39 if goalie else 0.28
-	stick_blade=build_blade()
+	if goalie:
+		stick_blade=build_blade()
+	else:
+		stick_blade=MeshInstance3D.new()
+		stick_blade.mesh=StickModel.blade_mesh(stick_blade_length,StickModel.tape_for(number))
+		stick_blade.material_override=StickModel.material()
 	sticks.add_child(stick_blade)
 	if goalie:
 		goalie_paddle=block(sticks,Vector3(0.088,1,0.026),Vector3.ZERO,Color("#e3e7e9"))
@@ -1566,9 +1576,26 @@ func update_stick() -> void:
 		var lift:=((hand-posed_elbows[1]).normalized()+Vector3(0,1.6,0)).normalized()
 		top=top.lerp(hand-lift*0.12,raised_stick)
 		bottom=bottom.lerp(hand+lift*1.30,raised_stick)
+	var flat:=Basis(toe_dir,Vector3.UP,toe_dir.cross(Vector3.UP))
+	var blade_xf:=Transform3D()
+	if not goalie:
+		# Skater stick: the blade (with its hosel) is placed first; the shaft
+		# runs from the top of the hosel to the knob, so blade and shaft join
+		# in one tapered piece instead of meeting at a corner.
+		var lift_dir:=(top-bottom).normalized()
+		var blade_basis:=flat.slerp(Basis(Quaternion(Vector3.UP,lift_dir)).orthonormalized(),maxf(raised_stick,stick_carry))
+		blade_xf=Transform3D(blade_basis,bottom+blade_basis*Vector3(stick_blade_length*0.48,0,0))
+		bottom=blade_xf*StickModel.hosel_top(stick_blade_length)
 	var axis:=top-bottom
 	stick_shaft.position=(top+bottom)*0.5
 	stick_shaft.basis=Basis(Quaternion(Vector3.UP,axis.normalized()))
+	if not goalie:
+		# Wide faces of the shaft lie in the blade's plane (as on a real stick).
+		var up_:=axis.normalized()
+		var n_:=flat.z-up_*up_.dot(flat.z)
+		if n_.length_squared()>0.0001:
+			n_=n_.normalized()
+			stick_shaft.basis=Basis(up_.cross(n_),up_,n_)
 	# A goalie's hand sits at the top of the paddle; the shaft runs on past it.
 	var beyond:=0.42 if goalie else 0.06
 	if not goalie and seat>0.0:
@@ -1583,9 +1610,11 @@ func update_stick() -> void:
 		goalie_paddle.position=(bottom+paddle_top)*0.5
 		goalie_paddle.basis=stick_shaft.basis
 		goalie_paddle.scale=Vector3(1,bottom.distance_to(paddle_top),1)
-	var flat:=Basis(toe_dir,Vector3.UP,toe_dir.cross(Vector3.UP))
-	stick_blade.basis=flat.slerp(stick_shaft.basis.orthonormalized(),maxf(raised_stick,stick_carry))
-	stick_blade.position=bottom+stick_blade.basis*Vector3(stick_blade_length*0.48,0,0)
+	if goalie:
+		stick_blade.basis=flat.slerp(stick_shaft.basis.orthonormalized(),maxf(raised_stick,stick_carry))
+		stick_blade.position=bottom+stick_blade.basis*Vector3(stick_blade_length*0.48,0,0)
+	else:
+		stick_blade.transform=blade_xf
 	grip_tape.position=top+axis.normalized()*maxf(beyond-0.06,0.0)
 	grip_tape.basis=stick_shaft.basis
 
@@ -1637,6 +1666,8 @@ func build_player_glove(parent: Node3D) -> void:
 ## the hand (+Z) facing away from the body.
 ## Hole through the closed fist (glove space): the shaft runs through it.
 const GLOVE_HOLE := Vector3(0,-0.035,-0.005)
+## Thumb side (local x sign) of each glove mesh: left hand +1, right hand -1.
+const GLOVE_THUMB := [1.0,-1.0]
 func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF) -> void:
 	var up := (elbow-wrist).normalized()
 	var shaft := (stick_grip()-stick_heel(stick_grip())).normalized()
@@ -1658,10 +1689,19 @@ func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF
 		up = (up-x*x.dot(up))
 		up = up.normalized() if up.length_squared()>0.0001 else x.cross(Vector3.BACK).normalized()
 	var z := x.cross(up)
-	var away := wrist-torso_pose.origin
-	if z.dot(away) < 0.0:
-		x = -x
-		z = -z
+	if grip_point==Vector3.INF:
+		var away := wrist-torso_pose.origin
+		if z.dot(away) < 0.0:
+			x = -x
+			z = -z
+	else:
+		# On the stick both thumbs point DOWN the shaft toward the blade (the
+		# top hand wraps over the knob, thumb along the shaft, never on top of
+		# the butt end). Glove i has its thumb on local +x * GLOVE_THUMB[i].
+		var toward_blade := -shaft
+		if (x*GLOVE_THUMB[i]).dot(toward_blade) < 0.0:
+			x = -x
+			z = -z
 	var basis_ := Basis(x,up,z)
 	# Seat the fist on the shaft: the hole through the fingers is on the grip point.
 	var origin := wrist if grip_point==Vector3.INF else grip_point-basis_*GLOVE_HOLE

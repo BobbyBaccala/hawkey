@@ -1,4 +1,5 @@
 extends SceneTree
+const StickModel = preload("res://scripts/stick_model.gd")
 ## Skate cuff and stick blade: the leg always goes down into the boot, and the
 ## blade runs on from the heel away from the hands, flat on the ice.
 var failures := 0
@@ -75,5 +76,18 @@ func run() -> void:
 	check(min_gap > 0.22 and max_gap < 0.55, "Hands two to three hand-widths apart (%.2f-%.2f m)" % [min_gap, max_gap])
 	check(min_forearm > 100.0, "Shaft crosses the palms, not held end-on (min %.0f deg)" % min_forearm)
 	check(min_len > 0.95, "Full-length stick out in front (min %.2f m knob to heel)" % min_len)
+	# Both thumbs point down the shaft toward the blade (not on top of the knob).
+	var top2: Vector3 = v.stick_grip()
+	var down: Vector3 = (v.stick_heel(top2) - top2).normalized()
+	for i in range(2):
+		var thumb: Vector3 = v.skater_gloves[i].basis.orthonormalized().x * v.GLOVE_THUMB[i]
+		check(thumb.dot(down) > 0.6, "Glove %d thumb points down the shaft (%.2f)" % [i, thumb.dot(down)])
+	# One-piece stick: shaft starts at the top of the hosel, blade curved and taped.
+	var hosel: Vector3 = v.stick_blade.transform * StickModel.hosel_top(v.stick_blade_length)
+	var shaft_end: Vector3 = v.stick_shaft.position - v.stick_shaft.basis.y * 0.5
+	check(hosel.distance_to(shaft_end) < 0.005, "Shaft joins the hosel (%.3f m)" % hosel.distance_to(shaft_end))
+	var heel_pt := StickModel.blade_point(0.28, 0.1, 0.5, -1.0)
+	var toe_pt := StickModel.blade_point(0.28, 0.95, 0.5, -1.0)
+	check(toe_pt.z < heel_pt.z - 0.01, "Blade is curved toward the forehand")
 	print("Skate/stick failures: %d" % failures)
 	quit(failures)
