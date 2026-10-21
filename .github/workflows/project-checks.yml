@@ -1,0 +1,41 @@
+name: Project checks
+
+on:
+  push:
+    branches: [main, codex/game-modes, prototype/skating-puck-lab]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Install verified Godot 4.6.3
+        run: |
+          bash tools/ci/install_godot.sh
+          echo "$PWD/build/tools/bin" >> "$GITHUB_PATH"
+      - name: Run engine and Python checks
+        run: python3 tools/check_project.py --suite all --workers 2
+      - name: Preserve check reports and logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: project-checks-${{ github.sha }}
+          path: |
+            build/checks/*.json
+            build/checks/*.xml
+            build/checks/*.log
+          if-no-files-found: warn
+          retention-days: 14

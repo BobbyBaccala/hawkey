@@ -1,0 +1,29 @@
+name: Bug report
+description: Report a reproducible problem in the current development build.
+title: "[Bug] "
+body:
+  - type: input
+    id: build
+    attributes:
+      label: Branch / commit and Godot version
+      description: Include operating system and controller model when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open GM Season…"
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs, screenshots or an isolated reproduction save
+      description: Logs from build/checks help identify engine/script failures.

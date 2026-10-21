@@ -1,0 +1,23 @@
+name: Playable improvement
+description: Propose a concrete improvement to gameplay, GM depth or presentation.
+title: "[Feature] "
+body:
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Player outcome
+      description: Describe what the player should be able to do and why it matters.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: A complete, testable first slice
+      description: Include a playable scenario and what success looks like.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Related roadmap items and dependencies
+      description: Link existing issues or the feature audit when applicable.
