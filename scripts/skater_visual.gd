@@ -124,6 +124,11 @@ var hop_a := Vector3.ZERO
 var hop_b := Vector3.ZERO
 var hop_board_x := 0.0
 var hop_state := {}
+## How firmly the top hand is planted on the board cap (0..1) this frame.
+var hand_plant := 0.0
+const PLANT_REACH_FADE := 0.10
+## A planted arm may straighten fully (upper 0.28 + forearm 0.29 m).
+const PLANT_REACH := 0.565
 const STOP_MIN_SPEED := 4.0      # m/s needed to start a stop
 const STOP_DECEL := 7.0          # m/s^2 (smoothed) that counts as a hard stop
 const STOP_ANGLE := 1.38         # hips turned this far from the travel (~79 deg)
@@ -947,6 +952,13 @@ func pose(speed: float, turn: float) -> void:
 			if shoulder.distance_to(wrist)>STICK_ARM_REACH:
 				wrist = shoulder+(wrist-shoulder).normalized()*STICK_ARM_REACH
 		if referee: wrist=Vector3(side*0.32,0.96,0.03)
+		if i==0: hand_plant=plant_weight(shoulder)
+		if i==0 and hand_plant>0.0:
+			# Board hop: the top hand lets go of the stick and plants on the cap.
+			# The fist rests on the cap; the wrist sits a fist's length up the arm.
+			var planted:=shoulder+(hop_hand_target()-shoulder).limit_length(PLANT_REACH)
+			grip_point=grip_point.lerp(planted,hand_plant)
+			wrist=wrist.lerp(planted+(shoulder-planted).normalized()*GLOVE_FIST,hand_plant)
 		var captured_elbow := Vector3.ZERO
 		if not cap.is_empty() and "arms" in mocap_mask and not goalie:
 			# Captured arm directions, scaled to this rig's segment lengths.
@@ -1069,6 +1081,19 @@ func start_hop(a: Vector3, b: Vector3, board_x: float) -> void:
 	hop_u = 0.0
 	hop_state = BoardHop.sample(0.0,a,b,board_x)
 	position = a
+
+## Board hop hand plant: the board-cap point (rig space) the top hand presses
+## on, and how much it is planted (the hop's plant curve, faded to nothing as
+## the cap passes out of arm's reach so the hand never floats above it).
+func hop_hand_target() -> Vector3:
+	return (transform*rig.transform).affine_inverse()*(hop_state.hand as Vector3)
+
+func plant_weight(shoulder: Vector3) -> float:
+	if goalie or referee or hop_state.is_empty(): return 0.0
+	var w: float = hop_state.get("plant",0.0)
+	if w <= 0.0: return 0.0
+	var d := shoulder.distance_to(hop_hand_target())
+	return w*clampf((PLANT_REACH-d)/PLANT_REACH_FADE,0.0,1.0)
 
 func hopping() -> bool:
 	return hop_u >= 0.0 and hop_u < 1.0
@@ -1320,6 +1345,8 @@ const GLOVE_HOLE := Vector3(0,-0.035,-0.005)
 func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF) -> void:
 	var up := (elbow-wrist).normalized()
 	var shaft := (stick_grip()-stick_heel(stick_grip())).normalized()
+	# A hand planted on the board cap (board hop) lies along the boards.
+	if i==0 and hand_plant>0.0: shaft=shaft.lerp(Vector3.RIGHT if shaft.x>=0.0 else Vector3.LEFT,hand_plant).normalized()
 	var x: Vector3
 	if grip_point==Vector3.INF:
 		x = shaft-up*up.dot(shaft)

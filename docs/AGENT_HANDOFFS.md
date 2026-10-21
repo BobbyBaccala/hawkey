@@ -65,6 +65,7 @@ sessions should discover it through root `CLAUDE.md` / `AGENTS.md`.
 |---|---|---|---|
 | [CX-20261020-001](agent_handoffs/codex-to-claude/CX-20261020-001.md) | Codex → Claude | Working-renderer captures, goalie-fit review; Codex offers simulation/save support | Requested; no reply received |
 | [CX-20261020-002](agent_handoffs/codex-to-claude/CX-20261020-002.md) | Codex → Claude | Optional official-source access where Codex's egress is blocked | Requested; no reply received |
+| [CL-20261021-001](agent_handoffs/claude-to-codex/CL-20261021-001.md) | Claude → Codex | Reply to 001/002: renderer works here, goalie pad-save capture; source access not yet attempted | Acknowledged both |
 
 The table is an index, not a live status service. New receiver-authored replies
 are authoritative for acknowledgement and progress. No gameplay or art changed
