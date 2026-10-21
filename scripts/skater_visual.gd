@@ -116,6 +116,14 @@ const MAX_EDGE := 0.75                        # deepest edge roll (radians)     
 ## here from the speed passed to animate(), so lab.gd and match.gd need no
 ## extra calls.
 const SnowSpray = preload("res://scripts/snow_spray.gd")
+const BoardHop = preload("res://scripts/board_hop.gd")
+## Board hop (line change, board_hop.gd): progress 0..1 (-1 = not hopping),
+## path in the parent's space, and the current tuck / crouch / lean weights.
+var hop_u := -1.0
+var hop_a := Vector3.ZERO
+var hop_b := Vector3.ZERO
+var hop_board_x := 0.0
+var hop_state := {}
 const STOP_MIN_SPEED := 4.0      # m/s needed to start a stop
 const STOP_DECEL := 7.0          # m/s^2 (smoothed) that counts as a hard stop
 const STOP_ANGLE := 1.38         # hips turned this far from the travel (~79 deg)
@@ -748,6 +756,25 @@ func pose(speed: float, turn: float) -> void:
 		# turned a little toward where the skater was going.
 		drop = drop.lerp(Vector3(s*0.13,-0.30,-0.05),stop_w)
 		shoulder_turn = lerpf(shoulder_turn,-s*0.22,stop_w)
+	# Board hop: gather low, then knees tuck to the chest over the boards and
+	# the legs extend again for the landing (board_hop.gd sample()).
+	if not goalie and not hop_state.is_empty():
+		var tuck: float = hop_state.tuck
+		var crouch: float = hop_state.crouch
+		for i in range(2):
+			var side := 1.0 if i==0 else -1.0
+			var f: Dictionary = stride[i]
+			var base := Vector3(side*0.15,0.115,0.02)
+			f.ankle = (f.ankle as Vector3).lerp(base,maxf(crouch,tuck))
+			f.ankle = (f.ankle as Vector3).lerp(Vector3(side*0.13,BoardHop.TUCK_ANKLE_Y,0.20),tuck)
+			f.yaw = f.yaw*(1.0-tuck)
+			f.pitch = lerpf(f.pitch,-0.35,tuck)
+			f.edge = f.edge*(1.0-maxf(crouch,tuck))
+			f.ext = f.ext*(1.0-maxf(crouch,tuck))
+			f.lift = f.lift*(1.0-maxf(crouch,tuck))
+		drop = drop.lerp(Vector3(0,-0.31,-0.04),crouch)
+		drop = drop.lerp(Vector3(0,-0.10,-0.06),tuck)
+		shoulder_turn = shoulder_turn*(1.0-maxf(crouch,tuck))
 	var cap := {}
 	if mocap_weight>0 and not mocap.is_empty():
 		cap = Mocap.sample(mocap,mocap_time,mocap_loop)
@@ -766,6 +793,7 @@ func pose(speed: float, turn: float) -> void:
 	if shoulder_turn != 0.0: bend = Basis(Vector3.UP,shoulder_turn)*bend
 	# Stop: the upper body leans back against the skid.
 	if stop_w > 0.0: bend = Basis(Vector3.BACK,-stop_side*0.24*stop_w)*bend
+	if not hop_state.is_empty(): bend = Basis(Vector3.RIGHT,0.38*float(hop_state.lean))*bend
 	if goalie:
 		var reach_lean: float = save_weights.glove*clampf(save_target.x-0.45,0.0,0.5)-save_weights.blocker*clampf(-save_target.x-0.45,0.0,0.5)
 		var pad_lean: float = save_weights.pad_left-save_weights.pad_right
@@ -1015,7 +1043,46 @@ func update_layers(delta: float) -> void:
 			var stride:float=maxf(0.1,data.travel.length()*MOCAP_HIP_HEIGHT/data.length)
 			shuffle_time+=delta*absf(lateral)/stride
 
+## Starts a board hop from `a` to `b` (parent space, see board_hop.gd) over the
+## board plane x = board_x; the body stays put while this visual travels.
+func start_hop(a: Vector3, b: Vector3, board_x: float) -> void:
+	hop_a = a
+	hop_b = b
+	hop_board_x = board_x
+	hop_u = 0.0
+	hop_state = BoardHop.sample(0.0,a,b,board_x)
+	position = a
+
+func hopping() -> bool:
+	return hop_u >= 0.0 and hop_u < 1.0
+
+## True once a started hop has reached its end (until cancel_hop()).
+func hop_finished() -> bool:
+	return hop_u >= 1.0
+
+## Ends any hop and puts the visual back on its body.
+func cancel_hop() -> void:
+	hop_u = -1.0
+	hop_state = {}
+	position = Vector3.ZERO
+
+func update_hop(delta: float) -> void:
+	if hop_u < 0.0: return
+	hop_u = minf(hop_u+delta/BoardHop.DURATION,1.0)
+	hop_state = BoardHop.sample(hop_u,hop_a,hop_b,hop_board_x)
+	position = hop_state.offset
+	var f: Vector3 = hop_state.facing
+	rotation.y = atan2(-f.x,-f.z)
+	if hop_u >= 1.0:
+		# Landed: stand normally where the hop ended.
+		hop_state = {}
+
 func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, braking: bool = false) -> void:
+	update_hop(delta)
+	if hop_u >= 0.0:
+		speed = 0.0
+		pushing = false
+		braking = false
 	update_layers(delta)
 	update_stop(speed,delta,braking)
 	brake_turn = move_toward(brake_turn,1.0 if braking and not goalie else 0.0,delta*6)

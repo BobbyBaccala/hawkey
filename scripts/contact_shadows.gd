@@ -106,7 +106,10 @@ func refresh() -> void:
 			centre += Vector3(skate.global_position.x, origin.y, skate.global_position.z)
 			count += 1.0
 		centre /= count
-		push(i, blob(centre, yaw, size), BODY_STRENGTH, 0.0, visual)
+		# A body off the ice (board hop) casts a fading blob on the ground below.
+		var body_lift := clampf(origin.y / 0.5, 0.0, 1.0)
+		centre.y = 0.0
+		push(i, blob(centre, yaw, size), BODY_STRENGTH * (1.0 - body_lift), 0.0, visual)
 		i += 1
 		for skate in visual.skates:
 			var p: Vector3 = skate.global_position
