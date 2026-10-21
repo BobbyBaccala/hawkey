@@ -46,6 +46,14 @@ const CHEER_TIME := 4.5
 ## player who came off (sitting down).
 const RISE_STEP := 0.30
 const SEAT_RETURN := 0.5
+## The player who comes off walks from where he landed on the bench floor to
+## the free seat (go_out() with a landing) at WALK_SPEED m/s, turning round to
+## face the ice on the way, then sits. The one who goes out is picked about
+## PASS_GAP (one seat) along the bench from the landing, so the two pass side
+## by side instead of walking through each other.
+const WALK_SPEED := 1.3
+const WALK_MIN := 0.6
+const PASS_GAP := 0.85
 
 ## Team 0 (home) bench and box at z > 0, team 1 at z < 0: each bench is at the
 ## end its team defends in periods 1 and 3 (long change in the 2nd), as in the NHL.
@@ -137,12 +145,18 @@ func is_cheering(team: int) -> bool:
 ## nobody is free to get up (everyone already up or the bench empty).
 func stand_up(team: int, z: float) -> bool:
 	var best = null
+	var best_score := INF
 	for rig in _rigs:
 		if rig.team != team or String(rig.fig.name).begins_with("PenaltySeat"): continue
-		if not rig.fig.visible or rig.rise_target > 0.0 or rig.return_at >= 0.0: continue
-		if best == null or absf(rig.fig.global_position.z - z) < absf(best.fig.global_position.z - z): best = rig
+		if not rig.fig.visible or rig.rise_target > 0.0 or rig.return_at >= 0.0 or rig.walk_t >= 0.0: continue
+		# About one seat along from where the tired player lands (PASS_GAP).
+		var score := absf(absf(rig.fig.global_position.z - z) - PASS_GAP)
+		if score < best_score:
+			best = rig
+			best_score = score
 	if best == null: return false
 	best.rise_target = 1.0
+	best.carry_scale = 1.0
 	# A whistle can call the change off: if nobody takes him out, sit back down.
 	best.rise_until = _time + 3.5
 	return true
@@ -153,22 +167,72 @@ func stand_up(team: int, z: float) -> bool:
 ## returned for the hop to start from, or null if nobody was up. His seat is
 ## taken SEAT_RETURN s later by the player who came off, wearing `number`,
 ## who sits down into it.
-func go_out(team: int, number: String) -> Variant:
+## With `landing` (world position where the player coming off stepped down
+## onto the bench floor) and `facing` (his world facing there), he does not
+## vanish: from that frame he stands at the landing, walks to the free seat
+## (curving back off the boards first, turning to face the ice) and sits.
+func go_out(team: int, number: String, landing: Variant = null, facing := Vector3.ZERO) -> Variant:
 	for rig in _rigs:
 		if rig.team != team or rig.rise_target <= 0.0 or not rig.fig.visible: continue
 		var at: Vector3 = rig.visual.global_position
 		at.y = rig.fig.global_position.y
-		rig.fig.visible = false
-		rig.return_at = _time + SEAT_RETURN
-		rig.return_number = number
+		if landing is Vector3:
+			_start_walk(rig, landing, facing, number)
+		else:
+			rig.fig.visible = false
+			rig.return_at = _time + SEAT_RETURN
+			rig.return_number = number
 		return at
 	return null
+
+func _start_walk(rig: Dictionary, landing: Vector3, facing: Vector3, number: String) -> void:
+	var fig: Node3D = rig.fig
+	var from: Vector3 = fig.to_local(landing)
+	from.y = 0.0
+	var to := Vector3(0, 0, RISE_STEP)
+	rig.walk_from = from
+	# Back off the boards at the landing's spot along the bench, then across.
+	rig.walk_mid = Vector3(from.x, 0, to.z)
+	var mid: Vector3 = rig.walk_mid
+	var length: float = from.distance_to(mid) + mid.distance_to(to)
+	rig.walk_time = maxf(WALK_MIN, length * 0.85 / WALK_SPEED)
+	rig.walk_t = 0.0
+	var d: Vector3 = fig.global_transform.basis.inverse() * facing
+	# The figure's skater faces local +Z at rotation PI (game-facing is -Z).
+	rig.walk_yaw = atan2(-d.x, -d.z) if Vector2(d.x, d.z).length() > 0.01 else PI
+	rig.rise = 1.0
+	rig.rise_target = 0.0
+	# He carries his stick as he stepped down (on the floor ahead, not raised),
+	# and holds it once seated.
+	rig.carry_scale = 0.0
+	rig.stick = true
+	rig.visual.seat_stick = true
+	if number != "": rig.visual.set_number(number)
+	_place_walker(rig)
+	_pose_rig(rig, true)
+
+## Where the walking player is (figure space) and which way he faces.
+func _place_walker(rig: Dictionary) -> void:
+	var v: Node3D = rig.visual
+	var u: float = clampf(rig.walk_t / rig.walk_time, 0.0, 1.0)
+	var t := smoothstep(0.0, 1.0, u)
+	var a: Vector3 = rig.walk_from
+	var b: Vector3 = rig.walk_mid
+	var c := Vector3(0, 0, RISE_STEP)
+	var p := a.lerp(b, t).lerp(b.lerp(c, t), t)
+	# Small step bob while moving.
+	p.y = absf(sin(rig.walk_t * 9.0)) * 0.018 * sin(PI * u)
+	v.position = p
+	v.rotation.y = lerp_angle(rig.walk_yaw, PI, smoothstep(0.35, 0.95, u))
+
+func is_walking(rig: Dictionary) -> bool:
+	return rig.walk_t >= 0.0
 
 ## Seated figures currently up to go out / waiting for a player to sit (tests).
 func rising_count(team: int) -> int:
 	var n := 0
 	for rig in _rigs:
-		if rig.team == team and (rig.rise_target > 0.0 or rig.return_at >= 0.0): n += 1
+		if rig.team == team and (rig.rise_target > 0.0 or rig.return_at >= 0.0 or rig.walk_t >= 0.0): n += 1
 	return n
 
 func _process(delta: float) -> void:
@@ -201,6 +265,15 @@ func update_figures(delta: float) -> void:
 			_pose_rig(rig, true)
 		if not fig.is_visible_in_tree(): continue
 		var team: int = rig.team
+		if rig.walk_t >= 0.0:
+			# Walking from the landing to his seat: on his feet until he gets there.
+			rig.walk_t += delta
+			_place_walker(rig)
+			if rig.walk_t >= rig.walk_time:
+				rig.walk_t = -1.0
+				rig.visual.rotation.y = PI
+			else:
+				continue
 		if rig.rise_target > 0.0 and _time > rig.rise_until: rig.rise_target = 0.0
 		rig.rise = move_toward(rig.rise, rig.rise_target, delta * 1.6)
 		var on_bench := not String(fig.name).begins_with("PenaltySeat")
@@ -230,7 +303,7 @@ func _pose_rig(rig: Dictionary, force := false) -> bool:
 	var up: float = smoothstep(0.0, 1.0, rig.rise)
 	st *= 1.0 - up
 	var state := [(1.0 - st) * (1.0 - up), (rig.yaw_bias * (1.0 - st) + rig.yaw) * (1.0 - up), rig.slump * (1.0 - up), st,
-		_time * 7.0 + rig.cheer_phase if st > 0.01 else 0.0, up]
+		_time * 7.0 + rig.cheer_phase if st > 0.01 else 0.0, up * rig.carry_scale, up]
 	var last: Array = rig.get("posed", [])
 	if not force and last.size() == state.size():
 		var moved := 0.0
@@ -244,12 +317,12 @@ func _pose_rig(rig: Dictionary, force := false) -> bool:
 	v.cheer_pump = state[4]
 	v.seat_lean = rig.lean
 	v.stick_carry = state[5]
-	v.stand_tall = state[5]
-	v.sticks.visible = rig.stick or state[5] > 0.01
+	v.stand_tall = state[6]
+	v.sticks.visible = rig.stick or state[6] > 0.01
 	v.pose_seated()
+	if rig.walk_t >= 0.0: return true
 	# Cheering bounce on the toes; stepping forward off the seat to go out.
-	v.position.y = absf(sin(_time * 9.0 + rig.cheer_phase)) * 0.03 * st
-	v.position.z = RISE_STEP * state[5]
+	v.position = Vector3(0, absf(sin(_time * 9.0 + rig.cheer_phase)) * 0.03 * st, RISE_STEP * state[6])
 	return true
 
 ## Two-bone solve: knee for a hip and ankle with fixed thigh/shin lengths,
@@ -397,7 +470,8 @@ func build_player(team: int, parent: Node3D, pos: Vector3, side: float) -> Node3
 		"lean": _rng.randf_range(0.12, 0.42), "yaw_bias": _rng.randf_range(-0.15, 0.15),
 		"spread": _rng.randf_range(0.12, 0.18), "stick": _rng.randf() < 0.55,
 		"number": str(_rng.randi_range(2, 98)), "index": _numbers[team].size(), "visual": null,
-		"rise": 0.0, "rise_target": 0.0, "rise_until": 0.0, "return_at": -1.0, "return_number": ""}
+		"rise": 0.0, "rise_target": 0.0, "rise_until": 0.0, "return_at": -1.0, "return_number": "",
+		"carry_scale": 1.0, "walk_t": -1.0, "walk_time": 1.0, "walk_from": Vector3.ZERO, "walk_mid": Vector3.ZERO, "walk_yaw": PI}
 	fig.set_meta("rig", rig)
 	_rigs.append(rig)
 	_numbers[team].append(null)

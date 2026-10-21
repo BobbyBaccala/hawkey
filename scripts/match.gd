@@ -636,12 +636,15 @@ func update_team_ai(delta: float) -> void:
 			elif hop==1 and visual_.hop_finished():
 				# Fresh legs climb out a little further along the bench.
 				var tired_number:String=visual_.number
+				# Where he stepped down onto the bench: he walks on from there to the free seat.
+				var landing:Vector3=visual_.global_position
+				var landing_face:Vector3=-visual_.global_transform.basis.z
 				change_identity(actor,int(actor.get_meta("pending_id")))
 				var from_:Vector3=visual_.position+Vector3(0,0,-signf(target.z)*0.7)
 				# The one who got up goes out from where he stands; the player
 				# who came off takes his seat (arena_benches.gd go_out()).
 				var out_benches=arena.get_node_or_null("Benches")
-				var out_at=out_benches.go_out(team,tired_number) if out_benches!=null else null
+				var out_at=out_benches.go_out(team,tired_number,landing,landing_face) if out_benches!=null else null
 				if out_at is Vector3:
 					from_=actor.to_local(out_at)
 					from_.y=visual_.position.y

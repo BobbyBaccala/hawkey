@@ -209,12 +209,19 @@ func check_line_change(m, benches) -> void:
 		check(absf(shaft_up.y) > 0.9, "Seated stick is nearly upright (%.2f)" % absf(shaft_up.y))
 		check(blade.y < 0.15 and blade.x < -Arena.HALF_WIDTH - 0.2, "Seated blade on the bench floor (%.2f, x %.2f)" % [blade.y, blade.x])
 		check(absf(Vector2(knob.x - blade.x, knob.z - blade.z).length()) < 0.6, "Stick stays in front of its player")
-	var fig: Node3D = benches.seated[0][3]
-	var rig: Dictionary = fig.get_meta("rig")
-	var v = rig.visual
-	var head0: float = v.helmet.global_position.y
-	check(benches.stand_up(0, fig.global_position.z), "A bench player gets up to go out")
+	# The tired player lands on the bench floor in front of seat 3; the one
+	# going out is about a seat along (PASS_GAP) so they pass side by side.
+	var z0: float = benches.seated[0][3].global_position.z
+	check(benches.stand_up(0, z0), "A bench player gets up to go out")
 	check(benches.rising_count(0) == 1 and benches.rising_count(1) == 0, "Only one player gets up, on the changing team's bench")
+	var rig: Dictionary = {}
+	for r in benches._rigs:
+		if r.team == 0 and r.rise_target > 0.0: rig = r
+	var fig: Node3D = rig.fig
+	var v = rig.visual
+	var dz := absf(fig.global_position.z - z0)
+	check(dz > 0.5 and dz < 1.2, "The one going out sits about a seat along from the landing (%.2f)" % dz)
+	var head0: float = v.helmet.global_position.y
 	var prev: float = head0
 	var smooth := true
 	for i in range(70):
@@ -228,6 +235,7 @@ func check_line_change(m, benches) -> void:
 	for i in range(2):
 		var foot: Vector3 = v.skates[i].global_position
 		check(foot.y > 0.03 and foot.y < 0.13 and foot.x < -Arena.HALF_WIDTH - 0.3, "Standing skate on the bench floor (%.2f, x %.2f)" % [foot.y, foot.x])
+	# Without a landing (old path) he reappears at the seat after SEAT_RETURN.
 	var at = benches.go_out(0, "77")
 	check(at is Vector3 and not fig.visible, "He leaves his seat for the hop")
 	if at is Vector3:
@@ -236,12 +244,69 @@ func check_line_change(m, benches) -> void:
 	check(fig.visible and v.number == "77", "The player coming off takes the free seat (%s)" % v.number)
 	for i in range(120): benches.update_figures(1.0 / 60.0)
 	check(absf(v.helmet.global_position.y - head0) < 0.06 and benches.rising_count(0) == 0, "and sits down (head %.2f)" % v.helmet.global_position.y)
+	check_seat_walk(benches, z0)
 	# A change called off (nobody goes out): he sits back down by himself.
 	benches.stand_up(1, -5.0)
 	for i in range(int(4.5 * 60)): benches.update_figures(1.0 / 60.0)
 	check(benches.rising_count(1) == 0, "A player left standing sits back down")
 	var src := FileAccess.get_file_as_string("res://scripts/match.gd")
-	check(src.contains("hop_benches.stand_up(") and src.contains(".go_out(team,tired_number)"), "match.gd line change drives the bench")
+	check(src.contains("hop_benches.stand_up(") and src.contains(".go_out(team,tired_number,landing,landing_face)"), "match.gd line change drives the bench")
+
+## Pass 3 slice 7: the player coming off does not vanish at his landing spot
+## - he stands there from the same frame, walks to the free seat (curving back
+## off the boards first so he passes the one going out), turns to face the
+## ice and sits, with no jumps on the way.
+func check_seat_walk(benches, z0: float) -> void:
+	check(benches.stand_up(0, z0), "Second change: a player gets up")
+	for i in range(70): benches.update_figures(1.0 / 60.0)
+	var landing := Vector3(-(Arena.HALF_WIDTH + 0.85), 0, z0)
+	var away := Vector3(-1, 0, 0)
+	var rig: Dictionary = {}
+	for r in benches._rigs:
+		if r.team == 0 and r.rise_target > 0.0: rig = r
+	var fig: Node3D = rig.fig
+	var v = rig.visual
+	var seat_head: float = -1.0
+	var at = benches.go_out(0, "45", landing, away)
+	check(at is Vector3, "He goes out from where he stood")
+	if not at is Vector3: return
+	check(fig.visible and v.number == "45", "The player coming off is shown at once, wearing his number")
+	var p0: Vector3 = v.global_position
+	check(Vector2(p0.x - landing.x, p0.z - landing.z).length() < 0.05, "He starts at his landing spot (%.2f m off)" % Vector2(p0.x - landing.x, p0.z - landing.z).length())
+	var f0: Vector3 = -v.global_transform.basis.z
+	check(f0.dot(away) > 0.95, "He still faces the way he landed (%.2f)" % f0.dot(away))
+	# The one going out heads straight for the boards at the landing's z.
+	var fresh_a: Vector3 = at
+	var fresh_b := Vector3(-Arena.HALF_WIDTH, 0, z0)
+	var prev: Vector3 = v.helmet.global_position
+	var max_step := 0.0
+	var min_pass := INF
+	var frames := int(rig.walk_time * 60.0) + 2
+	for i in range(frames):
+		benches.update_figures(1.0 / 60.0)
+		var h: Vector3 = v.helmet.global_position
+		max_step = maxf(max_step, h.distance_to(prev))
+		prev = h
+		var q: Vector3 = v.global_position
+		q.y = 0
+		if i < frames / 2:
+			var seg := Geometry3D.get_closest_point_to_segment(q, Vector3(fresh_a.x, 0, fresh_a.z), fresh_b)
+			min_pass = minf(min_pass, q.distance_to(seg))
+		for k in range(2):
+			var foot: Vector3 = v.skates[k].global_position
+			if foot.x > -Arena.HALF_WIDTH - 0.2 or foot.x < -Arena.HALF_WIDTH - Benches.DEPTH + 0.15: max_step = INF
+	check(max_step < 0.05, "Walk to the seat has no pops (max head step %.3f m/frame)" % max_step)
+	check(min_pass > 0.25, "He passes the player going out side by side (closest %.2f m)" % min_pass)
+	check(not benches.is_walking(rig), "He reaches the seat")
+	var p1: Vector3 = v.global_position
+	var seat_spot: Vector3 = fig.global_transform * Vector3(0, 0, Benches.RISE_STEP)
+	check(Vector2(p1.x - seat_spot.x, p1.z - seat_spot.z).length() < 0.05, "and stands in front of the free seat")
+	var f1: Vector3 = -v.global_transform.basis.z
+	check(f1.dot(Vector3(1, 0, 0)) > 0.9, "turned round to face the ice (%.2f)" % f1.dot(Vector3(1, 0, 0)))
+	for i in range(120): benches.update_figures(1.0 / 60.0)
+	seat_head = v.helmet.global_position.y
+	check(seat_head < 1.25 and benches.rising_count(0) == 0, "then sits down (head %.2f)" % seat_head)
+	check(v.sticks.visible and v.seat_stick, "holding the stick he came off with")
 
 func finish() -> void:
 	print("Bench failures: ", failures)
