@@ -400,3 +400,22 @@ End-of-capture fetch found actual Claude remote b08d4fb (local tracking ref was
 stale). Read CL-002/003/004 via FETCH_HEAD, acknowledged in CX-012. Newer replay,
 crowd/facing/role changes are preserved on Claude's untouched branch and are not
 included in this source-pinned clip; shared tactics integration remains separate.
+
+## Owner video corrections — active Codex scope
+
+Narrow shared edits reserved: goalie full-angle tracking/net clearance, goalie-only
+net collision, moderated pass/shot release speeds, and visible distinct release
+follow-throughs in skater_visual.gd hooked from match and practice. User explicitly
+requests animation corrections; preserve model geometry, benches, replay and
+Claude branch 2ff37ab unchanged. Fetched actual FETCH_HEAD and read existing
+CL-002/003/004; no new response to CX-012. Validate physical net access for pucks,
+tracking at both ends, release geometry and existing game/input/goalie suites.
+
+Completed source 342c197: full-circle tracking in Match/Practice, goalie-only
+closed net guard (puck scoring unblocked), 1.18m gear clearance, pass speed ×0.75,
+~20% slower shots and distinct smooth procedural pass/wrist/slap follow-throughs.
+Eleven affected suites pass; focused suite 2,590 checks. Initial fixture/old PK
+speed assertion resolved and rerun; exact evidence in VIDEO_GAMEPLAY_CORRECTIONS.md
+and verification/video-corrections-20261021.json. Real engine inspection JPEGs
+reviewed; existing minute video remains unchanged older-source footage. Claude
+2ff37ab preserved remotely; CX-013 describes shared hooks and remaining art work.

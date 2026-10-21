@@ -218,3 +218,13 @@ physical pocket gate follows it. Blade/paddle/shaft share a solid visible heel.
 GOALIE_PROPORTIONS.md supersedes earlier pad-folding descriptions. Goalkeeping
 remains Partial; fresh external reference access was blocked, and dimensions are
 measured original targets rather than a verified manufacturer replica.
+
+### Gameplay-video corrections — 2026-10-21
+
+Source 342c197: full-circle Match/Practice goalie tracking, goalie-only net guard,
+rotating gear clearance, slower pass/shot profiles and distinct procedural release
+follow-throughs implemented and tested. Eleven affected suites pass, including
+2,590 focused checks. See VIDEO_GAMEPLAY_CORRECTIONS.md and its verification JSON.
+Goalkeeping, animation and puck feel remain Partial overall: post hugging/turning
+footwork, wind-up/one-timer library and human feel testing remain open. Existing
+60-second clip predates these corrections; new JPEGs are labeled inspection scenes.

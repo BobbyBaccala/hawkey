@@ -1,0 +1,114 @@
+{
+  "source_commit": "342c197",
+  "engine_tests": "Godot 4.6.3 headless",
+  "tests": [
+    {
+      "name": "test_video_corrections",
+      "exit": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_net_shooting",
+      "exit": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_goal_net",
+      "exit": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_goalie_polish",
+      "exit": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_goalie_proportions",
+      "exit": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_goalie_saves",
+      "exit": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_skate_stick",
+      "exit": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_ai_spectator",
+      "exit": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_tactics_match",
+      "exit": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_overtime_shootout",
+      "exit": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_play_now",
+      "exit": 0,
+      "script_error": false
+    }
+  ],
+  "focused_checks": 2590,
+  "focused_failures": 0,
+  "capture": {
+    "captures": [
+      {
+        "image": "res://docs/screenshots/video-fix-behind-net-20261021.jpg",
+        "result": 0
+      },
+      {
+        "image": "res://docs/screenshots/video-fix-ready-20261021.jpg",
+        "result": 0
+      },
+      {
+        "image": "res://docs/screenshots/video-fix-pass-20261021.jpg",
+        "result": 0
+      },
+      {
+        "image": "res://docs/screenshots/video-fix-shot-20261021.jpg",
+        "result": 0
+      },
+      {
+        "image": "res://docs/screenshots/video-fix-slap-20261021.jpg",
+        "result": 0
+      }
+    ],
+    "engine": "4.6.2-stable (official)",
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "source": "Production main.tscn inspection scenarios: puck placed behind goal; normal pass/shot release functions sampled at follow-through peak. Frozen camera, HUD hidden; not continuous gameplay."
+  },
+  "screenshots": [
+    {
+      "path": "docs/screenshots/video-fix-behind-net-20261021.jpg",
+      "sha256": "1bb89dbada993fbfbf96d1eef84bd3e41cf2916f43abce7b9cbde60090873b28"
+    },
+    {
+      "path": "docs/screenshots/video-fix-pass-20261021.jpg",
+      "sha256": "e650f983ddbab4876a58af5a9218aae0207303ff822baaf9ea5e1e171762391a"
+    },
+    {
+      "path": "docs/screenshots/video-fix-ready-20261021.jpg",
+      "sha256": "30f8276d5aabb1608be08bee49df2cef122f336832aeedd05b972fadb9f328eb"
+    },
+    {
+      "path": "docs/screenshots/video-fix-shot-20261021.jpg",
+      "sha256": "0f47dea9242f4b028223f6024f3915b8e525f3dc30299e157f4aa843995effdc"
+    },
+    {
+      "path": "docs/screenshots/video-fix-slap-20261021.jpg",
+      "sha256": "a20be915df75f7beb6e989edcd5473d2c10f1449f16b44f3d65c80c0632a4daa"
+    }
+  ],
+  "initial_findings": "Initial focused fixture allowed insufficient time for an initial 180-degree turn and inherited practice spawn height. Fixture now allows 0.5s settling and sets player/puck at explicit ice coordinates. Old PK test required >15m/s forward; moderated airborne clearance now checked >12m/s forward with >3m/s lift. All affected tests rerun successfully.",
+  "limitations": "Procedural contact/follow-through animations; no full captured wind-up library or validated human feel claim. Conservative 1.18m crease clearance. Claude newer replay/crowd/role branch not integrated in this change; existing minute video is older source."
+}
