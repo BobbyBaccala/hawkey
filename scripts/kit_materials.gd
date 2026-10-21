@@ -444,6 +444,14 @@ static func helmet_shell(color: Color) -> ShaderMaterial:
 		m.set_shader_parameter("albedo_variation", 0.03)
 		return m)
 
+## Close-fitting cut-resistant fabric, not a glossy rigid plastic funnel.
+static func neck_guard() -> ShaderMaterial:
+	return cached("neck_guard",func() -> ShaderMaterial:
+		var m := _gear(rib_texture(),90.0,0.12,0.92,0.14)
+		m.set_shader_parameter("use_vertex_color",false)
+		m.set_shader_parameter("base_color",Color("#111820"))
+		return m)
+
 ## Matte impact liner/rubber backing: no plastic sparkle inside vent holes.
 static func helmet_liner() -> ShaderMaterial:
 	return cached("helmet_liner",func() -> ShaderMaterial:

@@ -1,6 +1,7 @@
 extends SceneTree
 ## Genuine isolated native 3D review. No arena load, AI or presentation effects.
 const Visual=preload("res://scripts/skater_visual.gd")
+var visual_source: Script=Visual
 var stage:="baseline"
 var goalkeeper:=false
 var pose_name:="idle"
@@ -21,6 +22,7 @@ func run() -> void:
 		if arg.begins_with("--stage="): stage=arg.trim_prefix("--stage=").validate_filename()
 		if arg=="--goalie": goalkeeper=true
 		if arg=="--helmet-only": helmet_only=true
+		if arg.begins_with("--visual-script="): visual_source=load(arg.trim_prefix("--visual-script="))
 		if arg.begins_with("--pose="): pose_name=arg.trim_prefix("--pose=")
 	DirAccess.make_dir_recursive_absolute("res://build")
 	root.size=Vector2i(960,960);root.content_scale_size=Vector2i(960,960)
@@ -38,7 +40,7 @@ func run() -> void:
 	var floor_material:=StandardMaterial3D.new();floor_material.albedo_color=Color("#66717e");floor_material.roughness=0.92
 	floor_mesh.material_override=floor_material;scene.add_child(floor_mesh)
 	camera=Camera3D.new();scene.add_child(camera);camera.current=true
-	visual=Visual.new();visual.goalie=goalkeeper;visual.kit=Color("#185c73");visual.number="17";scene.add_child(visual);visual.set_nameplate("LARSEN")
+	visual=visual_source.new();visual.goalie=goalkeeper;visual.kit=Color("#185c73");visual.number="17";scene.add_child(visual);visual.set_nameplate("LARSEN")
 	for i in range(8): visual.animate(0,1.0/60.0)
 	if goalkeeper and pose_name=="pad_right":
 		for i in range(60):
@@ -62,5 +64,5 @@ func run() -> void:
 	write_metadata()
 	quit()
 func write_metadata() -> void:
-	var metadata: Dictionary={"engine":Engine.get_version_info().string,"source":"Actual isolated Godot 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay","stage":stage,"goalkeeper":goalkeeper,"pose":pose_name,"renderer":RenderingServer.get_video_adapter_name(),"captures":captures,"size":"960x960"}
+	var metadata: Dictionary={"visual_script":visual_source.resource_path,"engine":Engine.get_version_info().string,"source":"Actual isolated Godot 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay","stage":stage,"goalkeeper":goalkeeper,"pose":pose_name,"renderer":RenderingServer.get_video_adapter_name(),"captures":captures,"size":"960x960"}
 	var file:=FileAccess.open("res://build/model-review-"+stage+".json",FileAccess.WRITE);file.store_string(JSON.stringify(metadata,"\t"));file.close()

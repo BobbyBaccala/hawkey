@@ -77,7 +77,7 @@ var skates: Array[Node3D] = []
 var skate_cuffs: Array[MeshInstance3D] = []
 var helmet: Node3D
 var shirt: Node3D
-## Cut-resistant neck guard (skaters): fills the collar up to the jaw.
+## Close-fitting cut-resistant neck fabric inside the jersey collar.
 var neck_guard: MeshInstance3D
 var sticks: Node3D
 var pads: Array[Node3D] = []
@@ -280,7 +280,7 @@ func _ready() -> void:
 		neck_guard = MeshInstance3D.new()
 		neck_guard.name = "NeckGuard"
 		neck_guard.mesh = ArrayMesh.new()
-		neck_guard.material_override = Kit.plastic(Color("#141a21"),0.85)
+		neck_guard.material_override = Kit.neck_guard()
 		rig.add_child(neck_guard)
 	sticks = Node3D.new()
 	rig.add_child(sticks)
@@ -488,7 +488,7 @@ func jersey_point(a: float, y: float, scale_: float = 1.0) -> Vector3:
 ## Top edge of the sweater: a V-neck at the front, a round collar elsewhere.
 func jersey_neck(a: float) -> float:
 	var front := maxf(0.0,sin(a))
-	return 1.56-0.095*pow(front,10.0)-0.014*front
+	return 1.56-0.032*pow(front,4.0)-0.008*front
 
 ## Skin weights for a rest-space point: the hem follows the hips, the body
 ## the spine chain up to the chest, the shoulder pads partly the upper arms.
@@ -538,9 +538,9 @@ func build_jersey() -> void:
 		levels.append([y,0.0,1.0,0.0,0.98+(y-hem)])
 	for k in range(1,7):
 		levels.append([-1.0,float(k)/6.0,1.0,0.0,0.0])
-	levels.append([-1.0,1.0,1.06,0.006,1.02])
-	levels.append([-1.0,1.0,1.08,-0.008,1.02])
-	levels.append([-1.0,1.0,0.97,-0.018,1.02])
+	levels.append([-1.0,1.0,1.025,0.003,1.02])
+	levels.append([-1.0,1.0,1.04,-0.003,1.02])
+	levels.append([-1.0,1.0,0.98,-0.009,1.02])
 	for level: Array in levels:
 		var ring := PackedVector3Array()
 		var uv_ring := PackedVector2Array()
@@ -1631,11 +1631,11 @@ func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF
 
 const SLEEVE_ROWS := 14
 const SLEEVE_SIDES := 22
-## Neck guard: a padded collar tube from inside the jersey neckline up under
-## the jaw, following the posed torso and head.
+## Short fabric neck guard, with both ends attached in the posed bind frame.
+## A world-up offset from the head stretched the old guard during a skating lean.
 func update_neck_guard() -> void:
-	var bottom: Vector3 = shirt.transform*Vector3(0,1.47,0.006)
-	var top: Vector3 = posed_head+Vector3(0,0.012,0.0)
+	var bottom: Vector3 = shirt.transform*Vector3(0,1.505,0.006)
+	var top: Vector3 = posed_head+shirt.transform.basis*(Vector3(0,1.575,0.006)-(rest["head"] as Transform3D).origin)
 	var old:Array=neck_guard.get_meta("pose",[])
 	if old.size()==2 and bottom.is_equal_approx(old[0]) and top.is_equal_approx(old[1]):return
 	neck_guard.set_meta("pose",[bottom,top])
@@ -1648,7 +1648,7 @@ func update_neck_guard() -> void:
 	const SIDES:=20
 	const ROWS:=6
 	# Radius: flares into the collar, snug round the neck, rolled top edge.
-	var radii:=[0.105,0.090,0.077,0.070,0.068,0.068,0.064]
+	var radii:=[0.067,0.063,0.060,0.057,0.056,0.056,0.055]
 	var rings:=[]
 	for r in range(ROWS+1):
 		var t:=float(r)/ROWS

@@ -97,7 +97,8 @@ func run() -> void:
 	check(Prof.curve(Visual.JERSEY_WIDTH, 1.42) > Prof.curve(Visual.JERSEY_WIDTH, 1.10) + 0.04, "no shoulder-pad shape in the sweater")
 	check(Prof.curve(Visual.JERSEY_WIDTH, Visual.JERSEY_HEM) > Prof.curve(Visual.JERSEY_WIDTH, 1.10) + 0.015, "hem does not flare")
 	# V-neck: the neckline dips at the front.
-	check(v.jersey_neck(PI * 0.5) < v.jersey_neck(-PI * 0.5) - 0.06, "no V-neck at the front")
+	var neck_drop: float=v.jersey_neck(-PI*0.5)-v.jersey_neck(PI*0.5)
+	check(neck_drop>0.02 and neck_drop<0.05,"Collar has a shallow front notch, not a deep chest cut")
 
 	# Pick chest vertices (moved by the chest only) and hem vertices.
 	var chest: Array[int] = []

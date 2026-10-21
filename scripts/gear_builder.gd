@@ -1276,15 +1276,6 @@ static func skater_helmet() -> ArrayMesh:
 			b.indices.append_array(PackedInt32Array([base + ia, base + ic, base + ib]))
 		else:
 			b.indices.append_array(PackedInt32Array([base + ia, base + ib, base + ic]))
-	# Layered side-shell break, lifted only a millimetre from the smooth body.
-	# This catches a narrow edge highlight without denting the crown.
-	for side: float in [-1.0,1.0]:
-		var line := PackedVector3Array()
-		for k in range(28):
-			var a := side * lerpf(0.22,2.92,float(k)/27.0)
-			var phi := 1.44 - 0.25 * maxf(0.0,-cos(a))
-			line.append(helmet_point(a,phi)+helmet_normal(a,phi)*0.0005)
-		b.add_tube(line,0.0011,shell,8)
 	_helmet_mesh = b.to_mesh(0.27)
 	return _helmet_mesh
 
@@ -1312,6 +1303,15 @@ static func helmet_fittings() -> ArrayMesh:
 				cols.append(Color("#05090d"))
 			liner_rings.append(ring);liner_colors.append(cols)
 		b.add_loft(liner_rings, liner_colors, false, true)
+	# Layered side-shell break, lifted only a millimetre from the smooth body.
+	# The matte joint avoids a bright wire-like painted highlight.
+	for side: float in [-1.0,1.0]:
+		var line := PackedVector3Array()
+		for k in range(28):
+			var a := side * lerpf(0.22,2.92,float(k)/27.0)
+			var phi := 1.44 - 0.25 * maxf(0.0,-cos(a))
+			line.append(helmet_point(a,phi)+helmet_normal(a,phi)*0.0005)
+		b.add_tube(line,0.0011,Color("#18232e"),8)
 	# Occipital lock adjuster on the back of the shell.
 	var occ := helmet_point(PI, 1.92)
 	b.add_rounded_box(occ + Vector3(0, 0.004, -0.004), Vector3(0.050, 0.014, 0.010), 0.004, plastic)
