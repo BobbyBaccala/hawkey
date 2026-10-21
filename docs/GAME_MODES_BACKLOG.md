@@ -196,3 +196,12 @@ passed. Follow-up management 160/scouting 2,755 checks pass, including scheduled
 match identity and saved scout assignment. Verification: gm-operations-20261020.json.
 Next: shared played/simulated player-stat ledger and leaders/history; verified
 NHLPA/CBA policy and offseason/draft dependencies remain required. No release/PR merge.
+
+## 2026-10-21 — Cup and standalone Shootout
+
+Implemented native More modes routing: eight-team HL Knockout Cup with saved
+bracket/play/simulation/champion, plus direct on-ice Shootout/results/rematch.
+See GAME_MODES.md for actual scope, independent save safety and remaining Career,
+GM postseason, online and structured-drill gaps. These are functional bounded modes,
+not completion of all AAA mode requirements. Source 57946b9; Claude through85fd791
+preserved. Evidence/captures: verification/collar-cup-20261021.json.

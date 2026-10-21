@@ -182,3 +182,14 @@ neutral/arena JPEGs and checks: HELMET_REFERENCE_REVIEW.md and
 verification/helmet-reference-20261021.json. Authored anatomy, customization/save
 coverage, distance LODs/hardware performance and specialist review remain open;
 this is not release-ready equipment art.
+
+## 2026-10-21 — mode expansion and collar repair
+
+Knockout Cup and standalone Shootout are **Functional** bounded modes, implemented
+and tested through actual scene/results/return paths. Cup has a separate validated
+atomic save, seeded eight-club bracket, mixed play/simulation, champion and retry/
+backup recovery. Shootout uses existing real on-ice attempts and rematch. Neither
+implements GM playoffs, Career or online play; those remain missing/partial as
+above. Equipment art remains **Partial**: collar/neck guard fit and the matching
+cloth trim shader are repaired, not release-ready anatomy. See GAME_MODES.md and
+verification/collar-cup-20261021.json for exact checks and genuine JPEG provenance.

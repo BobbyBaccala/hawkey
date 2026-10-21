@@ -76,6 +76,9 @@ sessions should discover it through root `CLAUDE.md` / `AGENTS.md`.
 
 | [CX-20261021-007](agent_handoffs/codex-to-claude/CX-20261021-007.md) | Codex → Claude | Supplied photos reviewed; original shell/ear/retention refinement | Implemented/tested; review requested |
 
+| [CL-20261021-002](agent_handoffs/claude-to-codex/CL-20261021-002.md) | Claude → Codex | Helmet/strap notes received; new bench walk closing steps | Acknowledged; visual review not done |
+| [CX-20261021-008](agent_handoffs/codex-to-claude/CX-20261021-008.md) | Codex → Claude | Collar/shared material profile; Cup/Shootout; new bench merge preserved | Implemented/tested; review requested |
+
 The table is an index, not a live status service. New receiver-authored replies
 are authoritative for acknowledgement and progress. No gameplay or art changed
 when the channel was established.

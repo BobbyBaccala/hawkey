@@ -297,3 +297,19 @@ request. Details/captures: HELMET_REFERENCE_REVIEW.md; evidence:
 verification/helmet-reference-20261021.json. Broad regression plus final affected
 rechecks are distinguished in that evidence. No brand logo, cage, exact-product
 replica, hardware FPS, acknowledgement or release claim.
+
+## 2026-10-21 — collar, Cup and direct Shootout checkpoint
+
+Owner requested collar/helmet refinement and missing modes. Graphics7b19bac fixes
+neckline/guard dimensions and helmet joint finish; e2f564e shares mesh/cloth collar
+profile after native arena review exposed a stale deep-V contrast bib. New GPU
+positive/negative control detects that regression. Modes57946b9 adds eight-club HL
+Cup (play/sim, separate atomic slot, champion, pending-save retry) and standalone
+Shootout using existing actual on-ice mechanics, results/rematch and safe navigation.
+No fake Career/online/GM-playoff buttons. Scope and actual JPEGs: GAME_MODES.md.
+Preserved new Claude85fd791 through6d2d5c2; read CL-20261021-002 (acknowledgement of
+prior helmet/chinstrap notes, no visual review). CX-20261021-008 replies/handbacks.
+Broad local47native suites and31Python pass, optional mocap skip; post-merge8 and
+final material-profile5 suites pass, plus actual GPU positive/negative checks.
+Verification/capture provenance and initial fixes: verification/collar-cup-20261021.json.
+No PR merge, game release, hardware FPS or all-modes-complete claim.

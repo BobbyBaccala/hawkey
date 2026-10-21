@@ -3,7 +3,7 @@
 [![Project checks](https://github.com/BobbyBaccala/hawkey/actions/workflows/project-checks.yml/badge.svg?branch=codex%2Fgame-modes)](https://github.com/BobbyBaccala/hawkey/actions/workflows/project-checks.yml)
 
 A native **Godot hockey simulation** with original fictional leagues, playable
-exhibitions and a growing general-manager mode. **Alpha development**: realistic
+exhibitions, a knockout cup, standalone shootouts and a growing general-manager mode. **Alpha development**: realistic
 hockey and deep management are the targets; complete rules, Career, multi-season
 GM and AAA visual quality are still in development.
 
@@ -23,9 +23,13 @@ that all platforms or graphics configurations have been validated.
 | Mode | Working scope | Important next work |
 |---|---|---|
 | Play Now | League/team selection, exhibition, results/rematch, overtime and shootout | Complete rule exceptions, richer setup and physical-controller feel |
+| Knockout Cup | Eight HL clubs, play/simulate seven knockout games, saved bracket and champion | Custom fields/formats; this is separate from GM playoffs |
+| Shootout | Direct three-round contest with sudden death, real roster shooters/goalies, results and rematch | Custom formats and physical-controller feel |
 | Practice | Shared skating, puck, shot and pass mechanics | Structured drills and feedback |
 | GM Season | 32 HL clubs, 62-game regular season, play/sim, standings and persistent saves | Playoffs, offseason, trades, draft and development |
 | Front office | Free agents/contracts, cap checks, junior scouting, team statistics and season game records | Verified NHL-based contract rules, player/goalie stat ledger and histories |
+
+Open **More modes** from the title for Cup and Shootout. See [mode scope and saves](docs/GAME_MODES.md).
 
 The original saved world contains **33 leagues, 643 clubs and 14,745 players**:
 32 HL teams, professional farm tiers, North American juniors, European leagues
