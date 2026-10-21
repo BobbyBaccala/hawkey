@@ -2,7 +2,8 @@ extends SceneTree
 ## Board hop (line change): the visual leaves the body at the bench door,
 ## vaults the dasher with the knees tucked so no part of either skate passes
 ## through the boards, lands on the bench floor, and the hop back out ends
-## exactly on the body. The path and pose change smoothly (no pops).
+## exactly on the body. The path and pose change smoothly (no pops), and the
+## stick is lifted blade-up so it never passes through the boards.
 const Arena = preload("res://scripts/arena.gd")
 const BoardHop = preload("res://scripts/board_hop.gd")
 const DT := 1.0 / 120
@@ -37,6 +38,26 @@ func lowest_over_boards(v) -> float:
 			low = minf(low, b.position.y)
 	return low
 
+## Deepest any point of the stick (shaft and blade) sits inside the dasher
+## boards' volume (west boards, up to the cap), 0 if clear.
+func stick_in_boards(v) -> float:
+	var pts: Array[Vector3] = []
+	for k in range(25):
+		pts.append(v.stick_shaft.global_transform * Vector3(0, k / 24.0 - 0.5, 0))
+	for k in range(9):
+		pts.append(v.stick_blade.global_transform * Vector3(v.stick_blade_length * k / 8.0, 0, 0))
+	var worst := 0.0
+	var x_in := -Arena.HALF_WIDTH
+	var x_out := x_in - BoardHop.BOARD_DEPTH
+	for p in pts:
+		if p.x < x_in and p.x > x_out and p.y < BoardHop.BOARD_TOP:
+			worst = maxf(worst, minf(minf(x_in - p.x, p.x - x_out), BoardHop.BOARD_TOP - p.y))
+	return worst
+
+func check_stick(r: Dictionary, what: String) -> void:
+	check(r.stick_in < 0.005, "Stick carried clear of the boards %s (%.3f m inside)" % [what, r.stick_in])
+	check(r.max_stick_step < 0.16, "Stick lifts and lowers without popping %s (blade step %.3f m)" % [what, r.max_stick_step])
+
 func check_plant(r: Dictionary, what: String) -> void:
 	check(r.plant_peak > 0.99, "Top hand plants on the board cap %s (peak %.2f)" % [what, r.plant_peak])
 	check(r.plant_frames >= 15, "Hand stays planted at least 0.125 s %s (%d frames)" % [what, r.plant_frames])
@@ -49,7 +70,8 @@ func check_plant(r: Dictionary, what: String) -> void:
 func run_hop(v, body: Node3D, a: Vector3, b: Vector3) -> Dictionary:
 	v.start_hop(a, b, -Arena.HALF_WIDTH - body.position.x)
 	var result := {"clear": INF, "max_step": 0.0, "max_tuck_step": 0.0, "peak": 0.0, "frames": 0, "crossed": false,
-		"plant_peak": 0.0, "plant_frames": 0, "max_plant_step": 0.0, "hand_err": 0.0, "max_hand_step": 0.0}
+		"plant_peak": 0.0, "plant_frames": 0, "max_plant_step": 0.0, "hand_err": 0.0, "max_hand_step": 0.0, "stick_in": 0.0, "max_stick_step": 0.0}
+	var last_blade := Vector3.INF
 	var last_plant := 0.0
 	var last_hand := Vector3.INF
 	var last: Vector3 = v.position
@@ -58,6 +80,12 @@ func run_hop(v, body: Node3D, a: Vector3, b: Vector3) -> Dictionary:
 		v.animate(0, DT, 0, false)
 		result.frames += 1
 		result.clear = minf(result.clear, lowest_over_boards(v))
+		# The stick may start the hop reaching into the boards (the skater stops
+		# facing them); once it is half way up it must stay clear of them.
+		if v.hop_u >= BoardHop.CARRY_IN * 0.5: result.stick_in = maxf(result.stick_in, stick_in_boards(v))
+		var blade: Vector3 = v.stick_blade.global_position
+		if last_blade != Vector3.INF: result.max_stick_step = maxf(result.max_stick_step, blade.distance_to(last_blade))
+		last_blade = blade
 		result.max_step = maxf(result.max_step, (v.position - last).length())
 		var tuck: float = v.hop_state.get("tuck", 0.0)
 		result.max_tuck_step = maxf(result.max_tuck_step, absf(tuck - last_tuck))
@@ -102,6 +130,7 @@ func run() -> void:
 	check(out.max_step < 0.05, "Hop path is continuous (largest step %.3f m)" % out.max_step)
 	check(out.max_tuck_step < 0.08, "Tuck blends smoothly (largest step %.3f)" % out.max_tuck_step)
 	check_plant(out, "going over")
+	check_stick(out, "going over")
 	check(v.global_position.distance_to(body.position + bench) < 0.01, "Lands on the bench floor")
 	check(absf(v.global_position.y) < 0.001, "Stands on the bench floor after landing")
 	# Facing the bench while going out: game forward (-Z of the visual) points -x.
@@ -113,6 +142,7 @@ func run() -> void:
 	check(back.clear > BoardHop.BOARD_TOP + 0.02, "Skates clear the boards coming back (lowest %.3f m)" % back.clear)
 	check(back.max_step < 0.05, "Return path is continuous (largest step %.3f m)" % back.max_step)
 	check_plant(back, "coming back")
+	check_stick(back, "coming back")
 	check(v.position.length() < 0.001, "Return hop ends on the body")
 	forward = -v.global_basis.z
 	check(forward.x > 0.9, "Faces the ice coming back")
@@ -120,6 +150,7 @@ func run() -> void:
 	check(not v.hopping() and v.hop_state.is_empty() and v.position == Vector3.ZERO, "cancel_hop() resets the visual")
 	v.animate(0, DT, 0, false)
 	check(v.hand_plant == 0.0, "Both hands back on the stick after the hop")
+	check(v.stick_carry == 0.0 and v.blade_position.y < 0.05, "Stick back down on the ice after the hop")
 
 	# Pure path: offsets stay on the near side before take-off and the far side after landing.
 	for k in range(101):
@@ -128,6 +159,7 @@ func run() -> void:
 		if u < BoardHop.VAULT_START: check(s.offset.x >= BoardHop.TAKEOFF - 0.001, "Near side before take-off (u=%.2f)" % u)
 		if u > BoardHop.VAULT_END: check(s.offset.x <= -BoardHop.BOARD_DEPTH - BoardHop.TAKEOFF + 0.001, "Far side after landing (u=%.2f)" % u)
 		if u < BoardHop.VAULT_START - 0.06 or u > BoardHop.VAULT_END + 0.04: check(s.tuck == 0.0, "No tuck while skating (u=%.2f)" % u)
+		if u >= BoardHop.CARRY_IN and u <= 1.0 - BoardHop.CARRY_OUT: check(s.carry > 0.999, "Stick fully carried over the vault (u=%.2f)" % u)
 		if u <= BoardHop.PLANT_START or u >= BoardHop.PLANT_END: check(s.plant == 0.0, "Hand off the boards outside the plant (u=%.2f)" % u)
 		check(absf(s.hand.x + BoardHop.BOARD_DEPTH * 0.5) < 0.001 and absf(s.hand.y - BoardHop.BOARD_TOP - BoardHop.HAND_ABOVE_CAP) < 0.001, "Hand point is on the middle of the cap (u=%.2f)" % u)
 	body.queue_free()

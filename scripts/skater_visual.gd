@@ -126,6 +126,15 @@ var hop_board_x := 0.0
 var hop_state := {}
 ## How firmly the top hand is planted on the board cap (0..1) this frame.
 var hand_plant := 0.0
+## Board hop stick carry (0..1, board_hop.gd "carry"): the stick is lifted off
+## the ice with the blade up so it clears the boards; see carry_knob().
+var stick_carry := 0.0
+## Carried stick (rig space): the knob a little below the normal top-hand grip,
+## in front of the top-hand hip, and the shaft angled up, forward and out to
+## the blade side so the blade rides high over the boards.
+const CARRY_KNOB := Vector3(-0.12,-0.30,0.02)
+const CARRY_DIR := Vector3(-0.40,0.88,0.25)
+const CARRY_LENGTH := 1.40
 const PLANT_REACH_FADE := 0.10
 ## A planted arm may straighten fully (upper 0.28 + forearm 0.29 m).
 const PLANT_REACH := 0.565
@@ -1131,6 +1140,13 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	blade_position=Vector3(-0.02+butterfly*0.05,0.042,0.60-butterfly*0.04) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
 	# Stop: the stick reaches out in front for balance.
 	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
+	# Board hop: lift the stick clear of the boards (blade rises first, so it
+	# never sweeps through the dasher on the way up or down).
+	stick_carry = float(hop_state.get("carry",0.0)) if not goalie and not referee and not hop_state.is_empty() else 0.0
+	if stick_carry>0.0:
+		var up := 1.0-pow(1.0-stick_carry,3.0)
+		var carried := carry_blade()
+		blade_position = Vector3(lerpf(blade_position.x,carried.x,stick_carry),lerpf(blade_position.y,carried.y,up),lerpf(blade_position.z,carried.z,stick_carry))
 	var target := clampf(speed/5.0,0,1) if pushing and not braking and not goalie else 0.0
 	# Critically damped spring (not a linear ramp) so starting or easing off a
 	# push - including into a hockey stop - never kinks the foot path.
@@ -1226,10 +1242,21 @@ func stick_grip() -> Vector3:
 	var grip := shoulder_of(0)+Vector3(-0.11-stick_intent.x*0.20-shot_follow*0.12,-0.235+shot_charge*0.06,0.15-stick_intent.y*0.05-shot_charge*0.12+shot_follow*0.22)
 	# Stop: hands come down with the hips and push the stick out front.
 	grip += Vector3(0,-0.10,0.06)*stop_blend()
+	# Board hop: the knob comes down to the hip as the stick is carried.
+	if stick_carry>0.0: grip = grip.lerp(carry_knob(),stick_carry)
 	# Pulling the stick in never drives the top hand into the hip pads.
 	grip.z = maxf(grip.z,shoulder_of(0).z+0.15)
 	# The top hand holds the stick in front of the jersey, never inside it.
 	return clear_hand(grip,0.075)
+
+## Board hop carried stick: knob and mid-blade points (rig space).
+func carry_knob() -> Vector3:
+	return shoulder_of(0)+CARRY_KNOB
+
+func carry_blade() -> Vector3:
+	var d := CARRY_DIR.normalized()
+	var toe := Vector3(d.x,0,d.z).normalized()
+	return carry_knob()+d*CARRY_LENGTH+toe*stick_blade_length*0.48
 
 ## Heel of the blade (where the shaft meets it) for a top-hand position.
 func stick_heel(top: Vector3) -> Vector3:
@@ -1286,7 +1313,7 @@ func update_stick() -> void:
 		goalie_paddle.basis=stick_shaft.basis
 		goalie_paddle.scale=Vector3(1,bottom.distance_to(paddle_top),1)
 	var flat:=Basis(toe_dir,Vector3.UP,toe_dir.cross(Vector3.UP))
-	stick_blade.basis=flat.slerp(stick_shaft.basis.orthonormalized(),raised_stick)
+	stick_blade.basis=flat.slerp(stick_shaft.basis.orthonormalized(),maxf(raised_stick,stick_carry))
 	stick_blade.position=bottom+stick_blade.basis*Vector3(stick_blade_length*0.48,0,0)
 	grip_tape.position=top
 	grip_tape.basis=stick_shaft.basis
