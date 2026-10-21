@@ -164,3 +164,11 @@ data worker with duplicate guards and failure preservation. Genuine JPEG before/
 after/in-progress/completed captures; see DEVELOPMENT_RESEARCH.md and verification
 /research-implementation-20261020.json. No new plugins needed, no art/animation
 replacement, no PR merge/release. Full 3D renderer/hardware comfort remain open.
+
+
+Final research integration — Preserved aa2e25d seated benches/penalty boxes via
+history merge 58fd6df. 34 engine suites passed and optional mocap skipped; 24
+Python tests passed. Accessibility recheck: 31 assertions; checkpoint: 10.
+Isolated snapshot-worker remeasurement: ~105 ms main-thread launch, ~5.75 s
+overall (copy hitch and total save latency remain explicit). JPEGs are actual
+native UI captures, not gameplay renders. See DEVELOPMENT_RESEARCH.md.

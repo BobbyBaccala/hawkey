@@ -77,3 +77,13 @@ not fresh 3D visual quality. No additional plugin is required for this pass:
 Godot already provides focus controls, profiling/timing, threads and image export.
 Physical-controller/human comfort sessions and broader resolution checks remain
 open; hardware testing will add more value than an unrelated free plugin.
+
+
+## Final verification
+
+34 engine suites passed after integrating Claude's aa2e25d bench/penalty-box work;
+optional mocap skipped. 24 Python tests passed. The accessibility input recheck
+passed 31 assertions (including actual Tab, right-arrow and accept actions), and
+the worker checkpoint suite passed 10. Its intentional unwritable-path diagnostic
+verifies rollback without invalidating a prior save. UI process callbacks during
+the worker are explicitly not interpreted as rendered FPS. No PR merge/release.

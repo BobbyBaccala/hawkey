@@ -4,8 +4,8 @@ Updated 2026-10-20. Assignments are not completion evidence.
 
 | Owner | Active task | Branch | Affected systems | Dependencies | Integration | Last verified build |
 |---|---|---|---|---|---|---|
-| Codex | Realism: original on-ice audio, persisted volume, renderer diagnosis | codex/game-modes | Audio bank/router, match/Practice hooks, preferences, tests and native UI capture | Godot 4.6.3; preserved prototype 3c324a4; full-arena renderer blocked | Functional audio foundation; human listening still open; draft PR #2 | HOCKEY_AUDIO.md and verification/realism-audio-20261020.json |
-| Claude/separate presentation agent (owner-reported) | Graphics/lighting/models/gear/animation | prototype/skating-puck-lab observed; confirm ownership before edits | presentation assets, skater visuals, arena lighting, HUD styling | Shared scene and match interfaces | Prototype observed at 28fb10b; runtime not inspected here | Unknown in this session; do not infer from assignment |
+| Codex | Source-backed comfort/focus, responsive GM checkpoint, JPEG progress | codex/game-modes | Settings/HUD/camera cue, data worker, session guards, profiler/tests/captures | Godot 4.6.3; official Godot docs read; preserved prototype aa2e25d | Tested and locally integrated; draft PR #2; no release | 34 engine suites passed, optional mocap skipped; 24 Python tests; DEVELOPMENT_RESEARCH.md |
+| Claude/separate presentation agent (owner-reported) | Graphics/lighting/models/gear/animation; latest bench/penalty-box work retained | prototype/skating-puck-lab | Arena, seated players, goalie/gear/animation, presentation | Shared match/HUD interface | Observed and reconciled aa2e25d | Headless integration/bench checks passed; this run does not establish new 3D visual approval |
 
 ## Coordination protocol
 
@@ -165,3 +165,11 @@ data worker with duplicate guards and failure preservation. Genuine JPEG before/
 after/in-progress/completed captures; see DEVELOPMENT_RESEARCH.md and verification
 /research-implementation-20261020.json. No new plugins needed, no art/animation
 replacement, no PR merge/release. Full 3D renderer/hardware comfort remain open.
+
+
+Final research integration — Preserved aa2e25d seated benches/penalty boxes via
+history merge 58fd6df. 34 engine suites passed and optional mocap skipped; 24
+Python tests passed. Accessibility recheck: 31 assertions; checkpoint: 10.
+Isolated snapshot-worker remeasurement: ~105 ms main-thread launch, ~5.75 s
+overall (copy hitch and total save latency remain explicit). JPEGs are actual
+native UI captures, not gameplay renders. See DEVELOPMENT_RESEARCH.md.
