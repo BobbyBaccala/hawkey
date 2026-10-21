@@ -24,6 +24,7 @@ static func setup(root: Control) -> VBoxContainer:
 		theme.set_color("font_disabled_color",type_,Color("#76899e"))
 		var focused:=style(Color("#25455d"));focused.border_color=ACCENT;focused.set_border_width_all(2);theme.set_stylebox("focus",type_,focused)
 		theme.set_font("font",type_,Fonts.get_font(true))
+		theme.set_font_size("font_size",type_,20)
 	theme.set_stylebox("normal","LineEdit",style(Color("#102338")))
 	var entry_focus:=style(Color("#152b40"));entry_focus.border_color=ACCENT;entry_focus.set_border_width_all(1)
 	theme.set_stylebox("focus","LineEdit",entry_focus)
