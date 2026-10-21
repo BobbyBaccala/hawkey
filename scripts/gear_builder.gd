@@ -1059,6 +1059,12 @@ static func _limb(radii: Array, depth_ratio: float, color_at: Callable, sides :=
 const PANTS_RINGS := 26
 const PANTS_SIDES := 36
 static func pants_leg(side: float, kit: Color, base: Color, flare := 1.0) -> ArrayMesh:
+	if is_zero_approx(flare):
+		# Keep the fitted goalie silhouette clear of articulated pads during saves.
+		# The new flared skater breezers below use a different hem/closure profile.
+		return _limb([0.118,0.132,0.136,0.134,0.128,0.120,0.112,0.104,0.098],0.92,func(t: float,a: float) -> Color:
+			if cos(a)*side>0.93: return kit
+			return base.lightened(0.12) if t>0.92 else base)
 	var b := MeshBuilder.new()
 	# flare 0: goalie pants taper in above the pads' thigh rises.
 	var base_r := [[0.0, 0.100], [0.06, 0.116], [0.16, 0.132], [0.32, 0.136], [0.55, 0.131], [0.75, lerpf(0.114, 0.122, flare)], [0.86, lerpf(0.105, 0.119, flare)], [0.95, lerpf(0.099, 0.126, flare)], [1.0, lerpf(0.097, 0.128, flare)]]

@@ -202,3 +202,20 @@ assignment save/resume and signed actor identity in an actual scheduled match.
 All five JPEGs are inspected 1440×900 native UI captures; full 3D visual quality
 remains unapproved. Draft PR #2 updated through the development branch; no merge
 or release. Next checkpoint remains shared player-stat ledger and verified CBA.
+
+
+## 2026-10-20 — owner-requested FIFA-style typography
+
+Codex: Barlow Regular body text and Barlow Condensed SemiBold headings/buttons/
+heavy broadcast text through the shared font loader; native button size 20. Both
+fonts are bundled under their SIL Open Font License, with upstream sources in
+assets/fonts/README.md. Original DejaVu assets remain available. Font Keep import
+mode retained. Genuine 1440×900 native JPEGs: sports-font-menu-20261020.jpg and
+sports-font-statistics-20261020.jpg; original earlier screenshots preserved.
+Preserved Claude prototype d3cabac kit geometry/materials/skin/render work via
+history merge 80939b8. Integration found new goalie pants/pad overlap during a
+right-pad save. Kept the already fitted goalie pants profile for flare=0 while
+retaining the new skater breezers/materials. Clipping, goalie gear/save, kit
+geometry/material and render-setting rechecks pass. Full matrix, initial failure
+and rechecks: verification/sports-font-20261020.json. No new 3D visual approval
+or EA proprietary font/assets claim. No PR merge/release.
