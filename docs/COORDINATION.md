@@ -376,3 +376,12 @@ and rerun; 31 Python pass, optional mocap skip. No final atomic broad-green clai
 Direct final JPEGs, attempted-but-blocked reference URLs and exact verification:
 GOALIE_PROPORTIONS.md and verification/goalie-proportions-20261021.json.
 CX-20261021-011 outgoing; Claude 85fd791 preserved, no reply/visual approval inferred.
+
+## AI-vs-AI video — active Codex scope
+
+Owner requests a minute of actual AI-vs-AI gameplay. Codex reserves a narrow
+spectator flag in match.gd (AI controls the normally human slot too; player input
+and human selection/aim UI suppressed), plus deterministic capture/verification
+tools. No model/bench/tactics changes or staged goals. Claude remote remains
+85fd791, preserved. Capture uses fixed-frame Godot Movie Maker on the known
+4.6.2 Compatibility diagnostic renderer; output FPS is not a hardware benchmark.

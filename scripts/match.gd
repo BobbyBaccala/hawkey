@@ -7,6 +7,7 @@ const TeamTactics=preload("res://scripts/team_tactics.gd")
 var tactical_plans: Array = [{},{}]
 const EventSession=preload("res://scripts/event_session.gd")
 var event_mode:=""
+var ai_vs_ai:=false
 const GMSession=preload("res://scripts/gm_session.gd")
 const Preferences=preload("res://scripts/game_settings.gd")
 var is_gm_match:=false
@@ -71,6 +72,7 @@ func _init() -> void:
 	arena_title = "HAWKEY ARENA"
 
 func _ready() -> void:
+	ai_vs_ai=ai_vs_ai or "--ai-vs-ai" in OS.get_cmdline_user_args()
 	event_mode=EventSession.mode
 	is_gm_match=event_mode.is_empty() and GMSession.season!=null and not GMSession.fixture_id.is_empty()
 	var preferences:=Preferences.new()
@@ -436,7 +438,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			set_paused(not paused)
 		if event.keycode==KEY_F1: debug=not debug
 		if event.keycode==KEY_C: cycle_camera()
-		if paused: return
+		if paused or ai_vs_ai: return
 		match event.keycode:
 			KEY_SPACE:
 				if not match_state.is_shootout(): switch_player()
@@ -448,7 +450,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_L: auto_lines=not auto_lines
 			KEY_E: defensive_action(false)
 			KEY_F: defensive_action(true)
-	if paused or (match_state.phase != MatchState.Phase.PLAY and match_state.phase != MatchState.Phase.SHOOTOUT_ATTEMPT): return
+	if ai_vs_ai or paused or (match_state.phase != MatchState.Phase.PLAY and match_state.phase != MatchState.Phase.SHOOTOUT_ATTEMPT): return
 	if event is InputEventMouseButton:
 		if event.button_index==MOUSE_BUTTON_WHEEL_UP and event.pressed: zoom=clampf(zoom-0.08,0.55,1.5)
 		if event.button_index==MOUSE_BUTTON_WHEEL_DOWN and event.pressed: zoom=clampf(zoom+0.08,0.55,1.5)
@@ -506,7 +508,7 @@ func release_puck(actor: CharacterBody3D, direction: Vector3, speed: float, elev
 func release_velocity(actor: CharacterBody3D, launch_velocity: Vector3) -> void:
 	puck.sleeping=false
 	puck.linear_velocity=launch_velocity
-	puck.angular_velocity=Vector3(0,lerpf(-8,8,controller.right_stick.x) if actor==player else 6,0)
+	puck.angular_velocity=Vector3(0,lerpf(-8,8,controller.right_stick.x) if actor==player and not ai_vs_ai else 6,0)
 	carrier=null
 	pickup_owner=false
 	cooldown=0.42
@@ -700,6 +702,7 @@ func sync_puck_shadow() -> void:
 		puck_shadow.scale=Vector3(shadow_scale,1,shadow_scale)
 
 func control_player(delta: float) -> void:
+	if ai_vs_ai: return
 	if not bool(player.get_meta("eligible")): switch_player()
 	var intent:=Vector3.ZERO
 	var effort:=false
@@ -788,7 +791,7 @@ func update_team_ai(delta: float) -> void:
 		tactical_plans[team]=TeamTactics.plan(groups[team],groups[1-team],puck.position,owner,attack_direction(team),TeamTactics.choices[team],Vector2i(match_state.count(team),match_state.count(1-team)))
 	for actor in skaters:
 		if not bool(actor.get_meta("eligible")): continue
-		if actor==player and not bool(actor.get_meta("changing")) and not is_hopping(actor): continue
+		if not ai_vs_ai and actor==player and not bool(actor.get_meta("changing")) and not is_hopping(actor): continue
 		var team:=body_team(actor)
 		var attack:=attack_direction(team)
 		var slot:=int(actor.get_meta("slot"))
@@ -1029,7 +1032,7 @@ func update_camera(delta: float) -> void:
 	camera.look_at(look,Vector3.UP)
 	camera.rotation.z=0
 	selection.position=player.position+Vector3(0,0.025,0)
-	selection.visible=match_state.phase!=MatchState.Phase.FINAL and not (match_state.is_shootout() and match_state.shootout_team==1)
+	selection.visible=not ai_vs_ai and match_state.phase!=MatchState.Phase.FINAL and not (match_state.is_shootout() and match_state.shootout_team==1)
 
 ## Converts stick or WASD input (x right, z down the screen) into rink space
 ## using the camera's facing, so up on the stick is always up the screen.
@@ -1104,11 +1107,12 @@ func update_match_hud() -> void:
 	hud_node.update_line(active_lines[0],defense_pairs[0],players)
 	hud_node.update_shootout(match_state,str(roster(shootout_actor).name) if is_instance_valid(shootout_actor) else "")
 	var target := NetShooting.target(attack_direction(body_team(player)),shot_placement())
-	hud_node.shot_reticle.visible=not in_menu and not paused and (match_state.phase==MatchState.Phase.PLAY or (match_state.phase==MatchState.Phase.SHOOTOUT_ATTEMPT and match_state.shootout_team==0)) and player.position.distance_to(puck.position)<1.9 and not camera.is_position_behind(target)
+	hud_node.shot_reticle.visible=not ai_vs_ai and not in_menu and not paused and (match_state.phase==MatchState.Phase.PLAY or (match_state.phase==MatchState.Phase.SHOOTOUT_ATTEMPT and match_state.shootout_team==0)) and player.position.distance_to(puck.position)<1.9 and not camera.is_position_behind(target)
 	hud_node.shot_reticle.position=camera.unproject_position(target)-Vector2(14,18)
 	power.visible=false
 	power.value=charge
 	help.text=("START  PAUSE   ·   VIEW  CONTROLS" if controller.active else "ESC  PAUSE   ·   F2  CONTROLS   ·   C  CAMERA")
+	if ai_vs_ai: help.text="AI vs AI   ·   BOTH TEAMS COMPUTER CONTROLLED"
 
 func capture_preview() -> void:
 	# --capture-time=<seconds> lets wear such as skate cuts build up first.
@@ -1145,6 +1149,9 @@ func update_officials(delta: float) -> void:
 		official.animate(move.length(),delta,0,move.length()>0.2)
 
 func process_controller_edges() -> void:
+	if ai_vs_ai:
+		controller.clear_edges()
+		return
 	if controller.controls_pressed:
 		hud_node.set_controls_text(true)
 		hud_node.controls_panel.visible=not hud_node.controls_panel.visible
