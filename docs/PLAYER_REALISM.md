@@ -116,3 +116,26 @@ cover finite/unit/outward normals, cardinal seam continuity, crown, actual vent
 openings, sharing and budget; ten final affected suites pass. Base facial anatomy,
 individual player likenesses, visor realism, authored equipment bakes and hardware
 performance remain future work. No new release-quality claim.
+
+## 2026-10-21 — retention strap, reference comparison pending
+
+Owner approved the existing visor and requested Bauer Re-Akt photo comparison.
+Bauer and three retailer pages returned proxy CONNECT403, so no reference photo
+was reviewed. Owner offered an attachment; requested side/three-quarter view.
+Brand-specific shell/hardware comparison remains pending, not completed by inference.
+
+Code `867af9d` replaces the round cord/hard front cup with 12 mm flat nylon webbing,
+1.4 mm thick, a smooth path under the jaw, small snap anchors and matte woven
+material. Cached 398-vertex mesh, one additional draw call per skater. No hardware
+FPS claim. Existing shell unchanged; visor arrays are byte-identical to `9844db3`,
+and visor shader/attachment remain unchanged. Eleven final affected suites pass,
+including 100 retention checks. Claude's e3caa27 remains preserved; CX-20261021-006
+requests reference assistance/review without claiming a reply.
+
+Actual fixed-light/camera Godot4.6.2llvmpipe JPEGs:
+[before](screenshots/chinstrap-before-quarter-20261021.jpg),
+[after](screenshots/chinstrap-final-quarter-20261021.jpg),
+[front](screenshots/chinstrap-final-front-20261021.jpg),
+[side](screenshots/chinstrap-final-side-20261021.jpg).
+These are staged native viewport captures, not generated/retouched images.
+Evidence and exact failed reference URLs: `verification/helmet-retention-20261021.json`.

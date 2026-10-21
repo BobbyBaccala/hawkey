@@ -273,3 +273,14 @@ Actual four-angle before/after JPEGs and evidence: PLAYER_REALISM.md and
 verification/helmet-geometry-20261021.json. Ten final affected suites pass; full
 initial broad run and stale clearcoat-test repair are recorded separately. Claude
 review requested, no acknowledgement inferred. No PR merge or release.
+
+## 2026-10-21 — owner-approved visor retained; chinstrap refinement
+
+Owner asks Re-Akt photo cross-reference. Bauer/retailer CONNECT403; no photo viewed.
+Owner offered attachment, pending. Codex narrow change 867af9d adds fitted flat nylon
+webbing/snap anchors, removes cord/front cup; shell unchanged, visor mesh arrays
+byte-identical to 9844db3 and material unchanged. Eleven final affected suites pass,
+100 retention checks; direct neutral before/after JPEGs saved. Evidence:
+verification/helmet-retention-20261021.json. Handoff CX-20261021-006 preserves e3caa27
+and explicitly leaves reference-based shell refinement pending attachment. No
+Re-Akt accuracy, hardware FPS, Claude acknowledgement or release claim.

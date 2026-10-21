@@ -1,0 +1,224 @@
+{
+  "date": "2026-10-21 America/Toronto",
+  "code_commit": "867af9d787af28f96577b6b5f396892f9029d07e",
+  "baseline": "9844db378dc218da6e4ca6bca2c73fc2d6365030",
+  "claude_preserved": "e3caa27",
+  "scope": "Flat under-jaw webbing, small snaps, matte nylon; shell and approved visor unchanged",
+  "reference_comparison": {
+    "status": "blocked; awaiting owner photograph",
+    "attempted": [
+      "https://www.bauer.com/products/re-akt-150-helmet",
+      "https://www.bauer.com/products/re-akt-150-helmet.js",
+      "https://ca.bauer.com/products/re-akt-150-helmet",
+      "https://www.hockeymonkey.com/bauer-hockey-helmet-re-akt-150.html",
+      "https://www.icewarehouse.com/Bauer_RE-AKT_150/descpage-BR150.html",
+      "https://www.purehockey.com/product/bauer-re-akt-150-hockey-helmet/itm/36659-2/"
+    ],
+    "result": "All proxy CONNECT403; no product photograph retrieved or viewed",
+    "owner_response": "Offered to send photograph; asked for side/three-quarter attachment",
+    "accuracy_claim": "Original generic retention improvement only; not a verified Re-Akt reconstruction"
+  },
+  "checks": {
+    "godot": "4.6.3",
+    "counts": {
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0
+    },
+    "checks": [
+      {
+        "name": "test_helmet_retention",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.476,
+        "log": "test_helmet_retention.log"
+      },
+      {
+        "name": "test_helmet_surface",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.45,
+        "log": "test_helmet_surface.log"
+      },
+      {
+        "name": "test_helmet_arm_fit",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.845,
+        "log": "test_helmet_arm_fit.log"
+      },
+      {
+        "name": "test_clipping",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 4.822,
+        "log": "test_clipping.log"
+      },
+      {
+        "name": "test_kit_geometry",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.928,
+        "log": "test_kit_geometry.log"
+      },
+      {
+        "name": "test_kit_materials",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.039,
+        "log": "test_kit_materials.log"
+      },
+      {
+        "name": "test_player_surfaces",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.471,
+        "log": "test_player_surfaces.log"
+      },
+      {
+        "name": "test_benches",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 19.448,
+        "log": "test_benches.log"
+      },
+      {
+        "name": "test_board_hop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.147,
+        "log": "test_board_hop.log"
+      },
+      {
+        "name": "test_goalie_gear",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 11.725,
+        "log": "test_goalie_gear.log"
+      },
+      {
+        "name": "test_goalie_saves",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.66,
+        "log": "test_goalie_saves.log"
+      }
+    ],
+    "scope": "Headless regressions; not GPU, physical controller, human feel or release approval"
+  },
+  "retention": {
+    "checks": 100,
+    "failures": 0,
+    "vertices": 398,
+    "width_m": 0.012,
+    "thickness_m": 0.0014,
+    "cached": true,
+    "additional_draw_calls_per_skater": 1,
+    "hardware_fps_measured": false
+  },
+  "visor": {
+    "baseline": "9844db3",
+    "baseline_bytes": 32948,
+    "current_bytes": 32948,
+    "visor_mesh_arrays_identical": true,
+    "visor_shader_changed": false
+  },
+  "captures": {
+    "before": {
+      "captures": [
+        {
+          "camera": "(-0.0, 1.427919, -1.111555)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-retention-before-front.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        },
+        {
+          "camera": "(0.4, 1.467919, -1.011554)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-retention-before-quarter.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        },
+        {
+          "camera": "(0.75, 1.447919, -0.361555)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-retention-before-side.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        },
+        {
+          "camera": "(0.35, 1.567919, 0.288445)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-retention-before-rear.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        }
+      ],
+      "engine": "4.6.2-stable (official)",
+      "goalkeeper": false,
+      "pose": "idle",
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "size": "960x960",
+      "source": "Actual isolated Godot 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay",
+      "stage": "retention-before"
+    },
+    "after": {
+      "captures": [
+        {
+          "camera": "(-0.0, 1.427919, -1.111555)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-retention-final-front.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        },
+        {
+          "camera": "(0.4, 1.467919, -1.011554)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-retention-final-quarter.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        },
+        {
+          "camera": "(0.75, 1.447919, -0.361555)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-retention-final-side.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        },
+        {
+          "camera": "(0.35, 1.567919, 0.288445)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-retention-final-rear.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        }
+      ],
+      "engine": "4.6.2-stable (official)",
+      "goalkeeper": false,
+      "pose": "idle",
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "size": "960x960",
+      "source": "Actual isolated Godot 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay",
+      "stage": "retention-final"
+    },
+    "source": "Direct Godot4.6.2llvmpipe viewport JPEGs; staged neutral scene, identical camera and lights, no retouching or image generation"
+  },
+  "limitations": [
+    "Reference-specific shell/hardware refinement pending photograph",
+    "No hardware FPS or release signoff",
+    "Asynchronous Claude request is not an acknowledgement"
+  ],
+  "publication": "Development branch only, no PR merge/release"
+}
