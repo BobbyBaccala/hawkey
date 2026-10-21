@@ -24,27 +24,38 @@ func run() -> void:
 	for i in range(4): await physics_frame
 	var player: CharacterBody3D = scene.player
 	var net := Vector3(0, 0, scene.attack_direction(scene.body_team(player)) * Arena.GOAL_LINE)
-	# Skate in four directions with the keyboard held; the body keeps facing the net.
+	# With the puck: whatever direction the carrier skates, he faces the net.
+	scene.puck.freeze = true
 	for key in [KEY_W, KEY_S, KEY_A, KEY_D]:
 		var ev := InputEventKey.new()
 		ev.physical_keycode = key
 		ev.pressed = true
 		Input.parse_input_event(ev)
-		for f in range(90): await physics_frame
+		for f in range(90):
+			scene.carrier = player
+			scene.puck.position = player.get_child(1).get_blade_world()
+			await physics_frame
 		ev.pressed = false
 		Input.parse_input_event(ev)
 		var want := net - player.position
 		want.y = 0
 		var got := facing_of(player.get_child(1))
-		check(got.dot(want.normalized()) > 0.95, "Holding %s the player still faces the opposing net (dot %.2f)" % [OS.get_keycode_string(key), got.dot(want.normalized())])
-	# Every skater on the ice faces the net his team attacks.
-	for f in range(60): await physics_frame
+		check(got.dot(want.normalized()) > 0.95, "Carrying, holding %s the player faces the opposing net (dot %.2f)" % [OS.get_keycode_string(key), got.dot(want.normalized())])
+	# Without the puck: every skater (both teams, including the user's) faces the puck.
+	scene.carrier = null
+	scene.puck.position = Vector3(3, 0.05, 2)
+	for f in range(90):
+		scene.carrier = null
+		await physics_frame
 	var worst := 1.0
 	for actor in scene.skaters:
 		if not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")): continue
-		var want: Vector3 = scene.net_facing(actor)
-		worst = minf(worst, facing_of(actor.get_child(1)).dot(want))
-	check(worst > 0.9, "All skaters tethered to the net they attack (worst dot %.2f)" % worst)
+		var want: Vector3 = scene.puck.position - actor.position
+		want.y = 0
+		if want.length() < 0.5: continue
+		worst = minf(worst, facing_of(actor.get_child(1)).dot(want.normalized()))
+	check(worst > 0.9, "Skaters without the puck face the puck (worst dot %.2f)" % worst)
+	scene.puck.freeze = false
 	# A shot from the side boards with the aim pointed away from the net goes on goal.
 	scene.aim = Vector3(1, 0, 0)
 	scene.puck.position = Vector3(8, 0.05, net.z * 0.6)

@@ -146,6 +146,14 @@ func net_facing(actor: CharacterBody3D) -> Vector3:
 	d.y=0
 	return d.normalized() if d.length()>0.05 else Vector3(0,0,attack_direction(body_team(actor)))
 
+## Which way a skater's body faces: the puck carrier is tethered to the net
+## his team attacks; every other skater (defending or supporting) faces the puck.
+func body_facing(actor: CharacterBody3D) -> Vector3:
+	if actor==carrier: return net_facing(actor)
+	var d:=puck.position-actor.position
+	d.y=0
+	return d.normalized() if d.length()>0.3 else net_facing(actor)
+
 ## Shots go at the net the player faces. Aim (mouse / left stick) picks a spot
 ## on the goal mouth: pointing left or right of the net moves the target toward
 ## that post; aiming well away from the net still shoots on goal.
@@ -623,9 +631,9 @@ func control_player(delta: float) -> void:
 	player.velocity=velocity
 	player.move_and_slide()
 	var visual:=player.get_child(1)
-	# Tethered to the opposing net: whichever way the player skates, the body
-	# stays square to the net he attacks, so he can shoot at any moment.
-	var to_net:=net_facing(player)
+	# The puck carrier is tethered to the net he attacks (shoot at any moment);
+	# without the puck the player faces the puck (body_facing()).
+	var to_net:=body_facing(player)
 	visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-to_net.x,-to_net.z),8*delta)
 	visual.shot_charge=charge
 	visual.animate(player.velocity.length(),delta,0,intent.length_squared()>0.01,braking)
@@ -752,8 +760,8 @@ func update_team_ai(delta: float) -> void:
 			actor.velocity=Skating.step(actor.velocity,intent,rating_,false,delta)
 		actor.move_and_slide()
 		var visual:=actor.get_child(1)
-		# Every skater's body is tethered to the net his team attacks.
-		var face:=net_facing(actor)
+		# Carrier faces the net he attacks; everyone else faces the puck.
+		var face:=body_facing(actor)
 		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-face.x,-face.z),6.0*delta)
 		visual.animate(actor.velocity.length(),delta,0,intent.length_squared()>0.01)
 		sync_skater_contacts(actor)
