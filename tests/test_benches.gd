@@ -189,9 +189,59 @@ func check_motion(m, benches) -> void:
 	benches.set_team_colors(0, Color.GREEN, Color.BLACK)
 	check(benches._numbers[0][2].kit == Color.GREEN and benches._numbers[0][2].number == num_before, "set_team_colors re-dresses the bench skaters")
 	benches.set_team_colors(0, m.team_color(0), m.team_accent(0))
+	await check_line_change(m, benches)
 	# Goal in the live match triggers the bench reaction.
 	var src := FileAccess.get_file_as_string("res://scripts/match.gd")
 	check(src.contains("goal_benches.celebrate(scoring_team)"), "match.gd tells the benches who scored")
+
+## Pass 3 slice 6: seated sticks stand nearly upright with the knob above the
+## helmet; on a line change a seated player gets up (stand_up()), leaves from
+## where he stands (go_out()) and the player coming off takes his seat.
+func check_line_change(m, benches) -> void:
+	for rig in benches._rigs:
+		if not rig.stick or rig.fig.name.begins_with("PenaltySeat") or not rig.fig.visible: continue
+		var v = rig.visual
+		var knob: Vector3 = v.sticks.global_transform * v.stick_knob_end()
+		var helmet_top: float = v.helmet.global_position.y + 0.12
+		check(knob.y > helmet_top, "Seated stick knob stands above the helmet (%.2f vs %.2f)" % [knob.y, helmet_top])
+		var blade: Vector3 = v.stick_blade.global_position
+		var shaft_up: Vector3 = (v.sticks.global_transform.basis * v.stick_shaft.basis.y).normalized()
+		check(absf(shaft_up.y) > 0.9, "Seated stick is nearly upright (%.2f)" % absf(shaft_up.y))
+		check(blade.y < 0.15 and blade.x < -Arena.HALF_WIDTH - 0.2, "Seated blade on the bench floor (%.2f, x %.2f)" % [blade.y, blade.x])
+		check(absf(Vector2(knob.x - blade.x, knob.z - blade.z).length()) < 0.6, "Stick stays in front of its player")
+	var fig: Node3D = benches.seated[0][3]
+	var rig: Dictionary = fig.get_meta("rig")
+	var v = rig.visual
+	var head0: float = v.helmet.global_position.y
+	check(benches.stand_up(0, fig.global_position.z), "A bench player gets up to go out")
+	check(benches.rising_count(0) == 1 and benches.rising_count(1) == 0, "Only one player gets up, on the changing team's bench")
+	var prev: float = head0
+	var smooth := true
+	for i in range(70):
+		benches.update_figures(1.0 / 60.0)
+		var h: float = v.helmet.global_position.y
+		if absf(h - prev) > 0.04: smooth = false
+		prev = h
+	check(smooth, "Getting up is eased, no pop")
+	check(v.helmet.global_position.y > head0 + 0.2, "He is on his feet (head %.2f -> %.2f)" % [head0, v.helmet.global_position.y])
+	check(v.stick_carry > 0.95 and v.sticks.visible, "Stick up, ready for the hop")
+	for i in range(2):
+		var foot: Vector3 = v.skates[i].global_position
+		check(foot.y > 0.03 and foot.y < 0.13 and foot.x < -Arena.HALF_WIDTH - 0.3, "Standing skate on the bench floor (%.2f, x %.2f)" % [foot.y, foot.x])
+	var at = benches.go_out(0, "77")
+	check(at is Vector3 and not fig.visible, "He leaves his seat for the hop")
+	if at is Vector3:
+		check(absf(at.z - fig.global_position.z) < 0.5 and at.x < -Arena.HALF_WIDTH - 1.0, "Hop starts where he stood (x %.2f)" % at.x)
+	for i in range(int(Benches.SEAT_RETURN * 60) + 4): benches.update_figures(1.0 / 60.0)
+	check(fig.visible and v.number == "77", "The player coming off takes the free seat (%s)" % v.number)
+	for i in range(120): benches.update_figures(1.0 / 60.0)
+	check(absf(v.helmet.global_position.y - head0) < 0.06 and benches.rising_count(0) == 0, "and sits down (head %.2f)" % v.helmet.global_position.y)
+	# A change called off (nobody goes out): he sits back down by himself.
+	benches.stand_up(1, -5.0)
+	for i in range(int(4.5 * 60)): benches.update_figures(1.0 / 60.0)
+	check(benches.rising_count(1) == 0, "A player left standing sits back down")
+	var src := FileAccess.get_file_as_string("res://scripts/match.gd")
+	check(src.contains("hop_benches.stand_up(") and src.contains(".go_out(team,tired_number)"), "match.gd line change drives the bench")
 
 func finish() -> void:
 	print("Bench failures: ", failures)

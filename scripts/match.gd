@@ -627,13 +627,24 @@ func update_team_ai(delta: float) -> void:
 				var bench_floor:=Vector3(-(Arena.HALF_WIDTH+HOP_BENCH_DEPTH),0,actor.position.z)
 				visual_.start_hop(Vector3.ZERO,bench_floor-actor.position,-Arena.HALF_WIDTH-actor.position.x)
 				actor.set_meta("hop",1)
+				# A player on the bench gets up to go out (arena_benches.gd).
+				var hop_benches=arena.get_node_or_null("Benches")
+				if hop_benches!=null: hop_benches.stand_up(team,actor.position.z)
 				actor.collision_layer=0
 				set_puck_contacts_enabled(actor,false)
 				if carrier==actor: carrier=null
 			elif hop==1 and visual_.hop_finished():
 				# Fresh legs climb out a little further along the bench.
+				var tired_number:String=visual_.number
 				change_identity(actor,int(actor.get_meta("pending_id")))
 				var from_:Vector3=visual_.position+Vector3(0,0,-signf(target.z)*0.7)
+				# The one who got up goes out from where he stands; the player
+				# who came off takes his seat (arena_benches.gd go_out()).
+				var out_benches=arena.get_node_or_null("Benches")
+				var out_at=out_benches.go_out(team,tired_number) if out_benches!=null else null
+				if out_at is Vector3:
+					from_=actor.to_local(out_at)
+					from_.y=visual_.position.y
 				# A different player now: he gets up off the bench facing the ice, stick up.
 				visual_.rotation.y=-PI*0.5
 				visual_.start_hop(from_,Vector3.ZERO,-Arena.HALF_WIDTH-actor.position.x,true)
