@@ -1,0 +1,682 @@
+{
+  "date": "2026-10-21",
+  "source_commits": [
+    "39bd21e",
+    "01c54c4"
+  ],
+  "base": "7241889a6b966efe2bb764ed525c9750525ba0fc",
+  "claude_preserved": "85fd7918d03287db327258b10e46f8a804c9ba23",
+  "scope": [
+    "Smaller actual mitt, cuff, web and fitted contact volume",
+    "One continuous pad shell; no independently folded/shrunken thigh rise",
+    "Whole-shell butterfly roll, boot channel, skate orientation and extension toe fit",
+    "Shared exact shaft/paddle/blade heel with solid curved connector and continuous white heel finish",
+    "Pocket coordinates shared by catch gate and held puck"
+  ],
+  "measurements": {
+    "glove_base_height_m": 0.352351129055023,
+    "glove_base_width_m": 0.325548350811005,
+    "pad_length_m": 0.86,
+    "pad_width_m": 0.275,
+    "projected_convex_perimeter_m": 1.10833010869101,
+    "web_height_m": 0.0977184027433395,
+    "web_width_m": 0.163343995809555
+  },
+  "baseline_comparison": {
+    "after": {
+      "height_m": 0.352351129055023,
+      "projected_convex_perimeter_m": 1.10833010869101,
+      "width_m": 0.325548350811005
+    },
+    "before_7241889": {
+      "height_m": 0.455466538667679,
+      "projected_convex_perimeter_m": 1.51756271440536,
+      "width_m": 0.467859029769897
+    }
+  },
+  "baseline_script_matches_7241889": true,
+  "fresh_reference_access": {
+    "successful_sources": [],
+    "attempts": [
+      {
+        "key": "nhl-rulebook",
+        "url": "https://media.nhl.com/site/asset/public/ext/2025-26/2025-26Rulebook.pdf",
+        "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+      },
+      {
+        "key": "iihf-rulebook",
+        "url": "https://blob.iihf.com/iihf-media/iihfmvc/media/contentimages/4_sport/officiating/rule_book/2025-26/2025-26_iihf_official_rulebook.pdf",
+        "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+      },
+      {
+        "key": "equipment",
+        "url": "https://en.wikipedia.org/wiki/Ice_hockey_goaltending_equipment",
+        "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+      },
+      {
+        "key": "bauer-pads",
+        "url": "https://www.bauer.com/products/vapor-flylite-goal-pad-senior",
+        "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+      },
+      {
+        "key": "goalie-reference",
+        "url": "https://www.goaliemonkey.com/learn/goalie-leg-pad-buying-guide",
+        "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+      },
+      {
+        "url": "https://www.nhl.com/info/video-rulebook",
+        "error": "HTTP Error 403: Forbidden"
+      },
+      {
+        "url": "https://www.hockeycanada.ca/en-ca/hockey-programs/players/essentials/equipment",
+        "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+      },
+      {
+        "url": "https://www.purehockey.com/c/goalie-catch-glove-sizing-chart",
+        "error": "<urlopen error Tunnel connection failed: 403 Forbidden>"
+      }
+    ],
+    "interpretation": "All fresh HTTP/PDF/photo lookups blocked with 403; previously documented equipment-limit figures and user construction corrections used as sanity guidance. No newly verified manufacturer photo/specification or official equipment certification claimed."
+  },
+  "broad_development_regression": {
+    "godot": "4.6.3.stable.official.7d41c59c4",
+    "counts": {
+      "passed": 53,
+      "failed": 1,
+      "skipped": 1
+    },
+    "checks": [
+      {
+        "name": "engine_version",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.028,
+        "log": "engine_version.log"
+      },
+      {
+        "name": "import",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.03,
+        "log": "import.log"
+      },
+      {
+        "name": "test_accessibility",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 9.134,
+        "log": "test_accessibility.log"
+      },
+      {
+        "name": "test_animation",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.039,
+        "log": "test_animation.log"
+      },
+      {
+        "name": "test_benches",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 17.292,
+        "log": "test_benches.log"
+      },
+      {
+        "name": "test_board_hop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.493,
+        "log": "test_board_hop.log"
+      },
+      {
+        "name": "test_boards",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 218.726,
+        "log": "test_boards.log"
+      },
+      {
+        "name": "test_clipping",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 5.864,
+        "log": "test_clipping.log"
+      },
+      {
+        "name": "test_controller",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 8.093,
+        "log": "test_controller.log"
+      },
+      {
+        "name": "test_controls",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 8.642,
+        "log": "test_controls.log"
+      },
+      {
+        "name": "test_event_modes",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 25.587,
+        "log": "test_event_modes.log"
+      },
+      {
+        "name": "test_gear_graphics",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.922,
+        "log": "test_gear_graphics.log"
+      },
+      {
+        "name": "test_gm_checkpoint",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 28.766,
+        "log": "test_gm_checkpoint.log"
+      },
+      {
+        "name": "test_gm_management",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 72.727,
+        "log": "test_gm_management.log"
+      },
+      {
+        "name": "test_gm_navigation",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 96.774,
+        "log": "test_gm_navigation.log"
+      },
+      {
+        "name": "test_gm_rosters",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 4.657,
+        "log": "test_gm_rosters.log"
+      },
+      {
+        "name": "test_gm_scouting",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 23.294,
+        "log": "test_gm_scouting.log"
+      },
+      {
+        "name": "test_gm_season",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 13.128,
+        "log": "test_gm_season.log"
+      },
+      {
+        "name": "test_goal_celebration",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 7.253,
+        "log": "test_goal_celebration.log"
+      },
+      {
+        "name": "test_goal_net",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 7.631,
+        "log": "test_goal_net.log"
+      },
+      {
+        "name": "test_goalie_gear",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 10.047,
+        "log": "test_goalie_gear.log"
+      },
+      {
+        "name": "test_goalie_polish",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 9.405,
+        "log": "test_goalie_polish.log"
+      },
+      {
+        "name": "test_goalie_proportions",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.399,
+        "log": "test_goalie_proportions.log"
+      },
+      {
+        "name": "test_goalie_saves",
+        "status": "failed",
+        "reason": "Process exited 1",
+        "returncode": 1,
+        "seconds": 2.322,
+        "log": "test_goalie_saves.log"
+      },
+      {
+        "name": "test_helmet_arm_fit",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.51,
+        "log": "test_helmet_arm_fit.log"
+      },
+      {
+        "name": "test_helmet_retention",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.76,
+        "log": "test_helmet_retention.log"
+      },
+      {
+        "name": "test_helmet_surface",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.592,
+        "log": "test_helmet_surface.log"
+      },
+      {
+        "name": "test_hockey_audio",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 7.449,
+        "log": "test_hockey_audio.log"
+      },
+      {
+        "name": "test_hockey_stop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.137,
+        "log": "test_hockey_stop.log"
+      },
+      {
+        "name": "test_ice",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 14.79,
+        "log": "test_ice.log"
+      },
+      {
+        "name": "test_jersey_collar",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.471,
+        "log": "test_jersey_collar.log"
+      },
+      {
+        "name": "test_kit_geometry",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.847,
+        "log": "test_kit_geometry.log"
+      },
+      {
+        "name": "test_kit_materials",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.209,
+        "log": "test_kit_materials.log"
+      },
+      {
+        "name": "test_knockout_cup",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.567,
+        "log": "test_knockout_cup.log"
+      },
+      {
+        "name": "test_lab",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.414,
+        "log": "test_lab.log"
+      },
+      {
+        "name": "test_lighting",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.694,
+        "log": "test_lighting.log"
+      },
+      {
+        "name": "test_match",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 12.91,
+        "log": "test_match.log"
+      },
+      {
+        "name": "test_match_loop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 74.558,
+        "log": "test_match_loop.log"
+      },
+      {
+        "name": "test_match_state",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.177,
+        "log": "test_match_state.log"
+      },
+      {
+        "name": "test_mocap",
+        "status": "skipped",
+        "reason": "Optional local motion-capture clips are absent",
+        "returncode": 0,
+        "seconds": 0.251,
+        "log": "test_mocap.log"
+      },
+      {
+        "name": "test_net_shooting",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 10.222,
+        "log": "test_net_shooting.log"
+      },
+      {
+        "name": "test_overtime_shootout",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 19.808,
+        "log": "test_overtime_shootout.log"
+      },
+      {
+        "name": "test_play_now",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 52.72,
+        "log": "test_play_now.log"
+      },
+      {
+        "name": "test_player_surfaces",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.28,
+        "log": "test_player_surfaces.log"
+      },
+      {
+        "name": "test_puck_flight",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 8.377,
+        "log": "test_puck_flight.log"
+      },
+      {
+        "name": "test_render_settings",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 7.164,
+        "log": "test_render_settings.log"
+      },
+      {
+        "name": "test_roster_database",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.269,
+        "log": "test_roster_database.log"
+      },
+      {
+        "name": "test_save_store",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.168,
+        "log": "test_save_store.log"
+      },
+      {
+        "name": "test_simulation",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.553,
+        "log": "test_simulation.log"
+      },
+      {
+        "name": "test_skate_stick",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.693,
+        "log": "test_skate_stick.log"
+      },
+      {
+        "name": "test_stride",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.148,
+        "log": "test_stride.log"
+      },
+      {
+        "name": "test_tactics_match",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 8.189,
+        "log": "test_tactics_match.log"
+      },
+      {
+        "name": "test_team_tactics",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.547,
+        "log": "test_team_tactics.log"
+      },
+      {
+        "name": "test_world_database",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 25.288,
+        "log": "test_world_database.log"
+      },
+      {
+        "name": "python",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.158,
+        "log": "python.log"
+      }
+    ],
+    "scope": "Headless regressions; not GPU, physical controller, human feel or release approval"
+  },
+  "initial_failure_resolution": {
+    "test": "test_goalie_saves",
+    "reason": "Old high-glove assertion required an additional 10 cm lateral travel from a hand that now starts 11 cm farther out. Physical arm reach still limited to 55 cm.",
+    "repair": "Retain original 35 cm vertical rise and arm-length checks; require non-inward reach and at least 30 percent reduction in distance to the actual shot line.",
+    "original_log": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nERROR: Glove rises and reaches out ((0.58, 0.86, 0.655) -> (0.593146, 1.219478, 0.411022))\n   at: push_error (core/variant/variant_utility.cpp:1024)\n   GDScript backtrace (most recent call first):\n       [0] check (res://tests/test_goalie_saves.gd:10)\n       [1] run (res://tests/test_goalie_saves.gd:41)\nGoalie save failures: 1\n",
+    "final_log": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoalie save failures: 0\n"
+  },
+  "final_affected_suites": [
+    {
+      "name": "test_goalie_proportions",
+      "returncode": 0,
+      "seconds": 1.93,
+      "script_error": false
+    },
+    {
+      "name": "test_clipping",
+      "returncode": 0,
+      "seconds": 4.54,
+      "script_error": false
+    },
+    {
+      "name": "test_goalie_saves",
+      "returncode": 0,
+      "seconds": 1.76,
+      "script_error": false
+    },
+    {
+      "name": "test_goalie_gear",
+      "returncode": 0,
+      "seconds": 9.86,
+      "script_error": false
+    },
+    {
+      "name": "test_goalie_polish",
+      "returncode": 0,
+      "seconds": 9.32,
+      "script_error": false
+    },
+    {
+      "name": "test_skate_stick",
+      "returncode": 0,
+      "seconds": 2.49,
+      "script_error": false
+    },
+    {
+      "name": "test_gear_graphics",
+      "returncode": 0,
+      "seconds": 0.71,
+      "script_error": false
+    },
+    {
+      "name": "test_overtime_shootout",
+      "returncode": 0,
+      "seconds": 16.45,
+      "script_error": false
+    }
+  ],
+  "final_new_checks": 66,
+  "final_new_log": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nGoalie proportions: 66 checks; 0 failures\n",
+  "test_inventory_change": "Clipping reads complete pad mesh instead of removed detached thigh nodes; includes new heel mesh. Tolerance and allowed-contact pairs unchanged. New web-position fixtures replace obsolete wrist-centre catch fixtures; palm outside web must not auto-catch.",
+  "run_order": "Broad development run: 53 pass, 1 stale reach assertion fail, 1 optional mocap skip; 31 Python tests pass. Final boot fit/heel finish and reach-fixture repair followed with 8 affected suites passing. No atomic all-green final-tree broad rerun claimed.",
+  "captures": {
+    "neutral": {
+      "captures": [
+        {
+          "camera": "(0.0, 0.95, -3.5)",
+          "error": 0,
+          "fov": 35.0,
+          "path": "res://build/model-review-goalie-proportion-ready-final-front.jpg",
+          "target": "(0.0, 0.73, 0.0)"
+        },
+        {
+          "camera": "(2.0, 1.2, -3.1)",
+          "error": 0,
+          "fov": 35.0,
+          "path": "res://build/model-review-goalie-proportion-ready-final-quarter.jpg",
+          "target": "(0.0, 0.73, 0.0)"
+        },
+        {
+          "camera": "(-0.712147, 0.704884, -1.211192)",
+          "error": 0,
+          "fov": 38.0,
+          "path": "res://build/model-review-goalie-proportion-ready-final-pad.jpg",
+          "target": "(-0.262147, 0.424884, -0.261192)"
+        },
+        {
+          "camera": "(-0.88, 1.04, -1.505)",
+          "error": 0,
+          "fov": 34.0,
+          "path": "res://build/model-review-goalie-proportion-ready-final-catcher.jpg",
+          "target": "(-0.58, 0.92, -0.655)"
+        },
+        {
+          "camera": "(0.465, 0.162, -1.41)",
+          "error": 0,
+          "fov": 38.0,
+          "path": "res://build/model-review-goalie-proportion-ready-final-heel.jpg",
+          "target": "(0.255, 0.062, -0.76)"
+        }
+      ],
+      "engine": "4.6.2-stable (official)",
+      "goalkeeper": true,
+      "pose": "idle",
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "size": "960x960",
+      "source": "Actual isolated Godot 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay",
+      "stage": "goalie-proportion-ready-final",
+      "visual_script": "res://scripts/skater_visual.gd"
+    },
+    "arena": {
+      "engine": "4.6.2-stable (official)",
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "source": "Actual main.tscn; frozen goalie inspection camera, HUD hidden, posed with production save functions. Direct viewport JPEGs, not normal gameplay footage."
+    }
+  },
+  "images": {
+    "goalie-proportions-ready-20261021.jpg": {
+      "sha256": "cb3480a4a8e0f543a44fa50029c1b6cb19ec197606e3fcb583616853fcaf3486",
+      "bytes": 508363
+    },
+    "goalie-proportions-butterfly-20261021.jpg": {
+      "sha256": "4d3a71d36e4b7c74af370e605ad52ebead8c37345965d57ddccb4a003e0de53b",
+      "bytes": 529803
+    },
+    "goalie-proportions-quarter-20261021.jpg": {
+      "sha256": "5db18240fbd1a3ad6314e942b746a8ea69b30ea27753b5b521410126d1918039",
+      "bytes": 116054
+    },
+    "goalie-proportions-catcher-20261021.jpg": {
+      "sha256": "f5d95c682634d1424c37ca2cec0ed4a504191db8dcc7c22547d4069cc2edd27e",
+      "bytes": 214908
+    },
+    "goalie-proportions-pad-20261021.jpg": {
+      "sha256": "7e84383b1910bb20ad8b38fdbea889119385fadbc046c158b4d0d5ea9ed42c36",
+      "bytes": 190537
+    },
+    "goalie-proportions-heel-20261021.jpg": {
+      "sha256": "914b783585515ad7e1305b22976b5c0e5e54195d3f723a7e4f170168b203cc18",
+      "bytes": 103651
+    }
+  },
+  "remaining": [
+    "Fresh manufacturer/reference source comparison blocked",
+    "Exact 3D equipment certification and youth-specific scaling",
+    "Hardware visuals/performance",
+    "Anatomy, mask, post/RVH and planted recovery work",
+    "Full-pad contact coverage increases low-shot coverage and needs human balance playtests"
+  ],
+  "release": false,
+  "plugins_required": false
+}

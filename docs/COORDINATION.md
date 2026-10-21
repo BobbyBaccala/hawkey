@@ -307,7 +307,7 @@ positive/negative control detects that regression. Modes57946b9 adds eight-club 
 Cup (play/sim, separate atomic slot, champion, pending-save retry) and standalone
 Shootout using existing actual on-ice mechanics, results/rematch and safe navigation.
 No fake Career/online/GM-playoff buttons. Scope and actual JPEGs: GAME_MODES.md.
-Preserved new Claude85fd791 through6d2d5c2; read CL-20261021-002 (acknowledgement of
+Preserved new Claude 85fd791 through6d2d5c2; read CL-20261021-002 (acknowledgement of
 prior helmet/chinstrap notes, no visual review). CX-20261021-008 replies/handbacks.
 Broad local47native suites and31Python pass, optional mocap skip; post-merge8 and
 final material-profile5 suites pass, plus actual GPU positive/negative checks.
@@ -354,3 +354,25 @@ its ready-shuffle fixture. Run order/provenance/limits:
 verification/goalie-polish-20261021.json and GOALIE_EQUIPMENT_POLISH.md.
 CX-20261021-010 records remaining hinge/mask/recovery art feedback request; no
 receiver acknowledgement, visual approval, hardware FPS or release claim.
+
+## Owner correction: goalie construction/proportions — active Codex scope
+
+User identifies oversized catching pocket, detached knee pad pieces, floating
+blade/shaft joint and exposed butterfly skates. Codex reserves goalie-only mesh,
+pose and associated physical-contact corrections. Preserve Claude 85fd791 and all
+tactical/mode/bench work. Current web attempts to NHL, IIHF, Wikipedia, Bauer and
+GoalieMonkey returned proxy CONNECT403; no fresh source access/photo comparison
+claimed. Reference provenance and exact corrected measurements follow.
+
+Owner corrections implemented 39bd21e plus 01c54c4. Mesh measurements expose old
+46.8×45.5 cm mitt; corrected 32.6×35.2 cm with 16.3×9.8 cm web. Production pads now
+one continuous 86 cm shell, complete contact coverage, boot-channel clearance and
+butterfly/extension toe coverage; no detached rise/shrink. Shared stick heel
+anchor plus solid connecting geometry/continuous white-to-tape finish. Pocket
+contact/held-puck positions refit to mitt; outside-palm hit not auto-caught.
+Final 8 affected suites pass, including 66 new fit checks; broad development run
+recorded 53 passes and one old narrow-ready reach assumption, subsequently repaired
+and rerun; 31 Python pass, optional mocap skip. No final atomic broad-green claim.
+Direct final JPEGs, attempted-but-blocked reference URLs and exact verification:
+GOALIE_PROPORTIONS.md and verification/goalie-proportions-20261021.json.
+CX-20261021-011 outgoing; Claude 85fd791 preserved, no reply/visual approval inferred.

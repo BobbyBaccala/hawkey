@@ -1,3 +1,6 @@
+> Current construction correction: [GOALIE_PROPORTIONS.md](GOALIE_PROPORTIONS.md).
+> Detached/hinged pad-top descriptions below are superseded historical notes.
+
 # 0.8 clipping pass and proportions
 
 - New `tests/test_clipping.gd` samples the surface of every gear piece and checks whether it lies more than 8 mm inside another piece's closed mesh. It covers seven goalie poses (ready, a save reach, and each quarter of the butterfly drop) and thirteen skater poses (stickhandling extremes and a full stride cycle). Contact is allowed only where it is designed: hands holding the stick inside the gloves, socks tucked into skates and under pants, and the stick's own joints. `--report` lists offending pairs. The pass started at 62 overlaps and now has 0.

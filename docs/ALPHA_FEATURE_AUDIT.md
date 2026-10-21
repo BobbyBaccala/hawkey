@@ -209,3 +209,12 @@ motion, no-clip shuffle fallback and regulation contact-gated catcher fold with
 frozen-puck follow through the whistle. Mask/hinge/anatomy and post/recovery work
 remain open. GOALIE_EQUIPMENT_POLISH.md distinguishes actual engine inspection
 captures, tests and remaining limitations; no AAA goalie realism claim.
+
+## Owner-corrected goalie construction — 2026-10-21
+
+Removed detached hinged thigh rises; production pads are continuous full-length
+shells with boot coverage and matching contacts. Measured adult mitt/web resized;
+physical pocket gate follows it. Blade/paddle/shaft share a solid visible heel.
+GOALIE_PROPORTIONS.md supersedes earlier pad-folding descriptions. Goalkeeping
+remains Partial; fresh external reference access was blocked, and dimensions are
+measured original targets rather than a verified manufacturer replica.

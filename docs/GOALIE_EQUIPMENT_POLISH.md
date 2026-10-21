@@ -1,3 +1,6 @@
+> Current construction correction: [GOALIE_PROPORTIONS.md](GOALIE_PROPORTIONS.md).
+> Detached/hinged pad-top descriptions below are superseded historical notes.
+
 # Goalie equipment and motion checkpoint — 2026-10-21
 
 Owner-directed continuation of goalie graphics/animation, preserving Claude through
