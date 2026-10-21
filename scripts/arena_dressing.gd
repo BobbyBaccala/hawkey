@@ -4,6 +4,7 @@ extends Node3D
 ## All sponsor names are invented; nothing imitates a real brand or arena.
 
 const Arena = preload("res://scripts/arena.gd")
+const Benches = preload("res://scripts/arena_benches.gd")
 const CROWD = preload("res://assets/crowd-spectators-v1.png")
 const SPONSORS := [
 	["NORTHLINE", Color("#0f2f5c"), Color("#f2f5f8")],
@@ -20,6 +21,9 @@ const ROWS := 14
 const SIDE_X := Arena.HALF_WIDTH + 1.4
 const ROW_RUN := 0.85
 const ROW_RISE := 0.46
+## Side rows 0-1 are left out where the benches and penalty boxes sit; row 2's
+## riser is their back wall (arena_benches.gd DEPTH).
+const CUT_ROWS := 2
 
 var helper: Arena
 var jumbotron_labels: Array[Label3D] = []
@@ -115,12 +119,20 @@ func build_bowl() -> void:
 		var y := r * ROW_RISE
 		var color: Color = seat[r % 2]
 		for side in [-1.0, 1.0]:
-			box(Vector3(ROW_RUN, 0.45 + y, 62 + r * 2 * ROW_RUN), Vector3(side * (SIDE_X + r * ROW_RUN), (0.45 + y) * 0.5, 0), color)
+			var half_len := 31.0 + r * ROW_RUN
+			if r < CUT_ROWS:
+				# Benches (west) and penalty boxes (east) replace the first rows.
+				var cut := Benches.BENCH_HALF if side < 0 else Benches.BOX_HALF
+				for zs in [-1.0, 1.0]:
+					box(Vector3(ROW_RUN, 0.45 + y, half_len - cut), Vector3(side * (SIDE_X + r * ROW_RUN), (0.45 + y) * 0.5, zs * (half_len + cut) * 0.5), color)
+				continue
+			box(Vector3(ROW_RUN, 0.45 + y, half_len * 2.0), Vector3(side * (SIDE_X + r * ROW_RUN), (0.45 + y) * 0.5, 0), color)
 			box(Vector3(Arena.HALF_WIDTH * 2.0 + 2.0 + r * 2 * ROW_RUN, 0.45 + y, ROW_RUN), Vector3(0, (0.45 + y) * 0.5, side * (31.4 + r * ROW_RUN)), color)
 	# Aisles: lighter stair strips that break up the rows.
 	for side in [-1.0, 1.0]:
 		for z in [-20.0, -6.0, 6.0, 20.0]:
 			for r in range(ROWS):
+				if r < CUT_ROWS and Benches.in_zone(side, z - 0.45, z + 0.45): continue
 				box(Vector3(ROW_RUN, 0.02, 0.9), Vector3(side * (SIDE_X + r * ROW_RUN), 0.46 + r * ROW_RISE, z), Color("#2a3746"))
 
 func build_crowd() -> void:
@@ -146,13 +158,17 @@ func build_crowd() -> void:
 			# Sides: cards run along the rink, facing the ice.
 			var count := int((60.0 + r * 2 * ROW_RUN) / 4.5)
 			for k in range(count):
+				var card_z := -count * 2.25 + 2.25 + k * 4.5
+				var pick := rng.randi() % shared.size()
+				var flip := rng.randf() > 0.5
+				if r < CUT_ROWS and Benches.in_zone(side, card_z - 2.25, card_z + 2.25): continue
 				var card := MeshInstance3D.new()
 				card.mesh = quad
-				card.material_override = shared[rng.randi() % shared.size()]
+				card.material_override = shared[pick]
 				card.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-				card.position = Vector3(side * (SIDE_X + r * ROW_RUN), y, -count * 2.25 + 2.25 + k * 4.5)
+				card.position = Vector3(side * (SIDE_X + r * ROW_RUN), y, card_z)
 				card.rotation.y = -side * PI / 2
-				card.scale.x = -1 if rng.randf() > 0.5 else 1
+				card.scale.x = -1 if flip else 1
 				add_child(card)
 			# Ends.
 			var end_count := int((Arena.HALF_WIDTH * 2.0 + r * 2 * ROW_RUN) / 4.5)

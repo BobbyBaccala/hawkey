@@ -1,5 +1,6 @@
 extends Node3D
 const GoalNet = preload("res://scripts/goal_net.gd")
+const Benches = preload("res://scripts/arena_benches.gd")
 ## Original procedural rink. Units are metres; visual markings share one ice plane.
 const RED = Color("#8f1631")
 const BLUE = Color("#174b8c")
@@ -241,9 +242,33 @@ func board_segment(a: Vector3, b: Vector3) -> void:
 		mesh.material_override.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	block(root, Vector3(length_, 0.18, 0.27), Vector3(0, 0.09, 0), Color("#e8ba37"))
 	block(root, Vector3(length_, 0.08, 0.29), Vector3(0, 1.07, 0), Color("#19364f"))
-	block(root, Vector3(length_, 1.55, 0.045), Vector3(0, 1.88, 0), Color(0.58, 0.8, 0.87, 0.12))
+	board_glass(root, length_)
 	tube(root, Vector3(-length_ / 2, 1.1, 0), Vector3(-length_ / 2, 2.66, 0), 0.025, Color("#8a9fac"))
 	board_count += 1
+
+## Glass above the boards. Along the west straight it is left out in front
+## of the player benches (arena_benches.gd glass_openings()); the collider in
+## board_segment() still runs the full length.
+func board_glass(root: Node3D, length_: float) -> void:
+	var glass_color := Color(0.58, 0.8, 0.87, 0.12)
+	var pieces: Array[Vector2] = [Vector2(-length_ / 2, length_ / 2)]
+	if root.position.x < -(HALF_WIDTH - 0.3) and length_ > 10.0:
+		# Local x runs along the segment; world z = position.z + x * basis.x.z.
+		var dir := signf(root.basis.x.z)
+		for gap in Benches.glass_openings():
+			var lo := minf((gap.x - root.position.z) * dir, (gap.y - root.position.z) * dir)
+			var hi := maxf((gap.x - root.position.z) * dir, (gap.y - root.position.z) * dir)
+			var next: Array[Vector2] = []
+			for piece in pieces:
+				if hi <= piece.x or lo >= piece.y:
+					next.append(piece)
+					continue
+				if lo > piece.x: next.append(Vector2(piece.x, lo))
+				if hi < piece.y: next.append(Vector2(hi, piece.y))
+			pieces = next
+	for piece in pieces:
+		var glass := block(root, Vector3(piece.y - piece.x, 1.55, 0.045), Vector3((piece.x + piece.y) * 0.5, 1.88, 0), glass_color)
+		glass.name = "BoardGlass"
 
 ## Half-width of the rink (to the board face) at distance `z` from centre.
 static func corner_half_width(z: float) -> float:
@@ -445,3 +470,6 @@ void fragment(){
 	dressing.name = "Dressing"
 	add_child(dressing)
 	dressing.add_board_ads(points)
+	var benches := Benches.new()
+	benches.name = "Benches"
+	add_child(benches)
