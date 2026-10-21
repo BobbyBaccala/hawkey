@@ -59,9 +59,9 @@ own license review; tool availability is not evidence of finished hockey models.
 
 ## Validation and remaining work
 
-Full Godot 4.6.3 runner: 45 passed, zero failed, one optional mocap skip; includes
-42 native suites and 31 Python tests. That run used the 70-check surface test;
-subsequent LOD-preservation recheck passes 77 checks. Displayed 4.6.2 shader test
+Final Godot 4.6.3 runner: 45 passed, zero failed, one optional mocap skip; includes
+42 native suites and 31 Python tests. The final run includes the 77-check surface
+and LOD-preservation regression. Displayed 4.6.2 shader test
 passes 576 samples; negative control fails 480 as expected. See verification JSON.
 
 Production/CI remain pinned to 4.6.3. The separate official 4.6.2 diagnostic binary
