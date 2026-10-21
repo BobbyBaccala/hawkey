@@ -586,7 +586,7 @@ func update_team_ai(delta: float) -> void:
 		var target:=Vector3.ZERO
 		var changing:=bool(actor.get_meta("changing"))
 		if changing:
-			target=Vector3(BENCH_X,0,(slot-1)*1.6+(team*8-4))
+			target=Vector3(BENCH_X,0,(slot-1)*1.6+(4-team*8))   # own bench, at the end it defends in periods 1 and 3
 			if actor.position.distance_to(target)<0.9:
 				change_identity(actor,int(actor.get_meta("pending_id")))
 				if actor==player: switch_player()
@@ -814,6 +814,10 @@ func update_match_hud() -> void:
 	var penalty_text:=match_state.penalty_text()
 	hud_node.penalties_panel.visible=not penalty_text.is_empty()
 	penalties_label.text="PENALTIES\n"+penalty_text
+	# Penalised players sit in their team's box (arena_benches.gd, at most two shown).
+	var benches=arena.get_node_or_null("Benches")
+	if benches!=null:
+		for t in range(2): benches.set_penalty_count(t,match_state.penalties.filter(func(p): return p.team==t).size())
 	var players:=[]
 	for actor in skaters:
 		if body_team(actor)==0 and int(actor.get_meta("slot"))<3:
