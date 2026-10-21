@@ -252,7 +252,9 @@ class MeshBuilder:
 			# Painted graphics multiply the vertex colours: crisp, anti-aliased
 			# panels and stripes instead of colours stepped across triangles.
 			m.albedo_texture = graphic
-			m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+			# Constant atlas UVs on bindings/cage bars trigger an anisotropic
+			# sampling artifact in Compatibility/llvmpipe. Keep mipmaps, avoid it.
+			m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS if RenderingServer.get_current_rendering_method()=="gl_compatibility" else BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 		m.roughness = roughness
 		m.metallic_specular = 0.35
 		mesh.surface_set_material(0, m)
@@ -451,7 +453,7 @@ static func goalie_pad(side: float, kit: Color, accent: Color, y_from := -1.0, y
 		var groove := 0.0
 		for g: Array in grooves:
 			groove = maxf(groove, _band(yy, g[0], g[1]))
-		front -= groove * 0.010
+		front -= groove * 0.006
 		# Rounded top and toe tip.
 		var round_ := 1.0
 		if yy > top - 0.03:
@@ -478,8 +480,8 @@ static func goalie_pad(side: float, kit: Color, accent: Color, y_from := -1.0, y
 				# Quilted columns pillow between the stitch lines; the boot
 				# section carries three vertical boot-break ribs instead.
 				var col_u := outer / hw
-				var pillow := 0.007 * (1.0 - pow(clampf(col_u, -1, 1), 6))
-				var stitch := 0.007 * (_band(outer, -hw / 3.0, 0.009) + _band(outer, hw / 3.0, 0.009))
+				var pillow := 0.0035 * (1.0 - pow(clampf(col_u, -1, 1), 6))
+				var stitch := 0.0035 * (_band(outer, -hw / 3.0, 0.009) + _band(outer, hw / 3.0, 0.009))
 				var rib := 0.010 * pow(0.5 + 0.5 * cos(col_u * 3.0 * PI), 0.6) * boot
 				z += (pillow - stitch * (1.0 - boot) + rib) * round_
 			ring.append(Vector3(outer * side, yy, z + toe))
@@ -503,11 +505,21 @@ static func goalie_pad(side: float, kit: Color, accent: Color, y_from := -1.0, y
 		ring_colors.append(cols)
 		ring_uvs.append(uv_ring)
 	b.add_loft(rings, ring_colors, true, true, ring_uvs)
+	# Sewn face binding: narrow inset rail with a contrasting thread, not a
+	# thick rounded roll. Keep the articulated break clear of both halves.
+	for edge in [-1.0,1.0]:
+		var binding:=PackedVector3Array()
+		for yy: float in ys:
+			if yy<bottom+0.03 or yy>top-0.03: continue
+			var half_w: float=(PAD_WIDTH-0.02*smoothstep(top-0.12,top,yy)-0.015*smoothstep(bottom+0.08,bottom,yy))*0.5
+			var toe: float=0.075*pow(smoothstep(boot_top+0.02,bottom,yy),1.2)
+			binding.append(Vector3(edge*side*(half_w-0.009),yy,FACE_Z+toe+0.002))
+		if binding.size()>1: b.add_tube(binding,0.0022,OFFWHITE,6)
 	var graphic := _cached("pad|%s|%s" % [kit.to_html(), accent.to_html()], func(): return _paint_pad(kit, accent))
 	# Behind the face: straps, knee landing block, calf wrap.
 	if y_from > bottom:
 		b.add_rounded_box(Vector3(0, PAD_KNEE + 0.17, BACK_Z - 0.06), Vector3(0.20, 0.03, 0.012), 0.005, OFFWHITE)
-		return b.to_mesh(0.62, graphic)
+		return goalie_leather(b.to_mesh(0.62, graphic), "pad")
 	# Knee landing block on the inside of the knee: a grey dense-foam block
 	# the goalie lands on in the butterfly, with an inner knee wedge.
 	b.add_rounded_box(Vector3(-side * 0.070, PAD_KNEE - 0.02, BACK_Z - 0.050), Vector3(0.115, 0.15, 0.10), 0.022, Color("#c8cdd1"))
@@ -519,7 +531,7 @@ static func goalie_pad(side: float, kit: Color, accent: Color, y_from := -1.0, y
 	for sy: float in [PAD_ANKLE + 0.21, PAD_KNEE - 0.12]:
 		b.add_rounded_box(Vector3(0, sy, BACK_Z - 0.085), Vector3(0.20, 0.03, 0.012), 0.005, OFFWHITE)
 		b.add_rounded_box(Vector3(side * 0.09, sy, BACK_Z - 0.088), Vector3(0.03, 0.036, 0.014), 0.004, DARK)
-	return b.to_mesh(0.62, graphic)
+	return goalie_leather(b.to_mesh(0.62, graphic), "pad")
 
 ## Pad face graphic: a white pad with team trim, as pros wear them - kit
 ## thigh-rise cap, a kit knee band with an accent insert, a kit sweep on the
@@ -530,7 +542,7 @@ static func _paint_pad(kit: Color, accent: Color) -> Texture2D:
 	var g := Graphic.new(256, 704, WHITE)
 	var v := func(y: float) -> float: return (y + PAD_LENGTH * 0.5) / PAD_LENGTH
 	var vk: float = v.call(PAD_KNEE)
-	var stitch := WHITE.darkened(0.38)
+	var stitch := WHITE.darkened(0.22)
 	# Column stitching and rows of short tack stitches in each column.
 	for u in [1.0 / 3.0, 2.0 / 3.0]:
 		g.stitches(Vector2(u, 0.03), Vector2(u, 0.975), 0.006, stitch, 80)
@@ -611,7 +623,7 @@ static func blocker(side: float, kit: Color, accent: Color) -> ArrayMesh:
 	b.add_rounded_box(Vector3(-side * 0.02, -0.22, -0.035), Vector3(0.12, 0.11, 0.095), 0.035, OFFWHITE)
 	b.add_rounded_box(Vector3(-side * 0.02, -0.17, -0.035), Vector3(0.125, 0.022, 0.10), 0.01, kit)
 	var graphic := _cached("blocker|%s|%s" % [kit.to_html(), accent.to_html()], func(): return _paint_blocker(kit, accent))
-	return b.to_mesh(0.55, graphic)
+	return goalie_leather(b.to_mesh(0.55, graphic), "blocker")
 
 ## Blocker face: white board with a kit border, a bold diagonal kit sweep with
 ## an accent pinstripe and a kit corner block at the top outside.
@@ -692,7 +704,7 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 		Vector2(0.146, 0.190), Vector2(0.171, 0.115), Vector2(0.175, 0.025), Vector2(0.155, -0.060), Vector2(0.108, -0.128)]
 	for q: Vector2 in rim_pts:
 		rim.append(Vector3(q.x * side, q.y, 0.030))
-	b.add_tube(rim, 0.024, kit, 14)
+	b.add_capsule(rim, [0.018,0.020,0.021,0.021,0.020,0.019,0.018,0.017,0.015], kit, 16, 0.85)
 	for k in range(1, 15):
 		var t := k / 15.0
 		var f := t * (rim_pts.size() - 1)
@@ -741,7 +753,7 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 		b.add_rounded_box(Vector3((0.035 + 0.04 * (k - 1)) * side, 0.17, -0.084), Vector3(0.034, 0.14, 0.028), 0.014, WHITE)
 	b.add_rounded_box(Vector3(0.02 * side, -0.115, -0.082), Vector3(0.16, 0.035, 0.015), 0.006, DARK)
 	var graphic := _cached("catcher|%s|%s" % [kit.to_html(), accent.to_html()], func(): return _paint_catcher(kit, accent))
-	return b.to_mesh(0.58, graphic)
+	return catcher_closure(goalie_leather(b.to_mesh(0.58, graphic), "catcher"),side)
 
 ## Catcher graphic (one texture for palm and cheater): the palm shows the
 ## dark pocket leather behind the web and stitched palm panels; the cheater
@@ -1476,3 +1488,84 @@ static func sock(kit: Color, stripe: Color) -> ArrayMesh:
 	return _limb(radii, 1.0, func(t: float, _a: float) -> Color:
 		if (t > 0.30 and t < 0.40) or (t > 0.46 and t < 0.51): return stripe
 		return kit)
+
+## Mipmapped synthetic-leather microfinish, shared independently of colourway.
+## Maps use the same atlas as painted graphics; reserved binding UVs stay flat.
+static var _leather_maps: Dictionary={}
+static func goalie_leather(mesh: ArrayMesh, piece: String) -> ArrayMesh:
+	if not _leather_maps.has(piece):
+		var size:=Vector2i(256,704) if piece=="pad" else (Vector2i(256,480) if piece=="blocker" else Vector2i(512,512))
+		var normal:=Image.create(size.x,size.y,false,Image.FORMAT_RGB8)
+		var rough:=Image.create(size.x,size.y,false,Image.FORMAT_RGB8)
+		for y in range(size.y):
+			for x in range(size.x):
+				var grain:=sin(float(x)*2.1+sin(float(y)*0.7))*cos(float(y)*1.9+sin(float(x)*0.6))
+				var n:=Vector3(0.13*sin(float(x)*2.1)*grain,0.13*cos(float(y)*1.9)*grain,1).normalized()
+				var r:=0.68+0.045*grain
+				if y>=int(FACE_V*size.y): n=Vector3(0,0,1);r=0.72
+				normal.set_pixel(x,y,Color(n.x*0.5+0.5,n.y*0.5+0.5,n.z*0.5+0.5))
+				rough.set_pixel(x,y,Color(r,r,r))
+		normal.generate_mipmaps();rough.generate_mipmaps()
+		_leather_maps[piece]=[ImageTexture.create_from_image(normal),ImageTexture.create_from_image(rough)]
+	var material:=mesh.surface_get_material(0) as StandardMaterial3D
+	material.normal_enabled=true;material.normal_scale=0.35
+	material.normal_texture=_leather_maps[piece][0]
+	material.roughness=1.0;material.roughness_texture=_leather_maps[piece][1]
+	material.roughness_texture_channel=BaseMaterial3D.TEXTURE_CHANNEL_RED
+	return goalie_tangents(mesh)
+
+## Finger-side fold toward the thumb after an actual secured catch. The open
+## pocket is retained while merely reaching for a shot; no guaranteed saves.
+static func catcher_closure(mesh: ArrayMesh, side: float) -> ArrayMesh:
+	var arrays:=mesh.surface_get_arrays(0)
+	var positions: PackedVector3Array=arrays[Mesh.ARRAY_VERTEX].duplicate()
+	var normals: PackedVector3Array=arrays[Mesh.ARRAY_NORMAL].duplicate()
+	var tangents: PackedFloat32Array=arrays[Mesh.ARRAY_TANGENT].duplicate()
+	for i in range(positions.size()):
+		var p: Vector3=positions[i];p.x*=side
+		var amount:=smoothstep(-0.075,0.025,p.x)*smoothstep(-0.13,0.06,p.y)
+		var turn:=Basis(Vector3.UP,-0.95*amount)
+		var pivot:=Vector3(-0.08,0.03,-0.01)
+		p=pivot+turn*(p-pivot);p.x*=side;positions[i]=p
+		var n: Vector3=normals[i];n.x*=side;n=turn*n;n.x*=side;normals[i]=n
+		var t:=Vector3(tangents[i*4],tangents[i*4+1],tangents[i*4+2]);t.x*=side;t=turn*t;t.x*=side
+		tangents[i*4]=t.x;tangents[i*4+1]=t.y;tangents[i*4+2]=t.z
+	var shape: Array=[];shape.resize(Mesh.ARRAY_MAX)
+	shape[Mesh.ARRAY_VERTEX]=positions;shape[Mesh.ARRAY_NORMAL]=normals;shape[Mesh.ARRAY_TANGENT]=tangents
+	var result:=ArrayMesh.new();result.blend_shape_mode=Mesh.BLEND_SHAPE_MODE_NORMALIZED
+	result.add_blend_shape("SecureCatch")
+	result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays,[shape])
+	result.surface_set_material(0,mesh.surface_get_material(0))
+	return result
+
+## Tangent frames for the normal map. Atlas bindings intentionally have constant
+## UVs: skip degenerate UV triangles and provide a finite orthogonal fallback.
+static func goalie_tangents(mesh: ArrayMesh) -> ArrayMesh:
+	var a:=mesh.surface_get_arrays(0)
+	var vertices: PackedVector3Array=a[Mesh.ARRAY_VERTEX]
+	var normals: PackedVector3Array=a[Mesh.ARRAY_NORMAL]
+	var uv: PackedVector2Array=a[Mesh.ARRAY_TEX_UV]
+	var indices: PackedInt32Array=a[Mesh.ARRAY_INDEX]
+	var sums:=PackedVector3Array();sums.resize(vertices.size())
+	var bitangents:=PackedVector3Array();bitangents.resize(vertices.size())
+	for i in range(0,indices.size(),3):
+		var x:=indices[i];var y:=indices[i+1];var z:=indices[i+2]
+		var u:=uv[y]-uv[x];var v:=uv[z]-uv[x]
+		var det:=u.x*v.y-u.y*v.x
+		if absf(det)<0.00000001: continue
+		var e:=vertices[y]-vertices[x];var f:=vertices[z]-vertices[x]
+		var tangent: Vector3=(e*v.y-f*u.y)/det
+		var bitangent: Vector3=(f*u.x-e*v.x)/det
+		for j in [x,y,z]: sums[j]+=tangent;bitangents[j]+=bitangent
+	var tangents:=PackedFloat32Array();tangents.resize(vertices.size()*4)
+	for i in range(vertices.size()):
+		var n:=normals[i].normalized()
+		if n.length_squared()<0.5: n=Vector3.BACK
+		var t:=sums[i]-n*n.dot(sums[i])
+		if t.length_squared()<0.000001: t=n.cross(Vector3.UP if absf(n.y)<0.9 else Vector3.RIGHT)
+		t=t.normalized()
+		tangents[i*4]=t.x;tangents[i*4+1]=t.y;tangents[i*4+2]=t.z
+		tangents[i*4+3]= -1.0 if n.cross(t).dot(bitangents[i])<0 else 1.0
+	a[Mesh.ARRAY_TANGENT]=tangents
+	var result:=ArrayMesh.new();result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,a)
+	result.surface_set_material(0,mesh.surface_get_material(0));return result

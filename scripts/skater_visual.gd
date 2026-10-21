@@ -38,7 +38,10 @@ var nameplate: Label3D
 ## Surname sewn on the back (twill in the jersey shader).
 var nameplate_text := ""
 var phase := 0.0
-var butterfly := 0.0
+var butterfly := 0.0 # Public drop command from rules/input; kept compatible.
+var goalie_drop := 0.0 # Eased pose, shared by the visible pads and contact boxes.
+var catch_hold := 0.0
+var catch_close := 0.0
 var shot_follow := 0.0
 var shot_charge := 0.0
 var desired_stick := Vector2.ZERO
@@ -393,8 +396,8 @@ func fit_limb(shell: MeshInstance3D, top: Vector3, bottom: Vector3, girth: float
 	shell.transform=Transform3D(Basis(up.cross(forward)*girth,up*axis.length(),forward*girth),top)
 
 func pad_box() -> Array:
-	var length:float=lerpf(Gear.PAD_LENGTH,Gear.PAD_BREAK+Gear.PAD_LENGTH*0.5,butterfly)
-	var center:float=lerpf(0.0,Gear.PAD_BREAK-length*0.5,butterfly)
+	var length:float=lerpf(Gear.PAD_LENGTH,Gear.PAD_BREAK+Gear.PAD_LENGTH*0.5,goalie_drop)
+	var center:float=lerpf(0.0,Gear.PAD_BREAK-length*0.5,goalie_drop)
 	return [Transform3D(Basis(),Vector3(0,center,0)),Vector3(pad_size.x,length,pad_size.z)]
 
 func build_blade() -> MeshInstance3D:
@@ -669,7 +672,14 @@ func set_save(kind: String, target: Vector2, delta: float) -> void:
 	save_kind = kind
 	save_target = save_target.lerp(target,1.0-exp(-18.0*delta))
 	for k in SAVE_KINDS:
-		save_weights[k] = move_toward(save_weights[k],1.0 if k==kind else 0.0,delta*(7.0 if k==kind else 3.0))
+		save_weights[k] = lerpf(save_weights[k],1.0 if k==kind else 0.0,1.0-exp(-maxf(0,delta)*(18.0 if k==kind else 6.0)))
+
+## Called only by a confirmed front-pocket puck contact, not by save selection.
+func secure_catch() -> void:
+	catch_hold=2.5
+
+func release_catch() -> void:
+	catch_hold=0.0
 
 ## Wrist target for a reaching save, kept within the arm's reach of its shoulder.
 func reach(shoulder: Vector3, target: Vector3) -> Vector3:
@@ -825,7 +835,7 @@ func pose(speed: float, turn: float) -> void:
 	if goalie:
 		# Sit back: hips behind the heels so the shins angle ~25 degrees and the
 		# pads stay upright; in the butterfly the hips come forward over the knees.
-		drop = Vector3(0,lerpf(-0.33,-0.55,butterfly),lerpf(-0.24,-0.04,butterfly))
+		drop = Vector3(0,lerpf(-0.33,-0.55,goalie_drop),lerpf(-0.24,-0.04,goalie_drop))
 		# Saves move the body toward the puck: hips slide toward an extended
 		# pad, and the torso leans toward a glove or blocker reach.
 		var pad_shift: float = save_weights.pad_left-save_weights.pad_right
@@ -966,14 +976,14 @@ func pose(speed: float, turn: float) -> void:
 	if goalie and not idle_data.is_empty():
 		idle = Mocap.sample(idle_data,idle_time)
 		# Captured weight shift and bounce of a keeper set in his stance.
-		var shift:Vector3=(idle.points.Hips-idle_data.mean.points.Hips)*MOCAP_HIP_HEIGHT*(1.0-butterfly)
+		var shift:Vector3=(idle.points.Hips-idle_data.mean.points.Hips)*MOCAP_HIP_HEIGHT*(1.0-goalie_drop)
 		drop += Vector3(shift.x*0.25,shift.y*0.8,0)
 	var capture_weight := mocap_weight*mocap_strength
 	posed_drop = drop
 	var root_pose := root_rest
 	root_pose.origin += drop
 	override_pose("root",root_pose)
-	bend = Basis(Vector3.RIGHT,lerpf(0.52,0.26,butterfly) if goalie else 0.50+minf(speed/40,0.18))
+	bend = Basis(Vector3.RIGHT,lerpf(0.52,0.26,goalie_drop) if goalie else 0.50+minf(speed/40,0.18))
 	if shoulder_turn != 0.0: bend = Basis(Vector3.UP,shoulder_turn)*bend
 	# Stop: the upper body leans back against the skid.
 	if stop_w > 0.0: bend = Basis(Vector3.BACK,-stop_side*0.24*stop_w)*bend
@@ -990,7 +1000,7 @@ func pose(speed: float, turn: float) -> void:
 			bend = Basis(Vector3.BACK,-reach_lean*0.6-pad_lean*0.18)*bend
 	if not idle.is_empty():
 		var sway:=Quaternion(idle_data.mean.dirs.spine,idle.dirs.spine)
-		bend = Basis(Quaternion.IDENTITY.slerp(sway,0.7*(1.0-butterfly)))*bend
+		bend = Basis(Quaternion.IDENTITY.slerp(sway,0.7*(1.0-goalie_drop)))*bend
 	if not cap.is_empty() and "spine" in mocap_mask:
 		bend = Basis(Quaternion(bend.orthonormalized()).slerp(Quaternion(Vector3.UP,cap.dirs.spine),capture_weight))
 	var pivot := root_rest.origin
@@ -1025,7 +1035,7 @@ func pose(speed: float, turn: float) -> void:
 				ankle = hip+reach.normalized()*LEG_REACH
 				ankle.y = maxf(ankle.y,0.115)
 		# Goalie ready stance: feet a little wider than the shoulders, knees in.
-		if goalie: ankle = Vector3(side*lerpf(0.27,0.58,butterfly),0.115,lerpf(0.0,0.10,butterfly))
+		if goalie: ankle = Vector3(side*lerpf(0.27,0.58,goalie_drop),0.115,lerpf(0.0,0.10,goalie_drop))
 		if goalie and shuffle_weight>0.01:
 			# Lateral shuffle: captured strafe footwork, narrowed to stay in the stance.
 			var data:Dictionary=shuffle_data[0 if lateral>0 else 1]
@@ -1036,15 +1046,23 @@ func pose(speed: float, turn: float) -> void:
 				ankle += Vector3(off.x*0.3,maxf(0,off.y)*0.5,off.z*0.15)*shuffle_weight
 				# Goalies shuffle without bringing the feet together.
 				ankle.x=side*clampf(side*ankle.x,0.25,0.33)
+			else:
+				# No optional strafe clip installed: a short alternating recovery
+				# step, driven by measured lateral distance, never crossing feet.
+				var cycle:=fposmod(shuffle_time+float(i)*0.5,1.0)
+				var swing:=smoothstep(0.58,0.98,cycle)
+				var offset:=lerpf(0.05,-0.05,minf(cycle/0.58,1.0)) if cycle<0.58 else lerpf(-0.05,0.05,swing)
+				ankle.x+=signf(lateral)*offset*shuffle_weight
+				ankle.y+=0.025*sin(PI*swing)*shuffle_weight
 		feet[i] = ankle
 		var knee := knee_position(hip,ankle,Vector3(-side*0.12,0,1) if goalie else Vector3(0,0,1),0.44,0.45)
 		# Pads meet edge to edge at the knees rather than crossing.
 		if goalie: knee.x=side*maxf(side*knee.x,Gear.PAD_WIDTH*0.5+0.036+0.035*shuffle_weight)
 		# Butterfly: knees together on the ice, shins flared out behind them.
 		if goalie:
-			knee=knee.lerp(Vector3(side*0.17,0.13,0.24),butterfly)
+			knee=knee.lerp(Vector3(side*0.17,0.13,0.24),goalie_drop)
 			# Shins flare as the knees drop, so the knees stay apart mid-drop.
-			knee.x+=side*0.045*sin(PI*butterfly)
+			knee.x+=side*0.045*sin(PI*goalie_drop)
 			# Pad extension: this leg kicks out along the ice to seal the post,
 			# pad face to the shooter; the other knee stays down in the butterfly.
 			var kick: float = save_weights["pad_left" if i==0 else "pad_right"]
@@ -1065,8 +1083,8 @@ func pose(speed: float, turn: float) -> void:
 		if pant_legs.size()>i:
 			# Goalie pants stop short of the pads; the legs meet but don't overlap.
 			var fill:=1.06 if goalie else 0.96
-			var reach:=lerpf(0.68,0.52,butterfly) if goalie else 0.94
-			fit_limb(pant_legs[i],hip+Vector3(side*(0.03+butterfly*0.02),0.10,0),hip.lerp(knee,reach),fill)
+			var reach:=lerpf(0.68,0.52,goalie_drop) if goalie else 0.94
+			fit_limb(pant_legs[i],hip+Vector3(side*(0.03+goalie_drop*0.02),0.10,0),hip.lerp(knee,reach),fill)
 		var foot_pose: Transform3D = rest["foot"+suffix]
 		foot_pose.origin = ankle
 		var boot := Vector3.ZERO
@@ -1082,7 +1100,7 @@ func pose(speed: float, turn: float) -> void:
 		override_pose("foot"+suffix,foot_pose)
 		skates[i].position = ankle+Vector3(0,-0.0525,0)
 		# Butterfly: skates turn out flat so the toes clear the pad backs.
-		skates[i].rotation = Vector3(0,side*lerpf(0.12,1.45,smoothstep(0.0,0.4,butterfly)),0) if goalie else boot
+		skates[i].rotation = Vector3(0,side*lerpf(0.12,1.45,smoothstep(0.0,0.4,goalie_drop)),0) if goalie else boot
 		if socks.size()>i:
 			# Sock and shin-guard knee cap overlap the bottom of the pants.
 			# The sock runs down the shin into the skate cuff (cuff top ~0.15 m).
@@ -1101,7 +1119,7 @@ func pose(speed: float, turn: float) -> void:
 			pads[i].basis=Basis(shin.cross(face),shin,face)
 			# Ride a few centimetres up the shin so the skate toe cap shows below.
 			# Standing, the pad is anchored to the ankle so it always clears the skate.
-			pads[i].position=(ankle+shin*0.48).lerp(knee-shin*(Gear.PAD_KNEE-0.065),butterfly)+face*0.09
+			pads[i].position=(ankle+shin*0.48).lerp(knee-shin*(Gear.PAD_KNEE-0.065),goalie_drop)+face*0.09
 			# The thigh rise follows the thigh: it leans out toward the hip as it
 			# rises in the stance, and folds back along the thigh in the butterfly.
 			var thigh_local:Vector3=pads[i].basis.inverse()*(hip-knee).normalized()
@@ -1111,9 +1129,9 @@ func pose(speed: float, turn: float) -> void:
 			# compresses where the two meet behind the wall of pads.
 			var folded:=Quaternion(Vector3.UP,thigh_local)
 			# Compress early in the drop so the halves never cross mid-transition.
-			var squash:=smoothstep(0.0,0.3,butterfly)
+			var squash:=smoothstep(0.0,0.3,goalie_drop)
 			thigh_rises[i].position=Vector3(0,Gear.PAD_BREAK-0.08*squash,-0.04+0.05*squash)
-			thigh_rises[i].basis=Basis(standing.slerp(folded,smoothstep(0.0,0.6,butterfly))).scaled_local(Vector3(lerpf(1.0,0.42,squash),1,lerpf(1.0,0.7,squash)))
+			thigh_rises[i].basis=Basis(standing.slerp(folded,smoothstep(0.0,0.6,goalie_drop))).scaled_local(Vector3(lerpf(1.0,0.42,squash),1,lerpf(1.0,0.7,squash)))
 			thigh_rises[i].set_meta("rest_basis",thigh_rises[i].basis)
 			# Pad lower edges seal against the ice in butterfly.
 			var box:Array=pad_box()
@@ -1170,7 +1188,7 @@ func pose(speed: float, turn: float) -> void:
 			# Hands out in front of the body: catcher open to the shooter at the hip,
 			# blocker on the stick at the top of the paddle.
 			# Hands travel with the hips when a save slides the body sideways.
-			wrist=Vector3(0.47+posed_drop.x,0.83-butterfly*0.16+goalie_save_height,0.42) if i==0 else stick_grip()
+			wrist=Vector3(0.47+posed_drop.x,0.83-goalie_drop*0.16+goalie_save_height,0.42) if i==0 else stick_grip()
 			var catch_w: float = save_weights.glove
 			if i==0 and catch_w > 0.0:
 				# Glove save: the catcher shoots out to the puck's line, pocket open.
@@ -1218,7 +1236,7 @@ func separate_thigh_rises() -> void:
 				var left_edge:Vector3=pads[0].transform*thigh_rises[0].transform*Vector3(-Gear.PAD_WIDTH*0.5,height,depth)
 				var right_edge:Vector3=pads[1].transform*thigh_rises[1].transform*Vector3(Gear.PAD_WIDTH*0.5,height,depth)
 				gap=minf(gap,left_edge.x-right_edge.x)
-		if gap>=0.045 or butterfly>0.3: return
+		if gap>=0.045 or goalie_drop>0.3: return
 		extra+=0.05
 		for i in range(2):
 			var side:=1.0 if i==0 else -1.0
@@ -1265,12 +1283,13 @@ func update_layers(delta: float) -> void:
 		idle_time+=delta
 		if shuffle_data[0].is_empty() and Mocap.available("Left_Strafe"):
 			shuffle_data=[Mocap.clip("Left_Strafe",self),Mocap.clip("Right_Strafe",self)]
-		shuffle_weight=move_toward(shuffle_weight,clampf((absf(lateral)-0.25)/1.5,0,1)*(1.0-butterfly),delta*5)
+		shuffle_weight=move_toward(shuffle_weight,clampf((absf(lateral)-0.25)/1.5,0,1)*(1.0-goalie_drop),delta*5)
 		var data:Dictionary=shuffle_data[0 if lateral>0 else 1]
 		if not data.is_empty():
 			# Advance the footwork by distance covered so steps match the slide.
 			var stride:float=maxf(0.1,data.travel.length()*MOCAP_HIP_HEIGHT/data.length)
 			shuffle_time+=delta*absf(lateral)/stride
+		else: shuffle_time+=delta*absf(lateral)/0.28
 
 ## Starts a board hop from `a` to `b` (parent space, see board_hop.gd) over the
 ## board plane x = board_x; the body stays put while this visual travels.
@@ -1324,6 +1343,12 @@ func update_hop(delta: float) -> void:
 		hop_state = {}
 
 func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, braking: bool = false) -> void:
+	if goalie:
+		goalie_drop=smoothstep(0.0,1.0,clampf(butterfly,0,1))
+		catch_hold=maxf(0,catch_hold-delta)
+		catch_close=lerpf(catch_close,1.0 if catch_hold>0 else 0.0,1.0-exp(-delta*(22 if catch_hold>0 else 7)))
+		if not goalie_gloves.is_empty():
+			(goalie_gloves[0].get_child(0) as MeshInstance3D).set_blend_shape_value(0,catch_close)
 	update_hop(delta)
 	if hop_u >= 0.0:
 		speed = 0.0
@@ -1334,7 +1359,7 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	brake_turn = move_toward(brake_turn,1.0 if braking and not goalie else 0.0,delta*6)
 	shot_follow = maxf(0,shot_follow-delta*3)
 	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
-	blade_position=Vector3(-0.02+butterfly*0.05,0.042,0.60-butterfly*0.04+0.035*sin(PI*butterfly)) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
+	blade_position=Vector3(-0.02+goalie_drop*0.05,0.042,0.60-goalie_drop*0.04+0.035*sin(PI*goalie_drop)) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
 	# Stop: the stick reaches out in front for balance.
 	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
 	# Board hop: lift the stick clear of the boards (blade rises first, so it
@@ -1431,7 +1456,7 @@ func set_nameplate(value: String) -> void:
 func stick_grip() -> Vector3:
 	if goalie:
 		# Mid-drop the stick is pushed out ahead of the closing pads.
-		var grip := Vector3(lerpf(-0.36,-0.24,butterfly)+posed_drop.x,0.60-butterfly*0.12,0.49+0.035*sin(PI*butterfly))
+		var grip := Vector3(lerpf(-0.36,-0.24,goalie_drop)+posed_drop.x,0.60-goalie_drop*0.12,0.49+0.035*sin(PI*goalie_drop))
 		var block_w: float = save_weights.blocker
 		if block_w > 0.0:
 			# Blocker save: the stick hand punches out to the puck's line and the

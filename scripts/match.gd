@@ -54,6 +54,7 @@ var auto_lines := true
 var goalie_targets: Array[Vector3] = [Vector3(0,0,-(Arena.GOAL_LINE-1.0)),Vector3(0,0,Arena.GOAL_LINE-1.0)]
 var goalie_reaction := 0.0
 var goalie_contact_timer := 0.0
+var caught_by: CharacterBody3D
 var capture_time := 3.0
 var known_period := 1
 var controller := ControllerInput.new()
@@ -278,6 +279,8 @@ func start_from_title() -> void:
 	hud_node.show_banner(hud_node.team_names[0] + "  vs  " + hud_node.team_names[1], "1ST PERIOD", hud_node.team_colors[0], 1.6)
 
 func setup_faceoff() -> void:
+	caught_by=null
+	for keeper in goalkeepers: keeper.get_child(1).release_catch()
 	for actor in skaters: actor.get_child(1).stop_mocap()
 	carrier = null
 	pickup_owner = false
@@ -576,6 +579,8 @@ func _on_puck_contact(body: Node) -> void:
 			match_state.phase=MatchState.Phase.STOPPAGE
 			match_state.phase_timer=2
 			match_state.event="Goalkeeper catch"
+			caught_by=actor
+			actor.get_child(1).secure_catch()
 			next_faceoff=Vector3(-Arena.DOT_X if puck.position.x<0 else Arena.DOT_X,0,signf(actor.position.z)*Arena.END_DOT_Z)
 			puck.linear_velocity=Vector3.ZERO
 			puck.freeze=true
@@ -669,6 +674,16 @@ func _physics_process(delta: float) -> void:
 		for actor in skaters:
 			actor.velocity=Vector3.ZERO
 			actor.get_child(1).animate(0,delta,0,false)
+		for keeper in goalkeepers:
+			keeper.velocity=Vector3.ZERO
+			var visual=keeper.get_child(1)
+			if keeper!=caught_by:
+				visual.set_save("",visual.save_target,delta)
+				visual.butterfly=move_toward(visual.butterfly,0.0,delta*1.6)
+			visual.animate(0,delta,0,false)
+			sync_goalie_contacts(keeper)
+	if is_instance_valid(caught_by) and match_state.phase==MatchState.Phase.STOPPAGE:
+		puck.global_position=caught_by.get_child(1).goalie_gloves[0].to_global(Vector3(0.02,0.15,0.01))
 	last_puck_velocity=puck.linear_velocity
 	goals=match_state.score[0]
 	away_goals=match_state.score[1]
