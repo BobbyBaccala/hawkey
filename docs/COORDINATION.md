@@ -9,6 +9,8 @@ Updated 2026-10-20. Assignments are not completion evidence.
 
 ## Coordination protocol
 
+The owner requested reciprocal Codex–Claude handoffs. Read [AGENT_HANDOFFS.md](AGENT_HANDOFFS.md) and the other branch’s incoming messages at each active session. The Git inbox is asynchronous; requests remain unacknowledged until the intended agent replies. Root AGENTS.md / CLAUDE.md point both workstreams to it.
+
 Read latest branch heads, open PRs, instructions and this record before edits.
 Refresh branch without losing either parent's changes. Current mode branch is
 based on prototype 8255b0b; prototype has advanced to 28fb10b. Do not copy stale
