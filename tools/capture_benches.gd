@@ -3,6 +3,8 @@ extends SceneTree
 ##  bench  - from the ice, looking at the home bench (west side)
 ##  benches - wide from centre ice across both benches
 ##  box    - penalty boxes and officials' booth (east), one road player seated
+##  cheer  - home bench standing after a goal, road bench slumped
+##  backs  - from behind the home bench (back numbers)
 ## xvfb-run -a -s "-screen 0 1728x1080x24" godot --rendering-method gl_compatibility --rendering-driver opengl3 --resolution 1728x1080 --script tools/capture_benches.gd
 ## Writes /tmp/hawkey-bench-<name>.png.
 const Arena = preload("res://scripts/arena.gd")
@@ -29,11 +31,19 @@ func run() -> void:
 	var hud = scene.get("hud_node")
 	if hud: hud.visible = false
 	var benches = scene.arena.get_node("Benches")
+	benches.set_process(false)
 	benches.set_penalty_count(1, 1)
 	var cam: Camera3D = scene.camera
 	var w := Arena.HALF_WIDTH
 	await shot(cam, Vector3(-w + 6.0, 2.0, -11.0), Vector3(-w - 1.5, 0.8, -5.0), 45, "/tmp/hawkey-bench-bench.png")
 	await shot(cam, Vector3(2.0, 6.0, 0.0), Vector3(-w - 1.0, 0.6, 0.0), 55, "/tmp/hawkey-bench-benches.png")
 	await shot(cam, Vector3(w - 5.5, 2.2, 7.5), Vector3(w + 1.4, 0.8, 1.5), 48, "/tmp/hawkey-bench-box.png")
+	# Goal reaction: home bench on its feet, arms up; road bench slumped.
+	benches.watch_target = Vector3(0, 0, 20)
+	for i in range(120): benches.update_figures(1.0 / 60.0)
+	benches.celebrate(0)
+	for i in range(70): benches.update_figures(1.0 / 60.0)
+	await shot(cam, Vector3(-w + 6.5, 2.2, 0.0), Vector3(-w - 1.5, 0.9, 0.0), 62, "/tmp/hawkey-bench-cheer.png")
+	await shot(cam, Vector3(-w - 2.55, 2.3, 1.6), Vector3(-w - 1.7, 0.7, 5.0), 60, "/tmp/hawkey-bench-backs.png")
 	print("bench capture done")
 	quit()

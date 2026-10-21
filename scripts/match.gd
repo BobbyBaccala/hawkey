@@ -125,6 +125,10 @@ func _ready() -> void:
 			actor.set_meta("decision",0.0)
 			actor.get_child(1).set_nameplate(str(rosters[team][roster_id].name).split(" ")[-1])
 			skaters.append(actor)
+	# Seated bench players wear the numbers of the roster players not dressed on the ice.
+	var bench_node=arena.get_node_or_null("Benches")
+	if bench_node!=null:
+		for team in range(2): bench_node.set_bench_numbers(team,range(3,12).map(func(i): return rosters[team][i].number))
 	player = skaters[0]
 	teammate = skaters[1]
 	player_visual = player.get_child(1)
@@ -602,6 +606,9 @@ func _physics_process(delta: float) -> void:
 				if carrier!=null and body_team(carrier)==scoring_team: scorer_name=str(roster(carrier).name).to_upper()
 				# Red goal light behind this net, arena light pulse, jumbotron GOAL.
 				if not reduce_motion: celebration.celebrate(end_, hud_node.team_colors[scoring_team], hud_node.team_names[scoring_team])
+				# Scoring bench jumps up, the other one slumps (arena_benches.gd).
+				var goal_benches=arena.get_node_or_null("Benches")
+				if goal_benches!=null: goal_benches.celebrate(scoring_team)
 				hud_node.show_banner("GOAL", (hud_node.team_names[scoring_team]+("  ·  "+scorer_name if scorer_name!="" else "")), hud_node.team_colors[scoring_team], 2.4)
 				# Scorers celebrate with captured motion, sticks raised.
 				for actor in skaters:
