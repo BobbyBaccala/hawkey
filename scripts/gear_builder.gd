@@ -972,60 +972,74 @@ static func pants_leg(side: float, kit: Color, base: Color, flare := 1.0) -> Arr
 	return b.to_mesh(0.8)
 
 # ---------------------------------------------------------------- skater helmet
-## Modern skater helmet shell. Origin near the top of the head (as the old
-## ball helmet); +Z forward. A raised crown with a centre ridge, recessed
-## vents, a brow that sits up over the visor, ear pieces down the sides, an
-## occipital lock at the back and a rolled lower edge.
-const HELMET_W := 0.118
-const HELMET_D := 0.138
-const HELMET_H := 0.138
-static func helmet_point(a: float, phi: float) -> Vector3:
+## Modern skater helmet shell, sized to the base human's head (skull about
+## 16 cm wide and 20 cm front to back; helmet shells sit 2.5 cm off it).
+## Origin at the centre of the skull, +Z forward (the face side), +Y up.
+## Low-profile two-piece shell: a smooth, slightly flattened crown, a brow
+## edge just above the eyebrows, the sides down over the tops of the ears and
+## an occipital tuck at the back. Vents are shallow slots with dark inserts
+## (helmet_fittings) so they read as openings, not dents.
+const HELMET_W := 0.104
+const HELMET_D := 0.126
+const HELMET_H := 0.112
+## Helmet origin relative to the head bone (rest), for skaters.
+const HELMET_OFFSET := Vector3(0, 0.066, 0.004)
+## Vent slots: [angle round the head (0 = front), phi down from the crown, half-length (rad), half-width (rad)].
+const HELMET_VENTS := [[0.30, 0.55, 0.20, 0.045], [-0.30, 0.55, 0.20, 0.045], [PI - 0.30, 0.70, 0.18, 0.045], [PI + 0.30, 0.70, 0.18, 0.045], [0.95, 0.95, 0.12, 0.04], [-0.95, 0.95, 0.12, 0.04]]
+static func helmet_point(a: float, phi: float, inset := 0.0) -> Vector3:
 	# a: angle round the head, 0 = front (+Z); phi: angle down from the crown.
 	var s := sin(phi)
 	var c := cos(phi)
 	var front := maxf(0.0, cos(a))
-	var back := smoothstep(0.2, -0.8, cos(a))
-	var w := HELMET_W * (1.0 + 0.03 * smoothstep(0.9, 1.4, phi))
-	var d := HELMET_D * lerpf(1.0, 1.03, back)
-	# Squarer plan than a ball: flatter sides, a broad front and back.
-	var square := 1.0 + 0.07 * pow(sin(2.0 * a), 2)
-	var sx := sin(a) * square
-	var cz := cos(a) * square
-	var p := Vector3(sx * s * w, c * HELMET_H, cz * s * d)
-	var out := Vector3(sin(a), 0, cos(a))
-	# Raised crown and a centre ridge front to back.
-	p.y += 0.010 * smoothstep(0.9, 0.2, phi) + 0.006 * exp(-pow(sin(a) * s / 0.024, 2)) * smoothstep(1.4, 0.5, phi)
-	# Two-piece shell: the lower (rear and side) shell stands proud of the
-	# upper one along a step line that sweeps up from the temple to the back.
-	var step_line := lerpf(1.32, 1.02, back)
-	p += out * 0.0045 * smoothstep(step_line - 0.03, step_line + 0.03, phi) * (1.0 - front * front)
-	# Brow: the front edge kicks forward over the visor.
-	p += out * 0.008 * pow(front, 3) * smoothstep(1.25, 1.55, phi)
-	# Rear tail flare, then the occipital tuck under the skull.
-	p += out * 0.008 * back * exp(-pow((phi - 1.70) / 0.14, 2))
-	p -= out * 0.014 * back * smoothstep(1.80, 2.05, phi)
-	# Vents: elongated recesses either side of the ridge and at the back.
-	var vent := 0.0
-	for va: float in [0.32, -0.32, PI - 0.38, PI + 0.38]:
-		var da := wrapf(a - va, -PI, PI)
-		vent += smoothstep(0.075, 0.04, absf(da)) * smoothstep(0.30, 0.20, absf(phi - 0.62))
-	for va: float in [0.80, -0.80]:
-		vent += smoothstep(0.06, 0.03, absf(wrapf(a - va, -PI, PI))) * smoothstep(0.16, 0.10, absf(phi - 0.98))
-	p -= out * 0.010 * vent
-	p.y -= 0.006 * vent * c
+	var back := maxf(0.0, -cos(a))
+	# Plan: rounded rectangle-ish (superellipse), a touch longer at the back.
+	var ca := cos(a)
+	var sa := sin(a)
+	var e := 0.82
+	var px := signf(sa) * pow(absf(sa), e)
+	var pz := signf(ca) * pow(absf(ca), e)
+	var d := HELMET_D * (1.0 + 0.04 * back)
+	# Crown slightly flattened; sides fall nearly vertical below the equator.
+	var cy := signf(c) * pow(absf(c), 1.15)
+	var sy := pow(s, 0.85)
+	var p := Vector3(px * sy * (HELMET_W - inset), cy * (HELMET_H - inset), pz * sy * (d - inset))
+	var out := Vector3(sa, 0, ca)
+	# Brow: the front edge turns slightly out over the visor clip line.
+	p += out * 0.004 * pow(front, 4) * smoothstep(1.35, 1.6, phi)
+	# Two-piece shell: the rear/lower piece stands 3 mm proud along a line
+	# that sweeps from the temples up over the back.
+	var step_line := lerpf(1.25, 0.85, back)
+	p += out * 0.003 * smoothstep(step_line - 0.02, step_line + 0.02, phi) * (1.0 - front)
+	# Occipital tuck under the back of the skull.
+	p -= out * 0.012 * back * smoothstep(1.75, 2.05, phi)
+	# Vent slots: a recess with a crisp edge.
+	var vent := helmet_vent(a, phi)
+	p -= out * 0.005 * vent
+	p.y -= 0.005 * vent * c
 	return p
 
-## Lower edge of the shell (phi) round the head: high brow at the front over
-## the visor, lower over the temples, low at the back occipital lock.
+## 0..1: how far (a, phi) lies inside a vent slot.
+static func helmet_vent(a: float, phi: float) -> float:
+	var v := 0.0
+	for vt: Array in HELMET_VENTS:
+		var da := wrapf(a - float(vt[0]), -PI, PI) * sin(phi)
+		var dp := phi - float(vt[1])
+		var r := Vector2(dp / float(vt[2]), da / float(vt[3])).length()
+		v = maxf(v, smoothstep(1.0, 0.8, r))
+	return v
+
+## Lower edge of the shell (phi) round the head: brow at the front just above
+## the eyebrows, down over the tops of the ears, low at the occipital lock.
 static func helmet_edge(a: float) -> float:
 	var front := maxf(0.0, cos(a))
 	var back := maxf(0.0, -cos(a))
-	return 1.85 + 0.20 * back - 0.25 * pow(front, 4)
+	var side := absf(sin(a))
+	return 1.80 + 0.18 * back + 0.10 * side * side - 0.20 * pow(front, 3)
 
 static func skater_helmet() -> ArrayMesh:
 	var b := MeshBuilder.new()
-	var cols_n := 48
-	var rows := 16
+	var cols_n := 64
+	var rows := 24
 	var rings := []
 	var ring_colors := []
 	var shell := Color("#132434")
@@ -1039,53 +1053,70 @@ static func skater_helmet() -> ArrayMesh:
 			if r < 0:
 				var p := helmet_point(a, edge)
 				var inward := Vector3(p.x, 0, p.z).normalized()
-				ring.append(p - inward * (0.008 if r == -2 else 0.004) + Vector3(0, 0.010 if r == -2 else -0.002, 0))
+				ring.append(p - inward * (0.010 if r == -2 else 0.004) + Vector3(0, 0.012 if r == -2 else -0.003, 0))
 			else:
 				var v := float(r) / rows
-				ring.append(helmet_point(a, edge * (1.0 - v * 0.985)))
+				ring.append(helmet_point(a, edge * (1.0 - v * 0.995)))
 			cols.append(shell)
 		rings.append(ring)
 		ring_colors.append(cols)
 	b.add_loft(rings, ring_colors, true, true)
 	return b.to_mesh(0.27)
 
-## Ear pieces, occipital adjuster and chin strap (dark plastic / webbing).
+## Ear guards, vent inserts, occipital adjuster and chin strap.
+## Head landmarks (helmet space): ears at x = +-0.082, y = -0.06, z = -0.01;
+## chin at y = -0.13, z = 0.075.
 static func helmet_fittings() -> ArrayMesh:
 	var b := MeshBuilder.new()
 	var plastic := Color("#0b1621")
 	for s: float in [-1.0, 1.0]:
-		var ear := helmet_point(PI * 0.5 * s - 0.22 * s, 1.80)
-		var dir := Vector3(ear.x, 0, ear.z).normalized()
-		# Ear cover: a flattened padded shell over the ear, below the side of the shell.
-		b.add_capsule(PackedVector3Array([ear + Vector3(0, -0.008, 0.016) - dir * 0.006, ear + Vector3(0, -0.052, 0.002) - dir * 0.010]), [0.027, 0.022], plastic, 16, 0.40, dir)
-		# Chin strap from the ear piece down under the jaw.
-		var start := ear + Vector3(0, -0.070, 0.004) - dir * 0.012
-		var pts := PackedVector3Array([start, start.lerp(Vector3(0, -0.215, 0.085), 0.5) + dir * 0.006, Vector3(0.012 * s, -0.212, 0.090)])
+		# Ear guard: a flat oval plate with a raised rim, clipped to the lower
+		# shell in front of and over the ear.
+		var side := Basis(Vector3.UP, s * 0.10)
+		var ear := Vector3(s * 0.096, -0.062, 0.006)
+		b.add_rounded_box(ear, Vector3(0.010, 0.058, 0.046), 0.005, plastic, side)
+		b.add_rounded_box(ear + Vector3(s * 0.004, 0.004, 0), Vector3(0.006, 0.040, 0.030), 0.003, Color("#1c2a36"), side)
+		# Chin strap: from the ear guard's lower front, along the jaw and under the chin.
+		var pts := PackedVector3Array([
+			ear + Vector3(-s * 0.004, -0.028, 0.012),
+			Vector3(s * 0.078, -0.112, 0.040),
+			Vector3(s * 0.050, -0.136, 0.066),
+			Vector3(s * 0.016, -0.142, 0.078),
+			Vector3(0.0, -0.142, 0.080)])
 		b.add_tube(pts, 0.0045, Color("#26313a"), 8)
+	# Chin cup.
+	b.add_rounded_box(Vector3(0, -0.140, 0.081), Vector3(0.040, 0.012, 0.024), 0.006, Color("#26313a"))
+	# Dark inserts set just under each vent so the slots read as openings.
+	for vt: Array in HELMET_VENTS:
+		var pts := PackedVector3Array()
+		for k in range(7):
+			var phi: float = float(vt[1]) + lerpf(-0.75, 0.75, k / 6.0) * float(vt[2])
+			pts.append(helmet_point(float(vt[0]), phi, 0.006))
+		b.add_tube(pts, 0.006, Color("#05090d"), 8)
 	# Occipital lock adjuster on the back of the shell.
-	var occ := helmet_point(PI, 1.95)
-	b.add_capsule(PackedVector3Array([occ + Vector3(-0.030, 0, -0.004), occ + Vector3(0.030, 0, -0.004)]), [0.010, 0.010], plastic, 12, 0.6, Vector3.FORWARD)
+	var occ := helmet_point(PI, 1.92)
+	b.add_rounded_box(occ + Vector3(0, 0.004, -0.004), Vector3(0.050, 0.014, 0.010), 0.004, plastic)
 	return b.to_mesh(0.4)
 
-## Curved half visor fitted to the brow of skater_helmet() (origin as the shell).
+## Curved half visor clipped at the temples: brow line to the nose tip,
+## 2 cm off the face, cut up toward the sides.
 static func visor() -> ArrayMesh:
 	var b := MeshBuilder.new()
 	var rings := []
 	var ring_colors := []
-	var count := 25
+	var count := 31
 	for k in range(count):
-		var a := lerpf(-1.18, 1.18, float(k) / (count - 1))
+		var a := lerpf(-1.25, 1.25, float(k) / (count - 1))
 		var edge := helmet_edge(a)
 		var top := helmet_point(a, edge)
 		var out := Vector3(sin(a), 0, cos(a))
-		# Lower edge cut up toward the sides; slightly raked forward at the bottom.
-		var drop := lerpf(0.082, 0.040, pow(absf(a) / 1.18, 1.6))
+		var drop := lerpf(0.062, 0.036, pow(absf(a) / 1.25, 1.8))
 		var ring := PackedVector3Array()
-		var profile := GearProfiles.rounded_rect(drop, 0.004, [0.0015, 0.0015, 0.0015, 0.0015], 2, 1)
+		var profile := GearProfiles.rounded_rect(drop, 0.0035, [0.0015, 0.0015, 0.0015, 0.0015], 2, 1)
 		for p in profile:
-			var y := top.y + 0.004 - drop * 0.5 + p.x
-			var rake := (top.y - y) * 0.16
-			ring.append(Vector3(top.x, 0, top.z) + out * (0.010 + rake + p.y) + Vector3(0, y, 0))
+			var y := top.y + 0.006 - drop * 0.5 + p.x
+			var rake := (top.y - y) * 0.10
+			ring.append(Vector3(top.x, 0, top.z) + out * (0.006 + rake + p.y) + Vector3(0, y, 0))
 		rings.append(ring)
 		var cols := PackedColorArray()
 		cols.resize(profile.size())
