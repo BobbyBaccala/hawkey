@@ -1,4 +1,5 @@
 extends "res://scripts/lab.gd"
+const TeamTactics = preload("res://scripts/team_tactics.gd")
 const MatchState = preload("res://scripts/match_state.gd")
 const ControllerInput = preload("res://scripts/controller_input.gd")
 const PuckPhysics = preload("res://scripts/puck.gd")
@@ -661,10 +662,13 @@ func update_roster_stamina(delta: float) -> void:
 				request_line(team,active_lines[team]+1)
 
 func update_team_ai(delta: float) -> void:
+	# Chaser per team: the nearest skater allowed to chase (TeamTactics.may_chase:
+	# D don't chase into the offensive zone).
 	var nearest: Array[CharacterBody3D]=[null,null]
 	for actor in skaters:
 		if not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")) or is_hopping(actor): continue
 		var team:=body_team(actor)
+		if not TeamTactics.may_chase(int(actor.get_meta("slot")),attack_direction(team),puck.position): continue
 		if nearest[team]==null or actor.position.distance_squared_to(puck.position)<nearest[team].position.distance_squared_to(puck.position):
 			nearest[team]=actor
 	for actor in skaters:
@@ -721,12 +725,16 @@ func update_team_ai(delta: float) -> void:
 				continue
 		elif actor==carrier:
 			target=Vector3(clampf(actor.position.x*0.6,-5,5),0,attack*(Arena.GOAL_LINE-3.0))
+			var is_d:=TeamTactics.is_defence(slot)
+			if is_d:
+				# A defenceman carries it to the point, not to the net.
+				target=Vector3(clampf(actor.position.x,-6,6),0,attack*(TeamTactics.D_MAX_ATTACK-0.5))
 			var distance_to_goal:=actor.position.distance_to(Vector3(0,0,attack*Arena.GOAL_LINE))
 			var timer:=float(actor.get_meta("decision"))-delta
 			if timer<=0 and cooldown<=0:
 				actor.set_meta("decision",0.4)
 				var pressure:=closest_opponent_distance(actor)
-				if distance_to_goal<16 and distance_to_goal>3:
+				if distance_to_goal<(21.0 if is_d else 16.0) and distance_to_goal>3:
 					var goalie:=goalkeeper_at_end(attack)
 					var target_x:float= -0.65 if goalie.position.x>=0 else 0.65
 					var shot_dir:Vector3=Vector3(target_x,0.1,attack*Arena.GOAL_LINE)-puck.position
@@ -741,15 +749,10 @@ func update_team_ai(delta: float) -> void:
 		elif nearest[team]==actor:
 			target=Vector3(puck.position.x,0,puck.position.z)+Vector3(puck.linear_velocity.x,0,puck.linear_velocity.z)*0.08
 		else:
+			# Role-based support positioning (scripts/team_tactics.gd): D stay
+			# home, forwards don't go too deep defensively.
 			var possession:=carrier!=null and body_team(carrier)==team
-			var x_slots: Array[float]=[0,-6,6,-5,5]
-			var z_offset: Array[float]=[3,1,1,-8,-8]
-			if possession:
-				target=Vector3(clampf(puck.position.x*0.25+x_slots[slot],-(Arena.HALF_WIDTH-1.5),Arena.HALF_WIDTH-1.5),0,clampf(puck.position.z+attack*z_offset[slot],-(Arena.GOAL_LINE-2.0),Arena.GOAL_LINE-2.0))
-			else:
-				var own_goal:float= -attack*Arena.GOAL_LINE
-				var defended_z:float=lerpf(puck.position.z,own_goal,0.35 if slot>=3 else 0.1)
-				target=Vector3(clampf(puck.position.x*0.3+x_slots[slot],-(Arena.HALF_WIDTH-2.0),Arena.HALF_WIDTH-2.0),0,clampf(defended_z,-(Arena.GOAL_LINE-2.0),Arena.GOAL_LINE-2.0))
+			target=TeamTactics.support_target(slot,attack,puck.position,possession)
 		var to_target:=target-actor.position
 		var intent:=to_target.limit_length(1)
 		if to_target.length()<0.6: intent=Vector3.ZERO

@@ -73,3 +73,4 @@ when the channel was established.
 | [CL-20261021-001](agent_handoffs/claude-to-codex/CL-20261021-001.md) | Claude → Codex | Acknowledges CX-001 (renderer works: 4.6.2 + gl_compatibility + Xvfb), CX-002 not attempted; requests puck-pocket feel check | Requested; no reply received |
 | [CL-20261021-002](agent_handoffs/claude-to-codex/CL-20261021-002.md) | Claude → Codex | FYI: owner-requested net tether, shots on goal, goalie square to puck in match.gd | Ready; no reply received |
 | [CL-20261021-003](agent_handoffs/claude-to-codex/CL-20261021-003.md) | Claude → Codex | FYI: owner correction, only the puck carrier faces the net; others face the puck | Ready; no reply received |
+| [CL-20261021-004](agent_handoffs/claude-to-codex/CL-20261021-004.md) | Claude → Codex | FYI: owner-requested role-based AI positioning (team_tactics.gd) | Ready; no reply received |
