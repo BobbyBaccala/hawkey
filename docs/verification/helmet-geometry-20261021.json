@@ -1,0 +1,597 @@
+{
+  "date": "2026-10-21 America/Toronto",
+  "branch": "codex/game-modes",
+  "code_commit": "caf9ac68876d824ae9a039f4bfab2b8307c9add0",
+  "baseline_commit": "6122c8cb6fb8e8c431838593efa15d3647c6b2f7",
+  "claude_integrated": "e3caa27",
+  "stage": "Implemented, tested; Claude review requested",
+  "scope": [
+    "Smooth oval helmet profile and continuous outer normals",
+    "Rounded vent boundaries with real mesh apertures and dark curved liner backing",
+    "Shared cached shell; softer paint finish",
+    "New surface/fit checks and four-angle real viewport JPEGs"
+  ],
+  "geometry": {
+    "old_vertices": 1730,
+    "old_triangles": 3456,
+    "new_vertices": 4040,
+    "new_triangles": 7386,
+    "surface_checks": 56,
+    "surface_failures": 0,
+    "max_cardinal_seam_degrees": 0.7537,
+    "cached_shared_mesh": true,
+    "hardware_fps_measured": false
+  },
+  "initial_broad_run": {
+    "godot": "4.6.3.stable.official.7d41c59c4",
+    "counts": {
+      "passed": 45,
+      "failed": 1,
+      "skipped": 1
+    },
+    "checks": [
+      {
+        "name": "engine_version",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.021,
+        "log": "engine_version.log"
+      },
+      {
+        "name": "import",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 4.985,
+        "log": "import.log"
+      },
+      {
+        "name": "test_accessibility",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 8.175,
+        "log": "test_accessibility.log"
+      },
+      {
+        "name": "test_animation",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.843,
+        "log": "test_animation.log"
+      },
+      {
+        "name": "test_benches",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 16.368,
+        "log": "test_benches.log"
+      },
+      {
+        "name": "test_board_hop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.688,
+        "log": "test_board_hop.log"
+      },
+      {
+        "name": "test_boards",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 206.407,
+        "log": "test_boards.log"
+      },
+      {
+        "name": "test_clipping",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 4.083,
+        "log": "test_clipping.log"
+      },
+      {
+        "name": "test_controller",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 7.437,
+        "log": "test_controller.log"
+      },
+      {
+        "name": "test_controls",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 7.239,
+        "log": "test_controls.log"
+      },
+      {
+        "name": "test_gear_graphics",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.446,
+        "log": "test_gear_graphics.log"
+      },
+      {
+        "name": "test_gm_checkpoint",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 26.615,
+        "log": "test_gm_checkpoint.log"
+      },
+      {
+        "name": "test_gm_management",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 71.184,
+        "log": "test_gm_management.log"
+      },
+      {
+        "name": "test_gm_navigation",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 89.963,
+        "log": "test_gm_navigation.log"
+      },
+      {
+        "name": "test_gm_rosters",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 4.458,
+        "log": "test_gm_rosters.log"
+      },
+      {
+        "name": "test_gm_scouting",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 21.766,
+        "log": "test_gm_scouting.log"
+      },
+      {
+        "name": "test_gm_season",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 12.181,
+        "log": "test_gm_season.log"
+      },
+      {
+        "name": "test_goal_celebration",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.499,
+        "log": "test_goal_celebration.log"
+      },
+      {
+        "name": "test_goal_net",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.691,
+        "log": "test_goal_net.log"
+      },
+      {
+        "name": "test_goalie_gear",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 8.932,
+        "log": "test_goalie_gear.log"
+      },
+      {
+        "name": "test_goalie_saves",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.378,
+        "log": "test_goalie_saves.log"
+      },
+      {
+        "name": "test_helmet_arm_fit",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.647,
+        "log": "test_helmet_arm_fit.log"
+      },
+      {
+        "name": "test_helmet_surface",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.354,
+        "log": "test_helmet_surface.log"
+      },
+      {
+        "name": "test_hockey_audio",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.594,
+        "log": "test_hockey_audio.log"
+      },
+      {
+        "name": "test_hockey_stop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 5.097,
+        "log": "test_hockey_stop.log"
+      },
+      {
+        "name": "test_ice",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 12.352,
+        "log": "test_ice.log"
+      },
+      {
+        "name": "test_kit_geometry",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.461,
+        "log": "test_kit_geometry.log"
+      },
+      {
+        "name": "test_kit_materials",
+        "status": "failed",
+        "reason": "Process exited 1",
+        "returncode": 1,
+        "seconds": 1.642,
+        "log": "test_kit_materials.log"
+      },
+      {
+        "name": "test_lab",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 4.806,
+        "log": "test_lab.log"
+      },
+      {
+        "name": "test_lighting",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.023,
+        "log": "test_lighting.log"
+      },
+      {
+        "name": "test_match",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 12.268,
+        "log": "test_match.log"
+      },
+      {
+        "name": "test_match_loop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 63.816,
+        "log": "test_match_loop.log"
+      },
+      {
+        "name": "test_match_state",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.178,
+        "log": "test_match_state.log"
+      },
+      {
+        "name": "test_mocap",
+        "status": "skipped",
+        "reason": "Optional local motion-capture clips are absent",
+        "returncode": 0,
+        "seconds": 0.269,
+        "log": "test_mocap.log"
+      },
+      {
+        "name": "test_net_shooting",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 9.867,
+        "log": "test_net_shooting.log"
+      },
+      {
+        "name": "test_overtime_shootout",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 17.182,
+        "log": "test_overtime_shootout.log"
+      },
+      {
+        "name": "test_play_now",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 54.071,
+        "log": "test_play_now.log"
+      },
+      {
+        "name": "test_player_surfaces",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.191,
+        "log": "test_player_surfaces.log"
+      },
+      {
+        "name": "test_puck_flight",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 8.075,
+        "log": "test_puck_flight.log"
+      },
+      {
+        "name": "test_render_settings",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 6.779,
+        "log": "test_render_settings.log"
+      },
+      {
+        "name": "test_roster_database",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.253,
+        "log": "test_roster_database.log"
+      },
+      {
+        "name": "test_save_store",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.259,
+        "log": "test_save_store.log"
+      },
+      {
+        "name": "test_simulation",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.539,
+        "log": "test_simulation.log"
+      },
+      {
+        "name": "test_skate_stick",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.063,
+        "log": "test_skate_stick.log"
+      },
+      {
+        "name": "test_stride",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.628,
+        "log": "test_stride.log"
+      },
+      {
+        "name": "test_world_database",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 27.072,
+        "log": "test_world_database.log"
+      },
+      {
+        "name": "python",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.987,
+        "log": "python.log"
+      }
+    ],
+    "scope": "Headless regressions; not GPU, physical controller, human feel or release approval"
+  },
+  "initial_failure": "test_kit_materials expected clearcoat >0.5. Revised existing assertion to positive/sub-full clearcoat for the softer finish; actual suite recheck passed. Initial broad run overlapped geometry iteration, so final affected checks below are the final-state evidence.",
+  "final_affected": {
+    "godot": "4.6.3",
+    "counts": {
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0
+    },
+    "checks": [
+      {
+        "name": "test_helmet_surface",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 0.348,
+        "log": "test_helmet_surface.log"
+      },
+      {
+        "name": "test_helmet_arm_fit",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.664,
+        "log": "test_helmet_arm_fit.log"
+      },
+      {
+        "name": "test_clipping",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 3.685,
+        "log": "test_clipping.log"
+      },
+      {
+        "name": "test_kit_geometry",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.467,
+        "log": "test_kit_geometry.log"
+      },
+      {
+        "name": "test_kit_materials",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.025,
+        "log": "test_kit_materials.log"
+      },
+      {
+        "name": "test_player_surfaces",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.184,
+        "log": "test_player_surfaces.log"
+      },
+      {
+        "name": "test_benches",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 17.024,
+        "log": "test_benches.log"
+      },
+      {
+        "name": "test_board_hop",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 2.975,
+        "log": "test_board_hop.log"
+      },
+      {
+        "name": "test_goalie_gear",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 10.412,
+        "log": "test_goalie_gear.log"
+      },
+      {
+        "name": "test_goalie_saves",
+        "status": "passed",
+        "reason": "",
+        "returncode": 0,
+        "seconds": 1.391,
+        "log": "test_goalie_saves.log"
+      }
+    ],
+    "scope": "Headless regressions; not GPU, physical controller, human feel or release approval"
+  },
+  "captures": {
+    "before": {
+      "captures": [
+        {
+          "camera": "(-0.0, 1.427919, -1.111555)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-helmet-before-front.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        },
+        {
+          "camera": "(0.4, 1.467919, -1.011554)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-helmet-before-quarter.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        },
+        {
+          "camera": "(0.75, 1.447919, -0.361555)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-helmet-before-side.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        },
+        {
+          "camera": "(0.35, 1.567919, 0.288445)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-helmet-before-rear.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        }
+      ],
+      "engine": "4.6.2-stable (official)",
+      "goalkeeper": false,
+      "pose": "idle",
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "size": "960x960",
+      "source": "Actual isolated Godot 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay",
+      "stage": "helmet-before"
+    },
+    "after": {
+      "captures": [
+        {
+          "camera": "(-0.0, 1.427919, -1.111555)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-helmet-final-front.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        },
+        {
+          "camera": "(0.4, 1.467919, -1.011554)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-helmet-final-quarter.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        },
+        {
+          "camera": "(0.75, 1.447919, -0.361555)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-helmet-final-side.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        },
+        {
+          "camera": "(0.35, 1.567919, 0.288445)",
+          "error": 0,
+          "fov": 32.0,
+          "path": "res://build/model-review-helmet-final-rear.jpg",
+          "target": "(-0.0, 1.362919, -0.361555)"
+        }
+      ],
+      "engine": "4.6.2-stable (official)",
+      "goalkeeper": false,
+      "pose": "idle",
+      "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+      "size": "960x960",
+      "source": "Actual isolated Godot 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay",
+      "stage": "helmet-final"
+    },
+    "type": "direct viewport JPEG, fixed neutral stage, identical cameras and lights, no retouching",
+    "renderer": "Official Godot 4.6.2 diagnostic, llvmpipe; production/CI remain 4.6.3"
+  },
+  "rejected_experiments": [
+    "Shallow displaced vents still pinched the glossy highlight",
+    "Deleting coarse grid triangles left sawtooth edges; replaced with sampled rounded aperture boundaries"
+  ],
+  "remaining": [
+    "Base facial anatomy/likenesses not rewritten",
+    "Visor finish and equipment bakes remain partial",
+    "Hardware/Forward+ performance and export unvalidated",
+    "No response to CX-20261021-005 yet"
+  ],
+  "publication": "Development branch only; no PR merge/release"
+}

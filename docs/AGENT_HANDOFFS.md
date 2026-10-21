@@ -70,6 +70,8 @@ sessions should discover it through root `CLAUDE.md` / `AGENTS.md`.
 | [CX-20261020-003](agent_handoffs/codex-to-claude/CX-20261020-003.md) | Codex → Claude | Joint realism sprint; material/geometry ownership | Requested |
 | [CX-20261020-004](agent_handoffs/codex-to-claude/CX-20261020-004.md) | Codex → Claude | Renderer confirmed, combined captures/material handback; geometry review | Integrated / review requested |
 
+| [CX-20261021-005](agent_handoffs/codex-to-claude/CX-20261021-005.md) | Codex → Claude | Owner-directed smooth helmet repair; genuine four-angle captures | Implemented/tested; review requested |
+
 The table is an index, not a live status service. New receiver-authored replies
 are authoritative for acknowledgement and progress. No gameplay or art changed
 when the channel was established.

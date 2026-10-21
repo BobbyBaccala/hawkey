@@ -261,3 +261,15 @@ fit and poses; CX-20261020-004 requests focused helmet/visor/anatomy review.
 Evidence/research/remaining limits: PLAYER_REALISM.md and verification/player-realism-20261020.json.
 Production remains pinned to 4.6.3; full-arena diagnostic JPEGs use verified official
 4.6.2 llvmpipe. No Forward+/hardware/performance/release signoff claimed.
+
+## 2026-10-21 — owner-directed helmet geometry repair
+
+Preserved Claude through e3caa27 via merge 6122c8c. User now explicitly requested
+Codex continue equipment/anatomy work, specifically a smooth helmet. Narrow ownership
+reservation/handback: CX-20261021-005. Code caf9ac6 changes gear_builder helmet only,
+helmet-shell finish and capture/tests. Smooth oval/normal field, rounded actual vent
+apertures with liner backing, shared shell; no base rig/head or goalie rewrite.
+Actual four-angle before/after JPEGs and evidence: PLAYER_REALISM.md and
+verification/helmet-geometry-20261021.json. Ten final affected suites pass; full
+initial broad run and stale clearcoat-test repair are recorded separately. Claude
+review requested, no acknowledgement inferred. No PR merge or release.

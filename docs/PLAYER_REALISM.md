@@ -81,3 +81,38 @@ Close-ups still show broad helmet highlights, limited facial variety/coarse anat
 and a pronounced visor edge. Authored anatomy/UVs, equipment normal/roughness bakes
 and motion-reference review are needed. Materials alone cannot deliver AAA models.
 No PR merge, publication, purchase or game release was performed.
+
+## 2026-10-21 — smooth helmet geometry
+
+Code: `caf9ac6`, preserving Claude through `e3caa27` (new seated bench, walk and
+board-hop animations). Owner explicitly requested direct helmet/anatomy geometry
+work; Codex reserved this narrow helmet repair in CX-20261021-005.
+
+Replaced fractional-power plan with a continuous oval and stable derivative
+normals. Crown poles point upward; rear shell transition is broader and shallower.
+Replaced displaced vent dents with rounded parameter-space aperture boundaries,
+triangulated around the openings. Added curved dark backing so scalp cannot show
+through. First render experiments with shallow recesses and grid-deleted holes
+were rejected: they still pinched highlights or left sawtooth edges. Final geometry
+uses 40 samples per rounded opening and a smooth shared shell. Reduced paint grain
+and clearcoat; kept brow/ear/occipital fit, visor, rig and other equipment placement.
+
+- [Before quarter](screenshots/helmet-before-quarter-20261021.jpg)
+- [Final quarter](screenshots/helmet-final-quarter-20261021.jpg)
+- [Final front](screenshots/helmet-final-front-20261021.jpg)
+- [Final side](screenshots/helmet-final-side-20261021.jpg)
+- [Final rear](screenshots/helmet-final-rear-20261021.jpg)
+
+Genuine direct Godot 4.6.2 llvmpipe JPEGs, 960×960, fixed neutral stage, same
+cameras/light setup before and after. Baseline source `6122c8c`, before geometry
+changes. Staged model inspection, not gameplay. No image generation/retouching.
+Capture: `tools/capture_model_review.gd -- --helmet-only --stage=helmet-final`.
+Metadata and tests: `verification/helmet-geometry-20261021.json` and companion files.
+
+Final shell: 4,040 vertices / 7,386 triangles, cached once and shared by bench and
+on-ice players. The old shell had 1,730 vertices / 3,456 triangles; increased detail
+has a bounded triangle budget, not a measured FPS improvement. Fifty-six new checks
+cover finite/unit/outward normals, cardinal seam continuity, crown, actual vent
+openings, sharing and budget; ten final affected suites pass. Base facial anatomy,
+individual player likenesses, visor realism, authored equipment bakes and hardware
+performance remain future work. No new release-quality claim.

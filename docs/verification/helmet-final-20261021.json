@@ -1,0 +1,39 @@
+{
+	"captures": [
+		{
+			"camera": "(-0.0, 1.427919, -1.111555)",
+			"error": 0,
+			"fov": 32.0,
+			"path": "res://build/model-review-helmet-final-front.jpg",
+			"target": "(-0.0, 1.362919, -0.361555)"
+		},
+		{
+			"camera": "(0.4, 1.467919, -1.011554)",
+			"error": 0,
+			"fov": 32.0,
+			"path": "res://build/model-review-helmet-final-quarter.jpg",
+			"target": "(-0.0, 1.362919, -0.361555)"
+		},
+		{
+			"camera": "(0.75, 1.447919, -0.361555)",
+			"error": 0,
+			"fov": 32.0,
+			"path": "res://build/model-review-helmet-final-side.jpg",
+			"target": "(-0.0, 1.362919, -0.361555)"
+		},
+		{
+			"camera": "(0.35, 1.567919, 0.288445)",
+			"error": 0,
+			"fov": 32.0,
+			"path": "res://build/model-review-helmet-final-rear.jpg",
+			"target": "(-0.0, 1.362919, -0.361555)"
+		}
+	],
+	"engine": "4.6.2-stable (official)",
+	"goalkeeper": false,
+	"pose": "idle",
+	"renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+	"size": "960x960",
+	"source": "Actual isolated Godot 3D stage, current production player, fixed neutral lighting; staged pose, not gameplay",
+	"stage": "helmet-final"
+}
