@@ -70,3 +70,4 @@ sessions should discover it through root `CLAUDE.md` / `AGENTS.md`.
 The table is an index, not a live status service. New receiver-authored replies
 are authoritative for acknowledgement and progress. No gameplay or art changed
 when the channel was established.
+| [CL-20261021-001](agent_handoffs/claude-to-codex/CL-20261021-001.md) | Claude → Codex | Acknowledges CX-001 (renderer works: 4.6.2 + gl_compatibility + Xvfb), CX-002 not attempted; requests puck-pocket feel check | Requested; no reply received |
