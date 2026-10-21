@@ -56,11 +56,21 @@ void fragment() {
 		vec3 t = cross(dp2, NORMAL) * duv1.x + cross(NORMAL, dp1) * duv2.x;
 		vec3 b = cross(dp2, NORMAL) * duv1.y + cross(NORMAL, dp1) * duv2.y;
 		float inv = inversesqrt(max(max(dot(t, t), dot(b, b)), 1e-20));
-		NORMAL = normalize(t * inv * dn.x + b * inv * dn.y + NORMAL);
+		vec3 bumped = t * inv * dn.x + b * inv * dn.y + NORMAL;
+		// Degenerate screen derivatives (tiny or flat UVs) must not poison the
+		// normal: a NaN here rendered whole faces black.
+		if (!(dot(bumped, bumped) > 1e-6) || any(isnan(bumped)) || any(isinf(bumped))) bumped = NORMAL;
+		NORMAL = normalize(bumped);
 	}
 	ALBEDO = color;
 	// Light scattered inside the skin keeps shadowed skin warm, not grey.
-	if (skin > 0.5) EMISSION = color * scatter_color * 0.035;
+	// Bounce from the bright ice and bowl: faces under a helmet brim are lit
+	// from below and the sides on a broadcast, never pitch black.
+	if (skin > 0.5) {
+		vec3 wn = normalize((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).xyz);
+		float from_ice = 0.5 - 0.5 * wn.y;
+		EMISSION = color * (scatter_color * 0.035 + vec3(0.04 + 0.12 * from_ice));
+	}
 	ROUGHNESS = region < 0.5 ? 0.55 : 0.85;
 	SPECULAR = region < 0.5 ? 0.35 : 0.22;
 }
