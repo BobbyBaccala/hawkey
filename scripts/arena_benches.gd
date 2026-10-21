@@ -31,6 +31,14 @@ const BOARD_BACK := 0.12
 const SEAT_TOP := 0.48
 const GLASS_TOP := 2.66
 const PLAYERS_PER_BENCH := 9
+## Upper-body pivot (hips) seated and standing, in figure space.
+const SEAT_HIP := Vector3(0, 0.56, -0.16)
+const STAND_HIP := Vector3(0, 0.94, -0.03)
+## How far the upper body / head turn to follow the puck (radians).
+const BODY_TURN := 0.55
+const HEAD_TURN := 0.75
+## Seconds a bench stays on its feet after its team scores.
+const CHEER_TIME := 4.5
 
 ## Team 0 (home) bench and box at z > 0, team 1 at z < 0: each bench is at the
 ## end its team defends in periods 1 and 3 (long change in the 2nd), as in the NHL.
@@ -46,6 +54,15 @@ var box_seats: Array = [[], []]
 var _team_mats: Array = [{}, {}]
 var _rng := RandomNumberGenerator.new()
 var _glass_mat: StandardMaterial3D
+## Per-figure pose state (build_player()), the back-number labels per team,
+## and when each team's bench cheers (it scored) or slumps (it conceded).
+var _rigs: Array = []
+var _numbers: Array = [[], []]
+var _cheer_until := [-1.0, -1.0]
+var _slump_until := [-1.0, -1.0]
+var _time := 0.0
+## World position the players watch; defaults to the arena's puck.
+var watch_target: Variant = null
 
 ## Whether the interval [z0, z1] on `side` (-1 west, +1 east) overlaps the cut
 ## out bench / penalty box zone.
@@ -84,6 +101,100 @@ func set_team_colors(team: int, jersey: Color, accent: Color, pants: Color = Col
 	m.accent.albedo_color = accent
 	if pants.a > 0: m.pants.albedo_color = pants
 	team_kits[team] = {"jersey": jersey, "accent": accent, "pants": m.pants.albedo_color}
+	for num in _numbers[team]:
+		num.modulate = accent
+		num.outline_modulate = m.pants.albedo_color
+
+## Jersey numbers for the seated players of `team` (bench first, then the two
+## penalty-box seats), e.g. the roster players who are not on the ice.
+func set_bench_numbers(team: int, numbers: Array) -> void:
+	if numbers.is_empty(): return
+	for i in range(_numbers[team].size()):
+		_numbers[team][i].text = str(numbers[i % numbers.size()])
+
+## Goal reaction: `team`'s bench jumps up and cheers, arms raised, for
+## CHEER_TIME; the other bench slumps forward, heads down.
+func celebrate(team: int) -> void:
+	_cheer_until[team] = _time + CHEER_TIME
+	_slump_until[1 - team] = _time + CHEER_TIME
+	_cheer_until[1 - team] = -1.0
+	_slump_until[team] = -1.0
+
+func is_cheering(team: int) -> bool:
+	return _time < _cheer_until[team]
+
+func _process(delta: float) -> void:
+	update_figures(delta)
+
+## Idle motion: breathing sway, upper body and head turning (with a little
+## per-player lag) to follow the puck, standing up and cheering on goals.
+func update_figures(delta: float) -> void:
+	_time += delta
+	var target := Vector3.ZERO
+	if watch_target is Vector3:
+		target = watch_target
+	else:
+		var puck = get_parent().get("puck") if get_parent() != null else null
+		if puck != null and is_instance_valid(puck): target = puck.global_position
+	var k := 1.0 - exp(-delta * 3.0)
+	for rig in _rigs:
+		var fig: Node3D = rig.fig
+		if not fig.is_visible_in_tree(): continue
+		var team: int = rig.team
+		var on_bench := not String(fig.name).begins_with("PenaltySeat")
+		var cheer: bool = on_bench and _time + rig.lag < _cheer_until[team] and _time > _cheer_until[team] - CHEER_TIME + rig.lag
+		var slump: bool = on_bench and _time < _slump_until[team]
+		rig.stand = lerpf(rig.stand, 1.0 if cheer else 0.0, 1.0 - exp(-delta * 5.0))
+		rig.slump = lerpf(rig.slump, 1.0 if slump else 0.0, 1.0 - exp(-delta * 2.0))
+		var lp := fig.to_local(target)
+		var want := clampf(atan2(lp.x, lp.z), -1.3, 1.3)
+		# Lagged reaction: each player re-aims at a slightly different rate.
+		rig.yaw = lerpf(rig.yaw, want, k * (0.55 + rig.lag))
+		_pose_rig(rig)
+
+func _pose_rig(rig: Dictionary) -> void:
+	var st: float = smoothstep(0.0, 1.0, rig.stand)
+	var sl: float = rig.slump
+	var breathe := sin(_time * 1.7 + rig.phase)
+	var upper: Node3D = rig.upper
+	var bounce := sin(_time * 9.0 + rig.cheer_phase) * 0.025 * st
+	upper.position = SEAT_HIP.lerp(STAND_HIP, st) + Vector3(0, bounce + breathe * 0.004, 0)
+	upper.rotation = Vector3(
+		lerpf(rig.lean + sl * 0.3 + breathe * 0.015, 0.06, st),
+		rig.yaw_bias * (1.0 - st) + rig.yaw * BODY_TURN * (1.0 - sl * 0.6),
+		rig.roll * (1.0 - st))
+	var head: Node3D = rig.head
+	head.rotation = Vector3(lerpf(-0.1, 0.25, sl) - rig.lean * 0.5 * (1.0 - st), rig.yaw * HEAD_TURN * (1.0 - sl * 0.6), 0)
+	# Arms: rest on the knees seated; pumped overhead when cheering.
+	for i in range(rig.arms.size()):
+		var arm: Node3D = rig.arms[i]
+		var pump := sin(_time * 7.0 + rig.cheer_phase + i * 1.3) * 0.25
+		arm.rotation = Vector3(lerpf(0.0, -2.0 + pump, st), 0, (0.25 if i == 1 else -0.25) * st)
+	# Legs: hips rise with the upper body, feet slide back under them, knees solved.
+	for leg in rig.legs:
+		var hip: Vector3 = leg.hip.lerp(Vector3(leg.x * 0.9, STAND_HIP.y - 0.01, STAND_HIP.z), st) + Vector3(0, bounce, 0)
+		var ankle: Vector3 = leg.ankle.lerp(Vector3(leg.x * 1.05, 0.13, 0.1), st)
+		var knee := solve_knee(hip, ankle, leg.l1, leg.l2, Vector3(0, 0, 1))
+		_place(leg.thigh, hip, knee)
+		_place(leg.shin, knee, ankle)
+		_place(leg.stripe, knee.lerp(ankle, 0.35), knee.lerp(ankle, 0.5))
+		leg.foot.position = ankle
+
+## Two-bone solve: knee for a hip and ankle with fixed thigh/shin lengths,
+## bending towards `forward`.
+static func solve_knee(hip: Vector3, ankle: Vector3, l1: float, l2: float, forward: Vector3) -> Vector3:
+	var d := clampf(hip.distance_to(ankle), absf(l1 - l2) + 0.001, l1 + l2 - 0.001)
+	var axis := (ankle - hip).normalized()
+	var a := (l1 * l1 - l2 * l2 + d * d) / (2.0 * d)
+	var h := sqrt(maxf(l1 * l1 - a * a, 0.0))
+	var bend := (forward - axis * forward.dot(axis)).normalized()
+	return hip + axis * a + bend * h
+
+## Re-place a capsule built by _limb() between two points (length unchanged).
+func _place(mi: MeshInstance3D, a: Vector3, b: Vector3) -> void:
+	mi.position = (a + b) * 0.5
+	if a.distance_to(b) > 0.001:
+		mi.quaternion = Quaternion(Vector3.UP, (b - a).normalized())
 
 ## Seats `count` (0-2) penalised players of `team` in its penalty box.
 func set_penalty_count(team: int, count: int) -> void:
@@ -207,7 +318,10 @@ func build_officials_booth() -> void:
 # --- figures ---------------------------------------------------------------
 
 ## Seated skater, origin on the floor under the front edge of his seat; faces
-## the ice (local +Z towards -side in world x).
+## the ice (local +Z towards -side in world x). The figure is rigged for
+## update_figures(): legs are re-solved from hip/ankle targets with a two-bone
+## solve (fixed thigh/shin lengths), the upper body pivots at the hips, the
+## head turns on the neck and the arms swing from the shoulders.
 func build_player(team: int, parent: Node3D, pos: Vector3, side: float) -> Node3D:
 	var m: Dictionary = _team_mats[team]
 	var fig := Node3D.new()
@@ -219,48 +333,85 @@ func build_player(team: int, parent: Node3D, pos: Vector3, side: float) -> Node3
 	var black := _mat(Color("#121417"), 0.5)
 	var glove := _mat(team_kits[team].pants.darkened(0.2), 0.7)
 	var spread := _rng.randf_range(0.10, 0.15)
+	var rig := {"team": team, "fig": fig, "legs": [], "phase": _rng.randf_range(0.0, TAU),
+		"lag": _rng.randf_range(0.0, 0.45), "stand": 0.0, "slump": 0.0, "yaw": 0.0, "cheer_phase": _rng.randf_range(0.0, TAU)}
 	# Legs: thighs out over the seat edge, shins down to skates on the floor.
 	for x in [-spread, spread]:
 		var hip := Vector3(x * 0.8, 0.55, -0.18)
 		var knee := Vector3(x, 0.56, 0.24 + _rng.randf_range(-0.03, 0.03))
 		var ankle := Vector3(x * 1.05, 0.13, knee.z + _rng.randf_range(0.02, 0.12))
-		_limb(fig, hip, knee, 0.105, m.pants)
-		_limb(fig, knee, ankle, 0.065, m.jersey)          # sock
-		_limb(fig, knee.lerp(ankle, 0.35) + Vector3(0, 0, 0.004), knee.lerp(ankle, 0.5), 0.068, m.accent)
-		_part(fig, BoxMesh.new(), Vector3(0.1, 0.13, 0.29), ankle + Vector3(0, -0.05, 0.06), black)
-		_part(fig, BoxMesh.new(), Vector3(0.012, 0.03, 0.27), ankle + Vector3(0, -0.12, 0.06), _mat(Color("#b9c2ca"), 0.2))
+		var leg := {"x": x, "hip": hip, "ankle": ankle, "l1": hip.distance_to(knee), "l2": knee.distance_to(ankle)}
+		leg.thigh = _limb(fig, hip, knee, 0.105, m.pants)
+		leg.shin = _limb(fig, knee, ankle, 0.065, m.jersey)          # sock
+		leg.stripe = _limb(fig, knee.lerp(ankle, 0.35), knee.lerp(ankle, 0.5), 0.068, m.accent)
+		var foot := Node3D.new()
+		fig.add_child(foot)
+		foot.position = ankle
+		_part(foot, BoxMesh.new(), Vector3(0.1, 0.13, 0.29), Vector3(0, -0.05, 0.06), black)
+		_part(foot, BoxMesh.new(), Vector3(0.012, 0.03, 0.27), Vector3(0, -0.12, 0.06), _mat(Color("#b9c2ca"), 0.2))
+		leg.foot = foot
+		rig.legs.append(leg)
 	# Upper body on a pivot at the hips so it can lean forward over the knees.
 	var upper := Node3D.new()
+	upper.name = "Upper"
 	fig.add_child(upper)
-	upper.position = Vector3(0, 0.56, -0.16)
-	upper.rotation.x = _rng.randf_range(0.12, 0.45)   # forward lean
-	upper.rotation.z = _rng.randf_range(-0.05, 0.05)
-	upper.rotation.y = _rng.randf_range(-0.3, 0.3)     # watching the play
+	upper.position = SEAT_HIP
+	rig.upper = upper
+	rig.lean = _rng.randf_range(0.12, 0.45)   # forward lean
+	rig.roll = _rng.randf_range(-0.05, 0.05)
+	rig.yaw_bias = _rng.randf_range(-0.15, 0.15)
+	upper.rotation = Vector3(rig.lean, rig.yaw_bias, rig.roll)
 	_part(upper, CapsuleMesh.new(), Vector3(0.21, 0.62, 0.0), Vector3(0, 0.3, 0), m.jersey)            # torso
 	_part(upper, BoxMesh.new(), Vector3(0.43, 0.08, 0.27), Vector3(0, 0.08, 0), m.accent)               # hem stripe
 	var shoulders := _part(upper, CapsuleMesh.new(), Vector3(0.13, 0.56, 0.0), Vector3(0, 0.53, 0), m.jersey)
 	shoulders.rotation.z = PI / 2
-	_part(upper, SphereMesh.new(), Vector3(0.1, 0.0, 0.0), Vector3(0, 0.76, 0.03), skin)                 # face/head
-	var helmet := _part(upper, SphereMesh.new(), Vector3(0.122, 0.0, 0.0), Vector3(0, 0.79, -0.01), m.helmet)
+	# Number on the back of the jersey (set_bench_numbers()), facing the fans.
+	var num := Label3D.new()
+	num.name = "BackNumber"
+	num.text = str(_rng.randi_range(2, 98))
+	num.font_size = 96
+	num.pixel_size = 0.2 / 96.0
+	num.modulate = team_kits[team].accent
+	num.outline_size = 10
+	num.outline_modulate = team_kits[team].pants
+	num.double_sided = false
+	num.rotation.y = PI
+	num.position = Vector3(0, 0.36, -0.215)
+	upper.add_child(num)
+	rig.number = num
+	_numbers[team].append(num)
+	var head := Node3D.new()
+	head.name = "Head"
+	upper.add_child(head)
+	head.position = Vector3(0, 0.68, 0.0)
+	_part(head, SphereMesh.new(), Vector3(0.1, 0.0, 0.0), Vector3(0, 0.08, 0.03), skin)                 # face/head
+	var helmet := _part(head, SphereMesh.new(), Vector3(0.122, 0.0, 0.0), Vector3(0, 0.11, -0.01), m.helmet)
 	helmet.scale = Vector3(1.0, 0.9, 1.1)
-	_part(upper, BoxMesh.new(), Vector3(0.2, 0.05, 0.03), Vector3(0, 0.78, 0.115), _mat(Color(0.1, 0.12, 0.14, 0.55), 0.05))  # visor
+	_part(head, BoxMesh.new(), Vector3(0.2, 0.05, 0.03), Vector3(0, 0.10, 0.115), _mat(Color(0.1, 0.12, 0.14, 0.55), 0.05))  # visor
+	rig.head = head
 	# Arms resting on the knees, gloves at the knees or holding the stick.
 	var hold_stick := _rng.randf() < 0.55
-	var hands: Array[Vector3] = []
+	rig.arms = []
 	for x in [-1.0, 1.0]:
 		var shoulder := Vector3(x * 0.25, 0.5, 0.0)
-		var elbow := Vector3(x * 0.27, 0.24, 0.2)
-		var hand := Vector3(x * (0.06 if hold_stick else 0.17), 0.18 + (0.12 if hold_stick and x > 0 else 0.0), 0.38)
-		_limb(upper, shoulder, elbow, 0.07, m.jersey)
-		_limb(upper, shoulder.lerp(elbow, 0.55), shoulder.lerp(elbow, 0.75), 0.073, m.accent)   # sleeve stripe
-		_limb(upper, elbow, hand, 0.062, glove)
-		_part(upper, BoxMesh.new(), Vector3(0.1, 0.1, 0.14), hand, glove)
-		hands.append(hand)
+		var arm := Node3D.new()
+		upper.add_child(arm)
+		arm.position = shoulder
+		var elbow := Vector3(x * 0.27, 0.24, 0.2) - shoulder
+		var hand := Vector3(x * (0.06 if hold_stick else 0.17), 0.18 + (0.12 if hold_stick and x > 0 else 0.0), 0.38) - shoulder
+		_limb(arm, Vector3.ZERO, elbow, 0.07, m.jersey)
+		_limb(arm, elbow * 0.55, elbow * 0.75, 0.073, m.accent)   # sleeve stripe
+		_limb(arm, elbow, hand, 0.062, glove)
+		_part(arm, BoxMesh.new(), Vector3(0.1, 0.1, 0.14), hand, glove)
+		rig.arms.append(arm)
 	if hold_stick:
 		# Stick held upright between the knees, knob up near the chin.
 		var top := fig.to_global(Vector3(0.06, 1.3, 0.3))
 		var blade := fig.to_global(Vector3(0.03, 0.03, 0.6))
 		_stick(parent, parent.to_local(blade), parent.to_local(top))
+	fig.set_meta("rig", rig)
+	_rigs.append(rig)
+	_pose_rig(rig)
 	return fig
 
 func build_coach(parent: Node3D, pos: Vector3, side: float) -> void:
