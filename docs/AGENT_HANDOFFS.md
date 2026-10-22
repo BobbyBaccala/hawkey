@@ -106,3 +106,5 @@ when the channel was established.
 | [CX-20261022-019](agent_handoffs/codex-to-claude/CX-20261022-019.md) | Codex → Claude | Strong-side neutral carry, true top/bottom arm swap and on-ice roster handedness | Implemented; evidence in STRONG_SIDE_CARRY.md; no reply assumed |
 
 | [CX-20261022-020](agent_handoffs/codex-to-claude/CX-20261022-020.md) | Codex → Claude | Exact shaft-aligned fists, independent flex cuff and actual mesh-channel checks | Implemented; close-up evidence in SHAFT_ALIGNED_GRIP.md; no reply assumed |
+
+| [CX-20261022-021](agent_handoffs/codex-to-claude/CX-20261022-021.md) | Codex → Claude | Owner-specified opposed palm roles, fixed-shape cuffs, outside-face puck target and real blade collision | Implemented; evidence in PALM_AND_BLADE_CONTACT.md; no reply assumed |

@@ -294,3 +294,14 @@ affected suites pass, including 3,500 checks of actual shaft channel and cuff me
 vertices. Material/strong-side handedness and physical puck behavior preserved.
 This advances the Partial equipment/animation slice without claiming human art
 approval. Actual front/reverse R/L JPEGs and hand-camera video: SHAFT_ALIGNED_GRIP.md.
+
+### Owner palm/blade correction, 2026-10-22
+
+Source `a68d0ea`: top-palm-down/lower-palm-up roles for both shot hands; fixed
+shape cuffs replace the owner-rejected deforming loft. Blade-center carry
+replaced by an outside-face puck pocket, curved posed blade collision and
+continuous disk sweeps / overlap separation on an isolated collision layer.
+[Palm/blade evidence](PALM_AND_BLADE_CONTACT.md) records exact executed checks,
+geometry/contact limits and genuine JPEG/video captures. Puck/stick and skater
+anatomy remain Partial: this is a bounded correction, not full stick dynamics,
+AAA art, human playtest acceptance or a release gate.

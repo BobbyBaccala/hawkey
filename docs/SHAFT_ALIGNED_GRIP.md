@@ -76,3 +76,8 @@ The capture-only profile uses llvmpipe, no MSAA/screen AA and reduced shadows;
 273 source frames take 1m46s offline with one-second warmup removed. These are
 output frames, not a real-time hardware FPS result. Human hand/animation review
 remains distinct from passing geometry and functional tests.
+
+Owner rejected the cuff deformation and palm roll after this checkpoint. The
+superseding correction is [PALM_AND_BLADE_CONTACT.md](PALM_AND_BLADE_CONTACT.md):
+explicit top-palm-down / lower-palm-up roles, fixed-shape cuff and actual blade
+contact. This older checkpoint is not evidence of owner-approved anatomy.

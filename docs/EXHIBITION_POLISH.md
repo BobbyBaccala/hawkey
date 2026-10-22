@@ -118,3 +118,12 @@ an independent forearm cuff, removing the oblique channel rejected by the owner.
 SHAFT_ALIGNED_GRIP.md includes actual close-ups, physical hand-camera footage,
 rendered mesh checks and 28 passing affected suites. Visual acceptance remains
 subject to owner review; the geometry tests alone do not establish realism.
+
+### Owner palm/blade correction — 2026-10-22
+
+Source `a68d0ea`: explicit opposite palm roles, compact fixed-shape gauntlets,
+regulation-radius puck pocket outside blade face, curved posed blade contacts
+and disk sweeps. Preserves lateral carry/roster handedness and goalie work.
+See [PALM_AND_BLADE_CONTACT.md](PALM_AND_BLADE_CONTACT.md) for current evidence;
+it supersedes the rejected stretched-cuff checkpoint. Human anatomical review
+and full moving-stick impact dynamics remain open.

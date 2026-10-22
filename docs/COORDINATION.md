@@ -603,3 +603,28 @@ palm-up lower hand using supplied stance reference; compact unwarped cuff;
 puck-center target outside blade face, actual curved blade collision. Preserve
 strong-side handedness, goalie work and newer Claude 2ff37ab (fetched this turn).
 No reply or art approval assumed. Physical contact and close-up review pending.
+
+Implemented source `a68d0ea`: top palm down, lower palm up, projected perpendicular
+to shaft with true L/R hand roles; compact rigid cuffs replace deforming lofts.
+Cuffs build once, animate by transform. get_blade_world is now the puck-center
+pocket outside the curved blade face; blade_position stays visual. Lab adds a
+curved convex StickContact and puck performs disk sweeps / contact separation.
+Dedicated blade layer 64 avoids ice 16 and goalie net guard 32; eligible actor
+state toggles contacts. This is a posed blade contact volume plus carry/release
+assistance, not full rigid-body arm/stick dynamics. No unrelated goalie edits.
+See PALM_AND_BLADE_CONTACT.md for final checks and genuine captures. CX-021
+records the shared API change; no Claude reply or owner art approval assumed.
+
+Final source `a68d0ea`: double-counted moving-blade contact energy removed;
+protection entry/exit added to both handed fixtures. All 29 affected suites
+pass, no script/engine errors. Detailed 1,351-check physical fixture: 960/960
+ticks held, zero detected hull overlaps / central-face crossings, max pocket
+gap 0.1591 m; both handed runs 1,920/1,920 held, AI pickup 130/129 ticks.
+4,500 palm/channel/rigid-cuff checks and 30 unassisted blade checks pass.
+Actual clip retains possession in all 16 half-second samples, largest sampled
+gap 0.1830 m; H.264 8 s / 240 frames, clean decode, silent. Offline software
+record 90 s, no real-time performance claim. Six staged R/L gear JPEGs and
+three genuine moving JPEGs included; source/hashes/tests recorded in
+verification/palm-blade-20261022.json. Specialist mesh detail, full stick/arm
+dynamics and human art/feel review remain open. CX-021 has shared hooks;
+latest Claude 2ff37ab unchanged, no reply or owner art approval assumed.

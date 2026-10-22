@@ -115,3 +115,8 @@ The owner accepted neither test passage nor shaft contact as proof that the top
 hand could hold the stick. SHAFT_ALIGNED_GRIP.md replaces the oblique fist/channel
 orientation with exact shaft alignment and an independent flexible forearm cuff.
 The side-carry and on-ice roster-handedness behavior from this checkpoint remains.
+
+The later [palm/blade correction](PALM_AND_BLADE_CONTACT.md) preserves shooting-side
+carry and true arm assignment. get_blade_world now means the outside-face puck
+center, while blade_position remains the visual blade center. Consumers drawing
+blade geometry must use its actual mesh transform rather than the puck pocket.
