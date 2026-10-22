@@ -594,3 +594,12 @@ recorded from source, 240 frames, clean decode, silent. Offline source render
 20261022.json record evidence. Claude 2ff37ab preserved, CX-020 hooks sent in repo;
 no reply or owner art approval assumed. Next: human grip review and animation/
 performance acceptance; no claim of finished anatomy from passing tests.
+
+## Palm roles and blade collision — active 2026-10-22
+
+Owner rejects deformed gloves and puck penetrating blade. Codex solo narrow
+skater_visual/gear_builder/lab edits authorized: explicit palm-down top and
+palm-up lower hand using supplied stance reference; compact unwarped cuff;
+puck-center target outside blade face, actual curved blade collision. Preserve
+strong-side handedness, goalie work and newer Claude 2ff37ab (fetched this turn).
+No reply or art approval assumed. Physical contact and close-up review pending.

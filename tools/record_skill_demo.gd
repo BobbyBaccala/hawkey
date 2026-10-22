@@ -11,12 +11,14 @@ var prefix:="/workspace/hawkey/build/skills-demo"
 var source_sha:="working-tree"
 var shoots:="R"
 var hands_camera:=false
+var inspection_camera:=false
 func _initialize()->void:call_deferred("run")
 func run()->void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--source-sha="):source_sha=arg.trim_prefix("--source-sha=")
 		if arg.begins_with("--shoots="):shoots=arg.trim_prefix("--shoots=")
 		if arg=="--hands-camera":hands_camera=true
+		if arg=="--inspection-camera":inspection_camera=true
 		if arg.begins_with("--prefix="):prefix=arg.trim_prefix("--prefix=")
 	load("res://scripts/game_settings.gd").path="res://build/skills-demo-settings.json"
 	load("res://scripts/match.gd").skip_title=true
@@ -45,7 +47,10 @@ func physics_tick()->void:
 	if ticks%60==0:samples.append({"seconds":ticks/120.0,"move":skills.move,"held":m.carrier==actor,"blade_gap_m":m.puck.position.distance_to(v.get_blade_world())})
 func draw_tick()->void:
 	frames+=1
-	if hands_camera:
+	if inspection_camera and frames>150:
+		var pocket:Vector3=actor.get_child(1).get_blade_world()
+		m.camera.position=pocket+Vector3(-0.55,0.38,-0.70);m.camera.look_at(pocket);m.camera.fov=44
+	elif hands_camera or inspection_camera:
 		var top:Vector3=actor.get_child(1).rig.to_global(actor.get_child(1).stick_grip())
 		m.camera.position=top+Vector3(-0.9,0.35,-1.2);m.camera.look_at(top+Vector3(0,-0.15,0));m.camera.fov=42
 	else:
@@ -54,7 +59,7 @@ func draw_tick()->void:
 		started=true;m.puck.freeze=false;m.puck.linear_velocity=Vector3.ZERO
 	if frames in [58,118,178,238]:call_deferred("save_preview",frames)
 	if frames==270:
-		FileAccess.open(prefix+".json",FileAccess.WRITE).store_string(JSON.stringify({"source_sha":source_sha,"engine":Engine.get_version_info().string,"fixture":"Scripted skill inputs, production skating/pose and rigid-body puck. One initial placement; no puck attachment or subsequent reposition. Not natural AI gameplay.","offline_render":true,"shoots":shoots,"hands_camera":hands_camera,"samples":samples},"\t"))
+		FileAccess.open(prefix+".json",FileAccess.WRITE).store_string(JSON.stringify({"source_sha":source_sha,"engine":Engine.get_version_info().string,"fixture":"Scripted skill inputs, production skating/pose and rigid-body puck. One initial placement; no puck attachment or subsequent reposition. Not natural AI gameplay.","offline_render":true,"shoots":shoots,"hands_camera":hands_camera,"inspection_camera":inspection_camera,"samples":samples},"\t"))
 func save_preview(frame:int)->void:
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_jpg(prefix+"-%03d.jpg"%frame,0.94)

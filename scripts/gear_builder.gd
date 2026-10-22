@@ -982,28 +982,20 @@ static func skater_glove(kit: Color, side := 1.0, with_cuff := true) -> ArrayMes
 	b.add_capsule(PackedVector3Array([Vector3(tx + 0.010 * side, 0.034, 0.018), Vector3(tx + 0.016 * side, -0.010, 0.020)]), [0.015, 0.013], kit, 16, 0.75, Vector3.RIGHT * side)
 	return b.to_mesh(0.62)
 
-## Flex gauntlet in fist-local coordinates. The mouth frame follows the actual
-## forearm independently of the fist's straight shaft channel.
+## Compact rigid gauntlet. Pose changes its transform, never its proportions.
+## The articulated wrist sits inside the cuff; no stretched/twisted loft.
 static func skater_glove_cuff(kit:Color,mouth:Transform3D)->ArrayMesh:
 	var b:=MeshBuilder.new()
-	var cuff:=kit.lightened(0.08)
-	var levels:=[[0.035,0.052,0.046],[0.06,0.059,0.053],[0.10,0.065,0.059],[0.14,0.070,0.063],[0.175,0.073,0.066],[0.183,0.076,0.069],[0.185,0.068,0.061],[0.165,0.062,0.055]]
 	var rings:=[];var colors:=[]
-	var rotation:=mouth.basis.get_rotation_quaternion().normalized()
+	var wrist:=mouth.origin-mouth.basis.y*GLOVE_CUFF_TOP
+	var levels:=[[-0.025,0.049,0.043],[0.0,0.055,0.047],[0.045,0.064,0.055],[0.080,0.068,0.058],[0.087,0.070,0.060],[0.089,0.062,0.052],[0.074,0.060,0.050]]
 	for k in range(levels.size()):
 		var l:Array=levels[k]
-		var t:=clampf((float(l[0])-0.035)/0.14,0,1)
-		var frame:=Basis(Quaternion.IDENTITY.slerp(rotation,t).normalized())
-		var center:=Vector3(0,0.035,0).lerp(mouth.origin,t)
-		if float(l[0])>0.175:center+=mouth.basis.y*(float(l[0])-0.175)
 		var ring:=PackedVector3Array();var cols:=PackedColorArray()
 		for j in range(28):
 			var angle:=TAU*j/28
-			var square:=1.0+0.08*pow(sin(2*angle),2)
-			var cx:=cos(angle)*square;var sz:=sin(angle)*square
-			var seam:=1.0-0.06*exp(-pow((cx-0.35)/0.08,2))*float(sz>0)-0.06*exp(-pow((cx+0.35)/0.08,2))*float(sz>0)
-			ring.append(center+frame*Vector3(cx*float(l[1])*seam,0,sz*float(l[2])*seam+0.004))
-			cols.append(WHITE if k==4 else cuff)
+			ring.append(wrist+mouth.basis*Vector3(cos(angle)*float(l[1]),float(l[0]),sin(angle)*float(l[2])))
+			cols.append(WHITE if k==3 else kit.lightened(0.08))
 		rings.append(ring);colors.append(cols)
 	b.add_loft(rings,colors,true,false)
 	return b.to_mesh(0.62)

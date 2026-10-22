@@ -42,6 +42,7 @@ func run()->void:
 	var v=actor.get_child(1);v.rotation.y=0
 	v.animate_motion(Vector3.ZERO,1.0/120,0,false);m.sync_skater_contacts(actor);await physics_frame
 	m.carrier=actor;m.cooldown=0;m.puck.freeze=false;m.puck.position=v.get_blade_world();m.puck.linear_velocity=Vector3.ZERO
+	var overlap_ticks:=0;var peak_height:=0.0;var max_penetration:=0.0
 	var max_error:=0.0;var worst_hand:=0.0;var max_reach:=0.0;var held:=0;var total:=0
 	for kind in ["cut","toe_drag","sweep"]:
 		check(m.request_player_skill(kind),"Human can request skill with real possession")
@@ -54,6 +55,17 @@ func run()->void:
 			m.update_possession(1.0/120)
 			check(m.puck.position.distance_to(before)<0.00001,"Deke never teleports puck")
 			await physics_frame
+			var query:=PhysicsShapeQueryParameters3D.new()
+			query.shape=m.puck.get_child(1).shape;query.transform=m.puck.global_transform;query.collision_mask=32
+			var hits:Array=m.get_world_3d().direct_space_state.intersect_shape(query)
+			if not hits.is_empty():
+				overlap_ticks+=1
+				var rest:Dictionary=m.get_world_3d().direct_space_state.get_rest_info(query)
+				if not rest.is_empty():
+					var nd:float=absf(rest.normal.dot(m.puck.global_basis.y))
+					var support:float=0.0127*nd+0.0381*sqrt(maxf(0,1-nd*nd))
+					max_penetration=maxf(max_penetration,support-rest.normal.dot(m.puck.position-rest.point))
+			peak_height=maxf(peak_height,m.puck.position.y)
 			total+=1
 			if m.carrier==actor:held+=1
 			max_error=maxf(max_error,m.puck.position.distance_to(v.get_blade_world()))
@@ -62,6 +74,7 @@ func run()->void:
 			for glove in v.skater_gloves:
 				var hole:Vector3=glove.transform*v.GLOVE_HOLE
 				worst_hand=maxf(worst_hand,(hole-top).cross(shaft).length())
+	check(max_penetration<0.005,"Moving puck never penetrates the blade deeper than the 5 mm contact skin")
 	check(float(held)/total>0.98 and max_error<0.35,"Moving dekes retain close physical puck control")
 	check(max_reach<0.62,"Deke arms remain within anatomical reach")
 	check(worst_hand<0.025,"Both hands stay on shaft during moves")
@@ -83,5 +96,6 @@ func run()->void:
 	m.skaters[5].position=m.puck.position+Vector3(0.35,0,0)
 	m.update_team_ai(1.0/120)
 	check(m.carrier==null and m.cooldown>0,"A defender can physically knock puck off an active deke")
+	print("BLADE_OVERLAP_TICKS ",overlap_ticks," peak_height ",peak_height," penetration ",max_penetration)
 	print("Puck skills: ",checks," checks; ",failures," failures; held ",held,"/",total," max error ",max_error," hand gap ",worst_hand," arm reach ",max_reach)
 	quit(failures)

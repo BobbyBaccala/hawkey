@@ -180,7 +180,7 @@ func _ready() -> void:
 	puck.axis_lock_angular_z = false
 	puck.collision_layer = 4
 	arena.puck = puck
-	puck.collision_mask = 9
+	puck.collision_mask = 41
 	puck.contact_monitor = true
 	puck.max_contacts_reported = 4
 	var pm := PhysicsMaterial.new()
@@ -206,6 +206,7 @@ func _ready() -> void:
 			points.append(Vector3(cos(angle)*0.0381,y,sin(angle)*0.0381))
 	shape.points=points
 	collision.shape = shape
+	puck.contact_shape=shape
 	puck.add_child(collision)
 	add_child(puck)
 	puck.body_entered.connect(_on_puck_contact)
@@ -548,14 +549,27 @@ func add_puck_collision(actor: CharacterBody3D, is_goalie: bool) -> void:
 		collision.name=entry.name
 		contact.add_child(collision)
 
+	# Curved blade hull comes from the same sections as the rendered mesh.
+	# Layer 6 is distinct from the analytic ice support on layer 5. The
+	# posed collider blocks free pucks; carry/release supplies stick velocity.
+	var blade_body:=StaticBody3D.new()
+	blade_body.name="StickContact"
+	blade_body.collision_layer=32;blade_body.collision_mask=4
+	blade_body.set_meta("actor",actor);blade_body.set_meta("zone","stick")
+	blade_body.physics_material_override=pm
+	var blade_shape:=CollisionShape3D.new()
+	blade_shape.shape=actor.get_child(1).skater_blade_shape()
+	blade_body.add_child(blade_shape);actor.add_child(blade_body)
+	blade_body.transform=actor.get_child(1).get_skater_blade_contact()
+
 func hit_actor(body: Node) -> Node:
 	if body.has_meta("actor"): return body.get_meta("actor")
 	return body
 
 func set_puck_contacts_enabled(actor: CharacterBody3D, enabled: bool) -> void:
 	for child in actor.get_children():
-		if child is AnimatableBody3D:
-			child.collision_layer=8 if enabled else 0
+		if child is StaticBody3D:
+			child.collision_layer=(32 if child.name=="StickContact" else 8) if enabled else 0
 
 func build_goalie_contacts(actor: CharacterBody3D) -> void:
 	var visual:=actor.get_child(1)
@@ -599,6 +613,7 @@ func sync_goalie_contacts(actor: CharacterBody3D) -> void:
 
 func sync_skater_contacts(actor: CharacterBody3D) -> void:
 	var visual:=actor.get_child(1)
+	actor.get_node("StickContact").transform=visual.get_skater_blade_contact()
 	var contact:=actor.get_node("PuckContact")
 	contact.transform=Transform3D.IDENTITY
 	var frame:Transform3D=visual.transform*visual.rig.transform

@@ -1,5 +1,5 @@
 extends SceneTree
-## Verify the rendered shaft channel, cuff mesh mouth and fist/cuff seam.
+## Verify shaft channels, explicit palm roles and unwarped gauntlet dimensions.
 const Skills=preload("res://scripts/puck_skills.gd")
 var checks:=0
 var failures:=0
@@ -23,17 +23,23 @@ func inspect(v)->void:
 		var cuff:MeshInstance3D=v.skater_glove_cuffs[i]
 		var verts:PackedVector3Array=cuff.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
 		var xf:Transform3D=fist.transform*cuff.transform
-		var mouth:=Vector3.ZERO;var seam:=Vector3.ZERO
-		for k in range(28):mouth+=xf*verts[4*28+k];seam+=xf*verts[k]
-		mouth/=28;seam/=28
+		var mouth:=Vector3.ZERO
+		for k in range(28):mouth+=xf*verts[3*28+k]
+		mouth/=28
 		var forearm:Vector3=(v.posed_elbows[i]-v.posed_wrists[i]).normalized()
-		var normal:Vector3=((xf*verts[119]-xf*verts[112]).cross(xf*verts[126]-xf*verts[112])).normalized()
+		var normal:Vector3=((xf*verts[91]-xf*verts[84]).cross(xf*verts[98]-xf*verts[84])).normalized()
 		var axis:=absf(normal.dot(forearm));min_mouth_axis=minf(min_mouth_axis,axis)
-		var error_:float=mouth.distance_to(v.posed_wrists[i]+forearm*v.Gear.GLOVE_CUFF_TOP)
+		var error_:float=mouth.distance_to(v.posed_wrists[i]+forearm*0.080)
 		max_mouth_error=maxf(max_mouth_error,error_)
-		check(axis>0.998,"Actual cuff mouth plane follows forearm independently")
-		check(error_<0.007,"Actual cuff mouth stays centered around sleeve")
-		check(seam.distance_to(fist.transform*Vector3(0,0.035,0.004))<0.002,"Flex cuff remains joined to fist")
+		check(axis>0.998,"Rigid cuff mouth follows forearm")
+		check(error_<0.001,"Cuff mouth stays around wrist without stretching")
+		check((verts[84]-verts[98]).length()>0.135 and (verts[84]-verts[98]).length()<0.137,"Rigid cuff width is always 136 mm")
+		check(absf((verts[0]-verts[84]).length()-sqrt(0.105*0.105+0.019*0.019))<0.001,"Cuff length stays rigid through animation")
+		var palm:Vector3=-fist.basis.z
+		var desired:=Vector3.DOWN if i==v.top_hand_index() else Vector3.UP
+		var projected:Vector3=(desired-shaft*shaft.dot(desired)).normalized()
+		check(palm.dot(projected)>0.999,"Top palm DOWN, lower palm UP, projected perpendicular to shaft")
+
 func run()->void:
 	var v=load("res://scripts/skater_visual.gd").new();root.add_child(v);await process_frame
 	for hand in ["R","L"]:

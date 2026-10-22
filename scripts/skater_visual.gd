@@ -1740,7 +1740,7 @@ func update_stick() -> void:
 	# The blade lies flat on the ice in the shaft's plane: it runs on from the
 	# heel in the direction the shaft leans (away from the hands), as on a
 	# real stick, instead of folding back under the shaft. blade_position (the
-	# puck pocket, used by gameplay) stays mid-blade.
+	# visual blade center) stays mid-blade; the puck target is outside its face.
 	var toe_dir:=stick_toe_dir(top,blade_position)
 	toe_dir=stick_toe_dir(top,blade_position-toe_dir*stick_blade_length*0.48)
 	var heel_fraction:=0.5 if goalie else 0.48
@@ -1806,8 +1806,23 @@ func stick_toe_dir(top: Vector3, heel: Vector3) -> Vector3:
 		d=Vector3(-shot_side(),0,0.4)
 	return d.normalized()
 
+## Historical gameplay API: now the puck's center OUTSIDE the blade face,
+## not the blade's own center. This leaves room for a regulation-radius puck.
 func get_blade_world() -> Vector3:
-	return rig.to_global(blade_position)
+	if goalie:return rig.to_global(blade_position)
+	return stick_blade.to_global(Vector3(0,-0.0163,-0.00575+shot_side()*0.050))
+
+func get_skater_blade_contact() -> Transform3D:
+	return transform*rig.transform*stick_blade.transform
+
+func skater_blade_shape() -> ConvexPolygonShape3D:
+	var shape:=ConvexPolygonShape3D.new()
+	var vertices:=PackedVector3Array()
+	for k in range(17):
+		for point in blade_section(float(k)/16,0.28,0.05,0.009):vertices.append(point)
+	shape.points=vertices
+	shape.margin=0.001
+	return shape
 
 func get_catch_pocket_world() -> Vector3:
 	return goalie_gloves[0].to_global(Gear.CATCHER_POCKET_POINT)
@@ -1833,13 +1848,13 @@ func build_player_glove(parent: Node3D) -> void:
 	# Thumbs on opposite sides so each hand is a mirror of the other.
 	add_mesh(parent,Gear.skater_glove(kit,1.0 if skater_gloves.size()==0 else -1.0,false)).material_override=Kit.gloves()
 
-	var cuff:=MeshInstance3D.new();cuff.name="FlexCuff"
-	cuff.material_override=Kit.gloves();parent.add_child(cuff)
+	var cuff:=MeshInstance3D.new();cuff.name="WristCuff"
+	cuff.material_override=Kit.gloves();cuff.mesh=Gear.skater_glove_cuff(kit,Transform3D.IDENTITY);parent.add_child(cuff)
 	skater_glove_cuffs.append(cuff);glove_cuff_frames.append(Transform3D.IDENTITY)
 
 ## Closes glove i round the stick at the wrist: cuff (+Y) back along the
-## forearm toward the elbow, shaft through the fist along local X, back of
-## the hand (+Z) rolled from handed thumb direction while attached.
+## forearm toward the elbow, shaft through the fist along local X. The top
+## palm (-Z) faces down, and the lower palm faces up.
 ## Hole through the closed fist (glove space): the shaft runs through it.
 const GLOVE_HOLE := Vector3(0,-0.035,-0.005)
 func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF) -> void:
@@ -1859,14 +1874,15 @@ func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF
 		up=up-x*x.dot(up)
 		up=up.normalized() if up.length_squared()>0.0001 else x.cross(Vector3.BACK).normalized()
 	var z := x.cross(up)
-	var away := wrist-torso_pose.origin
-	# Attached hockey grip: top-hand thumb points toward the blade; the
-	# mirrored bottom-hand thumb points back toward the top hand. Choosing
-	# palm roll from body distance alone can reverse the top hand like a putter.
-	var reverse := x.dot(-shaft*shot_side())<0.0 if grip_point!=Vector3.INF and hand_plant<0.01 else z.dot(away)<0.0
-	if reverse:
-		x = -x
-		z = -z
+	if grip_point!=Vector3.INF and hand_plant<0.01:
+		# Backhand is local +Z; palm is -Z. Top palm faces down,
+		# lower palm up, mirrored by ROLE rather than arbitrary body distance.
+		x=-shaft*shot_side()
+		var back:=Vector3.UP if i==top_hand_index() else Vector3.DOWN
+		z=(back-x*x.dot(back)).normalized()
+		up=z.cross(x).normalized()
+	elif z.dot(wrist-torso_pose.origin)<0:
+		x=-x;z=-z
 	var basis_ := Basis(x,up,z)
 	# Seat the fist on the shaft: the hole through the fingers is on the grip point.
 	var origin := wrist if grip_point==Vector3.INF else grip_point-basis_*GLOVE_HOLE
@@ -1883,11 +1899,8 @@ func update_glove_cuff(i:int,wrist:Vector3,elbow:Vector3)->void:
 	glove_cuff_frames[i]=frame
 	var local:=fist.affine_inverse()*frame
 	var cuff:=skater_glove_cuffs[i]
-	if cuff.has_meta("last_frame"):
-		var old:Transform3D=cuff.get_meta("last_frame")
-		if old.origin.distance_to(local.origin)<0.0015 and old.basis.get_rotation_quaternion().angle_to(local.basis.get_rotation_quaternion())<0.015:return
-	cuff.mesh=Gear.skater_glove_cuff(kit,local)
-	cuff.set_meta("last_frame",local)
+	cuff.transform=local
+
 
 
 const SLEEVE_ROWS := 14

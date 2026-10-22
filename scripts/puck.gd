@@ -1,5 +1,6 @@
 extends RigidBody3D
 ## Free 3D rigid body: gravity, spin, grounded drag and CCD; no height lock.
+var contact_shape:Shape3D
 var grounded := false
 var ice_deceleration := 0.35
 var air_drag := 0.0007
@@ -52,6 +53,51 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		v.z=horizontal.z
 	else:
 		v-=v*minf(0.05,air_drag*v.length()*state.step)
+	# At puck scale the native CCD can miss a 9 mm blade. Sweep the actual
+	# disk against the dedicated blade layer before integration, preserving
+	# free flight/ice/goalie physics and resolving the remaining tick as a bounce.
+	if contact_shape!=null:
+		# A posed blade can move into a stationary disk between ticks. Resolve
+		# that existing contact too; a forward sweep alone ignores overlaps.
+		var overlap:=PhysicsShapeQueryParameters3D.new()
+		overlap.shape=contact_shape;overlap.transform=state.transform
+		overlap.collision_mask=32;overlap.margin=0.005
+		var rest:=state.get_space_state().get_rest_info(overlap)
+		if not rest.is_empty():
+			var normal:Vector3=rest.normal
+			var axis:Vector3=state.transform.basis.y.normalized()
+			var nd:=absf(normal.dot(axis))
+			var support:=HALF_HEIGHT*nd+RADIUS*sqrt(maxf(0,1-nd*nd))
+			var depth:=support-normal.dot(state.transform.origin-rest.point)
+			if depth>0 and depth<0.075:
+				var contact:=state.transform
+				contact.origin+=normal*(depth+0.005)
+				state.transform=contact
+				var into:float=(v-rest.linear_velocity).dot(normal)
+				if into<0:v-=normal*into
+	var motion:=v*state.step
+	if motion.length_squared()>0.000001 and contact_shape!=null:
+		var query:=PhysicsShapeQueryParameters3D.new()
+		query.shape=contact_shape
+		query.transform=state.transform
+		query.motion=motion;query.collision_mask=32;query.margin=0.005
+		var space:=state.get_space_state()
+		var sweep:=space.cast_motion(query)
+		if sweep.size()==2 and sweep[0]<1.0:
+			query.transform.origin+=motion*minf(1.0,sweep[1]+0.001)
+			query.motion=Vector3.ZERO
+			var hit:=space.get_rest_info(query)
+			if not hit.is_empty():
+				var normal:Vector3=hit.normal
+				var surface:Vector3=hit.linear_velocity
+				var into:=(v-surface).dot(normal)
+				if into<0:
+					v-=normal*into*1.12
+					# Physics will integrate the new velocity for this step. Offset
+					# to the time of impact first, then leave only the remainder.
+					var contact:=state.transform
+					contact.origin+=motion*sweep[0]-v*state.step*sweep[0]
+					state.transform=contact
 	state.linear_velocity=v
 	last_velocity=v
 

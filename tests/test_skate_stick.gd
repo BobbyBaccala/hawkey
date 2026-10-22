@@ -45,7 +45,7 @@ func run() -> void:
 	check(worst_flex <= v.CUFF_FLEX + 0.01, "Cuff flexes no more than a stiff boot allows (%.2f rad)" % worst_flex)
 	check(worst_toe > 0.95, "Blade runs on from the heel away from the hands (dot %.2f)" % worst_toe)
 	check(worst_flat > 0.99, "Blade sits flat, upright on the ice (dot %.3f)" % worst_flat)
-	check(v.get_blade_world().distance_to(v.rig.to_global(v.blade_position)) < 0.001, "Puck pocket (gameplay) unchanged")
+	check(v.get_blade_world().distance_to(v.stick_blade.to_global(Vector3(0,-0.0163,-0.00575+v.shot_side()*0.050))) < 0.001, "Puck center sits outside blade face, not inside mesh")
 	# Two-hand grip like a real player: both fists closed ON the shaft, two to
 	# three hand-widths apart, top hand on the knob, shaft across the palm
 	# (not held end-on), and a full-length stick out in front.
