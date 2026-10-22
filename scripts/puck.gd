@@ -75,20 +75,21 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		if old.origin.distance_to(current.origin)>0.15:continue # Spawn/reset, not a physical stroke.
 		var was:=old.affine_inverse()*state.transform.origin
 		var now:=current.affine_inverse()*state.transform.origin
-		if absf(now.x)>0.14 or absf(now.y)>0.038:continue
+		if absf(was.x)>0.14 or absf(was.y)>0.038 or absf(now.x)>0.14 or absf(now.y)>0.038:continue
 		var t:=clampf(was.x/0.28+0.5,0,1)
 		var face:=signf(was.z+0.023*t*t)
 		if face==0:continue
 		t=clampf(now.x/0.28+0.5,0,1)
 		var curve:float=-0.023*(t*t if face>0 else t)
 		var distance_:float=(now.z-curve)*face
-		var depth:=RADIUS+0.0045+0.012-distance_
+		var depth:=RADIUS+0.0045+0.018-distance_
 		if depth>0 and depth<0.16:
 			moving_contacts+=1
 			var normal:=current.basis.z*face
 			var contact:=state.transform;contact.origin+=normal*depth;state.transform=contact
-			var surface:Vector3=(current*was-old*was)/state.step
-			var into:float=(v-surface).dot(normal)
+			# Pose displacement is already in the separation correction. Adding
+			# full wall velocity again would double the contact energy.
+			var into:float=v.dot(normal)
 			if into<0:v-=normal*into
 	# At puck scale the native CCD can miss a 9 mm blade. Sweep the actual
 	# disk against the dedicated blade layer before integration, preserving
@@ -98,7 +99,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		# that existing contact too; a forward sweep alone ignores overlaps.
 		var overlap:=PhysicsShapeQueryParameters3D.new()
 		overlap.shape=contact_shape;overlap.transform=state.transform
-		overlap.collision_mask=BLADE_LAYER;overlap.margin=0.012
+		overlap.collision_mask=BLADE_LAYER;overlap.margin=0.018
 		var rest:=state.get_space_state().get_rest_info(overlap)
 		if not rest.is_empty():
 			var normal:Vector3=rest.normal
@@ -108,7 +109,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 			var depth:=support-normal.dot(state.transform.origin-rest.point)
 			if depth>0 and depth<0.075:
 				var contact:=state.transform
-				contact.origin+=normal*(depth+0.012)
+				contact.origin+=normal*(depth+0.018)
 				state.transform=contact
 				var into:float=(v-rest.linear_velocity).dot(normal)
 				if into<0:v-=normal*into
@@ -117,7 +118,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		var query:=PhysicsShapeQueryParameters3D.new()
 		query.shape=contact_shape
 		query.transform=state.transform
-		query.motion=motion;query.collision_mask=BLADE_LAYER;query.margin=0.012
+		query.motion=motion;query.collision_mask=BLADE_LAYER;query.margin=0.018
 		var space:=state.get_space_state()
 		var sweep:=space.cast_motion(query)
 		if sweep.size()==2 and sweep[0]<1.0:
@@ -152,7 +153,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 			var support:=HALF_HEIGHT*nd+RADIUS*sqrt(maxf(0,1-nd*nd))
 			var depth:=support-normal.dot(endpoint.transform.origin-hit.point)
 			if depth<=0 or depth>0.075:break
-			var target:=endpoint.transform.origin+normal*(depth+0.012)
+			var target:=endpoint.transform.origin+normal*(depth+0.018)
 			var into:float=(v-hit.linear_velocity).dot(normal)
 			if into<0:v-=normal*into
 			var contact:=state.transform;contact.origin=target-v*state.step;state.transform=contact

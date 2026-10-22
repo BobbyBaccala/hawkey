@@ -60,9 +60,9 @@ func run()->void:
 		m.sync_skater_contacts(actor);await physics_frame
 		m.carrier=actor;m.cooldown=0;m.puck.freeze=false;m.puck.position=v.get_blade_world();m.puck.linear_velocity=Vector3.ZERO
 		m.skills_for(actor).move="";m.skills_for(actor).cooldown=0
-		for tick in range(720):
-			if tick%240==0:check(m.skills_for(actor).request(["cut","toe_drag","sweep"][tick/240],side),"Each handed skill can start")
-			var skill=m.prepare_skills(actor,1.0/120,Vector2.ZERO,m.carrier==actor,false)
+		for tick in range(960):
+			if tick<720 and tick%240==0:check(m.skills_for(actor).request(["cut","toe_drag","sweep"][tick/240],side),"Each handed skill can start")
+			var skill=m.prepare_skills(actor,1.0/120,Vector2.ZERO,m.carrier==actor,tick>=720 and tick<840)
 			actor.velocity=m.Skating.step(actor.velocity,skill.steer(Vector3.FORWARD*0.35,v.rig.global_basis.x),75,false,1.0/120)
 			actor.move_and_slide();v.animate_motion(actor.velocity,1.0/120,0,true);m.sync_skater_contacts(actor)
 			var before:Vector3=m.puck.position;m.update_possession(1.0/120)

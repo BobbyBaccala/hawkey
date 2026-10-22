@@ -45,10 +45,10 @@ func run()->void:
 	var last_local:=Vector3.INF;var center_crossings:=0
 	var overlap_ticks:=0;var peak_height:=0.0;var max_penetration:=0.0
 	var max_error:=0.0;var worst_hand:=0.0;var max_reach:=0.0;var held:=0;var total:=0
-	for kind in ["cut","toe_drag","sweep"]:
-		check(m.request_player_skill(kind),"Human can request skill with real possession")
+	for kind in ["cut","toe_drag","sweep","protection"]:
+		if kind!="protection":check(m.request_player_skill(kind),"Human can request skill with real possession")
 		for f in range(240):
-			var skill=m.prepare_skills(actor,1.0/120,Vector2.ZERO,m.carrier==actor,false)
+			var skill=m.prepare_skills(actor,1.0/120,Vector2.ZERO,m.carrier==actor,kind=="protection" and f<120)
 			actor.velocity=m.Skating.step(actor.velocity,skill.steer(Vector3.FORWARD*0.35,v.rig.global_basis.x),75,false,1.0/120)
 			actor.move_and_slide();v.animate_motion(actor.velocity,1.0/120,0,true)
 			m.sync_skater_contacts(actor)
