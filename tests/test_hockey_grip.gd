@@ -34,7 +34,7 @@ func run()->void:
 	var grip:Vector3=v.stick_grip()
 	var elbow:Vector3=v.posed_elbows[0]
 	var wrist:Vector3=v.posed_wrists[0]
-	check(shoulder.y-grip.y>0.28 and grip.z-shoulder.z>0.20,"Reference stance keeps top grip lower and forward")
+	check(shoulder.y-grip.y>0.24 and grip.x<0 and v.blade_position.x < -0.65 and absf(v.blade_position.x)>v.blade_position.z,"Strong-side stance keeps the shaft lateral rather than centered in front")
 	check(elbow.y-wrist.y>0.015,"Reference top forearm angles down toward fist")
 	var bend:float=rad_to_deg((shoulder-elbow).angle_to(wrist-elbow))
 	check(bend>60 and bend<120,"Top arm retains natural bent-elbow grip")

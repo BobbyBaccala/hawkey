@@ -135,6 +135,7 @@ func _ready() -> void:
 			actor.set_meta("stun",0.0)
 			actor.set_meta("decision",0.0)
 			actor.get_child(1).set_nameplate(str(rosters[team][roster_id].name).split(" ")[-1])
+			actor.get_child(1).set_shoots(str(rosters[team][roster_id].get("shoots","R")))
 			skaters.append(actor)
 	# Seated bench players wear the numbers of the roster players not dressed on the ice.
 	var bench_node=arena.get_node_or_null("Benches")
@@ -402,6 +403,7 @@ func change_identity(actor: CharacterBody3D, id_: int) -> void:
 	var visual := actor.get_child(1)
 	visual.set_number(str(rosters[body_team(actor)][id_].number))
 	visual.set_nameplate(str(rosters[body_team(actor)][id_].name).split(" ")[-1])
+	visual.set_shoots(str(rosters[body_team(actor)][id_].get("shoots","R")))
 	actor.set_meta("changing",false)
 	actor.set_meta("pending_id",-1)
 

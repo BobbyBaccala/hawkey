@@ -215,23 +215,25 @@ func run() -> void:
 	var skater = Visual.new()
 	root.add_child(skater)
 	await process_frame
-	for stick in [Vector2.ZERO, Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]:
-		skater.desired_stick = stick
-		for i in range(40):
-			skater.animate(0, 1.0 / 60)
-		await process_frame
-		check_pose(skater, "skater stick=%s" % stick)
-	for i in range(8):
-		for k in range(10):
-			skater.animate(8, 1.0 / 120)
-		await process_frame
-		check_pose(skater, "skater stride %d" % i)
-	if skater.play_mocap("Standing_Cheering", false, ["spine", "arms", "stick_up"]):
-		for f in range(200):
-			skater.animate(0, 1.0 / 60)
-			if f % 25 == 24:
-				await process_frame
-				check_pose(skater, "skater celebration %.1fs" % ((f + 1) / 60.0))
+	for hand in ["R","L"]:
+		skater.set_shoots(hand)
+		for stick in [Vector2.ZERO, Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]:
+			skater.desired_stick = stick
+			for i in range(40):
+				skater.animate(0, 1.0 / 60)
+			await process_frame
+			check_pose(skater, "skater %s stick=%s" % [hand,stick])
+		for i in range(8):
+			for k in range(10):
+				skater.animate(8, 1.0 / 120)
+			await process_frame
+			check_pose(skater, "skater %s stride %d" % [hand,i])
+		if skater.play_mocap("Standing_Cheering", false, ["spine", "arms", "stick_up"]):
+			for f in range(200):
+				skater.animate(0, 1.0 / 60)
+				if f % 25 == 24:
+					await process_frame
+					check_pose(skater, "skater celebration %.1fs" % ((f + 1) / 60.0))
 	skater.queue_free()
 	await process_frame
 	print("Clipping failures: ", failures)

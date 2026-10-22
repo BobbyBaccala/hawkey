@@ -94,8 +94,8 @@ func update_receiving(delta:float)->void:
 	receive_offset=Vector3.ZERO
 	if receive_weight>0.001 and is_inside_tree():
 		var local:=rig.to_local(receive_target)
-		var desired:=Vector3(clampf(local.x,-0.75,0.35),0.029,clampf(local.z,0.65,1.35))
-		receive_offset=(desired-stick_home(stick_intent)).limit_length(0.30)*receive_weight
+		var desired:=Vector3(clampf(local.x,-1.22 if shoots_right else -0.35,0.35 if shoots_right else 1.22),0.029,clampf(local.z,0.65,1.35))
+		receive_offset=(desired-stick_home(stick_intent,shoots_right)).limit_length(0.30)*receive_weight
 	if receive_age>=0:
 		receive_age+=delta
 		var t:=clampf(receive_age/0.32,0.0,1.0)
@@ -136,10 +136,21 @@ var skill_lean:=0.0
 var blade_velocity:=Vector3.ZERO
 var last_blade_world:=Vector3.INF
 
-static func stick_home(input:Vector2)->Vector3:
-	# Backhand crosses the body centre; top hand repositions to keep reach.
-	# Keep the blade ahead as the reference-guided top hand moves forward.
-	return Vector3(-0.36-input.x*(0.94 if input.x<0 else 0.72),0.029,1.18-input.y*0.48)
+var shoots_right:=true
+func shot_side()->float:return 1.0 if shoots_right or goalie else -1.0
+func top_hand_index()->int:return 0 if shoots_right or goalie else 1
+func set_shoots(value:String)->void:
+	shoots_right=value!="L"
+	last_blade_world=Vector3.INF
+
+static func stick_home(input:Vector2,right_shot:bool=true)->Vector3:
+	var side:=1.0 if right_shot else -1.0
+	# Neutral blade lies beside the shooting-side hip, on a lateral diagonal.
+	# Crossing to backhand reaches forward enough to clear the padded hips.
+	# Deliberate backhands can cross the body; raw horizontal input keeps its
+	# physical direction for either handedness.
+	var reach:=1.17 if input.x*side<0 else 0.60
+	return Vector3(-0.92*side-input.x*reach,0.029,0.78-input.y*0.48+0.24*maxf(0.0,-input.x*side))
 
 var goalie_save_height := 0.0
 ## Goalie save selection. Each save type has its own blend weight so a new
@@ -454,7 +465,7 @@ func _ready() -> void:
 				var spray := SnowSpray.new()
 				add_child(spray)
 				sprays.append(spray)
-	blade_position=Vector3(-0.02,0.042,0.60) if goalie else Vector3(-0.36,0.029,1.05)
+	blade_position=Vector3(-0.02,0.042,0.60) if goalie else stick_home(Vector2.ZERO,shoots_right)
 	if referee: sticks.visible=false
 	pose(0,0)
 
@@ -963,7 +974,7 @@ func pose(speed: float, turn: float) -> void:
 		drop.y+=0.035*backward_weight
 		# Shoulders open toward wherever the blade is being carried, so the
 		# bottom arm reaches out in front instead of across the chest.
-		shoulder_turn = push_side*0.07-stick_intent.x*0.30
+		shoulder_turn = push_side*0.07+shot_side()*0.18-stick_intent.x*0.30
 	# Hockey stop: blend the stride toward the skid stance (see STOP_ANGLE).
 	var stop_w := stop_blend()
 	if stop_w > 0.0:
@@ -1100,7 +1111,7 @@ func pose(speed: float, turn: float) -> void:
 	bend = Basis(Vector3.RIGHT,lerpf(0.52,0.26,goalie_drop) if goalie else 0.50+minf(speed/40,0.18))
 	if not goalie and not referee:
 		bend=Basis(Vector3.BACK,-skill_lean*0.23)*bend
-		bend=Basis(Vector3.UP,(0.12 if release_kind=="pass" else 0.32)*release_weight)*bend
+		bend=Basis(Vector3.UP,(0.12 if release_kind=="pass" else 0.32)*release_weight*shot_side())*bend
 	if shoulder_turn != 0.0: bend = Basis(Vector3.UP,shoulder_turn)*bend
 	# Stop: the upper body leans back against the skid.
 	if stop_w > 0.0: bend = Basis(Vector3.BACK,-stop_side*0.24*stop_w)*bend
@@ -1265,10 +1276,9 @@ func pose(speed: float, turn: float) -> void:
 			pads[i].position.y+=maxf(0,extent+0.012-box_center.y)
 		# Elbows and wrists stay on a two-hand stick posture, never running arm swings.
 		var shoulder := shoulder_of(i)
-		# Right-handed shot: the blade is on the skater's right (-x), so the right
-		# hand (i==1) is the bottom hand riding the shaft and the left hand holds
-		# the knob in front of the body. Neither arm has to reach across the chest.
-		var wrist := bottom_grip(shoulder) if i==1 else stick_grip()
+		# The shooting-side hand rides lower on the shaft; the opposite hand
+		# controls the knob. Arm assignment mirrors with actual roster handedness.
+		var wrist := bottom_grip(shoulder) if i!=top_hand_index() else stick_grip()
 		var grip_point := wrist
 		if not goalie and not referee:
 			# The shaft runs through the closed fist, which sits 3.5 cm past the
@@ -1327,12 +1337,12 @@ func pose(speed: float, turn: float) -> void:
 		# Elbows: the top-hand elbow points out and back a little; the bottom
 		# arm hangs nearly straight, elbow tucked in toward the body.
 		var top_elbow_y:=lerpf(0.20,-0.25,maxf(seat,stick_carry))
-		var pole := Vector3(side*0.6,-0.8,-0.1) if goalie else (Vector3(side*0.45,top_elbow_y,-1.0) if i==0 else Vector3(side*0.5,-0.2,-0.8))
+		var pole := Vector3(side*0.6,-0.8,-0.1) if goalie else (Vector3(side*0.45,top_elbow_y,-1.0) if i==top_hand_index() else Vector3(side*0.5,-0.2,-0.8))
 		if referee: pole = Vector3(side,0,-0.3)
 		if captured_elbow != Vector3.ZERO:
 			pole = pole.lerp((captured_elbow-(shoulder+wrist)*0.5).normalized(),capture_weight)
 		# Bottom hand and glove stay on the outside of the jersey.
-		if not goalie and not referee and captured_elbow == Vector3.ZERO and i==0: wrist = clear_hand(wrist,0.075)
+		if not goalie and not referee and captured_elbow == Vector3.ZERO and i==top_hand_index(): wrist = clear_hand(wrist,0.075)
 		var elbow := clear_elbow(shoulder,wrist,pole)
 		posed_wrists[i]=wrist
 		posed_elbows[i]=elbow
@@ -1481,10 +1491,10 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	update_receiving(delta)
 	shot_follow = release_weight
 	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
-	blade_position=Vector3(-0.02+goalie_drop*0.05,0.042,0.76-goalie_drop*0.04+0.035*sin(PI*goalie_drop)) if goalie else stick_home(stick_intent)
+	blade_position=Vector3(-0.02+goalie_drop*0.05,0.042,0.76-goalie_drop*0.04+0.035*sin(PI*goalie_drop)) if goalie else stick_home(stick_intent,shoots_right)
 	if not goalie and not referee: blade_position+=release_blade_offset()+receive_offset+Vector3(0,0,-0.18)*pass_load
 	# Stop: the stick reaches out in front for balance.
-	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
+	if not goalie: blade_position += Vector3(-0.04*shot_side(),0,0.16)*stop_blend()
 	# Board hop: lift the stick clear of the boards (blade rises first, so it
 	# never sweeps through the dasher on the way up or down).
 	stick_carry = float(hop_state.get("carry",0.0)) if not goalie and not referee and not hop_state.is_empty() else 0.0
@@ -1596,8 +1606,8 @@ func stick_grip() -> Vector3:
 	# back beside the body, forearm angled down to the fist so the shaft crosses the palm
 	# (not held end-on like a torch). Rides with the shoulders as the skater
 	# crouches, and moves with stickhandling and shots.
-	var grip := shoulder_of(0)+Vector3(-0.11-stick_intent.x*0.20-shot_follow*0.12,-0.30+shot_charge*0.06,0.23-stick_intent.y*0.05-shot_charge*0.12+shot_follow*0.22)
-	grip.x-=0.18*maxf(0.0,-stick_intent.x)
+	var grip := shoulder_of(top_hand_index())+Vector3(-shot_side()*0.32-stick_intent.x*0.16-shot_follow*0.12*shot_side(),-0.27+shot_charge*0.06,0.16-stick_intent.y*0.05-shot_charge*0.12+shot_follow*0.22)
+	grip.x-=shot_side()*0.18*maxf(0.0,-stick_intent.x*shot_side())
 	# Pull the top hand back/up during a deep drag, keeping the two cuffs
 	# separated as the blade returns toward the skates.
 	grip+=Vector3(0,0.065,-0.08)*maxf(0.0,stick_intent.y)
@@ -1609,18 +1619,18 @@ func stick_grip() -> Vector3:
 	# Bench: knob held up in front of the chin, stick leaning back against him.
 	if seat>0.0: grip = grip.lerp(seat_knob(),seat)
 	# Pulling the stick in never drives the top hand into the hip pads.
-	grip.z = maxf(grip.z,shoulder_of(0).z+0.15)
+	grip.z = maxf(grip.z,shoulder_of(top_hand_index()).z+0.15)
 	# The top hand holds the stick in front of the jersey, never inside it.
 	return clear_hand(grip,0.075)
 
 func seat_knob() -> Vector3:
-	return shoulder_of(0)+SEAT_KNOB
+	return shoulder_of(top_hand_index())+Vector3(SEAT_KNOB.x*shot_side(),SEAT_KNOB.y,SEAT_KNOB.z)
 
 ## Bench stick: blade on the floor (local y 0.07: the rubber floor is 4 cm
 ## up) straight in front, one stick length from the knob.
 func seat_blade() -> Vector3:
 	var knob := seat_knob()
-	return Vector3(knob.x+0.04,0.07,knob.z+SEAT_BLADE_AHEAD)
+	return Vector3(knob.x+0.04*shot_side(),0.07,knob.z+SEAT_BLADE_AHEAD)
 
 ## Knob end of the stick shaft (past the top hand), in the shaft's parent
 ## space: lets tests check the seated stick stands above the helmet.
@@ -1632,7 +1642,7 @@ func stick_knob_end() -> Vector3:
 func pose_seated() -> void:
 	stick_intent = Vector2.ZERO
 	desired_stick = Vector2.ZERO
-	blade_position = Vector3(-0.36,0.029,1.05).lerp(seat_blade(),seat)
+	blade_position = stick_home(Vector2.ZERO,shoots_right).lerp(seat_blade(),seat)
 	# Getting up to go out on a line change: stick comes up as for the hop.
 	if stick_carry>0.0: blade_position = blade_position.lerp(carry_blade(),stick_carry)
 	raised_stick = cheer if seat_stick else 0.0
@@ -1690,10 +1700,10 @@ func blade_board_need(xf: Transform3D) -> float:
 
 ## Board hop carried stick: knob and mid-blade points (rig space).
 func carry_knob() -> Vector3:
-	return shoulder_of(0)+CARRY_KNOB
+	return shoulder_of(top_hand_index())+Vector3(CARRY_KNOB.x*shot_side(),CARRY_KNOB.y,CARRY_KNOB.z)
 
 func carry_blade() -> Vector3:
-	var d := CARRY_DIR.normalized()
+	var d := Vector3(CARRY_DIR.x*shot_side(),CARRY_DIR.y,CARRY_DIR.z).normalized()
 	var toe := Vector3(d.x,0,d.z).normalized()
 	return carry_knob()+d*CARRY_LENGTH+toe*stick_blade_length*0.48
 
@@ -1736,7 +1746,7 @@ func update_stick() -> void:
 		bottom = top+(bottom-top).limit_length(GOALIE_STICK_REACH)
 	if raised_stick>0.01:
 		# Celebration: the stick goes up with the top hand, blade high.
-		var hand:Vector3=posed_wrists[1]
+		var hand:Vector3=posed_wrists[1-top_hand_index()]
 		var lift:=((hand-posed_elbows[1]).normalized()+Vector3(0,1.6,0)).normalized()
 		top=top.lerp(hand-lift*0.12,raised_stick)
 		bottom=bottom.lerp(hand+lift*1.30,raised_stick)
@@ -1788,7 +1798,7 @@ func stick_toe_dir(top: Vector3, heel: Vector3) -> Vector3:
 	var d:=heel-top
 	d.y=0
 	if d.length()<0.05:
-		d=Vector3(-1,0,0.4)
+		d=Vector3(-shot_side(),0,0.4)
 	return d.normalized()
 
 func get_blade_world() -> Vector3:
@@ -1820,7 +1830,7 @@ func build_player_glove(parent: Node3D) -> void:
 
 ## Closes glove i round the stick at the wrist: cuff (+Y) back along the
 ## forearm toward the elbow, shaft through the fist along local X, back of
-## the hand (+Z) facing away from the body.
+## the hand (+Z) rolled from handed thumb direction while attached.
 ## Hole through the closed fist (glove space): the shaft runs through it.
 const GLOVE_HOLE := Vector3(0,-0.035,-0.005)
 func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF) -> void:
@@ -1852,7 +1862,7 @@ func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF
 	# Attached hockey grip: top-hand thumb points toward the blade; the
 	# mirrored bottom-hand thumb points back toward the top hand. Choosing
 	# palm roll from body distance alone can reverse the top hand like a putter.
-	var reverse := x.dot(-shaft)<0.0 if grip_point!=Vector3.INF and hand_plant<0.01 else z.dot(away)<0.0
+	var reverse := x.dot(-shaft*shot_side())<0.0 if grip_point!=Vector3.INF and hand_plant<0.01 else z.dot(away)<0.0
 	if reverse:
 		x = -x
 		z = -z

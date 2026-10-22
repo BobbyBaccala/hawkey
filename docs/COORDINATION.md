@@ -539,3 +539,13 @@ and verification/photo-stance-20261022.json record source, tests and hashes.
 Photo is not redistributed; no brand/identity art copied. Claude 2ff37ab preserved;
 CX-018 documents hooks with no acknowledgement assumed. Per-player handedness,
 full transition art review and sustained AI chance creation remain open.
+
+## Strong-side carrying and handedness — active 2026-10-22
+
+Owner rejects centered forward stick position; wants normal carry on shooting
+side, hand alignment from supplied photo, mirrored for left shots. Codex solo
+scope: move default blade/shaft to strong-side diagonal, place top/bottom hands
+on it, support actual roster shoots in initial lineup and identity changes,
+retain physical puck/deke/release contacts and preserve goalie/bench equipment.
+Shared files skater_visual.gd/match.gd; fresh side-by-side engine inspection and
+left/right tests before publishing. Preserve latest Claude work; no reply assumed.
