@@ -1598,6 +1598,9 @@ func stick_grip() -> Vector3:
 	# crouches, and moves with stickhandling and shots.
 	var grip := shoulder_of(0)+Vector3(-0.11-stick_intent.x*0.20-shot_follow*0.12,-0.30+shot_charge*0.06,0.23-stick_intent.y*0.05-shot_charge*0.12+shot_follow*0.22)
 	grip.x-=0.18*maxf(0.0,-stick_intent.x)
+	# Pull the top hand back/up during a deep drag, keeping the two cuffs
+	# separated as the blade returns toward the skates.
+	grip+=Vector3(0,0.065,-0.08)*maxf(0.0,stick_intent.y)
 	# Stop: hands come down with the hips and push the stick out front.
 	grip += receive_offset*0.25+Vector3(0,0,-0.055)*pass_load
 	grip += Vector3(0,-0.10,0.06)*stop_blend()
