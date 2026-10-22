@@ -23,7 +23,8 @@ func run()->void:
 		for step in range(17):
 			var angle:=TAU*step/16
 			m.puck.position=center+Vector3(sin(angle)*3,0.03,cos(angle)*3)
-			for i in range(30):m.update_goalkeepers(1.0/60)
+			# CharacterBody.move_and_slide uses the project 120 Hz physics step.
+			for i in range(60):m.update_goalkeepers(1.0/120)
 			var visual=keeper.get_child(1)
 			var forward:Vector3=-visual.global_basis.z
 			var desired:Vector3=(m.puck.position-center);desired.y=0;desired=desired.normalized()

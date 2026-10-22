@@ -23,6 +23,12 @@ static func step(velocity: Vector3, intent: Vector3, rating: float, effort: bool
 	speed = move_toward(speed,top_speed,acceleration * delta)
 	return turned.normalized() * speed
 
+static func arrival_intent(velocity:Vector3,offset:Vector3,moving_target:bool=false)->Vector3:
+	var distance_:=offset.length()
+	if distance_<0.10:return Vector3.ZERO
+	var radius:=0.7 if moving_target else maxf(1.0,velocity.length_squared()/14.0+0.35)
+	return offset.normalized()*clampf(distance_/radius,0.0,1.0)
+
 static func goal_crossing(previous: Vector3, current: Vector3) -> bool:
 	return goal_crossing_end(previous,current,-1)
 

@@ -189,6 +189,8 @@ func team_accent(team: int) -> Color:
 
 ## Reconciled from Claude 3785bfd: carriers stay square to the attacked net;
 ## other skaters watch the puck while their feet handle travel direction.
+func has_player_control()->bool:return carrier==player and match_state.phase in [MatchState.Phase.PLAY,MatchState.Phase.SHOOTOUT_ATTEMPT]
+
 func net_facing(actor: CharacterBody3D) -> Vector3:
 	var d:=Vector3(0,0,attack_direction(body_team(actor))*Arena.GOAL_LINE)-actor.position
 	d.y=0
@@ -198,7 +200,7 @@ func body_facing(actor: CharacterBody3D) -> Vector3:
 	if actor==carrier:return net_facing(actor)
 	var d:=puck.position-actor.position
 	d.y=0
-	return d.normalized() if d.length()>0.3 else net_facing(actor)
+	return d.normalized() if d.length()>0.45 else -actor.get_child(1).global_basis.z
 
 func attack_direction(team: int) -> float:
 	var direction := -1.0 if team==0 else 1.0
@@ -297,7 +299,14 @@ func setup_faceoff() -> void:
 	pickup_lock_actor=null;pickup_lock_time=0.0;release_in_flight=false
 	caught_by=null
 	for keeper in goalkeepers: keeper.get_child(1).release_catch()
-	for actor in skaters: actor.get_child(1).stop_mocap()
+	for actor in skaters:
+		actor.get_child(1).stop_mocap()
+		actor.get_child(1).skill_lean=0.0
+		actor.get_child(1).desired_stick=Vector2.ZERO
+		actor.set_meta("steering_intent",Vector3.ZERO)
+		actor.set_meta("control_age",0.0)
+		var skills=skills_for(actor)
+		skills.move="";skills.protecting=false
 	carrier = null
 	pickup_owner = false
 	charge = 0
@@ -460,6 +469,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_2: request_line(0,1)
 			KEY_3: request_line(0,2)
 			KEY_4: request_line(0,3)
+			KEY_Z: request_player_skill("cut")
+			KEY_X: request_player_skill("toe_drag")
+			KEY_V: request_player_skill("sweep")
 			KEY_Q: request_line(0,defense_pairs[0]+1,true)
 			KEY_L: auto_lines=not auto_lines
 			KEY_E: defensive_action(false)
@@ -729,7 +741,7 @@ func control_player(delta: float) -> void:
 		if intent.length()>0.05: aim=intent.normalized()
 		effort=controller.effort
 		braking=controller.stop
-		player_visual.desired_stick=controller.right_stick
+		# Skill-stick input applied below.
 		charge=0
 	else:
 		intent=screen_to_rink(Vector3(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),0,float(Input.is_physical_key_pressed(KEY_S))-float(Input.is_physical_key_pressed(KEY_W))))
@@ -740,9 +752,14 @@ func control_player(delta: float) -> void:
 			if d.length()>0.3: aim=d.normalized()
 		effort=Input.is_physical_key_pressed(KEY_SHIFT)
 		braking=Input.is_physical_key_pressed(KEY_CTRL)
-		player_visual.desired_stick=Vector2.ZERO
+		# Keyboard skill input applied below.
 		charge=0
 	if bool(player.get_meta("changing")) or is_hopping(player): return
+	var raw_stick:Vector2=controller.right_stick if controller.active else Vector2(float(Input.is_physical_key_pressed(KEY_BRACKETRIGHT))-float(Input.is_physical_key_pressed(KEY_BRACKETLEFT)),0)
+	var protect:bool=controller.protect_down if controller.active else Input.is_physical_key_pressed(KEY_G)
+	if carrier==player and protect:skills_for(player).side=puck_escape_side(player)
+	var skill=prepare_skills(player,delta,raw_stick,carrier==player,protect)
+	intent=skill.steer(intent,player_visual.rig.global_basis.x)
 	velocity=Skating.step(player.velocity,intent,float(roster(player).speed)*lerpf(0.65,1,float(roster(player).stamina)),effort,delta)
 	if braking: velocity=velocity.move_toward(Vector3.ZERO,22*delta)
 	player.velocity=velocity
@@ -869,7 +886,7 @@ func update_team_ai(delta: float) -> void:
 			target=tactical_plans[team].get(actor.get_instance_id(),{"target":actor.position}).target
 			var distance_to_goal:=actor.position.distance_to(Vector3(0,0,attack*Arena.GOAL_LINE))
 			var timer:=float(actor.get_meta("decision"))-delta
-			if timer<=0 and cooldown<=0:
+			if timer<=0 and cooldown<=0 and skills_for(actor).move.is_empty():
 				actor.set_meta("decision",0.4)
 				var pressure:=closest_opponent_distance(actor)
 				var other:=tactical_pass_target(actor)
@@ -879,6 +896,8 @@ func update_team_ai(delta: float) -> void:
 				var goal_depth:float=Arena.GOAL_LINE-actor.position.z*attack
 				if not killing and shot_lane and distance_to_goal<10 and goal_depth>2 and absf(actor.position.x)<goal_depth*1.5:
 					emit_ai_shot(actor)
+				elif pressure>1.3 and pressure<4.0 and goal_depth>5 and absf(actor.position.x)<Arena.HALF_WIDTH-2 and skills_for(actor).request(["cut","toe_drag","sweep"][slot%3],puck_escape_side(actor)):
+					actor.set_meta("decision",0.85)
 				elif other!=null and (pressure<3.2 or actor.position.z*attack< -Arena.BLUE_LINE or killing or not shot_lane):
 					release_puck(actor,other.position+other.velocity*0.25-puck.position,17)
 				elif killing and actor.position.z*attack<0:
@@ -899,13 +918,19 @@ func update_team_ai(delta: float) -> void:
 				stick_recovery=true
 		actor.set_meta("tactical_target",target)
 		var to_target:=target-actor.position
-		var intent:=to_target.limit_length(1)
-		if to_target.length()<(0.12 if stick_recovery else 0.6): intent=Vector3.ZERO
+		var desired:=Skating.arrival_intent(actor.velocity,to_target,stick_recovery and puck.linear_velocity.length()>1)
+		var intent:Vector3=actor.get_meta("steering_intent",Vector3.ZERO)
+		intent=intent.lerp(desired,1.0-exp(-7*delta)) if not changing else desired
+		actor.set_meta("steering_intent",intent)
+		if carrier==actor and closest_opponent_distance(actor)<1.6:skills_for(actor).side=puck_escape_side(actor)
+		var skill=prepare_skills(actor,delta,Vector2.ZERO,carrier==actor,carrier==actor and closest_opponent_distance(actor)<1.6)
+		intent=skill.steer(intent,actor.get_child(1).rig.global_basis.x)
 		var stun:=maxf(0,float(actor.get_meta("stun"))-delta)
 		actor.set_meta("stun",stun)
 		if stun<=0:
 			var rating_:float=float(roster(actor).speed)*lerpf(0.65,1,float(roster(actor).stamina))
 			actor.velocity=Skating.step(actor.velocity,intent,rating_,false,delta)
+			if not changing and to_target.length()<0.6 and not (stick_recovery and puck.linear_velocity.length()>1):actor.velocity=actor.velocity.move_toward(Vector3.ZERO,6*delta)
 		actor.move_and_slide()
 		var visual:=actor.get_child(1)
 		var face:=body_facing(actor)
@@ -918,6 +943,17 @@ func update_team_ai(delta: float) -> void:
 			puck.linear_velocity=(puck.position-actor.position).normalized()*5
 			carrier=null;release_in_flight=false
 			cooldown=0.22
+
+func puck_escape_side(actor:CharacterBody3D)->float:
+	var nearest:CharacterBody3D
+	var best:=INF
+	for other in skaters:
+		if body_team(other)==body_team(actor) or not bool(other.get_meta("eligible")):continue
+		var distance_:float=actor.position.distance_squared_to(other.position)
+		if distance_<best:best=distance_;nearest=other
+	if nearest==null:return 1.0
+	var local:Vector3=actor.get_child(1).rig.global_basis.inverse()*(nearest.position-actor.position)
+	return 1.0 if local.x>=0 else -1.0
 
 func emit_ai_shot(actor:CharacterBody3D)->void:
 	var attack:=attack_direction(body_team(actor))
@@ -953,9 +989,10 @@ func update_possession(delta: float) -> void:
 				best=distance_;carrier=actor
 		if carrier!=null:
 			control_acquired()
+			carrier.set_meta("control_age",0.0)
 			carrier.get_child(1).receive_puck(puck.linear_velocity-carrier.velocity)
 	if carrier!=null:
-		puck.linear_velocity=PuckControl.control_velocity(puck.position,puck.linear_velocity,carrier.velocity,carrier.get_child(1).get_blade_world(),delta)
+		assist_carried_puck(carrier,delta)
 	pickup_owner=carrier==player
 
 func update_goalkeepers(delta: float) -> void:
@@ -1202,6 +1239,7 @@ func process_controller_edges() -> void:
 		aim=screen_to_rink(Vector3(controller.left_stick.x,0,controller.left_stick.y)).normalized()
 	if not paused and not in_menu:
 		var possession := carrier==player
+		if possession and not controller.deke_pressed.is_empty():request_player_skill(controller.deke_pressed,controller.deke_side)
 		if controller.trigger_pressed:
 			controller_pass_actor=player if possession and match_state.phase==MatchState.Phase.PLAY else null
 			if not possession and match_state.phase==MatchState.Phase.PLAY: switch_player()

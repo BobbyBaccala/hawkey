@@ -385,9 +385,9 @@ func build_controls() -> void:
 
 func set_controls_text(controller: bool) -> void:
 	if controller:
-		controls_label.text = "CONTROLLER\n\nLeft stick      Skate + place shot in net (up = high)\nRight stick     Flick up: wrist · down/up: slap\nRT / R2         Pass: hold strength, release · Defence: switch\nNeutral stick   Aim centre of net\nRB / R1         Saucer pass · Defence: poke check\nRight stick     Defence: flick to body check\nB / ○  Forward line     X / □  Defence pair\nL3              Burst\nD-pad           Lines and defence pairs\nStart           Pause"
+		controls_label.text = "CONTROLLER\n\nLeft stick      Skate + place shot in net (up = high)\nRight stick     L/R stickhandle · up shoot · down/up slap\nLB/L1 + stick   Side: cut · down: toe drag · up: sweep\nA / Cross       Hold puck protection\nRT / R2         Pass: hold strength, release · Defence: switch\nNeutral stick   Aim centre of net\nRB / R1         Saucer pass · Defence: poke check\nRight stick     Defence: flick to body check\nB / ○  Forward line     X / □  Defence pair\nL3              Burst\nD-pad           Lines and defence pairs\nStart           Pause"
 	else:
-		controls_label.text = "KEYBOARD AND MOUSE\n\nW A S D         Skate (screen relative)\nMouse           Place shot within the net\nLeft button     Quick wrist shot on click\nAlt + click     Slap shot\nRight button    Pass       Shift + right  Saucer\nSpace           Switch player\nE  Poke          F  Check\nShift  Burst     Ctrl  Stop\n1–4  Lines       Q  Defence pair\nC  Camera        Wheel  Zoom        Esc  Pause"
+		controls_label.text = "KEYBOARD AND MOUSE\n\nW A S D         Skate (screen relative)\nMouse           Place shot within the net\nLeft button     Quick wrist shot on click\nAlt + click     Slap shot\nRight button    Pass       Shift + right  Saucer\nSpace           Switch player\n[ / ]           Backhand / forehand · G hold protect\nZ / X / V       Lateral cut / toe drag / sweep\nE  Poke          F  Check\nShift  Burst     Ctrl  Stop\n1–4  Lines       Q  Defence pair\nC  Camera        Wheel  Zoom        Esc  Pause"
 
 # ------------------------------------------------------------ menus
 func menu_button(text: String, handler: Callable) -> Button:

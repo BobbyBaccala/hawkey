@@ -95,7 +95,7 @@ func update_receiving(delta:float)->void:
 	if receive_weight>0.001 and is_inside_tree():
 		var local:=rig.to_local(receive_target)
 		var desired:=Vector3(clampf(local.x,-0.75,0.35),0.029,clampf(local.z,0.65,1.35))
-		receive_offset=(desired-Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)).limit_length(0.30)*receive_weight
+		receive_offset=(desired-stick_home(stick_intent)).limit_length(0.30)*receive_weight
 	if receive_age>=0:
 		receive_age+=delta
 		var t:=clampf(receive_age/0.32,0.0,1.0)
@@ -132,6 +132,14 @@ func release_blade_offset() -> Vector3:
 
 var desired_stick := Vector2.ZERO
 var stick_intent := Vector2.ZERO
+var skill_lean:=0.0
+var blade_velocity:=Vector3.ZERO
+var last_blade_world:=Vector3.INF
+
+static func stick_home(input:Vector2)->Vector3:
+	# Backhand crosses the body centre; top hand repositions to keep reach.
+	return Vector3(-0.36-input.x*(0.66 if input.x<0 else 0.45),0.029,1.05-input.y*0.26)
+
 var goalie_save_height := 0.0
 ## Goalie save selection. Each save type has its own blend weight so a new
 ## save can interrupt the recovery from the last one. save_target is the
@@ -949,6 +957,8 @@ func pose(speed: float, turn: float) -> void:
 		# hips sink as a leg drives out, and the shoulders counter-turn a touch.
 		var push_side: float = stride[0].ext-stride[1].ext
 		drop += Vector3(-push_side*0.075,-0.035*push_blend-0.03*soft_max(stride[0].ext,stride[1].ext,0.25),0)
+		drop.x+=skill_lean*0.04
+		drop.y-=absf(skill_lean)*0.06
 		drop.y+=0.035*backward_weight
 		# Shoulders open toward wherever the blade is being carried, so the
 		# bottom arm reaches out in front instead of across the chest.
@@ -1088,6 +1098,7 @@ func pose(speed: float, turn: float) -> void:
 	override_pose("root",root_pose)
 	bend = Basis(Vector3.RIGHT,lerpf(0.52,0.26,goalie_drop) if goalie else 0.50+minf(speed/40,0.18))
 	if not goalie and not referee:
+		bend=Basis(Vector3.BACK,-skill_lean*0.15)*bend
 		bend=Basis(Vector3.UP,(0.12 if release_kind=="pass" else 0.32)*release_weight)*bend
 	if shoulder_turn != 0.0: bend = Basis(Vector3.UP,shoulder_turn)*bend
 	# Stop: the upper body leans back against the skid.
@@ -1468,7 +1479,7 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	update_receiving(delta)
 	shot_follow = release_weight
 	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
-	blade_position=Vector3(-0.02+goalie_drop*0.05,0.042,0.76-goalie_drop*0.04+0.035*sin(PI*goalie_drop)) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
+	blade_position=Vector3(-0.02+goalie_drop*0.05,0.042,0.76-goalie_drop*0.04+0.035*sin(PI*goalie_drop)) if goalie else stick_home(stick_intent)
 	if not goalie and not referee: blade_position+=release_blade_offset()+receive_offset+Vector3(0,0,-0.18)*pass_load
 	# Stop: the stick reaches out in front for balance.
 	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
@@ -1496,6 +1507,11 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	if push_blend > 0.01:
 		phase += delta * TAU * lerpf(0.7,1.25,clampf(speed/10,0,1))
 	pose(speed,turn)
+	if is_inside_tree() and delta>0:
+		var point:=get_blade_world()
+		var diff:=point-last_blade_world if last_blade_world!=Vector3.INF else Vector3.ZERO
+		blade_velocity=(diff/delta).limit_length(20.0) if last_blade_world!=Vector3.INF and diff.length()<1.5 else (supplied_motion if supplied_motion!=Vector3.INF else Vector3.ZERO)
+		last_blade_world=point
 	update_spray(speed)
 
 ## Eased 0..1 weight of the hockey-stop pose (smootherstep: no velocity or
@@ -1579,6 +1595,7 @@ func stick_grip() -> Vector3:
 	# (not held end-on like a torch). Rides with the shoulders as the skater
 	# crouches, and moves with stickhandling and shots.
 	var grip := shoulder_of(0)+Vector3(-0.11-stick_intent.x*0.20-shot_follow*0.12,-0.235+shot_charge*0.06,0.15-stick_intent.y*0.05-shot_charge*0.12+shot_follow*0.22)
+	grip.x-=0.18*maxf(0.0,-stick_intent.x)
 	# Stop: hands come down with the hips and push the stick out front.
 	grip += receive_offset*0.25+Vector3(0,0,-0.055)*pass_load
 	grip += Vector3(0,-0.10,0.06)*stop_blend()

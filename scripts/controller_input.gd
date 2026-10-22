@@ -19,6 +19,9 @@ var trigger_pressed := false
 var trigger_released := false
 var pass_held := 0.0
 var deke_modifier := false
+var deke_pressed:=""
+var deke_side:=1.0
+var protect_down:=false
 var pass_pressed := false
 var saucer_pressed := false
 var switch_pressed := false
@@ -47,18 +50,21 @@ func handle(event: InputEvent) -> void:
 			JOY_AXIS_LEFT_X: left_raw.x=event.axis_value
 			JOY_AXIS_LEFT_Y: left_raw.y=event.axis_value
 			JOY_AXIS_RIGHT_X:
-				if absf(event.axis_value)>0.65 and absf(right_raw.x)<=0.65: check_pressed=true
+				if absf(event.axis_value)>0.65 and absf(right_raw.x)<=0.65:
+					if deke_modifier:deke_pressed="cut";deke_side=signf(event.axis_value)
+					else:check_pressed=true
 				right_raw.x=event.axis_value
 			JOY_AXIS_RIGHT_Y:
 				var previous := right_raw.y
 				right_raw.y=event.axis_value
 				if absf(right_raw.y)>0.65 and absf(previous)<=0.65: check_pressed=true
-				if right_raw.y > 0.6:
-					backstroke=true
-					neutral_time=0
+				if right_raw.y>0.6:
+					if deke_modifier and previous<=0.6:deke_pressed="toe_drag"
+					elif not deke_modifier:backstroke=true;neutral_time=0
 				if right_raw.y < -0.65 and previous >= -0.65:
-					shoot_pressed=true
-					slap_requested=backstroke
+					shoot_pressed=not deke_modifier
+					if deke_modifier:deke_pressed="sweep"
+					slap_requested=backstroke and not deke_modifier
 					backstroke=false
 			JOY_AXIS_TRIGGER_LEFT: lift=clampf(event.axis_value,0,1)
 			JOY_AXIS_TRIGGER_RIGHT:
@@ -77,7 +83,10 @@ func handle(event: InputEvent) -> void:
 		connected=true
 		active=true
 		if event.button_index==JOY_BUTTON_LEFT_STICK: effort=event.pressed
-		if event.button_index==JOY_BUTTON_LEFT_SHOULDER: deke_modifier=event.pressed
+		if event.button_index==JOY_BUTTON_LEFT_SHOULDER:
+			deke_modifier=event.pressed
+			if event.pressed:backstroke=false
+		if event.button_index==JOY_BUTTON_A:protect_down=event.pressed
 		if not event.pressed: return
 		match event.button_index:
 			JOY_BUTTON_B: line_delta=1
@@ -103,6 +112,8 @@ func disconnected(id_: int) -> bool:
 	backstroke=false
 	pass_held=0
 	deke_modifier=false
+	protect_down=false
+	deke_pressed=""
 	effort=false
 	stop=false
 	active=false
@@ -111,6 +122,7 @@ func disconnected(id_: int) -> bool:
 	return was_active
 
 func clear_edges() -> void:
+	deke_pressed=""
 	slap_requested=false
 	shoot_pressed=false
 	trigger_pressed=false

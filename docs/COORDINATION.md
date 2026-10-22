@@ -467,3 +467,13 @@ JPEGs inspected, separately labeled from live video. Evidence and source:
 PUCK_CONTACT_POLISH.md / verification/puck-contact-20261022.json. Claude 2ff37ab
 untouched; CX-015 describes hooks. Next checkpoint: sustained AI chance creation,
 shot-contact anticipation and goalie post/recovery behavior, with human review.
+
+## Stick carrying, skills and AI movement — active 2026-10-22
+
+Owner reports awkward AI motion and puck slipping off blade; requests human/AI
+stickhandling and multiple dekes. Codex solo scope: measure existing carry error,
+add blade-velocity-aware bounded carry control, continuous forehand/backhand,
+physical timed dekes/protection in Match/Practice, deliberate AI use and smoothed
+arrival steering. Preserve free puck/shot physics, goalie/gear and shared tactical
+planner. Fetched Claude 2ff37ab; no new reply. Baseline scripted rigid-body fixture
+(before changes): no ownership drops but p95 blade gap 0.717m / max 0.725m.

@@ -3,6 +3,7 @@ var practice_pass_actor: CharacterBody3D
 var practice_input := preload("res://scripts/controller_input.gd").new()
 const NetShooting = preload("res://scripts/net_shooting.gd")
 const PuckControl=preload("res://scripts/puck_control.gd")
+const PuckSkills=preload("res://scripts/puck_skills.gd")
 const Skating = preload("res://scripts/skating.gd")
 const Arena = preload("res://scripts/arena.gd")
 const Skater = preload("res://scripts/skater_visual.gd")
@@ -64,6 +65,29 @@ func pickup_blocked(actor:CharacterBody3D)->bool:
 func advance_pickup_lock(delta:float)->void:
 	pickup_lock_time=maxf(0.0,pickup_lock_time-delta)
 	if pickup_lock_time<=0:pickup_lock_actor=null
+
+func skills_for(actor:CharacterBody3D):
+	if not actor.has_meta("puck_skills"):actor.set_meta("puck_skills",PuckSkills.new())
+	return actor.get_meta("puck_skills")
+
+func has_player_control()->bool:return pickup_owner
+
+func request_player_skill(kind:String,side:float=1.0)->bool:
+	return skills_for(player).request(kind,side) if has_player_control() and not paused else false
+
+func prepare_skills(actor:CharacterBody3D,delta:float,raw:Vector2,owns:bool,protect:bool=false):
+	var skills=skills_for(actor)
+	skills.advance(delta,owns);skills.protecting=protect and owns
+	var v=actor.get_child(1)
+	v.desired_stick=skills.stick(raw,actor.velocity.length(),owns)
+	v.skill_lean=skills.lean() if owns else 0.0
+	return skills
+
+func assist_carried_puck(actor:CharacterBody3D,delta:float)->void:
+	var age:float=float(actor.get_meta("control_age",0.0))+delta
+	actor.set_meta("control_age",age)
+	var v=actor.get_child(1)
+	puck.linear_velocity=PuckControl.control_velocity(puck.position,puck.linear_velocity,actor.velocity,v.get_blade_world(),delta,v.blade_velocity,age)
 
 func make_skater(pos: Vector3, color: Color, jersey: String, is_goalie: bool = false, accent: Color = Color(0,0,0,0)) -> CharacterBody3D:
 	var body := CharacterBody3D.new()
@@ -301,6 +325,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_C: wide_camera = not wide_camera
 			KEY_1: rating = 55
 			KEY_2: rating = 85
+			KEY_Z: request_player_skill("cut")
+			KEY_X: request_player_skill("toe_drag")
+			KEY_V: request_player_skill("sweep")
 			KEY_SPACE:
 				var old := player
 				player = teammate
@@ -370,6 +397,7 @@ func _physics_process(delta: float) -> void:
 	audio.set_suspended(paused)
 	if practice_input.active and not paused:
 		practice_input.advance(delta)
+		if not practice_input.deke_pressed.is_empty():request_player_skill(practice_input.deke_pressed,practice_input.deke_side)
 		if practice_input.trigger_pressed:
 			practice_pass_actor=player if pickup_owner else null
 			if not pickup_owner: practice_input.switch_pressed=true
@@ -399,15 +427,21 @@ func _physics_process(delta: float) -> void:
 	velocity = Skating.step(velocity,intent,rating,practice_input.effort if practice_input.active else Input.is_physical_key_pressed(KEY_SHIFT),delta)
 	if (practice_input.active and practice_input.stop) or Input.is_physical_key_pressed(KEY_CTRL):
 		velocity = velocity.move_toward(Vector3.ZERO,22 * delta)
+	var raw_stick:Vector2=practice_input.right_stick if practice_input.active else Vector2(float(Input.is_physical_key_pressed(KEY_BRACKETRIGHT))-float(Input.is_physical_key_pressed(KEY_BRACKETLEFT)),0)
+	var skill=prepare_skills(player,delta,raw_stick,pickup_owner,practice_input.protect_down if practice_input.active else Input.is_physical_key_pressed(KEY_G))
+	var adjusted:Vector3=skill.steer(intent,player_visual.rig.global_basis.x)
+	if pickup_owner:
+		velocity=Skating.step(player.velocity,adjusted,rating,practice_input.effort if practice_input.active else Input.is_physical_key_pressed(KEY_SHIFT),delta)
+		if (practice_input.active and practice_input.stop) or Input.is_physical_key_pressed(KEY_CTRL):velocity=velocity.move_toward(Vector3.ZERO,22*delta)
 	player.velocity = velocity
 	player.move_and_slide()
 	velocity = player.velocity
 	var intersection = Plane(Vector3.UP,0).intersects_ray(camera.project_ray_origin(get_viewport().get_mouse_position()),camera.project_ray_normal(get_viewport().get_mouse_position()))
 	if practice_input.active:
 		if intent.length()>0.05: aim=intent.normalized()
-		player_visual.desired_stick=practice_input.right_stick
+		# Right stick is applied by prepare_skills above.
 	elif intersection != null:
-		player_visual.desired_stick=Vector2.ZERO
+		# Keyboard stick control is applied by prepare_skills above.
 		var dir: Vector3 = intersection - player.position
 		dir.y = 0
 		if dir.length_squared() > 0.2: aim = dir.normalized()
@@ -423,9 +457,9 @@ func _physics_process(delta: float) -> void:
 	var blade:Vector3=player_visual.get_blade_world()
 	if not PuckControl.retained(puck.position,player.position,blade):pickup_owner=false
 	if not pickup_owner and not pickup_blocked(player) and PuckControl.can_receive(puck.position,puck.linear_velocity,player.position,player.velocity,blade):
-		pickup_owner=true;control_acquired()
+		pickup_owner=true;player.set_meta("control_age",0.0);control_acquired()
 		player_visual.receive_puck(puck.linear_velocity-player.velocity)
-	if pickup_owner:puck.linear_velocity=PuckControl.control_velocity(puck.position,puck.linear_velocity,player.velocity,blade,delta)
+	if pickup_owner:assist_carried_puck(player,delta)
 	update_partner(delta)
 	update_goalkeepers(delta)
 	if goal_timer <= 0:
@@ -468,8 +502,8 @@ func update_partner(delta: float) -> void:
 		status.text="PASS RECEIVED  /  Space to switch"
 		var old:=player;player=teammate;teammate=old
 		player_visual=player.get_child(1);teammate_visual=teammate.get_child(1)
-		velocity=player.velocity;pickup_owner=true;control_acquired()
-		puck.linear_velocity=PuckControl.control_velocity(puck.position,puck.linear_velocity,player.velocity,player_visual.get_blade_world(),delta)
+		velocity=player.velocity;pickup_owner=true;player.set_meta("control_age",0.0);control_acquired()
+		assist_carried_puck(player,delta)
 
 func update_goalkeepers(delta: float) -> void:
 	for i in range(goalkeepers.size()):
