@@ -42,6 +42,7 @@ func run()->void:
 	var v=actor.get_child(1);v.rotation.y=0
 	v.animate_motion(Vector3.ZERO,1.0/120,0,false);m.sync_skater_contacts(actor);await physics_frame
 	m.carrier=actor;m.cooldown=0;m.puck.freeze=false;m.puck.position=v.get_blade_world();m.puck.linear_velocity=Vector3.ZERO
+	var last_local:=Vector3.INF;var center_crossings:=0
 	var overlap_ticks:=0;var peak_height:=0.0;var max_penetration:=0.0
 	var max_error:=0.0;var worst_hand:=0.0;var max_reach:=0.0;var held:=0;var total:=0
 	for kind in ["cut","toe_drag","sweep"]:
@@ -55,6 +56,12 @@ func run()->void:
 			m.update_possession(1.0/120)
 			check(m.puck.position.distance_to(before)<0.00001,"Deke never teleports puck")
 			await physics_frame
+			var local_puck:Vector3=v.stick_blade.to_local(m.puck.position)
+			if last_local!=Vector3.INF and absf(last_local.x)<0.08 and absf(local_puck.x)<0.08:
+				var before_side:=signf(last_local.z+0.023*pow(clampf(last_local.x/0.28+0.5,0,1),2))
+				var after_side:=signf(local_puck.z+0.023*pow(clampf(local_puck.x/0.28+0.5,0,1),2))
+				if before_side!=after_side:center_crossings+=1
+			last_local=local_puck
 			var query:=PhysicsShapeQueryParameters3D.new()
 			query.shape=m.puck.get_child(1).shape;query.transform=m.puck.global_transform;query.collision_mask=m.puck.BLADE_LAYER
 			var hits:Array=m.get_world_3d().direct_space_state.intersect_shape(query)
@@ -74,6 +81,8 @@ func run()->void:
 			for glove in v.skater_gloves:
 				var hole:Vector3=glove.transform*v.GLOVE_HOLE
 				worst_hand=maxf(worst_hand,(hole-top).cross(shaft).length())
+	check(m.puck.moving_contacts>0 and m.puck.sweep_contacts>0,"Moving-blade and disk sweeps both exercise real contacts")
+	check(center_crossings==0,"Puck never crosses through the central blade face during dekes")
 	check(max_penetration<0.005,"Moving puck never penetrates the blade deeper than the 5 mm contact skin")
 	check(float(held)/total>0.98 and max_error<0.35,"Moving dekes retain close physical puck control")
 	check(max_reach<0.62,"Deke arms remain within anatomical reach")
@@ -96,6 +105,7 @@ func run()->void:
 	m.skaters[5].position=m.puck.position+Vector3(0.35,0,0)
 	m.update_team_ai(1.0/120)
 	check(m.carrier==null and m.cooldown>0,"A defender can physically knock puck off an active deke")
-	print("BLADE_OVERLAP_TICKS ",overlap_ticks," peak_height ",peak_height," penetration ",max_penetration)
+	print("CONTACT_COUNTS moving ",m.puck.moving_contacts," swept ",m.puck.sweep_contacts)
+	print("BLADE_OVERLAP_TICKS ",overlap_ticks," peak_height ",peak_height," penetration ",max_penetration," central face crossings ",center_crossings)
 	print("Puck skills: ",checks," checks; ",failures," failures; held ",held,"/",total," max error ",max_error," hand gap ",worst_hand," arm reach ",max_reach)
 	quit(failures)

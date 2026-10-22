@@ -181,7 +181,7 @@ func _ready() -> void:
 	puck.axis_lock_angular_z = false
 	puck.collision_layer = 4
 	arena.puck = puck
-	puck.collision_mask = 9 | PuckContactBody.BLADE_LAYER
+	puck.collision_mask = 9 # Blade sweeps resolve layer 64 separately; avoid double solver impulses.
 	puck.contact_monitor = true
 	puck.max_contacts_reported = 4
 	var pm := PhysicsMaterial.new()
@@ -555,13 +555,14 @@ func add_puck_collision(actor: CharacterBody3D, is_goalie: bool) -> void:
 	# posed collider blocks free pucks; carry/release supplies stick velocity.
 	var blade_body:=StaticBody3D.new()
 	blade_body.name="StickContact"
-	blade_body.collision_layer=PuckContactBody.BLADE_LAYER;blade_body.collision_mask=4
+	blade_body.collision_layer=PuckContactBody.BLADE_LAYER;blade_body.collision_mask=0
 	blade_body.set_meta("actor",actor);blade_body.set_meta("zone","stick")
 	blade_body.physics_material_override=pm
 	var blade_shape:=CollisionShape3D.new()
 	blade_shape.shape=actor.get_child(1).skater_blade_shape()
 	blade_body.add_child(blade_shape);actor.add_child(blade_body)
 	blade_body.transform=actor.get_child(1).get_skater_blade_contact()
+	blade_body.set_meta("last_world",blade_body.global_transform)
 
 func hit_actor(body: Node) -> Node:
 	if body.has_meta("actor"): return body.get_meta("actor")
@@ -614,7 +615,12 @@ func sync_goalie_contacts(actor: CharacterBody3D) -> void:
 
 func sync_skater_contacts(actor: CharacterBody3D) -> void:
 	var visual:=actor.get_child(1)
-	actor.get_node("StickContact").transform=visual.get_skater_blade_contact()
+	var blade:StaticBody3D=actor.get_node("StickContact")
+	blade.set_meta("previous_world",blade.get_meta("last_world",blade.global_transform))
+	blade.transform=visual.get_skater_blade_contact()
+	blade.force_update_transform() # Flush posed child transform before puck-space queries.
+	blade.set_meta("last_world",blade.global_transform)
+	blade.set_meta("pose_tick",Engine.get_physics_frames())
 	var contact:=actor.get_node("PuckContact")
 	contact.transform=Transform3D.IDENTITY
 	var frame:Transform3D=visual.transform*visual.rig.transform
