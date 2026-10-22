@@ -110,6 +110,10 @@ func _ready() -> void:
 	ice_marks.name = "IceMarks"
 	add_child(ice_marks)
 	arena.set_cut_map(ice_marks.texture)   # ice plus painted lines and emblem
+	# Skaters mirrored in the polished ice (scripts/ice_reflection.gd).
+	var reflection = preload("res://scripts/ice_reflection.gd").new()
+	add_child(reflection)
+	reflection.attach(arena, world.environment)
 	ice_marks.material = arena.ice_surface_material
 	ice_marks.paint_materials = arena.paint_materials
 	player = make_skater(Vector3(0,0,0),Color("#116c9e"),"17")
@@ -388,7 +392,7 @@ func _physics_process(delta: float) -> void:
 	var target_rotation := atan2(-aim.x,-aim.z)
 	var old_rotation := player_visual.rotation.y
 	player_visual.rotation.y = rotate_toward(old_rotation,target_rotation,7.5 * delta)
-	player_visual.animate(velocity.length(),delta,angle_difference(old_rotation,target_rotation) * velocity.length() * 0.02,intent.length_squared()>0.01,Input.is_physical_key_pressed(KEY_CTRL))
+	player_visual.animate_motion(velocity,delta,angle_difference(old_rotation,target_rotation) * velocity.length() * 0.02,intent.length_squared()>0.01,Input.is_physical_key_pressed(KEY_CTRL))
 	audio.track_stop(player,player_visual.stop_weight,velocity.length())
 	sync_skater_contacts(player)
 	charge = 0
@@ -443,7 +447,7 @@ func update_partner(delta: float) -> void:
 	teammate.move_and_slide()
 	if dir.length() > 0.4:
 		teammate_visual.rotation.y = rotate_toward(teammate_visual.rotation.y,atan2(-dir.x,-dir.z),5 * delta)
-	teammate_visual.animate(teammate.velocity.length(),delta,0,dir.length()>0.4)
+	teammate_visual.animate_motion(teammate.velocity,delta,0,dir.length()>0.4)
 	sync_skater_contacts(teammate)
 	if cooldown <= 0 and teammate.position.distance_to(puck.position) < 1.2 and not pickup_owner:
 		# Catch softly, rather than automatically firing the puck back.
@@ -469,7 +473,7 @@ func update_goalkeepers(delta: float) -> void:
 		var facing:=Vector3(puck.position.x,0,puck.position.z-end_*Arena.GOAL_LINE)
 		if facing.length_squared()<0.0001: facing=Vector3(0,0,-end_)
 		goalie_visuals[i].rotation.y=rotate_toward(goalie_visuals[i].rotation.y,atan2(-facing.x,-facing.z)-goalie.rotation.y,delta*9)
-		goalie_visuals[i].animate(goalie.velocity.length(),delta)
+		goalie_visuals[i].animate_motion(goalie.velocity,delta)
 		sync_goalie_contacts(goalie)
 
 func add_puck_collision(actor: CharacterBody3D, is_goalie: bool) -> void:

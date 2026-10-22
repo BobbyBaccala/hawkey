@@ -170,7 +170,7 @@ void fragment() {
 	if (use_uv) {
 		vec4 k = texture(knit_tex, m * knit_tiles);
 		vec4 f = texture(fold_tex, m * fold_tiles);
-		float ks = knit_strength * (1.0 - 0.7 * twill_mask);
+		float ks = knit_strength * (1.0 - 0.7 * twill_mask) * kit_detail_fade(VERTEX);
 		vec2 d = (k.rg * 2.0 - 1.0) * ks + (f.rg * 2.0 - 1.0) * fold_amt;
 		n = kit_perturb_uv(base_n, VERTEX, m, normalize(vec3(d, 1.0)));
 		cavity = mix(k.a, 1.0, twill_mask * 0.7);
@@ -188,9 +188,12 @@ void fragment() {
 	// adds the light-driven part).
 	float fres = pow(1.0 - clamp(dot(n, VIEW), 0.0, 1.0), 3.0);
 	col += (col + 0.03) * fres * sheen * 0.3;
-	ALBEDO = col * ao;
-	AO = ao;
-	ROUGHNESS = mix(rough, 0.62, twill_mask);
+	// Overhead arena key: lit shoulders, darker undersides (reads at distance).
+	vec3 wn = normalize((INV_VIEW_MATRIX * vec4(n, 0.0)).xyz);
+	float over = kit_overhead(wn);
+	ALBEDO = col * ao * over;
+	AO = ao * min(over, 1.0);
+	ROUGHNESS = kit_spec_aa(n, mix(rough, 0.62, twill_mask));
 	SPECULAR = mix(0.22, 0.35, twill_mask);
 	RIM = sheen * 0.3;
 	RIM_TINT = 0.8;

@@ -62,11 +62,16 @@ static func configure_environment(env: Environment) -> void:
 	env.ssil_enabled = true
 	env.ssil_radius = 2.0
 	env.ssil_intensity = 0.6
+	# SSR: players' mirror images in the ice now come mainly from the planar
+	# pass (scripts/ice_reflection.gd, both renderers), so SSR only adds the
+	# boards/glass/puck and is kept short, soft and cheap: fewer steps, a
+	# quick fade-in at contact and a tighter depth tolerance (no smeared
+	# streaks behind skates).
 	env.ssr_enabled = true
-	env.ssr_max_steps = 56
-	env.ssr_fade_in = 0.25
-	env.ssr_fade_out = 2.5
-	env.ssr_depth_tolerance = 0.25
+	env.ssr_max_steps = 40
+	env.ssr_fade_in = 0.15
+	env.ssr_fade_out = 2.0
+	env.ssr_depth_tolerance = 0.2
 	env.sdfgi_enabled = false   # costly; the arena is lit by analytic lights
 	# Depth + height haze (both renderers): a breath of aerial perspective that
 	# thickens up into the bowl so the far stands and rafters sit back.

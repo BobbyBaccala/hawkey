@@ -187,6 +187,19 @@ func team_color(team: int) -> Color:
 func team_accent(team: int) -> Color:
 	return Color("#e8eef5") if team==0 else Color("#b3162c")
 
+## Reconciled from Claude 3785bfd: carriers stay square to the attacked net;
+## other skaters watch the puck while their feet handle travel direction.
+func net_facing(actor: CharacterBody3D) -> Vector3:
+	var d:=Vector3(0,0,attack_direction(body_team(actor))*Arena.GOAL_LINE)-actor.position
+	d.y=0
+	return d.normalized() if d.length()>0.05 else Vector3(0,0,attack_direction(body_team(actor)))
+
+func body_facing(actor: CharacterBody3D) -> Vector3:
+	if actor==carrier:return net_facing(actor)
+	var d:=puck.position-actor.position
+	d.y=0
+	return d.normalized() if d.length()>0.3 else net_facing(actor)
+
 func attack_direction(team: int) -> float:
 	var direction := -1.0 if team==0 else 1.0
 	return direction if match_state.period%2==1 else -direction
@@ -732,9 +745,10 @@ func control_player(delta: float) -> void:
 	player.velocity=velocity
 	player.move_and_slide()
 	var visual:=player.get_child(1)
-	visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-aim.x,-aim.z),6*delta)
+	var facing:=body_facing(player)
+	visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-facing.x,-facing.z),6*delta)
 	visual.shot_charge=charge
-	visual.animate(player.velocity.length(),delta,0,intent.length_squared()>0.01,braking)
+	visual.animate_motion(player.velocity,delta,0,intent.length_squared()>0.01,braking)
 	audio.track_stop(player,visual.stop_weight,player.velocity.length())
 	sync_skater_contacts(player)
 
@@ -882,10 +896,9 @@ func update_team_ai(delta: float) -> void:
 			actor.velocity=Skating.step(actor.velocity,intent,rating_,false,delta)
 		actor.move_and_slide()
 		var visual:=actor.get_child(1)
-		var face:=intent if intent.length()>0.1 else (puck.position-actor.position).normalized()
-		if actor==carrier: face=(Vector3(0,0,attack*Arena.GOAL_LINE)-actor.position).normalized()
+		var face:=body_facing(actor)
 		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-face.x,-face.z),4.8*delta)
-		visual.animate(actor.velocity.length(),delta,0,intent.length_squared()>0.01)
+		visual.animate_motion(actor.velocity,delta,0,intent.length_squared()>0.01)
 		sync_skater_contacts(actor)
 		# Poke separation only within physical reach; AI uses the same puck object.
 		if carrier!=null and body_team(carrier)!=team and actor.position.distance_to(puck.position)<1.0 and cooldown<=0:
@@ -969,7 +982,7 @@ func update_goalkeepers(delta: float) -> void:
 		var facing:=Vector3(puck.position.x,0,puck.position.z)-Vector3(0,0,end_*Arena.GOAL_LINE)
 		if facing.length_squared()<0.0001: facing=Vector3(0,0,-end_)
 		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-facing.x,-facing.z)-keeper.rotation.y,delta*9)
-		visual.animate(keeper.velocity.length(),delta,0,false)
+		visual.animate_motion(keeper.velocity,delta,0,false)
 		sync_goalie_contacts(keeper)
 		if puck.position.y<0.13 and puck.linear_velocity.length()<2 and keeper.position.distance_to(puck.position)<0.65 and cooldown<=0:
 			if match_state.is_shootout():
@@ -1254,7 +1267,7 @@ func process_shootout(delta: float) -> void:
 		shootout_actor.velocity=Skating.step(shootout_actor.velocity,intent,float(roster(shootout_actor).speed),false,delta)
 		shootout_actor.move_and_slide()
 		shootout_actor.get_child(1).rotation.y=atan2(-intent.x,-intent.z)
-		shootout_actor.get_child(1).animate(shootout_actor.velocity.length(),delta,0,true)
+		shootout_actor.get_child(1).animate_motion(shootout_actor.velocity,delta,0,true)
 		sync_skater_contacts(shootout_actor)
 		if not shootout_shot and absf(shootout_actor.position.z-end_*Arena.GOAL_LINE)<13:
 			emit_net_shot(shootout_actor,Vector2(sin(float(shootout_prepared)*2)*0.8,-0.4))

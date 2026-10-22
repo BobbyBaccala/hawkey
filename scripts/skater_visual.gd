@@ -25,6 +25,23 @@ var shuffle_time := 0.0
 var shuffle_weight := 0.0
 var lateral := 0.0
 var last_world := Vector3.INF
+## Direction-aware locomotion. Explicit velocities avoid camera/teleport-driven
+## guesses; legacy animate() callers retain measured-motion fallback.
+var supplied_motion := Vector3.INF
+var backward_weight := 0.0
+var lateral_weight := 0.0
+var lateral_side := 1.0
+var previous_heading := INF
+var angular_speed := 0.0
+var pivot_weight := 0.0
+var pivot_phase := 0.0
+var pivot_direction := 0.0
+
+func animate_motion(world_velocity: Vector3, delta: float, turn: float = 0.0, pushing: bool = true, braking: bool = false) -> void:
+	supplied_motion=world_velocity
+	animate(world_velocity.length(),delta,turn,pushing,braking)
+	supplied_motion=Vector3.INF
+
 var raised_stick := 0.0
 var posed_wrists: Array[Vector3] = [Vector3.ZERO,Vector3.ZERO]
 var posed_elbows: Array[Vector3] = [Vector3.ZERO,Vector3.ZERO]
@@ -757,6 +774,24 @@ func stride_foot(i: int, speed: float) -> Dictionary:
 	var glide: Vector3 = GLIDE_FEET[i]
 	var ankle := glide.lerp(foot,amount)
 	pitch *= amount
+	# Backward C-cuts stay low: the push sweeps outward and forward rather
+	# than playing the forward toe-off in reverse. One leg recovers at a time.
+	if backward_weight>0.001:
+		var u:=cycle/STANCE if cycle<STANCE else (cycle-STANCE)/(1.0-STANCE)
+		var drive:=smoothstep(0.0,1.0,u) if cycle<STANCE else 1.0-smoothstep(0.0,1.0,u)
+		var back:=Vector3(side*lerpf(0.14,0.46,drive),0.115,lerpf(-0.12,0.20,drive))
+		ankle=ankle.lerp(glide.lerp(back,amount),backward_weight)
+		pitch=lerpf(pitch,0.0,backward_weight)
+	# Lateral edge steps: lead foot opens, trailing foot gathers. No crossing
+	# or airborne running pose is substituted for a shuffle.
+	if lateral_weight>0.001:
+		var open:=sin(PI*cycle)*sin(PI*cycle)
+		var lead:=side*lateral_side>0.0
+		var shift:=lateral_side*(0.18 if lead else 0.08)*open
+		var lateral_foot:=Vector3(side*0.18+shift,0.115+0.018*maxf(0.0,sin(TAU*cycle)),glide.z*0.5)
+		lateral_foot.x=side*maxf(0.085,side*lateral_foot.x)
+		ankle=ankle.lerp(glide.lerp(lateral_foot,amount),lateral_weight)
+		pitch=lerpf(pitch,0.0,lateral_weight)
 	# Keep the runner's toe and heel on or above the ice whatever the pitch:
 	# a toe-down foot pivots on its toe, so the heel and ankle rise.
 	ankle.y = soft_max(ankle.y,ankle_floor(pitch),0.012)
@@ -765,7 +800,7 @@ func stride_foot(i: int, speed: float) -> Dictionary:
 		"ext": ext*amount,
 		"lift": lift*amount,
 		# Toe turns out as the leg drives.
-		"yaw": side*(0.06+0.42*ext)*amount,
+		"yaw": lerpf(lerpf(side*(0.06+0.42*ext)*amount,-side*(0.08+0.30*ext)*amount,backward_weight),lateral_side*0.42*amount,lateral_weight),
 		"pitch": pitch,
 		"edge": edge*amount,
 	}
@@ -878,6 +913,7 @@ func pose(speed: float, turn: float) -> void:
 		# hips sink as a leg drives out, and the shoulders counter-turn a touch.
 		var push_side: float = stride[0].ext-stride[1].ext
 		drop += Vector3(-push_side*0.075,-0.035*push_blend-0.03*soft_max(stride[0].ext,stride[1].ext,0.25),0)
+		drop.y+=0.035*backward_weight
 		# Shoulders open toward wherever the blade is being carried, so the
 		# bottom arm reaches out in front instead of across the chest.
 		shoulder_turn = push_side*0.07-stick_intent.x*0.30
@@ -1087,6 +1123,11 @@ func pose(speed: float, turn: float) -> void:
 				var offset:=lerpf(0.05,-0.05,minf(cycle/0.58,1.0)) if cycle<0.58 else lerpf(-0.05,0.05,swing)
 				ankle.x+=signf(lateral)*offset*shuffle_weight
 				ankle.y+=0.025*sin(PI*swing)*shuffle_weight
+		if goalie and pivot_weight>0.001:
+			# Alternate unweighting a skate through the turn. The stance stays
+			# wide; pivoting does not rotate the pads independently or detach them.
+			var swivel:=TAU*pivot_phase+float(i)*PI
+			ankle.y+=0.018*maxf(0.0,sin(swivel))*pivot_weight*(1.0-goalie_drop)
 		feet[i] = ankle
 		var knee := knee_position(hip,ankle,Vector3(-side*0.12,0,1) if goalie else Vector3(0,0,1),0.44,0.45)
 		# Pads meet edge to edge at the knees rather than crossing.
@@ -1120,7 +1161,8 @@ func pose(speed: float, turn: float) -> void:
 			fit_limb(pant_legs[i],hip+Vector3(side*(0.03+goalie_drop*0.02),0.10,0),hip.lerp(knee,reach),fill)
 		var foot_pose: Transform3D = rest["foot"+suffix]
 		foot_pose.origin = ankle
-		var boot := Vector3.ZERO
+		var pivot_yaw:=pivot_direction*0.14*cos(TAU*pivot_phase+float(i)*PI)*pivot_weight*(1.0-goalie_drop) if goalie else 0.0
+		var boot := Vector3(0,pivot_yaw,0)
 		if not goalie:
 			# The boot follows the shin: as the leg drives out to the side the
 			# blade rolls onto its inside edge in line with the shin, and the toe
@@ -1133,7 +1175,7 @@ func pose(speed: float, turn: float) -> void:
 		override_pose("foot"+suffix,foot_pose)
 		skates[i].position = ankle+Vector3(0,-0.0525,0)
 		# Butterfly: skates turn out flat so the toes clear the pad backs.
-		skates[i].rotation = Vector3(0,side*lerpf(0.12,2.65,smoothstep(0.0,0.6,goalie_drop)),0) if goalie else boot
+		skates[i].rotation = Vector3(0,side*lerpf(0.12,2.65,smoothstep(0.0,0.6,goalie_drop))+pivot_yaw,0) if goalie else boot
 		if socks.size()>i:
 			# Sock and shin-guard knee cap overlap the bottom of the pants.
 			# The sock runs down the shin into the skate cuff (cuff top ~0.15 m).
@@ -1278,13 +1320,28 @@ func stop_mocap() -> void:
 func update_layers(delta: float) -> void:
 	if is_inside_tree():
 		var world:=global_position
-		if last_world!=Vector3.INF and delta>0:
-			var local_velocity:Vector3=rig.global_basis.orthonormalized().inverse()*((world-last_world)/delta)
-			lateral=lerpf(lateral,local_velocity.x,1-exp(-10*delta))
-			# Direction of travel for hockey stops (ignores teleports).
-			var moved:=(world-last_world)/delta
-			moved.y=0
-			if moved.length()<30: travel=travel.lerp(moved,1-exp(-15*delta))
+		var moved:=Vector3.ZERO
+		if supplied_motion!=Vector3.INF: moved=supplied_motion
+		elif last_world!=Vector3.INF and delta>0: moved=(world-last_world)/delta
+		moved.y=0
+		# Teleports/faceoff resets never create a fictitious stride or pivot.
+		if moved.length()>=30: moved=Vector3.ZERO
+		travel=travel.lerp(moved,1-exp(-15*delta))
+		var body_frame:=Basis(Vector3.UP,global_rotation.y+PI)
+		var local_velocity:Vector3=body_frame.inverse()*moved
+		lateral=lerpf(lateral,local_velocity.x,1-exp(-10*delta))
+		var direction:=local_velocity.normalized()
+		var moving:=smoothstep(0.15,0.8,local_velocity.length())
+		backward_weight=lerpf(backward_weight,smoothstep(0.15,0.8,-direction.z)*moving,1-exp(-9*delta))
+		lateral_weight=lerpf(lateral_weight,smoothstep(0.45,0.9,absf(direction.x))*moving,1-exp(-9*delta))
+		if absf(local_velocity.x)>0.1:lateral_side=lerpf(lateral_side,signf(local_velocity.x),1-exp(-10*delta))
+		var heading:=global_rotation.y
+		var angle:=angle_difference(previous_heading,heading) if previous_heading!=INF else 0.0
+		angular_speed=angle/maxf(delta,0.0001) if absf(angle)<0.9 else 0.0
+		if absf(angular_speed)>0.1:pivot_direction=lerpf(pivot_direction,signf(angular_speed),1-exp(-12*delta))
+		previous_heading=heading
+		pivot_weight=lerpf(pivot_weight,smoothstep(0.5,3.0,absf(angular_speed))*(1.0-goalie_drop),1-exp(-12*delta))
+		pivot_phase+=absf(angular_speed)*delta/0.65
 		last_world=world
 	if not mocap.is_empty():
 		mocap_time+=delta*mocap_rate

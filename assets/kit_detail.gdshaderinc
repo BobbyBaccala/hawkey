@@ -52,3 +52,31 @@ vec4 kit_triplanar(sampler2D tex, vec3 p, vec3 n, float strength) {
 	vec3 r = n + vec3(0.0, nx.y, nx.x * s.x) * w.x + vec3(ny.x * s.y, 0.0, ny.y) * w.y + vec3(nz.x * s.z, nz.y, 0.0) * w.z;
 	return vec4(normalize(r), tx.a * w.x + ty.a * w.y + tz.a * w.z);
 }
+
+// --- Gameplay-distance look (5-25 m from the camera) ---------------------
+// Arena light comes from straight overhead: shoulders, helmet tops and the
+// tops of the gloves catch it, undersides (under the arms, below the pants,
+// the inside of the legs) fall off. `wn` is the world-space normal. Returns a
+// multiplier for albedo/AO: < 1 facing down, a touch > 1 facing up.
+float kit_overhead(vec3 wn) {
+	float down = 1.0 - smoothstep(-0.75, 0.35, wn.y);
+	float up = smoothstep(0.45, 0.95, wn.y);
+	return 1.0 - 0.30 * down + 0.10 * up;
+}
+
+// Fine knit/grain normal detail aliases into sparkle once a texel is smaller
+// than a pixel; fade it with view distance (VERTEX is view space).
+float kit_detail_fade(vec3 view_pos) {
+	return 1.0 - 0.75 * smoothstep(7.0, 20.0, length(view_pos));
+}
+
+// Specular anti-aliasing (Kaplanyan/Tokuyoshi style): widen roughness by the
+// screen-space variance of the normal, so curved shells, thin sticks and
+// knit bumps do not flicker with single-pixel highlights in motion.
+float kit_spec_aa(vec3 n, float rough) {
+	vec3 dx = dFdx(n);
+	vec3 dy = dFdy(n);
+	float variance = 0.5 * (dot(dx, dx) + dot(dy, dy));
+	float a2 = rough * rough * rough * rough + min(2.0 * variance, 0.25);
+	return sqrt(sqrt(clamp(a2, 0.0, 1.0)));
+}
