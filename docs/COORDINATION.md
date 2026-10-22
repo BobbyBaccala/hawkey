@@ -566,3 +566,13 @@ not hardware FPS. STRONG_SIDE_CARRY.md / verification/strong-side-20261022.json
 record results/hashes. Claude 2ff37ab preserved; CX-019 has hooks, no reply assumed.
 Generic bench identity/handedness, full animation/human feel/controller review
 and sustained AI chance/balance tuning remain open.
+
+## Shaft-aligned fist and independent cuff — active 2026-10-22
+
+Owner rejects sideways top hand; requests hand parallel to shaft. Codex solo
+narrow skater_visual.gd / gear_builder.gd scope: remove capped oblique shaft
+channel compromise; orient closed fist exactly along shaft and let a separate
+smooth cuff follow forearm. Preserve side carry, handedness, blade/puck/AI and
+all goalie equipment. Verify actual channel alignment and rendered cuff fit,
+mesh clearance, moving contacts, and genuine close-ups for both shot hands.
+Latest fetched Claude 2ff37ab preserved; no reply assumed.

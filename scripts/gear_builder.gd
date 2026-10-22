@@ -933,33 +933,34 @@ static func _paint_mask(kit: Color, accent: Color) -> Texture2D:
 ## curl round the shaft, a thumb with a stiff thumb lock, and a flared gauntlet
 ## cuff with a rolled lip. `side` mirrors the thumb (+1: thumb toward +X).
 const GLOVE_CUFF_TOP := 0.175
-static func skater_glove(kit: Color, side := 1.0) -> ArrayMesh:
+static func skater_glove(kit: Color, side := 1.0, with_cuff := true) -> ArrayMesh:
 	var b := MeshBuilder.new()
 	var dark := Color("#18232c")
 	var roll := kit.darkened(0.25)
 	var cuff := kit.lightened(0.08)
 	# Leather palm core inside the fist.
 	b.add_capsule(PackedVector3Array([Vector3(-0.034, 0.005, -0.002), Vector3(0.034, 0.005, -0.002)]), [0.040, 0.040], dark, 16, 0.85, Vector3.BACK)
-	# Gauntlet cuff: an open, flared shell with a rolled lip, wider at the top.
-	var rings := []
-	var cols := []
-	var levels := [[0.035, 0.052, 0.046], [0.06, 0.059, 0.053], [0.10, 0.065, 0.059], [0.14, 0.070, 0.063], [GLOVE_CUFF_TOP, 0.073, 0.066], [GLOVE_CUFF_TOP + 0.008, 0.076, 0.069], [GLOVE_CUFF_TOP + 0.010, 0.068, 0.061], [GLOVE_CUFF_TOP - 0.01, 0.062, 0.055]]
-	for k in range(levels.size()):
-		var l: Array = levels[k]
-		var ring := PackedVector3Array()
-		var c := PackedColorArray()
-		for j in range(28):
-			var a := TAU * j / 28
-			var square := 1.0 + 0.08 * pow(sin(2.0 * a), 2)
-			var cx := cos(a) * square
-			var sz := sin(a) * square
-			# Cuff padding segments: two shallow vertical seams on the back.
-			var seam := 1.0 - 0.06 * exp(-pow((cx - 0.35) / 0.08, 2)) * float(sz > 0) - 0.06 * exp(-pow((cx + 0.35) / 0.08, 2)) * float(sz > 0)
-			ring.append(Vector3(cx * l[1] * seam, l[0], sz * l[2] * seam + 0.004))
-			c.append(WHITE if k == 4 else cuff)
-		rings.append(ring)
-		cols.append(c)
-	b.add_loft(rings, cols, true, false)
+	if with_cuff:
+		# Gauntlet cuff: an open, flared shell with a rolled lip, wider at the top.
+		var rings := []
+		var cols := []
+		var levels := [[0.035, 0.052, 0.046], [0.06, 0.059, 0.053], [0.10, 0.065, 0.059], [0.14, 0.070, 0.063], [GLOVE_CUFF_TOP, 0.073, 0.066], [GLOVE_CUFF_TOP + 0.008, 0.076, 0.069], [GLOVE_CUFF_TOP + 0.010, 0.068, 0.061], [GLOVE_CUFF_TOP - 0.01, 0.062, 0.055]]
+		for k in range(levels.size()):
+			var l: Array = levels[k]
+			var ring := PackedVector3Array()
+			var c := PackedColorArray()
+			for j in range(28):
+				var a := TAU * j / 28
+				var square := 1.0 + 0.08 * pow(sin(2.0 * a), 2)
+				var cx := cos(a) * square
+				var sz := sin(a) * square
+				# Cuff padding segments: two shallow vertical seams on the back.
+				var seam := 1.0 - 0.06 * exp(-pow((cx - 0.35) / 0.08, 2)) * float(sz > 0) - 0.06 * exp(-pow((cx + 0.35) / 0.08, 2)) * float(sz > 0)
+				ring.append(Vector3(cx * l[1] * seam, l[0], sz * l[2] * seam + 0.004))
+				c.append(WHITE if k == 4 else cuff)
+			rings.append(ring)
+			cols.append(c)
+		b.add_loft(rings, cols, true, false)
 	# Backhand: two padded rolls across the back of the hand, and a wrist roll.
 	for row: Array in [[0.036, 0.038, 0.020], [0.000, 0.044, 0.022], [-0.034, 0.042, 0.020]]:
 		var pts := PackedVector3Array()
@@ -979,6 +980,32 @@ static func skater_glove(kit: Color, side := 1.0) -> ArrayMesh:
 	var tx := 0.056 * side
 	b.add_capsule(PackedVector3Array([Vector3(tx, 0.020, 0.010), Vector3(tx + 0.006 * side, -0.016, 0.006), Vector3(tx, -0.044, -0.012), Vector3(tx * 0.72, -0.050, -0.034)]), [0.019, 0.018, 0.016, 0.014], roll, 16, 0.9, Vector3.RIGHT * side)
 	b.add_capsule(PackedVector3Array([Vector3(tx + 0.010 * side, 0.034, 0.018), Vector3(tx + 0.016 * side, -0.010, 0.020)]), [0.015, 0.013], kit, 16, 0.75, Vector3.RIGHT * side)
+	return b.to_mesh(0.62)
+
+## Flex gauntlet in fist-local coordinates. The mouth frame follows the actual
+## forearm independently of the fist's straight shaft channel.
+static func skater_glove_cuff(kit:Color,mouth:Transform3D)->ArrayMesh:
+	var b:=MeshBuilder.new()
+	var cuff:=kit.lightened(0.08)
+	var levels:=[[0.035,0.052,0.046],[0.06,0.059,0.053],[0.10,0.065,0.059],[0.14,0.070,0.063],[0.175,0.073,0.066],[0.183,0.076,0.069],[0.185,0.068,0.061],[0.165,0.062,0.055]]
+	var rings:=[];var colors:=[]
+	var rotation:=mouth.basis.get_rotation_quaternion().normalized()
+	for k in range(levels.size()):
+		var l:Array=levels[k]
+		var t:=clampf((float(l[0])-0.035)/0.14,0,1)
+		var frame:=Basis(Quaternion.IDENTITY.slerp(rotation,t).normalized())
+		var center:=Vector3(0,0.035,0).lerp(mouth.origin,t)
+		if float(l[0])>0.175:center+=mouth.basis.y*(float(l[0])-0.175)
+		var ring:=PackedVector3Array();var cols:=PackedColorArray()
+		for j in range(28):
+			var angle:=TAU*j/28
+			var square:=1.0+0.08*pow(sin(2*angle),2)
+			var cx:=cos(angle)*square;var sz:=sin(angle)*square
+			var seam:=1.0-0.06*exp(-pow((cx-0.35)/0.08,2))*float(sz>0)-0.06*exp(-pow((cx+0.35)/0.08,2))*float(sz>0)
+			ring.append(center+frame*Vector3(cx*float(l[1])*seam,0,sz*float(l[2])*seam+0.004))
+			cols.append(WHITE if k==4 else cuff)
+		rings.append(ring);colors.append(cols)
+	b.add_loft(rings,colors,true,false)
 	return b.to_mesh(0.62)
 
 # ---------------------------------------------------------------- skates

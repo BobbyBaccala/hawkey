@@ -174,7 +174,7 @@ func run() -> void:
 		check(glove_crease < 12.5, "glove %d has hard facets (%.0f deg)" % [i, glove_crease])
 		var to_elbow: Vector3 = (v.posed_elbows[i] - v.posed_wrists[i]).normalized()
 		# The wrist cocks a little so the shaft lies diagonally in the fist.
-		check(v.skater_gloves[i].basis.y.normalized().dot(to_elbow) > 0.9, "glove %d cuff does not point up the forearm" % i)
+		check(v.glove_cuff_frames[i].basis.y.normalized().dot(to_elbow) > 0.9, "glove %d cuff does not point up the forearm" % i)
 
 	# --- Helmet: a sculpted shell with visor and fittings, not a ball.
 	var shell: MeshInstance3D = v.helmet.get_node("Shell")

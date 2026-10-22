@@ -178,6 +178,8 @@ var torso_pose := Transform3D.IDENTITY
 var number_label: Label3D
 var goalie_gloves: Array[Node3D] = []
 var skater_gloves: Array[Node3D] = []
+var skater_glove_cuffs:Array[MeshInstance3D]=[]
+var glove_cuff_frames:Array[Transform3D]=[]
 var cloth_sleeves: Array[MeshInstance3D] = []
 var rig: Node3D
 var skeleton: Skeleton3D
@@ -1829,7 +1831,11 @@ func get_goalie_gear() -> Dictionary:
 
 func build_player_glove(parent: Node3D) -> void:
 	# Thumbs on opposite sides so each hand is a mirror of the other.
-	add_mesh(parent,Gear.skater_glove(kit,1.0 if skater_gloves.size()==0 else -1.0)).material_override=Kit.gloves()
+	add_mesh(parent,Gear.skater_glove(kit,1.0 if skater_gloves.size()==0 else -1.0,false)).material_override=Kit.gloves()
+
+	var cuff:=MeshInstance3D.new();cuff.name="FlexCuff"
+	cuff.material_override=Kit.gloves();parent.add_child(cuff)
+	skater_glove_cuffs.append(cuff);glove_cuff_frames.append(Transform3D.IDENTITY)
 
 ## Closes glove i round the stick at the wrist: cuff (+Y) back along the
 ## forearm toward the elbow, shaft through the fist along local X, back of
@@ -1847,19 +1853,11 @@ func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF
 		if x.length_squared() < 0.0001: x = up.cross(Vector3.BACK)
 		x = x.normalized()
 	else:
-		# The shaft runs diagonally across the palm (real grips are not square
-		# to the forearm): split the difference between the forearm-square
-		# fist and the shaft (35 % of the way), so the cuff stays on the forearm and the stick
-		# still lies in the fingers.
-		var square := shaft-up*up.dot(shaft)
-		square = square.normalized() if square.length_squared()>0.0001 else up.cross(Vector3.BACK).normalized()
-		var across:=shaft if shaft.dot(square)>0.0 else -shaft
-		# Limit wrist cock at extreme drags instead of pulling the cuff off
-		# the forearm to force an arbitrary percentage of shaft alignment.
-		var cock:=minf(0.35,0.45/maxf(square.angle_to(across),0.001))
-		x = square.slerp(across,cock).normalized()
-		up = (up-x*x.dot(up))
-		up = up.normalized() if up.length_squared()>0.0001 else x.cross(Vector3.BACK).normalized()
+		# The closed-fist channel is exactly parallel to the shaft. The cuff
+		# follows the forearm independently; do not tilt the fist off the stick.
+		x=shaft
+		up=up-x*x.dot(up)
+		up=up.normalized() if up.length_squared()>0.0001 else x.cross(Vector3.BACK).normalized()
 	var z := x.cross(up)
 	var away := wrist-torso_pose.origin
 	# Attached hockey grip: top-hand thumb points toward the blade; the
@@ -1873,6 +1871,24 @@ func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF
 	# Seat the fist on the shaft: the hole through the fingers is on the grip point.
 	var origin := wrist if grip_point==Vector3.INF else grip_point-basis_*GLOVE_HOLE
 	skater_gloves[i].transform = Transform3D(basis_,origin)
+	update_glove_cuff(i,wrist,elbow)
+
+func update_glove_cuff(i:int,wrist:Vector3,elbow:Vector3)->void:
+	var fist:=skater_gloves[i].transform
+	var up:Vector3=(elbow-wrist).normalized()
+	var across:Vector3=fist.basis.x-up*up.dot(fist.basis.x)
+	if across.length_squared()<0.0001:across=up.cross(Vector3.BACK)
+	across=across.normalized()
+	var frame:=Transform3D(Basis(across,up,across.cross(up)),wrist+up*Gear.GLOVE_CUFF_TOP)
+	glove_cuff_frames[i]=frame
+	var local:=fist.affine_inverse()*frame
+	var cuff:=skater_glove_cuffs[i]
+	if cuff.has_meta("last_frame"):
+		var old:Transform3D=cuff.get_meta("last_frame")
+		if old.origin.distance_to(local.origin)<0.0015 and old.basis.get_rotation_quaternion().angle_to(local.basis.get_rotation_quaternion())<0.015:return
+	cuff.mesh=Gear.skater_glove_cuff(kit,local)
+	cuff.set_meta("last_frame",local)
+
 
 const SLEEVE_ROWS := 14
 const SLEEVE_SIDES := 22

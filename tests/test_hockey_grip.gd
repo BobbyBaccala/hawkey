@@ -21,10 +21,10 @@ func inspect(v)->void:
 		var thumb:Vector3=glove.basis.x*(1.0 if i==0 else -1.0)
 		var expected:Vector3=down if i==0 else -down
 		min_thumb=minf(min_thumb,thumb.dot(expected))
-		min_cuff=minf(min_cuff,glove.basis.y.dot((v.posed_elbows[i]-v.posed_wrists[i]).normalized()))
+		min_cuff=minf(min_cuff,v.glove_cuff_frames[i].basis.y.dot((v.posed_elbows[i]-v.posed_wrists[i]).normalized()))
 		max_gap=maxf(max_gap,(glove.transform*v.GLOVE_HOLE-top).cross(down).length())
 		max_reach=maxf(max_reach,v.shoulder_of(i).distance_to(v.posed_wrists[i]))
-		check(thumb.dot(expected)>0.45,"Top thumb toward blade; lower thumb toward knob, never reversed")
+		check(thumb.dot(expected)>0.999,"Top thumb toward blade; lower thumb toward knob, never reversed")
 func run()->void:
 	var v=load("res://scripts/skater_visual.gd").new();root.add_child(v);await process_frame
 	# Supplied MPP.jpg: top hand ahead of hip, elbow bent, forearm down.
