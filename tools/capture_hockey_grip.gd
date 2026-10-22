@@ -13,6 +13,8 @@ func shot(label_:String,close_:bool=false,other_side:bool=false)->void:
 		m.camera.look_at(grip+Vector3(0,-0.06,0));m.camera.fov=38
 	else:
 		m.camera.position=Vector3(-2.6,1.9,-3.1);m.camera.look_at(Vector3(0,0.8,-0.15));m.camera.fov=42
+	if label_.begins_with("reference-stance") and not close_:
+		m.camera.position=Vector3(-1.8,1.6,-2.9);m.camera.look_at(Vector3(0,0.8,-0.15))
 	m.puck.position=v.get_blade_world()
 	for f in range(3):await process_frame
 	await RenderingServer.frame_post_draw
@@ -40,4 +42,9 @@ func run()->void:
 		if kind=="toe_drag":await shot("toe-drag-hand",true)
 		v.desired_stick=Vector2.ZERO;v.skill_lean=0
 		for f in range(120):v.animate(3,1.0/120,0,true)
+	# Reference-inspired inspection: mirrored wrist/arm relationships, edge lean.
+	v.desired_stick=Vector2(-0.55,0.05);v.skill_lean=-0.75
+	for f in range(90):v.animate(4,1.0/120,-0.12,true)
+	await shot("reference-stance")
+	await shot("reference-stance-hand",true)
 	quit()

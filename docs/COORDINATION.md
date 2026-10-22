@@ -516,3 +516,12 @@ HOCKEY_GRIP_AND_DEKES.md and verification/hockey-grip-20261022.json. Reference
 sites blocked by proxy; fresh photo comparison remains open. Claude 2ff37ab
 preserved; CX-017 records hooks without acknowledgement. Next checkpoint:
 human grip/deke review and per-player handedness, sustained AI chances.
+
+## Supplied stance-photo follow-up — active 2026-10-22
+
+Owner supplied visible MPP.jpg hockey stance after external reference access was
+blocked. Codex solo narrow visual scope: mirror the reference relationships for
+the current right-shot rig, bring top grip lower/forward of hip, preserve bent
+upper arm and downward forearm, inspect both glove sides and moving dekes.
+Do not copy jersey/marks/identity or redistribute the supplied photo. Preserve
+existing gear, goalie and bench work; update contact/reach/clearance regressions.

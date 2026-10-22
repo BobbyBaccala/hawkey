@@ -27,6 +27,17 @@ func inspect(v)->void:
 		check(thumb.dot(expected)>0.45,"Top thumb toward blade; lower thumb toward knob, never reversed")
 func run()->void:
 	var v=load("res://scripts/skater_visual.gd").new();root.add_child(v);await process_frame
+	# Supplied MPP.jpg: top hand ahead of hip, elbow bent, forearm down.
+	# Compare anatomical relationships in mirror for this right-shot rig.
+	for f in range(120):v.animate(3,1.0/120,0,true)
+	var shoulder:Vector3=v.shoulder_of(0)
+	var grip:Vector3=v.stick_grip()
+	var elbow:Vector3=v.posed_elbows[0]
+	var wrist:Vector3=v.posed_wrists[0]
+	check(shoulder.y-grip.y>0.28 and grip.z-shoulder.z>0.20,"Reference stance keeps top grip lower and forward")
+	check(elbow.y-wrist.y>0.015,"Reference top forearm angles down toward fist")
+	var bend:float=rad_to_deg((shoulder-elbow).angle_to(wrist-elbow))
+	check(bend>60 and bend<120,"Top arm retains natural bent-elbow grip")
 	for input_ in [Vector2.ZERO,Vector2.LEFT,Vector2.RIGHT,Vector2.DOWN,Vector2.UP]:
 		v.desired_stick=input_
 		for f in range(100):v.animate(4,1.0/120,0,true);inspect(v)

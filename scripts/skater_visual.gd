@@ -138,7 +138,8 @@ var last_blade_world:=Vector3.INF
 
 static func stick_home(input:Vector2)->Vector3:
 	# Backhand crosses the body centre; top hand repositions to keep reach.
-	return Vector3(-0.36-input.x*(0.94 if input.x<0 else 0.72),0.029,1.05-input.y*0.48)
+	# Keep the blade ahead as the reference-guided top hand moves forward.
+	return Vector3(-0.36-input.x*(0.94 if input.x<0 else 0.72),0.029,1.18-input.y*0.48)
 
 var goalie_save_height := 0.0
 ## Goalie save selection. Each save type has its own blend weight so a new
@@ -1325,7 +1326,8 @@ func pose(speed: float, turn: float) -> void:
 				goalie_gloves[i].rotation=Vector3(-0.10,-0.28,0.06)
 		# Elbows: the top-hand elbow points out and back a little; the bottom
 		# arm hangs nearly straight, elbow tucked in toward the body.
-		var pole := Vector3(side*0.6,-0.8,-0.1) if goalie else (Vector3(side*0.45,-0.25,-1.0) if i==0 else Vector3(side*0.5,-0.2,-0.8))
+		var top_elbow_y:=lerpf(0.20,-0.25,maxf(seat,stick_carry))
+		var pole := Vector3(side*0.6,-0.8,-0.1) if goalie else (Vector3(side*0.45,top_elbow_y,-1.0) if i==0 else Vector3(side*0.5,-0.2,-0.8))
 		if referee: pole = Vector3(side,0,-0.3)
 		if captured_elbow != Vector3.ZERO:
 			pole = pole.lerp((captured_elbow-(shoulder+wrist)*0.5).normalized(),capture_weight)
@@ -1591,10 +1593,10 @@ func stick_grip() -> Vector3:
 			grip = grip.lerp(reach(shoulder_of(1),aim),block_w)
 		return grip
 	# Top hand on the knob in front of the top-hand hip: upper arm down, elbow
-	# back beside the body, forearm roughly level so the shaft crosses the palm
+	# back beside the body, forearm angled down to the fist so the shaft crosses the palm
 	# (not held end-on like a torch). Rides with the shoulders as the skater
 	# crouches, and moves with stickhandling and shots.
-	var grip := shoulder_of(0)+Vector3(-0.11-stick_intent.x*0.20-shot_follow*0.12,-0.235+shot_charge*0.06,0.15-stick_intent.y*0.05-shot_charge*0.12+shot_follow*0.22)
+	var grip := shoulder_of(0)+Vector3(-0.11-stick_intent.x*0.20-shot_follow*0.12,-0.30+shot_charge*0.06,0.23-stick_intent.y*0.05-shot_charge*0.12+shot_follow*0.22)
 	grip.x-=0.18*maxf(0.0,-stick_intent.x)
 	# Stop: hands come down with the hips and push the stick out front.
 	grip += receive_offset*0.25+Vector3(0,0,-0.055)*pass_load
@@ -1835,7 +1837,11 @@ func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF
 		# still lies in the fingers.
 		var square := shaft-up*up.dot(shaft)
 		square = square.normalized() if square.length_squared()>0.0001 else up.cross(Vector3.BACK).normalized()
-		x = square.slerp(shaft if shaft.dot(square)>0.0 else -shaft,0.35).normalized()
+		var across:=shaft if shaft.dot(square)>0.0 else -shaft
+		# Limit wrist cock at extreme drags instead of pulling the cuff off
+		# the forearm to force an arbitrary percentage of shaft alignment.
+		var cock:=minf(0.35,0.42/maxf(square.angle_to(across),0.001))
+		x = square.slerp(across,cock).normalized()
 		up = (up-x*x.dot(up))
 		up = up.normalized() if up.length_squared()>0.0001 else x.cross(Vector3.BACK).normalized()
 	var z := x.cross(up)
