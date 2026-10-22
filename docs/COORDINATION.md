@@ -525,3 +525,17 @@ the current right-shot rig, bring top grip lower/forward of hip, preserve bent
 upper arm and downward forearm, inspect both glove sides and moving dekes.
 Do not copy jersey/marks/identity or redistribute the supplied photo. Preserve
 existing gear, goalie and bench work; update contact/reach/clearance regressions.
+
+Completed photo-guided source `abf97b9`: supplied MPP.jpg now informs mirrored
+top-hand/forearm/elbow relationships. Top-grip command 6.5 cm lower / 8 cm
+forward, capped wrist cock 24.1°, neutral blade 13 cm forward. Deep-drag pullback
+resolves cuff overlap exposed by the first regression; no test threshold relaxed.
+All 15 affected suites pass, grip 3,167 checks, moving physical dekes 720/720 held
+ticks (max gap 0.2202 m); shaft contact, full length and mesh clipping pass.
+Actual staged stance/hand/opposite JPEGs and separate 8 s scripted-input rigid-
+body demo captured from source, 240 frames / 960×600, clean decode, silent.
+Offline source render 1m18s, not a hardware benchmark. PHOTO_STANCE_REFINEMENT.md
+and verification/photo-stance-20261022.json record source, tests and hashes.
+Photo is not redistributed; no brand/identity art copied. Claude 2ff37ab preserved;
+CX-018 documents hooks with no acknowledgement assumed. Per-player handedness,
+full transition art review and sustained AI chance creation remain open.

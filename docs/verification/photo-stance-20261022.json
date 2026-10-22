@@ -1,0 +1,259 @@
+{
+  "source_sha": "abf97b9370ee243112f7a1cef1f80d8a2ed9cee2",
+  "date": "2026-10-22",
+  "reference": "User-supplied visible MPP.jpg. Anatomical relationships mirrored for current right-shot rig; image not redistributed.",
+  "engine_tests": [
+    {
+      "name": "test_hockey_grip",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Hockey grip: 3167 checks; 0 failures; thumb dot 0.46449908614159 cuff dot 0.91308808326721 shaft gap 0.00000008024521 arm reach 0.56500005722046 max shaft 1.30678427219391 handling span 1.66000008583069 drag 0.47999995946884",
+      "log_sha256": "fcac165131f02c5cc5c56890caae43135c25126b80dd9df9beb65fcf5c2a8ad8"
+    },
+    {
+      "name": "test_kit_geometry",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Kit geometry failures: 0",
+      "log_sha256": "4d53fbbfc691dbdfd4cb7311997913a278b2fa30613506373c5808da5264473d"
+    },
+    {
+      "name": "test_clipping",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Clipping failures: 0",
+      "log_sha256": "45f7b1fc5379b69ad060dc236e9674fbf31e22e26ff94ce88d44e44712fdaef9"
+    },
+    {
+      "name": "test_board_hop",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Board hop failures: 0",
+      "log_sha256": "12e11573057a6fb8a82dafa1678c66a7a25cf1146dfb5e84edad7cce938e7f1e"
+    },
+    {
+      "name": "test_puck_skills",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Puck skills: 1108 checks; 0 failures; held 720/720 max error 0.22011376917362 hand gap 0.00000007347421 arm reach 0.56500005722046",
+      "log_sha256": "09e05538a9e7f43c5799c1c05fee97b6b54b05d21a9bc85a9aaf9f096b9e4b0e"
+    },
+    {
+      "name": "test_puck_receiving",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Puck receiving: 202 checks; 0 failures; maximum receive dv 0.66741561889648",
+      "log_sha256": "4885e608afa9665e4d757250057568f19553a34b563ff7a30e9811c86aafb503"
+    },
+    {
+      "name": "test_skating_integration",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Skating integration failures: 0",
+      "log_sha256": "c527ce3fb08250d1263ccad553635a4b6a2c6787be3c229746b1b7d279b747d0"
+    },
+    {
+      "name": "test_directional_skating",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Directional skating: 968 checks; 0 failures",
+      "log_sha256": "ac97faa4874006331090e3e7e8d3c3faaf82dc749c3d79ed9d3a643fc6df117b"
+    },
+    {
+      "name": "test_stride",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Stride failures: 0",
+      "log_sha256": "dfff70f5c41a8eb1ab5cee8b4a238cafbc60aac16055f665437c1363bb96800e"
+    },
+    {
+      "name": "test_hockey_stop",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Hockey stop failures: 0",
+      "log_sha256": "12b3d2e9717ae56c0d58fb0020f722d5c47182ed157f932b4927d59f8c6c87c6"
+    },
+    {
+      "name": "test_skate_stick",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Skate/stick failures: 0",
+      "log_sha256": "dcea54d50747d7a44e298d4e20f8be1f0820d8ffb8a8171c5d38db154d613cc1"
+    },
+    {
+      "name": "test_video_corrections",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Video corrections: 2590 checks; 0 failures",
+      "log_sha256": "7e160531a14358dc54ebd251f64c2315d64283453239aabac2b70c1d16a419df"
+    },
+    {
+      "name": "test_benches",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "PASS",
+      "log_sha256": "bbb19e3e04ce642eb94f84e493adbfe169163ea965c27dd81831feac1fafd803"
+    },
+    {
+      "name": "test_gameplay_photo",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Gameplay photo failures: 0",
+      "log_sha256": "8e0c163567f154cfe7b9cb628d3fc0835b7cce0b9778e8fcc22277c7b0034580"
+    },
+    {
+      "name": "test_net_shooting",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Net shooting: 135 checks; 0 failures",
+      "log_sha256": "eee322efda8407c3506bbb1ba3854d046c389900e3e081d26532ee450921c746"
+    }
+  ],
+  "scripted_training_capture": {
+    "engine": "4.6.2-stable (official)",
+    "fixture": "Scripted skill inputs, production skating/pose and rigid-body puck. One initial placement; no puck attachment or subsequent reposition. Not natural AI gameplay.",
+    "offline_render": true,
+    "samples": [
+      {
+        "blade_gap_m": 0.0229407995939255,
+        "held": true,
+        "move": "cut",
+        "seconds": 0.5
+      },
+      {
+        "blade_gap_m": 0.0301845595240593,
+        "held": true,
+        "move": "cut",
+        "seconds": 1.0
+      },
+      {
+        "blade_gap_m": 0.0175135657191277,
+        "held": true,
+        "move": "",
+        "seconds": 1.5
+      },
+      {
+        "blade_gap_m": 0.0178435053676367,
+        "held": true,
+        "move": "",
+        "seconds": 2.0
+      },
+      {
+        "blade_gap_m": 0.0224284660071135,
+        "held": true,
+        "move": "toe_drag",
+        "seconds": 2.5
+      },
+      {
+        "blade_gap_m": 0.0388230234384537,
+        "held": true,
+        "move": "toe_drag",
+        "seconds": 3.0
+      },
+      {
+        "blade_gap_m": 0.0249921604990959,
+        "held": true,
+        "move": "",
+        "seconds": 3.5
+      },
+      {
+        "blade_gap_m": 0.017722612246871,
+        "held": true,
+        "move": "",
+        "seconds": 4.0
+      },
+      {
+        "blade_gap_m": 0.034325297921896,
+        "held": true,
+        "move": "sweep",
+        "seconds": 4.5
+      },
+      {
+        "blade_gap_m": 0.0470767021179199,
+        "held": true,
+        "move": "sweep",
+        "seconds": 5.0
+      },
+      {
+        "blade_gap_m": 0.0294585730880499,
+        "held": true,
+        "move": "",
+        "seconds": 5.5
+      },
+      {
+        "blade_gap_m": 0.0185564588755369,
+        "held": true,
+        "move": "",
+        "seconds": 6.0
+      },
+      {
+        "blade_gap_m": 0.118891313672066,
+        "held": true,
+        "move": "",
+        "seconds": 6.5
+      },
+      {
+        "blade_gap_m": 0.0163191705942154,
+        "held": true,
+        "move": "",
+        "seconds": 7.0
+      },
+      {
+        "blade_gap_m": 0.0810923054814339,
+        "held": true,
+        "move": "",
+        "seconds": 7.5
+      },
+      {
+        "blade_gap_m": 0.0194835253059864,
+        "held": true,
+        "move": "",
+        "seconds": 8.0
+      }
+    ],
+    "source_sha": "abf97b9370ee243112f7a1cef1f80d8a2ed9cee2"
+  },
+  "video_probe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "width": 960,
+        "height": 600,
+        "pix_fmt": "yuv420p",
+        "avg_frame_rate": "30/1",
+        "nb_frames": "240"
+      }
+    ],
+    "format": {
+      "duration": "8.000000"
+    }
+  },
+  "video_full_decode_errors": "",
+  "capture_wall_time_seconds": 78,
+  "stills": "Staged production poses; puck placed for inspection. Not natural AI gameplay.",
+  "initial_regression": "Neutral hand relocation initially caused cuff/cuff overlap at full inward drag. Production top-hand pullback resolves it; original clipping/contact/length thresholds retained.",
+  "artifacts": [
+    {
+      "path": "docs/screenshots/photo-reference-stance-20261022.jpg",
+      "sha256": "08021d4b8e3cc3cc2694c32efa141a221f4804647065bc44b56fe8de41372ed0",
+      "bytes": 309335
+    },
+    {
+      "path": "docs/screenshots/photo-reference-grip-20261022.jpg",
+      "sha256": "83c7a0ab2aea648513dd2e1aa56a4b88d3746e59c46ba06e35def5d3a9b2ddf9",
+      "bytes": 227848
+    },
+    {
+      "path": "docs/screenshots/photo-reference-grip-opposite-20261022.jpg",
+      "sha256": "d072a157358c2746d292813237e7f313dd4d37fa16069724a50256609ce77695",
+      "bytes": 238401
+    },
+    {
+      "path": "docs/videos/photo-reference-dekes-8s-20261022.mp4",
+      "sha256": "eca049100378d4a40ae2dd0d29f63bc1065cb417a2b0dd6c78bdb7204621aad9",
+      "bytes": 3083144
+    }
+  ]
+}

@@ -99,3 +99,9 @@ explicit top/bottom thumb direction; wider/deeper dekes add stronger body weight
 transfer while respecting hand contact and reach. See HOCKEY_GRIP_AND_DEKES.md
 for actual close-ups, a moving physical demo and reference-access limitations.
 Anatomy/transition realism remains partial and subject to human review.
+
+Supplied-photo follow-up `abf97b9` refines top-hand height/forward reach, bent
+elbow, capped wrist cock and drag pullback; gameplay blade follows the shared
+pose. Reference-inspired inspection and moving physics evidence are in
+PHOTO_STANCE_REFINEMENT.md. This is still partial procedural anatomy, with
+per-player handedness and full animation/human acceptance outstanding.

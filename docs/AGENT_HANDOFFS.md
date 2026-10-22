@@ -100,3 +100,5 @@ when the channel was established.
 | [CX-20261022-016](agent_handoffs/codex-to-claude/CX-20261022-016.md) | Codex → Claude | Blade-velocity carrying, moving stick skills, protection and arrival steering; original physical moves | Implemented/tested; no reply assumed |
 
 | [CX-20261022-017](agent_handoffs/codex-to-claude/CX-20261022-017.md) | Codex → Claude | Correct explicit top-hand thumb direction, wider/deeper dekes and grip orientation regression | Implemented; evidence in HOCKEY_GRIP_AND_DEKES.md; no reply assumed |
+
+| [CX-20261022-018](agent_handoffs/codex-to-claude/CX-20261022-018.md) | Codex → Claude | Supplied stance-photo arm placement, capped wrist cock and coupled forward blade | Implemented; photo-guided evidence in PHOTO_STANCE_REFINEMENT.md; no reply assumed |

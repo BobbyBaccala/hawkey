@@ -271,3 +271,10 @@ hip/torso motion. The current right-shot procedural rig remains a subset;
 per-player mirrored handedness is not implemented by this change. See
 HOCKEY_GRIP_AND_DEKES.md for posed and moving physical evidence. Fresh coaching
 reference pages were blocked; no retrieved-reference or human approval claimed.
+
+Photo-guided refinement, 2026-10-22 source `abf97b9`: visible owner-supplied stance
+now informs top hand/forearm/elbow placement. Added neutral proportion checks,
+capped wrist cock, cuff clearance on deep drag and coupled forward blade. This
+advances the existing Partial anatomy/handling slice; it does not establish full
+pose equivalence, real-device acceptance or complete handedness. Actual evidence
+and reference limitations: PHOTO_STANCE_REFINEMENT.md.
