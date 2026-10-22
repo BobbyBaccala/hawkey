@@ -49,7 +49,9 @@ func draw_tick()->void:
 	frames+=1
 	if inspection_camera and frames>150:
 		var pocket:Vector3=actor.get_child(1).get_blade_world()
-		m.camera.position=pocket+Vector3(-0.55,0.38,-0.70);m.camera.look_at(pocket);m.camera.fov=44
+		var visual=actor.get_child(1)
+		var normal:Vector3=visual.stick_blade.global_basis.z*visual.shot_side()
+		m.camera.position=pocket+normal*0.65+Vector3.UP*0.45-visual.stick_blade.global_basis.x*0.20;m.camera.look_at(pocket);m.camera.fov=44
 	elif hands_camera or inspection_camera:
 		var top:Vector3=actor.get_child(1).rig.to_global(actor.get_child(1).stick_grip())
 		m.camera.position=top+Vector3(-0.9,0.35,-1.2);m.camera.look_at(top+Vector3(0,-0.15,0));m.camera.fov=42

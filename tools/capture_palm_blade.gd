@@ -12,7 +12,8 @@ func shot(label_:String,reverse_:bool=false,blade_:bool=false)->void:
 	m.camera.look_at(top+Vector3(0,-0.12,0));m.camera.fov=42
 	if blade_:
 		var target:Vector3=v.get_blade_world()
-		m.camera.position=target+Vector3(-0.55*side,0.30,-0.65)
+		var normal:Vector3=v.stick_blade.global_basis.z*side
+		m.camera.position=target+normal*0.65+Vector3.UP*0.45-v.stick_blade.global_basis.x*0.20
 		m.camera.look_at(target);m.camera.fov=40
 	m.puck.position=v.get_blade_world()
 	for f in range(3):await process_frame
