@@ -71,14 +71,16 @@ exhibition human acceptance or target-hardware FPS result is claimed.
 | Priority | Gate | Current state | Acceptance evidence needed |
 |---|---|---|---|
 | 1 | Directional movement and transitions | Partial; first pass implemented/tested | Continuous gameplay review of defending, stops, pivots and diagonal transitions; skates/gear remain coherent |
-| 2 | Puck-contact actions | Partial; release follow-through exists | Anticipation/contact/recovery timing, receiving absorption, pressured passes and one-timers; no invisible or detached contacts |
+| 2 | Puck-contact actions | Partial; release, receiving and held-pass preparation implemented/tested | Anticipation/contact/recovery timing, receiving absorption, pressured passes and one-timers; no invisible or detached contacts |
 | 3 | Goalie locomotion and posts | Partial; tracking/net clearance/pivot steps tested | Shuffle-to-butterfly-to-recovery, post attachment and reverse-VH without equipment clipping; playable shot scenarios |
 | 4 | Sustained tactical play | Partial; selectable planner and facing integrated | Full exhibition at each strength, sensible shot/pass decisions, role constraints and no repeated deadlocks |
 | 5 | Broadcast presentation and sound | Partial; shaders/reflection layer integrated | Camera motion/puck visibility, restrained highlights, readable UI, audio context and crowd consistency across a full match |
 | 6 | Polished exhibition acceptance | In progress | One complete uninterrupted match through result/rematch, human feel review, regression pass and measured performance on target hardware |
 
-The next focused implementation checkpoint is puck-contact timing and receiving,
-followed by a short real gameplay capture. These are checkpoints for active work,
+Puck-contact/receiving source 870246d now implements the next slice; see
+PUCK_CONTACT_POLISH.md for the actual receiving checks and gameplay evidence.
+The next checkpoint is sustained chance creation, shot-contact anticipation
+and goalie post/recovery transitions. These are checkpoints for active work,
 not an unattended background job or a promise of a completion date.
 
 Claude's latest remote remains 2ff37ab. This pass selectively reconciles the

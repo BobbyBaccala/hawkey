@@ -1,0 +1,357 @@
+{
+  "video": "receiving-gameplay-10s-20261022.mp4",
+  "sha256": "f3961c8fa2db214f63494a0d321096a123fc8a06c7fa6e832b87c22ff955302a",
+  "bytes": 4050661,
+  "duration_seconds": 10.0,
+  "frames": 300,
+  "resolution": [
+    960,
+    600
+  ],
+  "fps": "30/1",
+  "codecs": [
+    "h264",
+    "aac"
+  ],
+  "full_decode_errors": "",
+  "audio_peak_db": -26.1,
+  "regression_tests": [
+    {
+      "name": "test_puck_receiving",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_controller",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_net_shooting",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_puck_flight",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_match",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_ai_spectator",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_tactics_match",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_skating_integration",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_directional_skating",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_stride",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_hockey_stop",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_skate_stick",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_video_corrections",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_goalie_proportions",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_goalie_saves",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_goalie_polish",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_goal_net",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_benches",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_play_now",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_overtime_shootout",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_gameplay_photo",
+      "returncode": 0,
+      "script_error": false
+    }
+  ],
+  "capture": {
+    "ai_vs_ai": true,
+    "camera": "Production Broadcast camera",
+    "capture_profile": "960x600, no MSAA or screen AA; 1024px two-split key shadows. Production models, arena, lights and physics preserved.",
+    "engine": "4.6.2-stable (official)",
+    "output_fps": 30,
+    "render_frames_seen": 330,
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "rendering": "Fixed-frame offline Movie Maker render; output FPS is not measured real-time hardware performance.",
+    "samples": [
+      {
+        "ai_actors_with_targets": 0,
+        "clock": 1200.0,
+        "phase": 0,
+        "puck": [
+          0.0,
+          0.0163194444030523,
+          0.0
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 0.0
+      },
+      {
+        "ai_actors_with_targets": 0,
+        "clock": 1200.0,
+        "phase": 0,
+        "puck": [
+          0.0,
+          0.0163194444030523,
+          0.0
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 1.0
+      },
+      {
+        "ai_actors_with_targets": 0,
+        "clock": 1200.0,
+        "phase": 0,
+        "puck": [
+          0.0,
+          0.0163194444030523,
+          0.0
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 2.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1196.03333333334,
+        "phase": 1,
+        "puck": [
+          0.428640276193619,
+          0.0129740312695503,
+          1.48923063278198
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 3.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1192.03333333334,
+        "phase": 1,
+        "puck": [
+          5.52748680114746,
+          0.0127227818593383,
+          -8.54826831817627
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 4.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1188.03333333334,
+        "phase": 1,
+        "puck": [
+          10.6289577484131,
+          0.0127227818593383,
+          -18.8222579956055
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 5.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1184.03333333335,
+        "phase": 1,
+        "puck": [
+          10.064474105835,
+          0.021989930421114,
+          -27.5748348236084
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 6.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1180.03333333335,
+        "phase": 1,
+        "puck": [
+          1.96265983581543,
+          0.0180197581648827,
+          -29.7804107666016
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 7.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1176.03333333336,
+        "phase": 1,
+        "puck": [
+          -5.20581245422363,
+          0.0378043167293072,
+          -29.7228927612305
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 8.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1172.03333333336,
+        "phase": 1,
+        "puck": [
+          -7.13320255279541,
+          0.0127394571900368,
+          -22.6767807006836
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 9.0
+      },
+      {
+        "ai_actors_with_targets": 10,
+        "clock": 1168.03333333336,
+        "phase": 1,
+        "puck": [
+          -1.8301774263382,
+          0.0256162006407976,
+          -15.3266954421997
+        ],
+        "roster_shots": [
+          0,
+          0
+        ],
+        "score": [
+          0,
+          0
+        ],
+        "second": 10.0
+      }
+    ],
+    "simulation": "Normal production rules, skating, puck, goalie and team AI; no forced game events. Normal match clock_rate=4.0.",
+    "source_sha": "870246d",
+    "warmup_frames": 30
+  }
+}

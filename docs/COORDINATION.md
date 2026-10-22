@@ -442,3 +442,28 @@ EXHIBITION_POLISH.md / verification/exhibition-polish-20261022.json. Claude remo
 2ff37ab untouched; CX-014 records API changes and remaining integration. Next
 checkpoint is puck-contact timing/receiving plus a short actual gameplay capture.
 No full-match human acceptance or real-time target-hardware performance claim.
+
+## Puck-contact/receiving slice — 2026-10-22, active Codex scope
+
+Owner asks continued solo progress. Fetched Claude 2ff37ab; current cc573a0
+preserved. Narrow shared edits: physical blade-reach receiving, bounded cushioning
+and anticipation poses, controller pass preparation, AI stick-first recovery and
+shared Match/Practice pickup assistance. Keep net targeting, moderated speeds,
+full-circle goalie tracking, source-pinned capture honesty and existing modes.
+Validate actual rigid-body passes, no distant/airborne/high-speed pickup, controller
+ownership, animation grip, live AI movement and existing exhibition regressions.
+
+Completed source 870246d: shared blade-based Match/Practice receipt with bounded
+cushion acceleration, approach/contact poses, held-pass preparation, actor-specific
+0.28s re-pickup lock and immediate opponent/receiver access. Battle cooldowns
+retained separately. AI chases with stick leading (bench routes preserved) and
+prioritizes clear close chances; no speed/difficulty cheat or forced scoring.
+21 affected suites green; eight targeted final reruns passed. Receiving suite
+202 checks. Actual source-pinned 30s AI run: acquisitions [19,12], 15 releases,
+0 shots/0 goals; chance creation remains open. Actual uninterrupted 10s MP4:
+300 frames, 960×600 / 30 FPS / H.264-AAC, non-silent audio, clean full decode;
+software/offline render took 3m45s, not a hardware benchmark. Controlled close-up
+JPEGs inspected, separately labeled from live video. Evidence and source:
+PUCK_CONTACT_POLISH.md / verification/puck-contact-20261022.json. Claude 2ff37ab
+untouched; CX-015 describes hooks. Next checkpoint: sustained AI chance creation,
+shot-contact anticipation and goalie post/recovery behavior, with human review.

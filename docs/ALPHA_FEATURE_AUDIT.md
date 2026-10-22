@@ -240,3 +240,15 @@ controlled engine inspections, not new live footage. See EXHIBITION_POLISH.md an
 verification/exhibition-polish-20261022.json. Skating/goalkeeping/presentation remain
 Partial overall; full contact/wind-up/receiving/one-timer/post systems, human feel
 review, target-hardware profiling and continuous-match acceptance remain open.
+
+### Puck-contact receiving — 2026-10-22
+
+Source 870246d implements blade-reach/relative-speed receiving, acceleration-
+bounded cushioning and pose, controller pass preparation, stick-leading AI
+recovery, individual pickup locks and close-shot priority. 21 affected suites
+pass; 202 focused checks and eight final targeted reruns. Source-pinned 10-second
+actual AI clip and separately labeled close-up JPEGs are in PUCK_CONTACT_POLISH.md.
+The 30-second natural AI check has pickups/releases but zero shots; chance creation
+and balance remain explicit gaps. Passing/receiving, AI and animation remain
+Partial overall; shot/one-timer anticipation, deflections, protection, goalie post
+movement, full-match human review and target-hardware performance are still open.
