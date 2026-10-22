@@ -1606,8 +1606,11 @@ func stick_grip() -> Vector3:
 	# back beside the body, forearm angled down to the fist so the shaft crosses the palm
 	# (not held end-on like a torch). Rides with the shoulders as the skater
 	# crouches, and moves with stickhandling and shots.
-	var grip := shoulder_of(top_hand_index())+Vector3(-shot_side()*0.32-stick_intent.x*0.16-shot_follow*0.12*shot_side(),-0.27+shot_charge*0.06,0.16-stick_intent.y*0.05-shot_charge*0.12+shot_follow*0.22)
-	grip.x-=shot_side()*0.18*maxf(0.0,-stick_intent.x*shot_side())
+	var side:=shot_side()
+	var backhand:=maxf(0.0,-stick_intent.x*side)
+	var across:=lerpf(0.05,0.16,smoothstep(0.0,0.5,backhand))
+	var grip := shoulder_of(top_hand_index())+Vector3(-side*0.32-stick_intent.x*across-shot_follow*0.12*side,-0.27+shot_charge*0.06,0.23-backhand*0.07-stick_intent.y*0.05-shot_charge*0.12+shot_follow*0.22)
+	grip.x-=side*0.18*backhand
 	# Pull the top hand back/up during a deep drag, keeping the two cuffs
 	# separated as the blade returns toward the skates.
 	grip+=Vector3(0,0.065,-0.08)*maxf(0.0,stick_intent.y)
@@ -1853,7 +1856,7 @@ func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF
 		var across:=shaft if shaft.dot(square)>0.0 else -shaft
 		# Limit wrist cock at extreme drags instead of pulling the cuff off
 		# the forearm to force an arbitrary percentage of shaft alignment.
-		var cock:=minf(0.35,0.42/maxf(square.angle_to(across),0.001))
+		var cock:=minf(0.35,0.45/maxf(square.angle_to(across),0.001))
 		x = square.slerp(across,cock).normalized()
 		up = (up-x*x.dot(up))
 		up = up.normalized() if up.length_squared()>0.0001 else x.cross(Vector3.BACK).normalized()

@@ -936,6 +936,15 @@ func update_team_ai(delta: float) -> void:
 		actor.move_and_slide()
 		var visual:=actor.get_child(1)
 		var face:=body_facing(actor)
+		if stick_recovery and carrier==null:
+			# Aim the side-held blade at a loose puck. Looking straight at it
+			# while subtracting a lateral stick offset creates an orbit with
+			# no reachable body/heading equilibrium.
+			var local_blade:Vector3=visual.rig.basis*visual.stick_home(Vector2.ZERO,visual.shoots_right)
+			local_blade.y=0
+			var toward:Vector3=puck.position+puck.linear_velocity*0.06-actor.position
+			toward.y=0
+			if toward.length()>0.1:face=toward.rotated(Vector3.UP,-Vector3.FORWARD.signed_angle_to(local_blade.normalized(),Vector3.UP)).normalized()
 		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-face.x,-face.z),4.8*delta)
 		prepare_stick(actor)
 		visual.animate_motion(actor.velocity,delta,0,intent.length_squared()>0.01)

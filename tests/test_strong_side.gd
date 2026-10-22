@@ -74,7 +74,24 @@ func run()->void:
 		for kind in ["pass","shot","slap"]:
 			v.play_release(kind,Vector3.FORWARD)
 			for f in range(120):v.animate(4,1.0/120,0,true);inspect(v)
+	# A side-held blade requires a side-aware body heading on loose-puck
+	# recovery. Exercise the actual planner/skating/facing/contact loop.
+	var recovery_ticks:Array=[]
+	m.ai_vs_ai=true
+	for hand in ["R","L"]:
+		m.carrier=null;m.cooldown=0;m.release_in_flight=false
+		actor.position=Vector3(-4,0,4);actor.velocity=Vector3.ZERO
+		v.set_shoots(hand);v.rotation.y=0;v.desired_stick=Vector2.ZERO;v.stick_intent=Vector2.ZERO;v.skill_lean=0
+		for f in range(60):v.animate_motion(Vector3.ZERO,1.0/120,0,false)
+		m.sync_skater_contacts(actor);m.puck.position=Vector3(0,0.03,0);m.puck.linear_velocity=Vector3.ZERO
+		var acquired_tick:=-1
+		for tick in range(960):
+			m.update_team_ai(1.0/120);m.update_possession(1.0/120)
+			await physics_frame
+			if m.carrier==actor:acquired_tick=tick;break
+		recovery_ticks.append(acquired_tick)
+		check(acquired_tick>=0,"Actual AI recovers a loose puck with each side-held blade, without orbiting")
 	check(float(held)/total>0.98 and worst_gap<0.35,"Both handed moving dekes retain close physical control")
 	check(worst_contact<0.025,"Both handed fists remain seated on shaft")
-	print("Strong side: ",checks," checks; ",failures," failures; held ",held,"/",total," gap ",worst_gap," contact ",worst_contact," thumb dot ",min_thumb)
+	print("Strong side: ",checks," checks; ",failures," failures; held ",held,"/",total," gap ",worst_gap," contact ",worst_contact," thumb dot ",min_thumb," recovery ticks ",recovery_ticks)
 	quit(failures)
