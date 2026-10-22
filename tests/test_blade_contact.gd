@@ -14,7 +14,7 @@ func run()->void:
 	m.set_physics_process(false);m.set_process(false)
 	for actor in m.skaters:m.set_actor_active(actor,false)
 	for actor in m.goalkeepers:m.set_actor_active(actor,false)
-	m.puck.collision_mask=33 # Isolate blade from nearby skates/torso for this fixture.
+	m.puck.collision_mask=1 | m.puck.BLADE_LAYER # Isolate blade from nearby skates/torso for this fixture.
 	var actor=m.player;m.set_actor_active(actor,true);actor.position=Vector3.ZERO
 	var v=actor.get_child(1);v.rotation.y=0
 	for hand in ["R","L"]:

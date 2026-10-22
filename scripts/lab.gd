@@ -2,6 +2,7 @@ extends Node3D
 var practice_pass_actor: CharacterBody3D
 var practice_input := preload("res://scripts/controller_input.gd").new()
 const NetShooting = preload("res://scripts/net_shooting.gd")
+const PuckPhysics=preload("res://scripts/puck.gd")
 const PuckControl=preload("res://scripts/puck_control.gd")
 const PuckSkills=preload("res://scripts/puck_skills.gd")
 const Skating = preload("res://scripts/skating.gd")
@@ -180,7 +181,7 @@ func _ready() -> void:
 	puck.axis_lock_angular_z = false
 	puck.collision_layer = 4
 	arena.puck = puck
-	puck.collision_mask = 41
+	puck.collision_mask = 9 | PuckPhysics.BLADE_LAYER
 	puck.contact_monitor = true
 	puck.max_contacts_reported = 4
 	var pm := PhysicsMaterial.new()
@@ -550,11 +551,11 @@ func add_puck_collision(actor: CharacterBody3D, is_goalie: bool) -> void:
 		contact.add_child(collision)
 
 	# Curved blade hull comes from the same sections as the rendered mesh.
-	# Layer 6 is distinct from the analytic ice support on layer 5. The
+	# Layer 7 is distinct from ice support (5) and the goalie net guard (6). The
 	# posed collider blocks free pucks; carry/release supplies stick velocity.
 	var blade_body:=StaticBody3D.new()
 	blade_body.name="StickContact"
-	blade_body.collision_layer=32;blade_body.collision_mask=4
+	blade_body.collision_layer=PuckPhysics.BLADE_LAYER;blade_body.collision_mask=4
 	blade_body.set_meta("actor",actor);blade_body.set_meta("zone","stick")
 	blade_body.physics_material_override=pm
 	var blade_shape:=CollisionShape3D.new()
@@ -569,7 +570,7 @@ func hit_actor(body: Node) -> Node:
 func set_puck_contacts_enabled(actor: CharacterBody3D, enabled: bool) -> void:
 	for child in actor.get_children():
 		if child is StaticBody3D:
-			child.collision_layer=(32 if child.name=="StickContact" else 8) if enabled else 0
+			child.collision_layer=(PuckPhysics.BLADE_LAYER if child.name=="StickContact" else 8) if enabled else 0
 
 func build_goalie_contacts(actor: CharacterBody3D) -> void:
 	var visual:=actor.get_child(1)

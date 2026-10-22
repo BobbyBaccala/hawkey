@@ -1,5 +1,6 @@
 extends RigidBody3D
 ## Free 3D rigid body: gravity, spin, grounded drag and CCD; no height lock.
+const BLADE_LAYER:=1<<6 # Layers 5/6 are ice support / goalie-only net guard.
 var contact_shape:Shape3D
 var grounded := false
 var ice_deceleration := 0.35
@@ -61,7 +62,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		# that existing contact too; a forward sweep alone ignores overlaps.
 		var overlap:=PhysicsShapeQueryParameters3D.new()
 		overlap.shape=contact_shape;overlap.transform=state.transform
-		overlap.collision_mask=32;overlap.margin=0.005
+		overlap.collision_mask=BLADE_LAYER;overlap.margin=0.005
 		var rest:=state.get_space_state().get_rest_info(overlap)
 		if not rest.is_empty():
 			var normal:Vector3=rest.normal
@@ -80,7 +81,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		var query:=PhysicsShapeQueryParameters3D.new()
 		query.shape=contact_shape
 		query.transform=state.transform
-		query.motion=motion;query.collision_mask=32;query.margin=0.005
+		query.motion=motion;query.collision_mask=BLADE_LAYER;query.margin=0.005
 		var space:=state.get_space_state()
 		var sweep:=space.cast_motion(query)
 		if sweep.size()==2 and sweep[0]<1.0:

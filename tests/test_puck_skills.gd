@@ -56,7 +56,7 @@ func run()->void:
 			check(m.puck.position.distance_to(before)<0.00001,"Deke never teleports puck")
 			await physics_frame
 			var query:=PhysicsShapeQueryParameters3D.new()
-			query.shape=m.puck.get_child(1).shape;query.transform=m.puck.global_transform;query.collision_mask=32
+			query.shape=m.puck.get_child(1).shape;query.transform=m.puck.global_transform;query.collision_mask=m.puck.BLADE_LAYER
 			var hits:Array=m.get_world_3d().direct_space_state.intersect_shape(query)
 			if not hits.is_empty():
 				overlap_ticks+=1
