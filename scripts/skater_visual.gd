@@ -68,9 +68,45 @@ var release_age := 0.0
 var release_duration := 0.6
 var release_direction := Vector3.FORWARD
 var release_weight := 0.0
+var receive_hint:=false
+var receive_target:=Vector3.ZERO
+var receive_weight:=0.0
+var receive_age:=-1.0
+var receive_direction:=Vector3.ZERO
+var receive_offset:=Vector3.ZERO
+var pass_preparation:=0.0
+var pass_load:=0.0
+
+func offer_receive(world_point:Vector3)->void:
+	if goalie or referee:return
+	receive_hint=true;receive_target=world_point
+
+func receive_puck(world_velocity:Vector3)->void:
+	if goalie or referee:return
+	receive_age=0.0
+	receive_direction=(rig.global_basis.inverse()*Vector3(world_velocity.x,0,world_velocity.z)).normalized()
+
+func update_receiving(delta:float)->void:
+	receive_weight=lerpf(receive_weight,1.0 if receive_hint else 0.0,1-exp(-14*delta))
+	receive_hint=false
+	pass_load=lerpf(pass_load,pass_preparation,1-exp(-14*delta))
+	pass_preparation=0.0
+	receive_offset=Vector3.ZERO
+	if receive_weight>0.001 and is_inside_tree():
+		var local:=rig.to_local(receive_target)
+		var desired:=Vector3(clampf(local.x,-0.75,0.35),0.029,clampf(local.z,0.65,1.35))
+		receive_offset=(desired-Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)).limit_length(0.30)*receive_weight
+	if receive_age>=0:
+		receive_age+=delta
+		var t:=clampf(receive_age/0.32,0.0,1.0)
+		receive_offset+=receive_direction*0.12*sin(PI*t)
+		if t>=1:receive_age=-1.0
+
 
 func play_release(kind: String, world_direction: Vector3) -> void:
 	if goalie or referee: return
+	pass_preparation=0.0
+	receive_hint=false
 	release_kind=kind
 	release_age=0.0
 	release_duration=0.44 if kind=="pass" else (0.82 if kind=="slap" else 0.66)
@@ -1429,10 +1465,11 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	update_stop(speed,delta,braking)
 	brake_turn = move_toward(brake_turn,1.0 if braking and not goalie else 0.0,delta*6)
 	update_release(delta)
+	update_receiving(delta)
 	shot_follow = release_weight
 	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
 	blade_position=Vector3(-0.02+goalie_drop*0.05,0.042,0.76-goalie_drop*0.04+0.035*sin(PI*goalie_drop)) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
-	if not goalie and not referee: blade_position+=release_blade_offset()
+	if not goalie and not referee: blade_position+=release_blade_offset()+receive_offset+Vector3(0,0,-0.18)*pass_load
 	# Stop: the stick reaches out in front for balance.
 	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
 	# Board hop: lift the stick clear of the boards (blade rises first, so it
@@ -1543,6 +1580,7 @@ func stick_grip() -> Vector3:
 	# crouches, and moves with stickhandling and shots.
 	var grip := shoulder_of(0)+Vector3(-0.11-stick_intent.x*0.20-shot_follow*0.12,-0.235+shot_charge*0.06,0.15-stick_intent.y*0.05-shot_charge*0.12+shot_follow*0.22)
 	# Stop: hands come down with the hips and push the stick out front.
+	grip += receive_offset*0.25+Vector3(0,0,-0.055)*pass_load
 	grip += Vector3(0,-0.10,0.06)*stop_blend()
 	# Board hop: the knob comes down to the hip as the stick is carried.
 	if stick_carry>0.0: grip = grip.lerp(carry_knob(),stick_carry)

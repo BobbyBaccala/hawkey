@@ -79,6 +79,17 @@ func run() -> void:
 	m.update_team_ai(1.0/60)
 	check(m.carrier==null and m.puck.linear_velocity.z*attack>12 and m.puck.linear_velocity.y>3,"PK carrier clears up ice when no safe outlet exists")
 	m.match_state.penalties.clear()
+	# A nearby defender off the lane must not force a pass out of an open slot.
+	for actor in m.skaters:
+		actor.position=Vector3(-10,0,-15*attack);actor.velocity=Vector3.ZERO
+		actor.set_meta("eligible",true);actor.set_meta("changing",false)
+	cpu.position=Vector3(0,0,20*attack)
+	m.skaters[2].position=Vector3(6,0,20*attack)
+	m.skaters[5].position=Vector3(2,0,20*attack)
+	m.carrier=cpu;m.puck.position=cpu.get_child(1).get_blade_world();m.cooldown=0;cpu.set_meta("decision",0.0)
+	var before_shots:int=m.roster(cpu).shots
+	m.update_team_ai(1.0/120)
+	check(m.roster(cpu).shots==before_shots+1 and cpu.get_child(1).release_kind=="shot","AI takes open close-range shot under off-lane pressure")
 	T.choices=[T.defaults(),T.defaults()]
 	change_scene_to_file("res://events.tscn");await process_frame
 	print("Tactics match: %d checks; %d failures"%[checks,failures]);quit(failures)

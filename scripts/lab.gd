@@ -2,6 +2,7 @@ extends Node3D
 var practice_pass_actor: CharacterBody3D
 var practice_input := preload("res://scripts/controller_input.gd").new()
 const NetShooting = preload("res://scripts/net_shooting.gd")
+const PuckControl=preload("res://scripts/puck_control.gd")
 const Skating = preload("res://scripts/skating.gd")
 const Arena = preload("res://scripts/arena.gd")
 const Skater = preload("res://scripts/skater_visual.gd")
@@ -45,6 +46,24 @@ var camera_target := Vector3.ZERO
 var pickup_owner := false
 var audio: Node3D
 var selection: MeshInstance3D
+
+var pickup_lock_actor:CharacterBody3D
+var pickup_lock_time:=0.0
+var release_in_flight:=false
+
+func lock_released_puck(actor:CharacterBody3D)->void:
+	pickup_lock_actor=actor;pickup_lock_time=0.28;release_in_flight=true
+
+func control_acquired()->void:
+	if release_in_flight:cooldown=0.0
+	release_in_flight=false
+
+func pickup_blocked(actor:CharacterBody3D)->bool:
+	return pickup_lock_time>0 and is_instance_valid(pickup_lock_actor) and actor==pickup_lock_actor
+
+func advance_pickup_lock(delta:float)->void:
+	pickup_lock_time=maxf(0.0,pickup_lock_time-delta)
+	if pickup_lock_time<=0:pickup_lock_actor=null
 
 func make_skater(pos: Vector3, color: Color, jersey: String, is_goalie: bool = false, accent: Color = Color(0,0,0,0)) -> CharacterBody3D:
 	var body := CharacterBody3D.new()
@@ -255,6 +274,7 @@ func capture_preview() -> void:
 	get_tree().quit()
 
 func reset_puck() -> void:
+	pickup_lock_actor=null;pickup_lock_time=0.0;release_in_flight=false
 	charge = 0
 	pickup_owner = false
 	puck.position = player.position + aim * 1.05 + Vector3(0,0.017,0)
@@ -313,6 +333,7 @@ func strike(direction: Vector3, speed: float, is_pass: bool = false, loft: float
 	player_visual.play_release("pass" if is_pass else ("slap" if (practice_input.slap_requested if practice_input.active else Input.is_physical_key_pressed(KEY_ALT)) else "shot"),puck.linear_velocity)
 	if is_pass: puck.linear_velocity.y=speed*loft
 	pickup_owner = false
+	lock_released_puck(player)
 	cooldown = 0.42
 	if not is_pass: shots += 1
 	audio.cue("pass" if is_pass else ("slap" if (practice_input.slap_requested if practice_input.active else Input.is_physical_key_pressed(KEY_ALT)) else "wrist"),puck.global_position,speed/32)
@@ -371,6 +392,7 @@ func _physics_process(delta: float) -> void:
 		return
 	elapsed += delta
 	cooldown = maxf(0,cooldown - delta)
+	advance_pickup_lock(delta)
 	goal_timer = maxf(0,goal_timer - delta)
 	var intent := Vector3(float(Input.is_physical_key_pressed(KEY_D))-float(Input.is_physical_key_pressed(KEY_A)),0,float(Input.is_physical_key_pressed(KEY_S))-float(Input.is_physical_key_pressed(KEY_W)))
 	if practice_input.active: intent=Vector3(practice_input.left_stick.x,0,practice_input.left_stick.y)
@@ -392,27 +414,18 @@ func _physics_process(delta: float) -> void:
 	var target_rotation := atan2(-aim.x,-aim.z)
 	var old_rotation := player_visual.rotation.y
 	player_visual.rotation.y = rotate_toward(old_rotation,target_rotation,7.5 * delta)
+	if not pickup_owner and not pickup_blocked(player) and PuckControl.offer(puck.position,puck.linear_velocity,player.position,player.velocity):player_visual.offer_receive(puck.position+puck.linear_velocity*0.03)
+	player_visual.pass_preparation=0.4+practice_input.pass_held*0.6 if practice_input.active and practice_input.trigger_down and practice_pass_actor==player and pickup_owner else 0.0
 	player_visual.animate_motion(velocity,delta,angle_difference(old_rotation,target_rotation) * velocity.length() * 0.02,intent.length_squared()>0.01,Input.is_physical_key_pressed(KEY_CTRL))
 	audio.track_stop(player,player_visual.stop_weight,velocity.length())
 	sync_skater_contacts(player)
 	charge = 0
-	# Stable critically damped stick spring with speed and reach limits.
-	var puck_flat := puck.position
-	puck_flat.y = 0
-	var distance_ := player.position.distance_to(puck_flat)
-	if distance_ > 1.9 or cooldown > 0 or puck.position.y>0.18: pickup_owner = false
-	if cooldown <= 0 and distance_ < 1.25 and puck.position.y<0.14 and (puck.linear_velocity - velocity).length() < 14:
-		pickup_owner = true
-	if pickup_owner:
-		var stick_forward := -player_visual.global_basis.z
-		var stick_right := player_visual.global_basis.x
-		var target: Vector3 = player_visual.get_blade_world()
-		var error := target - puck.position
-		error.y = 0
-		var relative := puck.linear_velocity - velocity
-		relative.y = 0
-		var accel := (error * 160 - relative * 25).limit_length(100)
-		puck.linear_velocity += accel * delta
+	var blade:Vector3=player_visual.get_blade_world()
+	if not PuckControl.retained(puck.position,player.position,blade):pickup_owner=false
+	if not pickup_owner and not pickup_blocked(player) and PuckControl.can_receive(puck.position,puck.linear_velocity,player.position,player.velocity,blade):
+		pickup_owner=true;control_acquired()
+		player_visual.receive_puck(puck.linear_velocity-player.velocity)
+	if pickup_owner:puck.linear_velocity=PuckControl.control_velocity(puck.position,puck.linear_velocity,player.velocity,blade,delta)
 	update_partner(delta)
 	update_goalkeepers(delta)
 	if goal_timer <= 0:
@@ -440,27 +453,23 @@ func _physics_process(delta: float) -> void:
 func update_partner(delta: float) -> void:
 	var target := Vector3(clampf(player.position.x + (6 if player.position.x < 0 else -6),-(Arena.HALF_WIDTH-2.0),Arena.HALF_WIDTH-2.0),0,clampf(player.position.z - 5,-21,21))
 	# Receiver moves to the pass, otherwise holds a supporting lane.
-	if cooldown > 0.05 and passes > 0 and teammate.position.distance_to(puck.position) < 5:
-		target = Vector3(puck.position.x,0,puck.position.z)
+	if not pickup_owner and passes>0 and teammate.position.distance_to(puck.position)<5:
+		target=PuckControl.recovery_target(puck.position,puck.linear_velocity,teammate_visual.get_blade_world()-teammate.position)
 	var dir := target - teammate.position
 	teammate.velocity = teammate.velocity.move_toward(dir.limit_length(1) * 5,9 * delta)
 	teammate.move_and_slide()
 	if dir.length() > 0.4:
 		teammate_visual.rotation.y = rotate_toward(teammate_visual.rotation.y,atan2(-dir.x,-dir.z),5 * delta)
+	if not pickup_owner and not pickup_blocked(teammate) and PuckControl.offer(puck.position,puck.linear_velocity,teammate.position,teammate.velocity):teammate_visual.offer_receive(puck.position+puck.linear_velocity*0.03)
 	teammate_visual.animate_motion(teammate.velocity,delta,0,dir.length()>0.4)
 	sync_skater_contacts(teammate)
-	if cooldown <= 0 and teammate.position.distance_to(puck.position) < 1.2 and not pickup_owner:
-		# Catch softly, rather than automatically firing the puck back.
-		puck.linear_velocity *= 0.35
-		status.text = "PASS RECEIVED  /  Space to switch"
-		if teammate.position.distance_to(player.position) > 2:
-			var old := player
-			player = teammate
-			teammate = old
-			player_visual = player.get_child(1)
-			teammate_visual = teammate.get_child(1)
-			velocity = player.velocity
-			pickup_owner = true
+	if not pickup_blocked(teammate) and not pickup_owner and PuckControl.can_receive(puck.position,puck.linear_velocity,teammate.position,teammate.velocity,teammate_visual.get_blade_world()):
+		teammate_visual.receive_puck(puck.linear_velocity-teammate.velocity)
+		status.text="PASS RECEIVED  /  Space to switch"
+		var old:=player;player=teammate;teammate=old
+		player_visual=player.get_child(1);teammate_visual=teammate.get_child(1)
+		velocity=player.velocity;pickup_owner=true;control_acquired()
+		puck.linear_velocity=PuckControl.control_velocity(puck.position,puck.linear_velocity,player.velocity,player_visual.get_blade_world(),delta)
 
 func update_goalkeepers(delta: float) -> void:
 	for i in range(goalkeepers.size()):

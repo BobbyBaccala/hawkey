@@ -67,7 +67,7 @@ func run()->void:
 	var practice=load("res://practice.tscn").instantiate()
 	root.add_child(practice);await physics_frame
 	practice.set_physics_process(false)
-	practice.puck.position=practice.player.position+Vector3(0,0.03,-0.6)
+	practice.puck.position=practice.player_visual.get_blade_world()
 	practice.puck.position.y=0.03
 	practice.cooldown=0
 	var e:=InputEventJoypadMotion.new()
@@ -80,9 +80,12 @@ func run()->void:
 	for i in range(10):practice._physics_process(1.0/120)
 	check(practice.shots==1 and practice.charge==0,"Practice right-stick hold never charges or repeats")
 	# Possession-dependent Practice passes use R2 release and R1 saucer loft.
+	# New possession is actually on an idle blade, after the prior release.
+	for frame in range(120):practice.player_visual.animate_motion(Vector3.ZERO,1.0/120,0,false)
+	practice.advance_pickup_lock(1.0)
 	practice.cooldown=0;practice.pickup_owner=true
 	practice.puck.linear_velocity=Vector3.ZERO
-	practice.puck.position=practice.player.position+Vector3(0,0.03,-0.6)
+	practice.puck.position=practice.player_visual.get_blade_world()
 	practice.puck.position.y=0.03
 	e=InputEventJoypadMotion.new();e.device=7;e.axis=JOY_AXIS_TRIGGER_RIGHT;e.axis_value=1
 	practice._unhandled_input(e);practice._physics_process(1.0/120)
@@ -90,9 +93,12 @@ func run()->void:
 	practice.practice_input.advance(0.8)
 	e.axis_value=0;practice._unhandled_input(e);practice._physics_process(1.0/120)
 	check(practice.passes==1 and practice.shots==1,"Practice R2 release passes without shooting")
+	# New possession is actually on an idle blade, after the prior release.
+	for frame in range(120):practice.player_visual.animate_motion(Vector3.ZERO,1.0/120,0,false)
+	practice.advance_pickup_lock(1.0)
 	practice.cooldown=0;practice.pickup_owner=true
 	practice.puck.linear_velocity=Vector3.ZERO
-	practice.puck.position=practice.player.position+Vector3(0,0.03,-0.6)
+	practice.puck.position=practice.player_visual.get_blade_world()
 	practice.puck.position.y=0.03
 	var bumper:=InputEventJoypadButton.new();bumper.device=7;bumper.button_index=JOY_BUTTON_RIGHT_SHOULDER;bumper.pressed=true
 	practice._unhandled_input(bumper);practice._physics_process(1.0/120)
