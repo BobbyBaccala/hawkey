@@ -228,3 +228,15 @@ follow-throughs implemented and tested. Eleven affected suites pass, including
 Goalkeeping, animation and puck feel remain Partial overall: post hugging/turning
 footwork, wind-up/one-timer library and human feel testing remain open. Existing
 60-second clip predates these corrections; new JPEGs are labeled inspection scenes.
+
+### Exhibition foundation — 2026-10-22
+
+Source d77009e selectively integrates Claude 936bbd0 photo shading/reflections and
+3785bfd body-facing behavior. Explicit-velocity procedural animation now selects
+forward stride, backward C-cuts and lateral edge steps; goalies use small standing
+pivot steps. Initial 21-suite regression and final targeted reruns cover 22 current
+suites with no failures; directional tests have 968 checks. Preview JPEGs are
+controlled engine inspections, not new live footage. See EXHIBITION_POLISH.md and
+verification/exhibition-polish-20261022.json. Skating/goalkeeping/presentation remain
+Partial overall; full contact/wind-up/receiving/one-timer/post systems, human feel
+review, target-hardware profiling and continuous-match acceptance remain open.

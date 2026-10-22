@@ -1,0 +1,204 @@
+{
+  "source_commit": "d77009e",
+  "client_date": "2026-10-22",
+  "test_engine": "Godot 4.6.3 headless",
+  "current_tests": [
+    {
+      "name": "test_skate_stick",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_goalie_polish",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_goalie_saves",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_goal_net",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_benches",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_kit_geometry",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_kit_materials",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_render_settings",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_puck_flight",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_play_now",
+      "returncode": 0,
+      "script_error": false
+    },
+    {
+      "name": "test_skating_integration",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_gameplay_photo",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_directional_skating",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_stride",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_hockey_stop",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_video_corrections",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_goalie_proportions",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_net_shooting",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_tactics_match",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_ai_spectator",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_controller",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    },
+    {
+      "name": "test_overtime_shootout",
+      "returncode": 0,
+      "script_error": false,
+      "final_rerun": true
+    }
+  ],
+  "suite_count": 22,
+  "current_failures": 0,
+  "directional_checks": 968,
+  "stronger_integration_rerun": "Godot Engine v4.6.3.stable.official.7d41c59c4 - https://godotengine.org\n\nDefensive skating sample: velocity (-0.042997, 0.0, -0.214987) backward weight 0.4980461736906 role Zone coverage\nSkating integration failures: 0\n",
+  "capture": {
+    "captures": [
+      {
+        "error": 0,
+        "path": "res://docs/screenshots/exhibition-polish-broadcast-20261022.jpg"
+      },
+      {
+        "error": 0,
+        "path": "res://docs/screenshots/exhibition-polish-directional-footwork-20261022.jpg"
+      },
+      {
+        "error": 0,
+        "path": "res://docs/screenshots/exhibition-polish-reflection-off-20261022.jpg"
+      },
+      {
+        "error": 0,
+        "path": "res://docs/screenshots/exhibition-polish-reflection-on-20261022.jpg"
+      }
+    ],
+    "engine": "4.6.2-stable (official)",
+    "renderer": "llvmpipe (LLVM 19.1.7, 256 bits)",
+    "source": "Actual production match and materials. Broadcast starts at opening faceoff. Footwork figures are controlled production visual instances sampled at the same stride phase. Reflection A/B toggles only reflection strength in this build; not an older-build comparison. Inspection stills, not gameplay footage.",
+    "source_sha": "d77009e"
+  },
+  "screenshots": [
+    {
+      "path": "docs/screenshots/exhibition-polish-broadcast-20261022.jpg",
+      "sha256": "344a94dc159a118222e614906aadd1ca501c342af84f43e1822ab3885d7d4047",
+      "dimensions": [
+        960,
+        600
+      ]
+    },
+    {
+      "path": "docs/screenshots/exhibition-polish-directional-footwork-20261022.jpg",
+      "sha256": "b9d956b5e07334ac011d90cfb6c72d32236180c1f893267d40f06d8dada36298",
+      "dimensions": [
+        960,
+        600
+      ]
+    },
+    {
+      "path": "docs/screenshots/exhibition-polish-reflection-off-20261022.jpg",
+      "sha256": "15b2a40b7a837ff0ef26e21f0f728c715fc7cb3240951482788fd2b04a3f7b48",
+      "dimensions": [
+        960,
+        600
+      ]
+    },
+    {
+      "path": "docs/screenshots/exhibition-polish-reflection-on-20261022.jpg",
+      "sha256": "c7c0b6ac3ef16a508cb9433967f1dccf2aa9c7180192069e2d7ed92565dcee21",
+      "dimensions": [
+        960,
+        600
+      ]
+    }
+  ],
+  "reflection_toggle_mean_pixel_difference_rgb": [
+    0.12631944444444446,
+    0.11756770833333334,
+    0.13690625
+  ],
+  "render_script_errors": false,
+  "integration_sources": [
+    "Claude 936bbd0 (photo/material/thin-AA slice)",
+    "Claude 3785bfd (body-facing behavior reconciled into current planner)"
+  ],
+  "claude_remote_preserved": "2ff37ab",
+  "initial_findings": "21 affected suites passed initially. Eleven affected suites were rerun after final changes, plus new skating integration. Initial neutral-zone integration fixture expected backward coverage during forecheck; changed to defensive-zone coverage, then strengthened to measure C-cuts only during actual backward motion; rerun passed. Reflection defaults were tuned down after inspecting initial close-camera render.",
+  "limitations": "Alpha. Controlled engine inspection images, not live gameplay footage. No target-hardware FPS or complete-match human acceptance. Partial procedural locomotion; no complete crossovers, plant system, contact/wind-up library or post/VH controller."
+}

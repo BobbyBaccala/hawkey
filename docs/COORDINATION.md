@@ -419,3 +419,26 @@ speed assertion resolved and rerun; exact evidence in VIDEO_GAMEPLAY_CORRECTIONS
 and verification/video-corrections-20261021.json. Real engine inspection JPEGs
 reviewed; existing minute video remains unchanged older-source footage. Claude
 2ff37ab preserved remotely; CX-013 describes shared hooks and remaining art work.
+
+## Solo exhibition polish — 2026-10-22, active Codex scope
+
+Owner explicitly asks Codex to work alone while Claude usage is unavailable.
+Terminal/Godot 4.6.3 verified; fetched Claude 2ff37ab, no new receiver reply.
+First slice: selectively integrate Claude 936bbd0's reflection/material/stick-AA
+work with three-way preservation of current gear/match changes; then direction-aware
+skating footwork/goalie turns. Codex temporarily owns these narrow presentation
+edits per owner instruction. No mode expansion, PR merge, release or changes to
+Claude remote. Validate renderer, shader paths, pose contacts and regressions;
+show real engine JPEGs with source/camera provenance.
+
+Completed first source slice d77009e: Claude photo/facing slices selectively
+reconciled; current goalie/gear/release/tactics retained. Reflections tuned down
+after visual review. Direction-aware forward/backward/lateral footwork and goalie
+standing pivot steps implemented. First 21 suites passed; targeted final reruns
+and the defensive skating integration bring coverage to 22 current suites green.
+Directional suite: 968 checks. Actual renderer: 4.6.2 Compatibility/llvmpipe;
+headless checks: 4.6.3. Source-pinned inspection JPEGs and exact evidence in
+EXHIBITION_POLISH.md / verification/exhibition-polish-20261022.json. Claude remote
+2ff37ab untouched; CX-014 records API changes and remaining integration. Next
+checkpoint is puck-contact timing/receiving plus a short actual gameplay capture.
+No full-match human acceptance or real-time target-hardware performance claim.
