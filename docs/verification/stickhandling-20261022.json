@@ -1,0 +1,529 @@
+{
+  "source_sha": "e06ab4c75ade2ad96987b046039df4e1373da328",
+  "date": "2026-10-22",
+  "engine_tests": [
+    {
+      "name": "test_puck_skills",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Puck skills: 1108 checks; 0 failures; held 720/720 max error 0.13148826360703 hand gap 0.00000008059035 arm reach 0.5650001168251",
+      "log_sha256": "79b769aef1d30f39c4619f67d5c481951a0e751bfb85551ad90860509d4b2a95"
+    },
+    {
+      "name": "test_puck_receiving",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Puck receiving: 202 checks; 0 failures; maximum receive dv 0.66741561889648",
+      "log_sha256": "4885e608afa9665e4d757250057568f19553a34b563ff7a30e9811c86aafb503"
+    },
+    {
+      "name": "test_controller",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Controller failures: 0 (synthetic events; hardware untested)",
+      "log_sha256": "b64c43832ebb843ba0b36d598b2b96583bb65bcbd17d379c3d54d6ca91ac3c64"
+    },
+    {
+      "name": "test_net_shooting",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Net shooting: 135 checks; 0 failures",
+      "log_sha256": "eee322efda8407c3506bbb1ba3854d046c389900e3e081d26532ee450921c746"
+    },
+    {
+      "name": "test_puck_flight",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Puck flight failures: 0",
+      "log_sha256": "05a477e80a20690f1829828e35745c626c3e38f43e91b13c3ca5963aa17d1ba3"
+    },
+    {
+      "name": "test_match",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Match integration failures: 0",
+      "log_sha256": "39fc99401fd12882cffebd2d8440e70e5158c2e2cc5b027b469c7cff96631b97"
+    },
+    {
+      "name": "test_ai_spectator",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "AI spectator failures: 0",
+      "log_sha256": "17faf8bd85541082978c90bcb1b2d90ba8dfe5356367c6103c9cb3cbac3dbd0f"
+    },
+    {
+      "name": "test_tactics_match",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Tactics match: 16 checks; 0 failures",
+      "log_sha256": "f31f74502707bff79a56ff3907e44c054fd62f4edfcf18f671cedaeedc994720"
+    },
+    {
+      "name": "test_skating_integration",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Skating integration failures: 0",
+      "log_sha256": "c527ce3fb08250d1263ccad553635a4b6a2c6787be3c229746b1b7d279b747d0"
+    },
+    {
+      "name": "test_directional_skating",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Directional skating: 968 checks; 0 failures",
+      "log_sha256": "ac97faa4874006331090e3e7e8d3c3faaf82dc749c3d79ed9d3a643fc6df117b"
+    },
+    {
+      "name": "test_stride",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Stride failures: 0",
+      "log_sha256": "dfff70f5c41a8eb1ab5cee8b4a238cafbc60aac16055f665437c1363bb96800e"
+    },
+    {
+      "name": "test_hockey_stop",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Hockey stop failures: 0",
+      "log_sha256": "12b3d2e9717ae56c0d58fb0020f722d5c47182ed157f932b4927d59f8c6c87c6"
+    },
+    {
+      "name": "test_skate_stick",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Skate/stick failures: 0",
+      "log_sha256": "dcea54d50747d7a44e298d4e20f8be1f0820d8ffb8a8171c5d38db154d613cc1"
+    },
+    {
+      "name": "test_video_corrections",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Video corrections: 2590 checks; 0 failures",
+      "log_sha256": "7e160531a14358dc54ebd251f64c2315d64283453239aabac2b70c1d16a419df"
+    },
+    {
+      "name": "test_goalie_proportions",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Goalie proportions: 66 checks; 0 failures",
+      "log_sha256": "bc719970dbc9b74cb6d910064812c35f0766e23655edf70a9564fa6c2106214d"
+    },
+    {
+      "name": "test_goalie_saves",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Goalie save failures: 0",
+      "log_sha256": "343b2e6856fd706226e6a6295c4bb3f5d10ce724791dc01eef457388e927d1ad"
+    },
+    {
+      "name": "test_goalie_polish",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Goalie polish: 26 checks; 0 failures",
+      "log_sha256": "e8ebf85877fe9efc8c7fa92687f6046465d8f4932dc596b3447b1e1844ce8cdc"
+    },
+    {
+      "name": "test_goal_net",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Goal net failures: 0",
+      "log_sha256": "ddb06459afd424e2a448abbfcb5f37c021c5aae1724e4434d427c2081eaeb48a"
+    },
+    {
+      "name": "test_benches",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "PASS",
+      "log_sha256": "bbb19e3e04ce642eb94f84e493adbfe169163ea965c27dd81831feac1fafd803"
+    },
+    {
+      "name": "test_play_now",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Play Now: 47 checks; 0 failures",
+      "log_sha256": "18f0b39c2527887a03ce3c6532c4b83317a420e766c47e894b00578ff8dc9e0f"
+    },
+    {
+      "name": "test_overtime_shootout",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Overtime/shootout: 75 checks; 0 failures",
+      "log_sha256": "15ff8282288dbc09ad8c99637db3750d317684d1804118acb7aaff302cb1f311"
+    },
+    {
+      "name": "test_gameplay_photo",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Gameplay photo failures: 0",
+      "log_sha256": "8e0c163567f154cfe7b9cb628d3fc0835b7cce0b9778e8fcc22277c7b0034580"
+    }
+  ],
+  "carry_before": {
+    "drops": 0,
+    "engine": "4.6.3-stable (official)",
+    "error_max_m": 0.725377142429352,
+    "error_p95_m": 0.717389643192291,
+    "fixture": "Scripted skating/pivot/stickhandling; actual puck physics, no puck reposition after initial placement. Not AI gameplay.",
+    "held_fraction": 1.0,
+    "held_ticks": 420,
+    "label": "before",
+    "phases": {
+      "pivot": {
+        "held": 84,
+        "ticks": 84
+      },
+      "stickhandle": {
+        "held": 216,
+        "ticks": 216
+      },
+      "straight": {
+        "held": 120,
+        "ticks": 120
+      }
+    },
+    "ticks": 420
+  },
+  "carry_after": {
+    "drops": 0,
+    "engine": "4.6.3-stable (official)",
+    "error_max_m": 0.204247817397118,
+    "error_p95_m": 0.14250622689724,
+    "fixture": "Scripted skating/pivot/stickhandling; actual puck physics, no puck reposition after initial placement. Not AI gameplay.",
+    "held_fraction": 1.0,
+    "held_ticks": 420,
+    "label": "after",
+    "phases": {
+      "pivot": {
+        "held": 84,
+        "ticks": 84
+      },
+      "stickhandle": {
+        "held": 216,
+        "ticks": 216
+      },
+      "straight": {
+        "held": 120,
+        "ticks": 120
+      }
+    },
+    "ticks": 420
+  },
+  "natural_ai_soak": {
+    "engine": "4.6.3-stable (official)",
+    "final_clock": 1095.56666666676,
+    "final_score": [
+      0,
+      1
+    ],
+    "final_shots": [
+      0,
+      1
+    ],
+    "fixed_fps": 120,
+    "no_forced_events": true,
+    "normal_rules": true,
+    "passed": true,
+    "release_events": 16,
+    "samples": [
+      {
+        "acquisitions": [
+          0,
+          0
+        ],
+        "clock": 1200.0,
+        "phase": 0,
+        "puck": [
+          0.0,
+          0.0163194444030523,
+          0.0
+        ],
+        "release_events": 0,
+        "score": [
+          0,
+          0
+        ],
+        "seconds": 0.0,
+        "shots": [
+          0,
+          0
+        ],
+        "skill_moves": 0
+      },
+      {
+        "acquisitions": [
+          1,
+          1
+        ],
+        "clock": 1188.03333333334,
+        "phase": 1,
+        "puck": [
+          4.1871190071106,
+          0.012699999846518,
+          -4.22278118133545
+        ],
+        "release_events": 2,
+        "score": [
+          0,
+          0
+        ],
+        "seconds": 5.0,
+        "shots": [
+          0,
+          0
+        ],
+        "skill_moves": 2
+      },
+      {
+        "acquisitions": [
+          2,
+          5
+        ],
+        "clock": 1168.03333333336,
+        "phase": 1,
+        "puck": [
+          -5.3313946723938,
+          0.0127227818593383,
+          9.38212490081787
+        ],
+        "release_events": 5,
+        "score": [
+          0,
+          0
+        ],
+        "seconds": 10.0,
+        "shots": [
+          0,
+          0
+        ],
+        "skill_moves": 4
+      },
+      {
+        "acquisitions": [
+          7,
+          5
+        ],
+        "clock": 1148.03333333338,
+        "phase": 1,
+        "puck": [
+          -6.36054134368896,
+          0.0127227818593383,
+          12.0623016357422
+        ],
+        "release_events": 10,
+        "score": [
+          0,
+          0
+        ],
+        "seconds": 15.0,
+        "shots": [
+          0,
+          0
+        ],
+        "skill_moves": 6
+      },
+      {
+        "acquisitions": [
+          10,
+          6
+        ],
+        "clock": 1128.0333333334,
+        "phase": 1,
+        "puck": [
+          1.35172653198242,
+          0.0127557972446084,
+          28.2880001068115
+        ],
+        "release_events": 11,
+        "score": [
+          0,
+          0
+        ],
+        "seconds": 20.0,
+        "shots": [
+          0,
+          0
+        ],
+        "skill_moves": 7
+      },
+      {
+        "acquisitions": [
+          16,
+          9
+        ],
+        "clock": 1108.03333333342,
+        "phase": 1,
+        "puck": [
+          -2.07179355621338,
+          0.0127186020836234,
+          14.8484878540039
+        ],
+        "release_events": 14,
+        "score": [
+          0,
+          0
+        ],
+        "seconds": 25.0,
+        "shots": [
+          0,
+          0
+        ],
+        "skill_moves": 10
+      }
+    ],
+    "simulation_seconds": 30,
+    "source_sha": "e06ab4c",
+    "total_acquisitions": [
+      16,
+      12
+    ]
+  },
+  "scripted_training_capture": {
+    "engine": "4.6.2-stable (official)",
+    "fixture": "Scripted skill inputs, production skating/pose and rigid-body puck. One initial placement; no puck attachment or subsequent reposition. Not natural AI gameplay.",
+    "offline_render": true,
+    "samples": [
+      {
+        "blade_gap_m": 0.0221789926290512,
+        "held": true,
+        "move": "cut",
+        "seconds": 0.5
+      },
+      {
+        "blade_gap_m": 0.0230663251131773,
+        "held": true,
+        "move": "cut",
+        "seconds": 1.0
+      },
+      {
+        "blade_gap_m": 0.0167391318827868,
+        "held": true,
+        "move": "",
+        "seconds": 1.5
+      },
+      {
+        "blade_gap_m": 0.0169888846576214,
+        "held": true,
+        "move": "",
+        "seconds": 2.0
+      },
+      {
+        "blade_gap_m": 0.0184411611407995,
+        "held": true,
+        "move": "toe_drag",
+        "seconds": 2.5
+      },
+      {
+        "blade_gap_m": 0.0303501412272453,
+        "held": true,
+        "move": "toe_drag",
+        "seconds": 3.0
+      },
+      {
+        "blade_gap_m": 0.0196176674216986,
+        "held": true,
+        "move": "",
+        "seconds": 3.5
+      },
+      {
+        "blade_gap_m": 0.0169620383530855,
+        "held": true,
+        "move": "",
+        "seconds": 4.0
+      },
+      {
+        "blade_gap_m": 0.0264425333589315,
+        "held": true,
+        "move": "sweep",
+        "seconds": 4.5
+      },
+      {
+        "blade_gap_m": 0.0392522253096104,
+        "held": true,
+        "move": "sweep",
+        "seconds": 5.0
+      },
+      {
+        "blade_gap_m": 0.0224775839596987,
+        "held": true,
+        "move": "",
+        "seconds": 5.5
+      },
+      {
+        "blade_gap_m": 0.0171247199177742,
+        "held": true,
+        "move": "",
+        "seconds": 6.0
+      },
+      {
+        "blade_gap_m": 0.082253135740757,
+        "held": true,
+        "move": "",
+        "seconds": 6.5
+      },
+      {
+        "blade_gap_m": 0.0163141880184412,
+        "held": true,
+        "move": "",
+        "seconds": 7.0
+      },
+      {
+        "blade_gap_m": 0.0512546561658382,
+        "held": true,
+        "move": "",
+        "seconds": 7.5
+      },
+      {
+        "blade_gap_m": 0.0174683965742588,
+        "held": true,
+        "move": "",
+        "seconds": 8.0
+      }
+    ],
+    "source_sha": "e06ab4c"
+  },
+  "video_probe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "width": 960,
+        "height": 600,
+        "pix_fmt": "yuv420p",
+        "avg_frame_rate": "30/1",
+        "nb_frames": "240"
+      }
+    ],
+    "format": {
+      "duration": "8.000000"
+    }
+  },
+  "video_full_decode_errors": "",
+  "capture_wall_time_seconds": 93,
+  "artifacts": [
+    {
+      "path": "docs/screenshots/stickhandling-cut-20261022.jpg",
+      "sha256": "22ed73aa2d080904ddb9d2feaa4bd1e3df89423842ef6718764f1ea477de3a65",
+      "bytes": 165640
+    },
+    {
+      "path": "docs/screenshots/stickhandling-toe-drag-20261022.jpg",
+      "sha256": "a1fb4f3b4a91fcc08df7a286e6e7eb891853f0395aff9022f45655816ca13b59",
+      "bytes": 188824
+    },
+    {
+      "path": "docs/screenshots/stickhandling-sweep-20261022.jpg",
+      "sha256": "6d2d30035ef78446977a21b709b0163327e988fff9d4369c53f21e2ce0b79b69",
+      "bytes": 173737
+    },
+    {
+      "path": "docs/videos/stickhandling-demo-8s-20261022.mp4",
+      "sha256": "4fc9dde28d320fe8ba678ef6b64dbedbad02ac515f679af6a11bfbbaed2a6296",
+      "bytes": 3035986
+    }
+  ],
+  "limitations": [
+    "Training inputs are scripted; physics is production. Separate natural AI soak has no shots or goals.",
+    "Software offline capture is not a hardware FPS benchmark.",
+    "Physical controller and full-match human review remain open."
+  ]
+}

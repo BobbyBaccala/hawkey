@@ -252,3 +252,15 @@ The 30-second natural AI check has pickups/releases but zero shots; chance creat
 and balance remain explicit gaps. Passing/receiving, AI and animation remain
 Partial overall; shot/one-timer anticipation, deflections, protection, goalie post
 movement, full-match human review and target-hardware performance are still open.
+
+## Moving possession checkpoint — 2026-10-22
+
+Source `e06ab4c`: skating/stick handling remains **Partial**, with cross-body
+forehand/backhand, moving cut/toe drag/sweep, close-pressure protection, deliberate
+AI moves, smoothed arrival steering and bounded blade-velocity carry control.
+Physical fixture p95 blade gap falls 0.7174→0.1425m; 1,108 focused skill checks pass,
+including opponent poke/loss and actual skating physics. This supersedes the old
+"advanced dekes/protection missing" statement only for this implemented subset.
+Full commercial move catalogue, polished transitions, real-device input review
+and sustained full-match AI chance creation remain open. Evidence and original
+training-demo vs natural-AI distinction: STICKHANDLING_AND_MOVEMENT.md.

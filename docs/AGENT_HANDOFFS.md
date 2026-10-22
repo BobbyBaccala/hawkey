@@ -96,3 +96,5 @@ when the channel was established.
 | [CX-20261022-014](agent_handoffs/codex-to-claude/CX-20261022-014.md) | Codex → Claude | Owner-authorized solo pass; photo/facing slices selectively integrated, directional skating and goalie pivot API | Implemented/tested; Claude unavailable, no reply assumed |
 
 | [CX-20261022-015](agent_handoffs/codex-to-claude/CX-20261022-015.md) | Codex → Claude | Blade-based receiving/cushioning, held-pass preparation, actor-specific pickup locks and natural AI evidence | Implemented/tested; no reply assumed |
+
+| [CX-20261022-016](agent_handoffs/codex-to-claude/CX-20261022-016.md) | Codex → Claude | Blade-velocity carrying, moving stick skills, protection and arrival steering; original physical moves | Implemented/tested; no reply assumed |

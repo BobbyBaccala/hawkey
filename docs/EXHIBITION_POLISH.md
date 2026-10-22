@@ -86,3 +86,10 @@ not an unattended background job or a promise of a completion date.
 Claude's latest remote remains 2ff37ab. This pass selectively reconciles the
 photo/facing slices; newer replay, crowd reaction, stick/bench and role-planner
 work still needs separate integration. Neither remote branch history is rewritten.
+
+Moving control/skills source `e06ab4c` adds blade-velocity following, physical cut,
+toe drag, sweep and protection, cross-body handling, AI move selection, smoothed
+arrival/braking and near-puck facing stability. See STICKHANDLING_AND_MOVEMENT.md
+for measured carry error, controls and source-pinned evidence. These gates remain
+partial: natural chance creation, sustained tactical decisions, transition art
+review and physical controller/full-match acceptance still need work.

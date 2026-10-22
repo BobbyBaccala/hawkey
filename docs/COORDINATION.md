@@ -477,3 +477,17 @@ physical timed dekes/protection in Match/Practice, deliberate AI use and smoothe
 arrival steering. Preserve free puck/shot physics, goalie/gear and shared tactical
 planner. Fetched Claude 2ff37ab; no new reply. Baseline scripted rigid-body fixture
 (before changes): no ownership drops but p95 blade gap 0.717m / max 0.725m.
+
+Completed source `e06ab4c`: bounded blade-velocity carry follow after soft capture;
+forehand/backhand, cut/toe drag/sweep/protection for Match/Practice and pressure
+choices for AI; smoothed arrival/braking with dedicated bench paths preserved.
+All 22 affected suites pass; skills 1,108 checks, physical moves 720/720 held ticks,
+max gap 0.1315m. Same 420-tick carry fixture p95 0.7174→0.1425m, zero drops both.
+Natural 30s AI: acquisitions [16,12], 16 releases, ten moves by25s, no shots/goals;
+chance creation remains open. Actual engine 8s silent scripted training MP4 and
+three JPEGs distinguish staged inputs from normal AI. 240frames/960×600/H.264,
+clean decode; offline llvmpipe source render1m33s, no hardware FPS claim.
+Details/provenance STICKHANDLING_AND_MOVEMENT.md and verification/stickhandling-
+20261022.json. Gear/goalie art and Claude2ff37ab preserved. CX-016 documents shared
+hooks; no new acknowledgement. Next: sustained attacking opportunities and
+transition review, physical controller/full-match acceptance.
