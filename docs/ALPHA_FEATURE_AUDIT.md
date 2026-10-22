@@ -278,3 +278,12 @@ capped wrist cock, cuff clearance on deep drag and coupled forward blade. This
 advances the existing Partial anatomy/handling slice; it does not establish full
 pose equivalence, real-device acceptance or complete handedness. Actual evidence
 and reference limitations: PHOTO_STANCE_REFINEMENT.md.
+
+Strong-side correction, 2026-10-22 source `6b7d849`: functional on-ice L/R carry
+slice now uses actual roster shoots at construction and identity/line changes,
+mirrored arm assignment and lateral neutral blade/shaft. Earlier statements that
+per-player handedness is wholly missing are superseded for this defined slice;
+generic bench-seat identity and full handed animation/art acceptance remain open.
+Strong-side recovery heading avoids unreachable puck-chase orbits. All 27 affected
+suites pass, including 10,119 strong-side checks and both-handed clipping. Actual
+frontal JPEGs, physical moving trials and normal AI evidence: STRONG_SIDE_CARRY.md.

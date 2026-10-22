@@ -63,3 +63,10 @@ maximum sampled gap 0.1189 m. Capture uses llvmpipe, no MSAA/screen AA, 1024px
 shadows; 273 source frames render offline in 1m18s with one-second warmup removed.
 This does not measure real-time consumer hardware performance or prove human
 feel, full-match balance, complete handedness or a finished commercial animation.
+
+## Owner correction superseding the neutral placement
+
+The owner rejected this pass's centered forward carry even though its geometry
+checks passed. STRONG_SIDE_CARRY.md records the replacement default: shooting-side
+blade/shaft and both hands on that diagonal, actual mirrored on-ice roster
+handedness. This checkpoint never established human acceptance of the old pose.

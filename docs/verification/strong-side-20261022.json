@@ -1,0 +1,658 @@
+{
+  "source_sha": "6b7d849e75e128d2d93ec6f8a63467da87484176",
+  "date": "2026-10-22",
+  "engine_tests": [
+    {
+      "name": "test_strong_side",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Strong side: 10119 checks; 0 failures; held 1440/1440 gap 0.18529298901558 contact 0.00000008059035 thumb dot 0.43587711453438 recovery ticks [130, 129]",
+      "log_sha256": "3a96a2b6128ece22b36b39d5cc2285cbe4adad957aa76da312950599cea635ed"
+    },
+    {
+      "name": "test_hockey_grip",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Hockey grip: 3167 checks; 0 failures; thumb dot 0.45310533046722 cuff dot 0.90044522285461 shaft gap 0.00000007858508 arm reach 0.5650001168251 max shaft 1.4789125919342 handling span 1.78619706630707 drag 0.47999995946884",
+      "log_sha256": "455df421361eb2d2bc225b549df0c2f6aba0e61d09e4f94d76a5e17e0672dada"
+    },
+    {
+      "name": "test_kit_geometry",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Kit geometry failures: 0",
+      "log_sha256": "4d53fbbfc691dbdfd4cb7311997913a278b2fa30613506373c5808da5264473d"
+    },
+    {
+      "name": "test_clipping",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Clipping failures: 0",
+      "log_sha256": "45f7b1fc5379b69ad060dc236e9674fbf31e22e26ff94ce88d44e44712fdaef9"
+    },
+    {
+      "name": "test_board_hop",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Board hop failures: 0",
+      "log_sha256": "12e11573057a6fb8a82dafa1678c66a7a25cf1146dfb5e84edad7cce938e7f1e"
+    },
+    {
+      "name": "test_puck_skills",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Puck skills: 1108 checks; 0 failures; held 720/720 max error 0.18529289960861 hand gap 0.00000006848863 arm reach 0.5650001168251",
+      "log_sha256": "3437090461dab2e45dbdcdd36e1ca3ac12fe2124f00b4093a4de6ab28e705854"
+    },
+    {
+      "name": "test_puck_receiving",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Puck receiving: 202 checks; 0 failures; maximum receive dv 0.66741561889648",
+      "log_sha256": "4885e608afa9665e4d757250057568f19553a34b563ff7a30e9811c86aafb503"
+    },
+    {
+      "name": "test_controller",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Controller failures: 0 (synthetic events; hardware untested)",
+      "log_sha256": "b64c43832ebb843ba0b36d598b2b96583bb65bcbd17d379c3d54d6ca91ac3c64"
+    },
+    {
+      "name": "test_net_shooting",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Net shooting: 135 checks; 0 failures",
+      "log_sha256": "eee322efda8407c3506bbb1ba3854d046c389900e3e081d26532ee450921c746"
+    },
+    {
+      "name": "test_puck_flight",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Puck flight failures: 0",
+      "log_sha256": "05a477e80a20690f1829828e35745c626c3e38f43e91b13c3ca5963aa17d1ba3"
+    },
+    {
+      "name": "test_match",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Match integration failures: 0",
+      "log_sha256": "39fc99401fd12882cffebd2d8440e70e5158c2e2cc5b027b469c7cff96631b97"
+    },
+    {
+      "name": "test_ai_spectator",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "AI spectator failures: 0",
+      "log_sha256": "17faf8bd85541082978c90bcb1b2d90ba8dfe5356367c6103c9cb3cbac3dbd0f"
+    },
+    {
+      "name": "test_tactics_match",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Tactics match: 16 checks; 0 failures",
+      "log_sha256": "f31f74502707bff79a56ff3907e44c054fd62f4edfcf18f671cedaeedc994720"
+    },
+    {
+      "name": "test_skating_integration",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Skating integration failures: 0",
+      "log_sha256": "c527ce3fb08250d1263ccad553635a4b6a2c6787be3c229746b1b7d279b747d0"
+    },
+    {
+      "name": "test_directional_skating",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Directional skating: 968 checks; 0 failures",
+      "log_sha256": "ac97faa4874006331090e3e7e8d3c3faaf82dc749c3d79ed9d3a643fc6df117b"
+    },
+    {
+      "name": "test_stride",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Stride failures: 0",
+      "log_sha256": "dfff70f5c41a8eb1ab5cee8b4a238cafbc60aac16055f665437c1363bb96800e"
+    },
+    {
+      "name": "test_hockey_stop",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Hockey stop failures: 0",
+      "log_sha256": "12b3d2e9717ae56c0d58fb0020f722d5c47182ed157f932b4927d59f8c6c87c6"
+    },
+    {
+      "name": "test_skate_stick",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Skate/stick failures: 0",
+      "log_sha256": "dcea54d50747d7a44e298d4e20f8be1f0820d8ffb8a8171c5d38db154d613cc1"
+    },
+    {
+      "name": "test_video_corrections",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Video corrections: 2590 checks; 0 failures",
+      "log_sha256": "7e160531a14358dc54ebd251f64c2315d64283453239aabac2b70c1d16a419df"
+    },
+    {
+      "name": "test_goalie_proportions",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Goalie proportions: 66 checks; 0 failures",
+      "log_sha256": "bc719970dbc9b74cb6d910064812c35f0766e23655edf70a9564fa6c2106214d"
+    },
+    {
+      "name": "test_goalie_saves",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Goalie save failures: 0",
+      "log_sha256": "343b2e6856fd706226e6a6295c4bb3f5d10ce724791dc01eef457388e927d1ad"
+    },
+    {
+      "name": "test_goalie_polish",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Goalie polish: 26 checks; 0 failures",
+      "log_sha256": "e8ebf85877fe9efc8c7fa92687f6046465d8f4932dc596b3447b1e1844ce8cdc"
+    },
+    {
+      "name": "test_goal_net",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Goal net failures: 0",
+      "log_sha256": "ddb06459afd424e2a448abbfcb5f37c021c5aae1724e4434d427c2081eaeb48a"
+    },
+    {
+      "name": "test_benches",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "PASS",
+      "log_sha256": "bbb19e3e04ce642eb94f84e493adbfe169163ea965c27dd81831feac1fafd803"
+    },
+    {
+      "name": "test_play_now",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Play Now: 47 checks; 0 failures",
+      "log_sha256": "18f0b39c2527887a03ce3c6532c4b83317a420e766c47e894b00578ff8dc9e0f"
+    },
+    {
+      "name": "test_overtime_shootout",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Overtime/shootout: 75 checks; 0 failures",
+      "log_sha256": "15ff8282288dbc09ad8c99637db3750d317684d1804118acb7aaff302cb1f311"
+    },
+    {
+      "name": "test_gameplay_photo",
+      "returncode": 0,
+      "script_error": false,
+      "summary": "Gameplay photo failures: 0",
+      "log_sha256": "8e0c163567f154cfe7b9cb628d3fc0835b7cce0b9778e8fcc22277c7b0034580"
+    }
+  ],
+  "scripted_training_captures": {
+    "right": {
+      "engine": "4.6.2-stable (official)",
+      "fixture": "Scripted skill inputs, production skating/pose and rigid-body puck. One initial placement; no puck attachment or subsequent reposition. Not natural AI gameplay.",
+      "offline_render": true,
+      "samples": [
+        {
+          "blade_gap_m": 0.0228886641561985,
+          "held": true,
+          "move": "cut",
+          "seconds": 0.5
+        },
+        {
+          "blade_gap_m": 0.0260280352085829,
+          "held": true,
+          "move": "cut",
+          "seconds": 1.0
+        },
+        {
+          "blade_gap_m": 0.0185806285589933,
+          "held": true,
+          "move": "",
+          "seconds": 1.5
+        },
+        {
+          "blade_gap_m": 0.0217487886548042,
+          "held": true,
+          "move": "",
+          "seconds": 2.0
+        },
+        {
+          "blade_gap_m": 0.0208677239716053,
+          "held": true,
+          "move": "toe_drag",
+          "seconds": 2.5
+        },
+        {
+          "blade_gap_m": 0.0968460142612457,
+          "held": true,
+          "move": "toe_drag",
+          "seconds": 3.0
+        },
+        {
+          "blade_gap_m": 0.0292098745703697,
+          "held": true,
+          "move": "",
+          "seconds": 3.5
+        },
+        {
+          "blade_gap_m": 0.0187333673238754,
+          "held": true,
+          "move": "",
+          "seconds": 4.0
+        },
+        {
+          "blade_gap_m": 0.0408084616065025,
+          "held": true,
+          "move": "sweep",
+          "seconds": 4.5
+        },
+        {
+          "blade_gap_m": 0.0964373424649239,
+          "held": true,
+          "move": "sweep",
+          "seconds": 5.0
+        },
+        {
+          "blade_gap_m": 0.0359153151512146,
+          "held": true,
+          "move": "",
+          "seconds": 5.5
+        },
+        {
+          "blade_gap_m": 0.0179013647139072,
+          "held": true,
+          "move": "",
+          "seconds": 6.0
+        },
+        {
+          "blade_gap_m": 0.155111521482468,
+          "held": true,
+          "move": "",
+          "seconds": 6.5
+        },
+        {
+          "blade_gap_m": 0.0163182821124792,
+          "held": true,
+          "move": "",
+          "seconds": 7.0
+        },
+        {
+          "blade_gap_m": 0.0709238499403,
+          "held": true,
+          "move": "",
+          "seconds": 7.5
+        },
+        {
+          "blade_gap_m": 0.0188436508178711,
+          "held": true,
+          "move": "",
+          "seconds": 8.0
+        }
+      ],
+      "shoots": "R",
+      "source_sha": "6b7d849e75e128d2d93ec6f8a63467da87484176"
+    },
+    "left": {
+      "engine": "4.6.2-stable (official)",
+      "fixture": "Scripted skill inputs, production skating/pose and rigid-body puck. One initial placement; no puck attachment or subsequent reposition. Not natural AI gameplay.",
+      "offline_render": true,
+      "samples": [
+        {
+          "blade_gap_m": 0.0257530361413956,
+          "held": true,
+          "move": "cut",
+          "seconds": 0.5
+        },
+        {
+          "blade_gap_m": 0.0260602105408907,
+          "held": true,
+          "move": "cut",
+          "seconds": 1.0
+        },
+        {
+          "blade_gap_m": 0.0182717945426702,
+          "held": true,
+          "move": "",
+          "seconds": 1.5
+        },
+        {
+          "blade_gap_m": 0.0239339899271727,
+          "held": true,
+          "move": "",
+          "seconds": 2.0
+        },
+        {
+          "blade_gap_m": 0.0245152432471514,
+          "held": true,
+          "move": "toe_drag",
+          "seconds": 2.5
+        },
+        {
+          "blade_gap_m": 0.0968343243002892,
+          "held": true,
+          "move": "toe_drag",
+          "seconds": 3.0
+        },
+        {
+          "blade_gap_m": 0.0358115583658218,
+          "held": true,
+          "move": "",
+          "seconds": 3.5
+        },
+        {
+          "blade_gap_m": 0.0171095244586468,
+          "held": true,
+          "move": "",
+          "seconds": 4.0
+        },
+        {
+          "blade_gap_m": 0.0207502078264952,
+          "held": true,
+          "move": "sweep",
+          "seconds": 4.5
+        },
+        {
+          "blade_gap_m": 0.0963190719485283,
+          "held": true,
+          "move": "sweep",
+          "seconds": 5.0
+        },
+        {
+          "blade_gap_m": 0.0659174919128418,
+          "held": true,
+          "move": "",
+          "seconds": 5.5
+        },
+        {
+          "blade_gap_m": 0.0226913020014763,
+          "held": true,
+          "move": "",
+          "seconds": 6.0
+        },
+        {
+          "blade_gap_m": 0.0577392056584358,
+          "held": true,
+          "move": "",
+          "seconds": 6.5
+        },
+        {
+          "blade_gap_m": 0.0163177531212568,
+          "held": true,
+          "move": "",
+          "seconds": 7.0
+        },
+        {
+          "blade_gap_m": 0.0606109984219074,
+          "held": true,
+          "move": "",
+          "seconds": 7.5
+        },
+        {
+          "blade_gap_m": 0.0246771182864904,
+          "held": true,
+          "move": "",
+          "seconds": 8.0
+        }
+      ],
+      "shoots": "L",
+      "source_sha": "6b7d849e75e128d2d93ec6f8a63467da87484176"
+    }
+  },
+  "video_probes": {
+    "right": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 960,
+          "height": 600,
+          "pix_fmt": "yuv420p",
+          "avg_frame_rate": "30/1",
+          "nb_frames": "240"
+        }
+      ],
+      "format": {
+        "duration": "8.000000"
+      }
+    },
+    "left": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "h264",
+          "width": 960,
+          "height": 600,
+          "pix_fmt": "yuv420p",
+          "avg_frame_rate": "30/1",
+          "nb_frames": "240"
+        }
+      ],
+      "format": {
+        "duration": "8.000000"
+      }
+    }
+  },
+  "video_full_decode_errors": {
+    "right": "",
+    "left": ""
+  },
+  "capture_wall_time_seconds": {
+    "right": 177,
+    "left": 175
+  },
+  "natural_ai_soak": {
+    "engine": "4.6.3-stable (official)",
+    "final_clock": 1112.56666666675,
+    "final_score": [
+      1,
+      0
+    ],
+    "final_shots": [
+      2,
+      0
+    ],
+    "fixed_fps": 120,
+    "no_forced_events": true,
+    "normal_rules": true,
+    "passed": true,
+    "release_events": 10,
+    "samples": [
+      {
+        "acquisitions": [
+          0,
+          0
+        ],
+        "clock": 1200.0,
+        "phase": 0,
+        "puck": [
+          0.0,
+          0.0163194444030523,
+          0.0
+        ],
+        "release_events": 0,
+        "score": [
+          0,
+          0
+        ],
+        "seconds": 0.0,
+        "shots": [
+          0,
+          0
+        ],
+        "skill_moves": 0
+      },
+      {
+        "acquisitions": [
+          0,
+          1
+        ],
+        "clock": 1188.03333333334,
+        "phase": 1,
+        "puck": [
+          11.7137279510498,
+          0.012699999846518,
+          -14.2030963897705
+        ],
+        "release_events": 1,
+        "score": [
+          0,
+          0
+        ],
+        "seconds": 5.0,
+        "shots": [
+          0,
+          0
+        ],
+        "skill_moves": 1
+      },
+      {
+        "acquisitions": [
+          2,
+          3
+        ],
+        "clock": 1168.03333333336,
+        "phase": 1,
+        "puck": [
+          2.54289889335632,
+          0.0127227818593383,
+          -17.998327255249
+        ],
+        "release_events": 3,
+        "score": [
+          0,
+          0
+        ],
+        "seconds": 10.0,
+        "shots": [
+          0,
+          0
+        ],
+        "skill_moves": 4
+      },
+      {
+        "acquisitions": [
+          2,
+          5
+        ],
+        "clock": 1164.10000000003,
+        "phase": 1,
+        "puck": [
+          -7.10184144973755,
+          0.0252403188496828,
+          -20.7669906616211
+        ],
+        "release_events": 4,
+        "score": [
+          0,
+          0
+        ],
+        "seconds": 15.0,
+        "shots": [
+          1,
+          0
+        ],
+        "skill_moves": 4
+      },
+      {
+        "acquisitions": [
+          5,
+          9
+        ],
+        "clock": 1144.10000000005,
+        "phase": 1,
+        "puck": [
+          6.87487602233887,
+          0.0127227818593383,
+          -6.93563222885132
+        ],
+        "release_events": 7,
+        "score": [
+          0,
+          0
+        ],
+        "seconds": 20.0,
+        "shots": [
+          1,
+          0
+        ],
+        "skill_moves": 7
+      },
+      {
+        "acquisitions": [
+          5,
+          11
+        ],
+        "clock": 1124.10000000007,
+        "phase": 1,
+        "puck": [
+          -9.9152774810791,
+          0.0127227818593383,
+          -25.7879600524902
+        ],
+        "release_events": 9,
+        "score": [
+          0,
+          0
+        ],
+        "seconds": 25.0,
+        "shots": [
+          1,
+          0
+        ],
+        "skill_moves": 7
+      }
+    ],
+    "simulation_seconds": 30,
+    "source_sha": "6b7d849e75e128d2d93ec6f8a63467da87484176",
+    "total_acquisitions": [
+      9,
+      12
+    ]
+  },
+  "reference": "User-supplied MPP.jpg and explicit correction that neutral carry belongs to shooting side; photo not redistributed.",
+  "stills": "Staged frontal/close-up production poses, puck placed for inspection.",
+  "integration_regressions_resolved": [
+    "Initial side-held blade plus straight-at-puck body heading caused loose-puck orbits; corrected alignment verified with both actual AI recovery fixtures and natural exhibition.",
+    "Full forehand sleeve/torso and full backhand glove/hip clearance corrected with original thresholds retained."
+  ],
+  "artifacts": [
+    {
+      "path": "docs/screenshots/strong-side-right-20261022.jpg",
+      "bytes": 285702,
+      "sha256": "b577ef373ffa18257a8d286ee63d0bd4aa08f9091ad6c990a4d473541081c515"
+    },
+    {
+      "path": "docs/screenshots/strong-side-right-grip-20261022.jpg",
+      "bytes": 250590,
+      "sha256": "ebed93fbca3472134e5fea07f4251a3b795667f226852b4e9bff693efe33156a"
+    },
+    {
+      "path": "docs/screenshots/strong-side-left-20261022.jpg",
+      "bytes": 285717,
+      "sha256": "24f05e1a828e5ad6700d8977f38ffbfbc029e063b03b5ca00cb0ef58a68035a6"
+    },
+    {
+      "path": "docs/screenshots/strong-side-left-grip-20261022.jpg",
+      "bytes": 238676,
+      "sha256": "ba11ac14b52fcfb64e3639bf3c0e9c77ccef13ce43c15532153c25e27b16a648"
+    },
+    {
+      "path": "docs/videos/strong-side-right-8s-20261022.mp4",
+      "bytes": 3088314,
+      "sha256": "11257b243aa25472fbe3e13635f886538cda7362de2c35108e30dbb420a1556d"
+    },
+    {
+      "path": "docs/videos/strong-side-left-8s-20261022.mp4",
+      "bytes": 3090052,
+      "sha256": "698587bc66d6c2543107fad047ab3de84f768157a73424b05a4143c905f2b2a3"
+    }
+  ]
+}

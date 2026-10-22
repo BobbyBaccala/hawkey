@@ -105,3 +105,10 @@ elbow, capped wrist cock and drag pullback; gameplay blade follows the shared
 pose. Reference-inspired inspection and moving physics evidence are in
 PHOTO_STANCE_REFINEMENT.md. This is still partial procedural anatomy, with
 per-player handedness and full animation/human acceptance outstanding.
+
+Owner-corrected strong-side slice `6b7d849` replaces the centered default stick
+with a shooting-side diagonal. Actual roster handedness now swaps top/lower arms
+on ice and updates on line changes. Loose-puck body heading aligns the side-held
+blade, with both-hand real AI recovery and natural exhibition evidence; neutral
+stick is never recentered to make pickup easier. See STRONG_SIDE_CARRY.md for
+frontal R/L views, separate physical demos and 27 passing affected suites.

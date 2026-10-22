@@ -488,7 +488,7 @@ chance creation remains open. Actual engine 8s silent scripted training MP4 and
 three JPEGs distinguish staged inputs from normal AI. 240frames/960×600/H.264,
 clean decode; offline llvmpipe source render1m33s, no hardware FPS claim.
 Details/provenance STICKHANDLING_AND_MOVEMENT.md and verification/stickhandling-
-20261022.json. Gear/goalie art and Claude2ff37ab preserved. CX-016 documents shared
+20261022.json. Gear/goalie art and Claude 2ff37ab preserved. CX-016 documents shared
 hooks; no new acknowledgement. Next: sustained attacking opportunities and
 transition review, physical controller/full-match acceptance.
 
@@ -549,3 +549,20 @@ on it, support actual roster shoots in initial lineup and identity changes,
 retain physical puck/deke/release contacts and preserve goalie/bench equipment.
 Shared files skater_visual.gd/match.gd; fresh side-by-side engine inspection and
 left/right tests before publishing. Preserve latest Claude work; no reply assumed.
+
+Completed source `6b7d849`: normal blade/shaft on shooting side (neutral rig-space
+lateral 0.92 m / forward 0.78 m), both hands follow that diagonal; actual L/R top
+and lower arm assignment, thumb roll/receiving/release/carry/seat targets, roster
+construction and line-change identity wired. No whole-mesh/text mirror. Added
+side-aware loose-puck recovery heading: the old face-body-at-puck rule orbited
+with lateral sticks; corrected planner/skating/contact recovers R/L in 130/129 ticks.
+Forehand sleeve and backhand glove/hip regressions fixed with original geometry
+thresholds intact. All 27 affected suites green, strong-side 10,119 checks, physical
+moving 1,440/1,440 ticks held / max gap 0.1853 m. Native normal 30 s AI (seed 42): acquisitions
+[9,12], 10 releases, shots [2,0], score [1,0], no forced events; no full-match balance claim.
+Actual frontal/hand JPEGs and separate R/L 8 s scripted-input physics demos pinned
+to source; 240 frames each, clean decode, silent. Offline llvmpipe renders 2m57/2m55,
+not hardware FPS. STRONG_SIDE_CARRY.md / verification/strong-side-20261022.json
+record results/hashes. Claude 2ff37ab preserved; CX-019 has hooks, no reply assumed.
+Generic bench identity/handedness, full animation/human feel/controller review
+and sustained AI chance/balance tuning remain open.
