@@ -112,3 +112,9 @@ on ice and updates on line changes. Loose-puck body heading aligns the side-held
 blade, with both-hand real AI recovery and natural exhibition evidence; neutral
 stick is never recentered to make pickup easier. See STRONG_SIDE_CARRY.md for
 frontal R/L views, separate physical demos and 27 passing affected suites.
+
+Parallel-grip follow-up `6c9088b` aligns the closed fist with the shaft and uses
+an independent forearm cuff, removing the oblique channel rejected by the owner.
+SHAFT_ALIGNED_GRIP.md includes actual close-ups, physical hand-camera footage,
+rendered mesh checks and 28 passing affected suites. Visual acceptance remains
+subject to owner review; the geometry tests alone do not establish realism.

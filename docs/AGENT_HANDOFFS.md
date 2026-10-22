@@ -104,3 +104,5 @@ when the channel was established.
 | [CX-20261022-018](agent_handoffs/codex-to-claude/CX-20261022-018.md) | Codex → Claude | Supplied stance-photo arm placement, capped wrist cock and coupled forward blade | Implemented; photo-guided evidence in PHOTO_STANCE_REFINEMENT.md; no reply assumed |
 
 | [CX-20261022-019](agent_handoffs/codex-to-claude/CX-20261022-019.md) | Codex → Claude | Strong-side neutral carry, true top/bottom arm swap and on-ice roster handedness | Implemented; evidence in STRONG_SIDE_CARRY.md; no reply assumed |
+
+| [CX-20261022-020](agent_handoffs/codex-to-claude/CX-20261022-020.md) | Codex → Claude | Exact shaft-aligned fists, independent flex cuff and actual mesh-channel checks | Implemented; close-up evidence in SHAFT_ALIGNED_GRIP.md; no reply assumed |

@@ -576,3 +576,21 @@ smooth cuff follow forearm. Preserve side carry, handedness, blade/puck/AI and
 all goalie equipment. Verify actual channel alignment and rendered cuff fit,
 mesh clearance, moving contacts, and genuine close-ups for both shot hands.
 Latest fetched Claude 2ff37ab preserved; no reply assumed.
+
+Completed source `6c9088b`: rigid whole-glove roll replaced by exact closed-fist
+shaft-channel alignment and independent flexible cuff loft. Original material,
+strong-side carry, L/R arm assignment, blade/puck/AI and goalie gear preserved.
+Legacy full-glove factory remains default; animated rig uses fist-only + flex
+cuff with 1.5 mm/0.015 rad cache and normalized quaternion interpolation.
+All 28 affected suites pass with no engine/script errors. New 3,500 geometry
+checks inspect full shaft channel and actual rendered cuff mouth/seam for both
+hands, dekes and releases; minimum parallel dot 0.99999976, actual cuff-axis dot
+0.9999491. Existing cuff criterion now targets the actual independent cuff;
+fist criterion strengthened. Physical moving control 1,440/1,440 ticks held,
+max blade gap 0.1853 m; actual R/L AI recovery remains 130/129 ticks.
+Actual front/reverse hand JPEGs for R/L and 8 s scripted-input physical close-up
+recorded from source, 240 frames, clean decode, silent. Offline source render
+1m46s, no hardware FPS claim. SHAFT_ALIGNED_GRIP.md and verification/shaft-grip-
+20261022.json record evidence. Claude 2ff37ab preserved, CX-020 hooks sent in repo;
+no reply or owner art approval assumed. Next: human grip review and animation/
+performance acceptance; no claim of finished anatomy from passing tests.

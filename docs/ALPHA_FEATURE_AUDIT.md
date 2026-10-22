@@ -287,3 +287,10 @@ generic bench-seat identity and full handed animation/art acceptance remain open
 Strong-side recovery heading avoids unreachable puck-chase orbits. All 27 affected
 suites pass, including 10,119 strong-side checks and both-handed clipping. Actual
 frontal JPEGs, physical moving trials and normal AI evidence: STRONG_SIDE_CARRY.md.
+
+Shaft-aligned hand checkpoint, 2026-10-22 source `6c9088b`: exact fist channel plus
+independent flex cuff replaces the rejected sideways/oblique glove pose. All 28
+affected suites pass, including 3,500 checks of actual shaft channel and cuff mesh
+vertices. Material/strong-side handedness and physical puck behavior preserved.
+This advances the Partial equipment/animation slice without claiming human art
+approval. Actual front/reverse R/L JPEGs and hand-camera video: SHAFT_ALIGNED_GRIP.md.

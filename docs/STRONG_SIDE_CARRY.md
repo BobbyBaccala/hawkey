@@ -108,3 +108,10 @@ Output FPS is not a real-time hardware measurement.
 Human pose/feel review, full-match tuning, physical controller review and complete
 bench-seat identity/handedness wiring remain open. This is a functional on-ice
 handedness/carry slice, not a claim of finished commercial animation.
+
+## Subsequent owner grip correction
+
+The owner accepted neither test passage nor shaft contact as proof that the top
+hand could hold the stick. SHAFT_ALIGNED_GRIP.md replaces the oblique fist/channel
+orientation with exact shaft alignment and an independent flexible forearm cuff.
+The side-carry and on-ice roster-handedness behavior from this checkpoint remains.
