@@ -491,3 +491,14 @@ Details/provenance STICKHANDLING_AND_MOVEMENT.md and verification/stickhandling-
 20261022.json. Gear/goalie art and Claude2ff37ab preserved. CX-016 documents shared
 hooks; no new acknowledgement. Next: sustained attacking opportunities and
 transition review, physical controller/full-match acceptance.
+
+## Grip orientation and stronger dekes — active 2026-10-22
+
+Owner reports reversed top hand and insufficient move exaggeration. Codex solo
+scope: explicit top/bottom thumb direction on stick, preserve cuff/shaft seating,
+increase physical blade reach and body/hand action within anatomical limits;
+actual close-up pose inspection plus moving-physics regression and capture.
+Shared files: skater_visual.gd/puck_skills.gd; gear shape/goalie art preserved.
+Fetched origin; Claude prototype head checked, no reply assumed. Direct coaching
+reference attempts (HowToHockey, IceHockeySystems, PureHockey, HockeyCanada,
+USAHockey) rejected by network proxy; do not claim accessed reference content.

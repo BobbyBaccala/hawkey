@@ -31,12 +31,12 @@ func stick(raw:Vector2,speed:float,owns:bool)->Vector2:
 		var u:=clampf(elapsed/float(DURATIONS[move]),0,1)
 		var envelope:=sin(PI*u)
 		match move:
-			"cut":result=Vector2(side*0.95*sin(PI*u),0.15*envelope)
-			"sweep":result=Vector2(side*0.95*sin(TAU*u),-0.25*envelope)
-			"toe_drag":result=Vector2(side*0.8*sin(TAU*u),0.95*sin(PI*u))
+			"cut":result=Vector2(side*sin(PI*u),0.30*envelope)
+			"sweep":result=Vector2(side*sin(TAU*u),-0.65*envelope)
+			"toe_drag":result=Vector2(side*sin(TAU*u),sin(PI*u))
 	return result.clamp(Vector2(-1,-1),Vector2(1,1))
 func lean()->float:
-	return side*0.35 if protecting else side*weight()*(0.7 if move=="cut" else 0.3)
+	return side*0.55 if protecting else side*weight()*(1.0 if move=="cut" else 0.65)
 func steer(intent:Vector3,rig_right:Vector3)->Vector3:
-	if move=="cut":return (intent*0.85-rig_right*side*0.28*weight()).limit_length(1)
+	if move=="cut":return (intent*0.85-rig_right*side*0.42*weight()).limit_length(1)
 	return intent*(0.82 if protecting else 1.0)

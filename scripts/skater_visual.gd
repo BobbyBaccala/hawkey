@@ -138,7 +138,7 @@ var last_blade_world:=Vector3.INF
 
 static func stick_home(input:Vector2)->Vector3:
 	# Backhand crosses the body centre; top hand repositions to keep reach.
-	return Vector3(-0.36-input.x*(0.66 if input.x<0 else 0.45),0.029,1.05-input.y*0.26)
+	return Vector3(-0.36-input.x*(0.94 if input.x<0 else 0.72),0.029,1.05-input.y*0.48)
 
 var goalie_save_height := 0.0
 ## Goalie save selection. Each save type has its own blend weight so a new
@@ -957,8 +957,8 @@ func pose(speed: float, turn: float) -> void:
 		# hips sink as a leg drives out, and the shoulders counter-turn a touch.
 		var push_side: float = stride[0].ext-stride[1].ext
 		drop += Vector3(-push_side*0.075,-0.035*push_blend-0.03*soft_max(stride[0].ext,stride[1].ext,0.25),0)
-		drop.x+=skill_lean*0.04
-		drop.y-=absf(skill_lean)*0.06
+		drop.x+=skill_lean*0.075
+		drop.y-=absf(skill_lean)*0.09
 		drop.y+=0.035*backward_weight
 		# Shoulders open toward wherever the blade is being carried, so the
 		# bottom arm reaches out in front instead of across the chest.
@@ -1098,7 +1098,7 @@ func pose(speed: float, turn: float) -> void:
 	override_pose("root",root_pose)
 	bend = Basis(Vector3.RIGHT,lerpf(0.52,0.26,goalie_drop) if goalie else 0.50+minf(speed/40,0.18))
 	if not goalie and not referee:
-		bend=Basis(Vector3.BACK,-skill_lean*0.15)*bend
+		bend=Basis(Vector3.BACK,-skill_lean*0.23)*bend
 		bend=Basis(Vector3.UP,(0.12 if release_kind=="pass" else 0.32)*release_weight)*bend
 	if shoulder_turn != 0.0: bend = Basis(Vector3.UP,shoulder_turn)*bend
 	# Stop: the upper body leans back against the skid.
@@ -1831,16 +1831,20 @@ func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF
 	else:
 		# The shaft runs diagonally across the palm (real grips are not square
 		# to the forearm): split the difference between the forearm-square
-		# fist and the shaft (40 % of the way), so the cuff stays on the forearm and the stick
+		# fist and the shaft (35 % of the way), so the cuff stays on the forearm and the stick
 		# still lies in the fingers.
 		var square := shaft-up*up.dot(shaft)
 		square = square.normalized() if square.length_squared()>0.0001 else up.cross(Vector3.BACK).normalized()
-		x = square.slerp(shaft if shaft.dot(square)>0.0 else -shaft,0.4).normalized()
+		x = square.slerp(shaft if shaft.dot(square)>0.0 else -shaft,0.35).normalized()
 		up = (up-x*x.dot(up))
 		up = up.normalized() if up.length_squared()>0.0001 else x.cross(Vector3.BACK).normalized()
 	var z := x.cross(up)
 	var away := wrist-torso_pose.origin
-	if z.dot(away) < 0.0:
+	# Attached hockey grip: top-hand thumb points toward the blade; the
+	# mirrored bottom-hand thumb points back toward the top hand. Choosing
+	# palm roll from body distance alone can reverse the top hand like a putter.
+	var reverse := x.dot(-shaft)<0.0 if grip_point!=Vector3.INF and hand_plant<0.01 else z.dot(away)<0.0
+	if reverse:
 		x = -x
 		z = -z
 	var basis_ := Basis(x,up,z)
