@@ -264,3 +264,10 @@ including opponent poke/loss and actual skating physics. This supersedes the old
 Full commercial move catalogue, polished transitions, real-device input review
 and sustained full-match AI chance creation remain open. Evidence and original
 training-demo vs natural-AI distinction: STICKHANDLING_AND_MOVEMENT.md.
+
+Grip follow-up 2026-10-22, source `c5a8f71`: thumb direction now verified separately
+from shaft contact; command handling span 1.11→1.66 m and drag 0.26→0.48 m, stronger
+hip/torso motion. The current right-shot procedural rig remains a subset;
+per-player mirrored handedness is not implemented by this change. See
+HOCKEY_GRIP_AND_DEKES.md for posed and moving physical evidence. Fresh coaching
+reference pages were blocked; no retrieved-reference or human approval claimed.

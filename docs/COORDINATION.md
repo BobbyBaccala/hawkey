@@ -502,3 +502,17 @@ Shared files: skater_visual.gd/puck_skills.gd; gear shape/goalie art preserved.
 Fetched origin; Claude prototype head checked, no reply assumed. Direct coaching
 reference attempts (HowToHockey, IceHockeySystems, PureHockey, HockeyCanada,
 USAHockey) rejected by network proxy; do not claim accessed reference content.
+
+Completed grip source `c5a8f71`: explicit opposed thumb direction removes the
+reversed top-hand roll; cuff alignment preserved. Cross-body command span
+1.11→1.66 m, drag 0.26→0.48 m, stronger torso/hip lean and cut steering. All 26
+affected engine suites pass, including 3,164 grip checks through 1,580 poses;
+physical moving skills retain 720/720 ticks (max gap 0.2202 m). Prior carry fixture
+still p95 0.1425 m, zero drops. Actual engine JPEG closeups/opposite side and
+8 s silent moving MP4 captured from source; 240 frames, clean decode, offline
+render 1m22s, not a hardware performance claim. Stills are posed inspection;
+video uses scripted input with real puck physics, not AI gameplay. See
+HOCKEY_GRIP_AND_DEKES.md and verification/hockey-grip-20261022.json. Reference
+sites blocked by proxy; fresh photo comparison remains open. Claude 2ff37ab
+preserved; CX-017 records hooks without acknowledgement. Next checkpoint:
+human grip/deke review and per-player handedness, sustained AI chances.

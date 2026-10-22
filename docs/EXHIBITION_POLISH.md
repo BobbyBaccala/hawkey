@@ -93,3 +93,9 @@ arrival/braking and near-puck facing stability. See STICKHANDLING_AND_MOVEMENT.m
 for measured carry error, controls and source-pinned evidence. These gates remain
 partial: natural chance creation, sustained tactical decisions, transition art
 review and physical controller/full-match acceptance still need work.
+
+Owner-reviewed grip follow-up source `c5a8f71` replaces ambiguous palm roll with
+explicit top/bottom thumb direction; wider/deeper dekes add stronger body weight
+transfer while respecting hand contact and reach. See HOCKEY_GRIP_AND_DEKES.md
+for actual close-ups, a moving physical demo and reference-access limitations.
+Anatomy/transition realism remains partial and subject to human review.
