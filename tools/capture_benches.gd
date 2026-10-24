@@ -1,0 +1,124 @@
+extends SceneTree
+## Bench and penalty-box review renders:
+##  bench  - from the ice, looking at the home bench (west side)
+##  benches - wide from centre ice across both benches
+##  box    - penalty boxes and officials' booth (east), one road player seated
+##  cheer  - home bench standing after a goal, road bench slumped
+##  backs  - from behind the home bench (back numbers)
+##  outwalk - line change: a home player who got up walks from his seat to the
+##           boards (mid-step)
+##  goout  - he waits at the boards, stick raised, to go out
+##  walk   - the player who came off walking from his landing spot to the free
+##           seat (walk1 just after landing, walkturn mid-turn from inside the
+##           bench, walk2 turning round at the seat)
+##  walkstep - the same walk from inside the bench, mid-step (one skate up,
+##           hips over the planted one)
+##  close  - the same player stopped in front of the seat, closing his stance
+##           with a last step before he sits
+##  wait1/wait2 - a real match line change with nobody up to go out when the
+##           tired player lands: he waits on the bench floor while a teammate
+##           gets up (wait1), then the fresh player goes out from there and the
+##           tired one walks on to the seat (wait2)
+## xvfb-run -a -s "-screen 0 1728x1080x24" godot --rendering-method gl_compatibility --rendering-driver opengl3 --resolution 1728x1080 --script tools/capture_benches.gd
+## Writes /tmp/hawkey-bench-<name>.png.
+const Arena = preload("res://scripts/arena.gd")
+func _initialize() -> void: call_deferred("run")
+
+func shot(cam: Camera3D, pos: Vector3, look: Vector3, fov: float, path: String) -> void:
+	cam.fov = fov
+	cam.position = pos
+	cam.look_at(look)
+	cam.cull_mask = preload("res://scripts/arena_lighting.gd").camera_cull_mask(pos)
+	for i in range(4): await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png(path)
+
+func run() -> void:
+	var scene = load("res://main.tscn").instantiate()
+	scene.get_script().skip_title = true
+	root.add_child(scene)
+	for i in range(3): await physics_frame
+	scene.set_physics_process(false)
+	scene.set_process(false)
+	for s in scene.skaters: s.visible = false
+	for g in scene.goalkeepers: g.visible = false
+	scene.puck.visible = false
+	var hud = scene.get("hud_node")
+	if hud: hud.visible = false
+	var benches = scene.arena.get_node("Benches")
+	benches.set_process(false)
+	benches.set_penalty_count(1, 1)
+	var cam: Camera3D = scene.camera
+	var w := Arena.HALF_WIDTH
+	await shot(cam, Vector3(-w + 6.0, 2.0, -11.0), Vector3(-w - 1.5, 0.8, -5.0), 45, "/tmp/hawkey-bench-bench.png")
+	await shot(cam, Vector3(2.0, 6.0, 0.0), Vector3(-w - 1.0, 0.6, 0.0), 55, "/tmp/hawkey-bench-benches.png")
+	await shot(cam, Vector3(w - 5.5, 2.2, 7.5), Vector3(w + 1.4, 0.8, 1.5), 48, "/tmp/hawkey-bench-box.png")
+	# Line change: a home player gets up to go out (arena_benches.gd stand_up()).
+	benches.watch_target = Vector3(0, 0, 20)
+	benches.stand_up(0, 5.0)
+	# Slice 11: once up he walks from his seat to the boards (outwalk, mid-step)
+	# and waits there, stick raised (goout).
+	for i in range(58): benches.update_figures(1.0 / 60.0)
+	await shot(cam, Vector3(-w + 0.7, 2.4, 1.6), Vector3(-w - 1.3, 0.5, 4.6), 52, "/tmp/hawkey-bench-outwalk.png")
+	for i in range(62): benches.update_figures(1.0 / 60.0)
+	await shot(cam, Vector3(-w + 5.0, 1.9, 9.5), Vector3(-w - 1.6, 0.9, 4.0), 50, "/tmp/hawkey-bench-goout.png")
+	# The player coming off lands at z 5 and walks to the free seat.
+	benches.go_out(0, "45", Vector3(-w - 0.85, 0, 5.0), Vector3(-1, 0, 0))
+	for i in range(18): benches.update_figures(1.0 / 60.0)
+	await shot(cam, Vector3(-w + 0.7, 2.5, 7.2), Vector3(-w - 1.0, 0.25, 4.7), 50, "/tmp/hawkey-bench-walkstep.png")
+	for i in range(7): benches.update_figures(1.0 / 60.0)
+	await shot(cam, Vector3(-w + 4.0, 2.4, 8.5), Vector3(-w - 1.4, 0.8, 4.6), 50, "/tmp/hawkey-bench-walk1.png")
+	# Turning round to face the ice mid-walk: the swinging skate lands on a
+	# world spot (no whip round with the body).
+	for i in range(16): benches.update_figures(1.0 / 60.0)
+	await shot(cam, Vector3(-w + 0.7, 2.5, 7.2), Vector3(-w - 1.0, 0.25, 4.9), 50, "/tmp/hawkey-bench-walkturn.png")
+	for i in range(14): benches.update_figures(1.0 / 60.0)
+	await shot(cam, Vector3(-w + 4.0, 2.4, 8.5), Vector3(-w - 1.4, 0.8, 4.6), 50, "/tmp/hawkey-bench-walk2.png")
+	# Stopped in front of the seat: the closing step (second skate coming in).
+	for i in range(29): benches.update_figures(1.0 / 60.0)
+	await shot(cam, Vector3(-w + 0.6, 2.7, 2.9), Vector3(-w - 1.3, 0.35, 5.0), 46, "/tmp/hawkey-bench-close.png")
+	for i in range(231): benches.update_figures(1.0 / 60.0)
+	# Goal reaction: home bench on its feet, arms up; road bench slumped.
+	benches.watch_target = Vector3(0, 0, 20)
+	for i in range(120): benches.update_figures(1.0 / 60.0)
+	benches.celebrate(0)
+	for i in range(70): benches.update_figures(1.0 / 60.0)
+	await shot(cam, Vector3(-w + 6.5, 2.2, 0.0), Vector3(-w - 1.5, 0.9, 0.0), 62, "/tmp/hawkey-bench-cheer.png")
+	await shot(cam, Vector3(-w - 2.55, 2.3, 1.6), Vector3(-w - 1.7, 0.7, 5.0), 60, "/tmp/hawkey-bench-backs.png")
+	# Line change with nobody up when the tired player lands (match.gd hop 3).
+	for i in range(300): benches.update_figures(1.0 / 60.0)
+	scene.match_state.phase = scene.MatchState.Phase.PLAY
+	scene.request_line(0, 1)
+	var changer = null
+	for a in scene.skaters:
+		if scene.body_team(a) == 0 and bool(a.get_meta("changing", false)):
+			a.position = scene.bench_spot(0, int(a.get_meta("slot")))
+			if changer == null:
+				changer = a
+				a.visible = true
+			else:
+				# Keep one change in the picture.
+				a.set_meta("changing", false)
+	scene.update_team_ai(1.0 / 120.0)
+	for rig in benches._rigs:
+		if rig.team == 0: rig.rise_until = -1.0
+	var guard := 0
+	while int(changer.get_meta("hop", 0)) != 3 and guard < 400:
+		scene.update_team_ai(1.0 / 120.0)
+		benches.update_figures(1.0 / 120.0)
+		guard += 1
+	for i in range(24):
+		scene.update_team_ai(1.0 / 120.0)
+		benches.update_figures(1.0 / 120.0)
+	var at: Vector3 = changer.get_child(1).global_position
+	await shot(cam, Vector3(-w + 2.4, 2.1, at.z + 3.0), Vector3(-w - 1.4, 0.75, at.z - 0.4), 50, "/tmp/hawkey-bench-wait1.png")
+	guard = 0
+	while int(changer.get_meta("hop", 0)) != 2 and guard < 400:
+		scene.update_team_ai(1.0 / 120.0)
+		benches.update_figures(1.0 / 120.0)
+		guard += 1
+	for i in range(40):
+		scene.update_team_ai(1.0 / 120.0)
+		benches.update_figures(1.0 / 120.0)
+	await shot(cam, Vector3(-w + 2.4, 2.1, at.z + 3.0), Vector3(-w - 1.4, 0.75, at.z - 0.4), 50, "/tmp/hawkey-bench-wait2.png")
+	print("bench capture done")
+	quit()
