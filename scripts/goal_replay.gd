@@ -21,6 +21,14 @@ extends Node
 ## goals, "overhead" (looking down on the crease) for plays that cross the slot,
 ## otherwise "reverse" (above the end boards) - never the same angle twice in a
 ## row. A skip prompt sits in the corner while it plays.
+##
+## Big saves get a replay too: the match calls big_save(end_sign, strength) when
+## a goalie stops a hard shot, and whistle() when play next stops; if the whistle
+## comes within SAVE_WINDOW seconds of the save, the save is replayed (SAVE_*
+## clip around the save, tag "GREAT SAVE") SAVE_DELAY after the whistle, so a
+## save never interrupts live play. In slow motion a crisp puck trail (a
+## camera-facing ribbon through the puck's recorded path, fading out over
+## TRAIL_TIME of clip time) shows where the shot went.
 
 const RATE := 30.0
 const KEEP := 8.0
@@ -33,6 +41,17 @@ const WIPE := 0.6
 const SLATE := Color("#0b1118")
 const ACCENT := Color("#e8b83a")
 const INK := Color("#f2f5f8")
+const SAVE_BEFORE := 2.6
+const SAVE_AFTER := 1.0
+const SAVE_SLOW_FROM := 0.8
+const SAVE_WINDOW := 4.0
+const SAVE_DELAY := 1.0
+## Weakest save (crowd reaction strength from match.gd save_reaction()) replayed.
+const SAVE_MIN := 0.2
+const TRAIL_TIME := 0.4
+const TRAIL_STEPS := 24
+const TRAIL_WIDTH := 0.07
+const TRAIL_COLOR := Color(0.78, 0.92, 1.0)
 const ANGLES := ["reverse", "ice", "overhead", "follow"]
 const ANGLE_NAMES := {"reverse": "REVERSE ANGLE", "ice": "ICE LEVEL", "overhead": "OVERHEAD", "follow": "SHOOTER CAM"}
 const Arena := preload("res://scripts/arena.gd")
@@ -68,6 +87,18 @@ var _cam_pos := Vector3.ZERO
 var _shot_dir := Vector3.BACK
 var _release_t := 0.0
 var _release_pos := Vector3.ZERO
+## "goal" or "save": what the pending/current replay shows (goal_time is the
+## moment of the event either way).
+var kind := "goal"
+var _before := BEFORE
+var _after := AFTER
+var _slow_from := SLOW_FROM
+var _delay := START_DELAY
+var _save_t := -100.0
+var _save_end := 1.0
+var _save_strength := 0.0
+var trail: MeshInstance3D
+var _trail_mesh: ImmediateMesh
 
 var layer: CanvasLayer
 var wipe: Node2D
@@ -77,11 +108,13 @@ var angle_label: Label
 var skip_prompt: PanelContainer
 
 ## Seconds the replay runs on screen (clip at its playback speeds).
-static func clip_duration() -> float:
+static func clip_duration(what := "goal") -> float:
+	if what == "save": return (SAVE_BEFORE - SAVE_SLOW_FROM) + (SAVE_SLOW_FROM + SAVE_AFTER) / SLOW
 	return (BEFORE - SLOW_FROM) + (SLOW_FROM + AFTER) / SLOW
 
 func _ready() -> void:
 	build_ui()
+	build_trail()
 
 func track(nodes: Array) -> void:
 	for n in nodes:
@@ -106,7 +139,7 @@ func capture(delta: float) -> void:
 		frames.append(snapshot())
 		while frames.size() > 2 and clock - float(frames[0].t) > KEEP: frames.pop_front()
 	if goal_time >= 0.0:
-		var start := goal_time + START_DELAY
+		var start := goal_time + _delay
 		if _wipe_t < 0.0 and clock >= start - WIPE * 0.5: _wipe_t = 0.0
 		if clock >= start: begin()
 
@@ -114,14 +147,45 @@ func goal(end_: float) -> void:
 	if _playing: return
 	goal_time = clock
 	end_sign = end_
+	_set_kind("goal")
+	_save_t = -100.0
+
+## A goalie stopped a hard shot (strength: match.gd save_reaction(), 0..0.55).
+## Remembered until the next whistle; the strongest recent save wins.
+func big_save(end_: float, strength: float) -> void:
+	if _playing or strength < SAVE_MIN: return
+	if clock - _save_t < SAVE_WINDOW and strength < _save_strength: return
+	_save_t = clock
+	_save_end = end_
+	_save_strength = strength
+
+## Play has stopped (not for a goal): replay a big save from just before it.
+## Returns true if a save replay was queued.
+func whistle() -> bool:
+	if _playing or goal_time >= 0.0: return false
+	if clock - _save_t > SAVE_WINDOW: return false
+	goal_time = _save_t
+	end_sign = _save_end
+	_set_kind("save")
+	_delay = clock - _save_t + SAVE_DELAY
+	_save_t = -100.0
+	return true
+
+func _set_kind(what: String) -> void:
+	kind = what
+	var save := what == "save"
+	_before = SAVE_BEFORE if save else BEFORE
+	_after = SAVE_AFTER if save else AFTER
+	_slow_from = SAVE_SLOW_FROM if save else SLOW_FROM
+	_delay = START_DELAY
 
 func begin() -> void:
 	if frames.size() < 2:
 		goal_time = -1.0
 		return
 	_live = snapshot()
-	_clip_start = maxf(goal_time - BEFORE, float(frames[0].t))
-	_clip_end = minf(goal_time + AFTER, float(frames[-1].t))
+	_clip_start = maxf(goal_time - _before, float(frames[0].t))
+	_clip_end = minf(goal_time + _after, float(frames[-1].t))
 	play_t = _clip_start
 	_playing = true
 	_ending = false
@@ -141,7 +205,7 @@ func begin() -> void:
 	last_angle = angle
 	var away := Vector3(shot_from.x - net.x, 0, shot_from.z - net.z)
 	_shot_dir = away.normalized() if away.length() > 0.5 else Vector3(0, 0, -end_sign)
-	angle_label.text = ANGLE_NAMES[angle]
+	angle_label.text = ("GREAT SAVE  ·  " if kind == "save" else "") + ANGLE_NAMES[angle]
 	tag.visible = true
 	skip_prompt.visible = true
 	apply(sample(play_t))
@@ -155,12 +219,16 @@ func step(delta: float) -> void:
 		_end_wait -= delta
 		if _end_wait <= 0.0: finish()
 		return
-	play_t += delta * (SLOW if play_t >= goal_time - SLOW_FROM else 1.0)
+	play_t += delta * (SLOW if slow_motion() else 1.0)
 	if play_t >= _clip_end:
 		play_t = _clip_end
 		_start_end()
 	apply(sample(play_t))
 	aim_camera(delta, false)
+	update_trail()
+
+func slow_motion() -> bool:
+	return _playing and play_t >= goal_time - _slow_from
 
 func skip() -> void:
 	if _playing and not _ending: _start_end()
@@ -194,6 +262,7 @@ static func pick_angle(shot_from: Vector3, net: Vector3, lateral: float, last: S
 func _start_end() -> void:
 	_ending = true
 	skip_prompt.visible = false
+	trail.visible = false
 	_end_wait = WIPE * 0.5
 	_wipe_t = 0.0
 
@@ -208,6 +277,7 @@ func finish() -> void:
 	goal_time = -1.0
 	tag.visible = false
 	skip_prompt.visible = false
+	trail.visible = false
 	_live = {}
 
 func aim_camera(delta: float, snap: bool) -> void:
@@ -215,7 +285,7 @@ func aim_camera(delta: float, snap: bool) -> void:
 	var net := Vector3(0, 0.5, end_sign * Arena.GOAL_LINE)
 	var k := 1.0 if snap else 1.0 - exp(-delta * 4.0)
 	# 0 -> 1 as the play slows down at the net: every angle pushes in a little.
-	var slow := smoothstep(0.0, 1.0, clampf((play_t - (goal_time - SLOW_FROM)) / (SLOW_FROM + AFTER), 0.0, 1.0))
+	var slow := smoothstep(0.0, 1.0, clampf((play_t - (goal_time - _slow_from)) / (_slow_from + _after), 0.0, 1.0))
 	var pos: Vector3
 	match angle:
 		"ice":
@@ -249,6 +319,83 @@ func aim_camera(delta: float, snap: bool) -> void:
 	camera.global_position = pos
 	camera.look_at(_look, Vector3.UP)
 	camera.cull_mask = preload("res://scripts/arena_lighting.gd").camera_cull_mask(camera.global_position)
+
+# ---------------------------------------------------------------- puck trail
+
+func build_trail() -> void:
+	_trail_mesh = ImmediateMesh.new()
+	trail = MeshInstance3D.new()
+	trail.name = "PuckTrail"
+	trail.mesh = _trail_mesh
+	trail.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	trail.visible = false
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	m.vertex_color_use_as_albedo = true
+	m.no_depth_test = false
+	m.render_priority = 2
+	trail.material_override = m
+	add_child(trail)
+
+## Puck position at clip time t (no blending across a teleport).
+func puck_at(t: float) -> Vector3:
+	return (sample_puck(t) as Transform3D).origin
+
+func sample_puck(t: float) -> Transform3D:
+	if frames.is_empty(): return puck.global_transform
+	var lo := 0
+	var hi := frames.size() - 1
+	if t <= float(frames[0].t): return frames[0].puck
+	if t >= float(frames[hi].t): return frames[hi].puck
+	while hi - lo > 1:
+		var mid := (lo + hi) / 2
+		if float(frames[mid].t) <= t: lo = mid
+		else: hi = mid
+	var pa: Transform3D = frames[lo].puck
+	var pb: Transform3D = frames[hi].puck
+	var w := (t - float(frames[lo].t)) / maxf(float(frames[hi].t) - float(frames[lo].t), 0.0001)
+	return pa.interpolate_with(pb, w) if pa.origin.distance_to(pb.origin) < 3.0 else (pa if w < 0.5 else pb)
+
+## Trail points, newest first: the puck's path over the last TRAIL_TIME of clip
+## time, cut at a teleport. Empty when the puck has barely moved.
+func trail_points() -> PackedVector3Array:
+	var pts := PackedVector3Array()
+	var prev := puck.global_position
+	pts.append(prev)
+	for i in range(1, TRAIL_STEPS + 1):
+		var t := play_t - TRAIL_TIME * float(i) / TRAIL_STEPS
+		if t < _clip_start: break
+		var q := puck_at(t)
+		if q.distance_to(prev) > 1.0: break
+		pts.append(q)
+		prev = q
+	var length := 0.0
+	for i in range(1, pts.size()): length += pts[i].distance_to(pts[i - 1])
+	if length < 0.6: return PackedVector3Array()
+	return pts
+
+func update_trail() -> void:
+	_trail_mesh.clear_surfaces()
+	var pts := trail_points() if slow_motion() and not _ending else PackedVector3Array()
+	trail.visible = pts.size() >= 2
+	if not trail.visible: return
+	var eye := camera.global_position
+	_trail_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
+	for i in range(pts.size()):
+		var u := float(i) / float(pts.size() - 1)
+		var along := (pts[maxi(i - 1, 0)] - pts[mini(i + 1, pts.size() - 1)])
+		if along.length() < 0.0001: along = Vector3.FORWARD
+		var side := along.cross(eye - pts[i]).normalized() * TRAIL_WIDTH * 0.5 * (1.0 - 0.7 * u)
+		var c := Color(TRAIL_COLOR, 0.85 * pow(1.0 - u, 1.5))
+		# Lift the ribbon just off the ice so it never fights the ice surface.
+		var p := pts[i] + Vector3(0, 0.012, 0)
+		_trail_mesh.surface_set_color(c)
+		_trail_mesh.surface_add_vertex(p + side)
+		_trail_mesh.surface_set_color(c)
+		_trail_mesh.surface_add_vertex(p - side)
+	_trail_mesh.surface_end()
 
 # ---------------------------------------------------------------- recording
 

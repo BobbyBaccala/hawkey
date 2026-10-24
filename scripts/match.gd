@@ -31,6 +31,8 @@ var match_state := MatchState.new()
 var celebration: Node3D
 ## Instant replay after goals (scripts/goal_replay.gd).
 var replay: Node
+## Phase at the end of the last live tick (a PLAY -> STOPPAGE change is a whistle).
+var replay_phase := -1
 var skaters: Array[CharacterBody3D] = []
 var rosters: Array = [[],[]]
 var active_lines: Array[int] = [0,0]
@@ -515,6 +517,8 @@ func _on_puck_contact(body: Node) -> void:
 		var save_dressing:=arena.get_node_or_null("Dressing")
 		var save_roar:=save_reaction(last_puck_velocity,actor.position.z)
 		if save_dressing!=null and save_roar>0.05: save_dressing.crowd_react(save_roar,signf(actor.position.z),0.5)
+		# Replayed at the next whistle if it was a big one (goal_replay.gd).
+		replay.big_save(signf(actor.position.z),save_roar)
 		cooldown=0.2
 		carrier=null
 		# Engine contact normals/materials resolve rebound direction and vertical speed.
@@ -625,6 +629,9 @@ func _physics_process(delta: float) -> void:
 	away_goals=match_state.score[1]
 	update_camera(delta)
 	update_match_hud()
+	# Whistle shortly after a big save: replay the save during the stoppage.
+	if replay_phase==MatchState.Phase.PLAY and match_state.phase==MatchState.Phase.STOPPAGE: replay.whistle()
+	replay_phase=match_state.phase
 	replay.capture(delta)
 	if is_instance_valid(puck_shadow):
 		puck_shadow.position=Vector3(puck.position.x,0.003,puck.position.z)
@@ -1011,7 +1018,9 @@ func capture_preview() -> void:
 	if "--paused" in OS.get_cmdline_user_args():
 		set_paused(true)
 		await get_tree().process_frame
-	if "--replay" in OS.get_cmdline_user_args() or "--replay-wipe" in OS.get_cmdline_user_args():
+	if "--replay-save" in OS.get_cmdline_user_args():
+		await capture_save_replay()
+	elif "--replay" in OS.get_cmdline_user_args() or "--replay-wipe" in OS.get_cmdline_user_args():
 		await capture_replay("--replay-wipe" in OS.get_cmdline_user_args())
 	if "--goal-banner" in OS.get_cmdline_user_args():
 		hud_node.show_banner("GOAL", "TORONTO  ·  VALE", hud_node.team_colors[0], 5.0)
@@ -1054,6 +1063,39 @@ func capture_replay(wipe_frame: bool) -> void:
 		if not wipe_frame and replay.playing() and replay.play_t>replay.goal_time-0.7: get_viewport().disable_3d=false
 		if wipe_frame and replay.wipe_progress()>0.44 and replay.wipe_progress()<0.56: break
 		if not wipe_frame and replay.playing() and replay.play_t>replay.goal_time-0.25: break
+	get_viewport().disable_3d=false
+
+## --replay-save screenshot: a hard shot from the slot into the goalie's
+## chest, the whistle goes, and the save replay is caught in slow motion with
+## the puck trail just short of the goalie.
+func capture_save_replay() -> void:
+	get_viewport().disable_3d=true
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--replay-angle="): replay.force_angle=arg.substr(15)
+	var end_:=attack_direction(0)
+	var keeper:=goalkeeper_at_end(end_)
+	var shooter:=skaters[0]
+	shooter.position=Vector3(2.5,0,keeper.position.z-end_*10.0)
+	puck.position=shooter.position+Vector3(-0.3,0.02,end_*0.8)
+	puck.linear_velocity=Vector3(-0.3,0,end_*5.0)
+	for i in range(int(0.9*Engine.physics_ticks_per_second)): await get_tree().physics_frame
+	puck.position=Vector3(1.6,0.05,keeper.position.z-end_*8.0)
+	puck.linear_velocity=(keeper.position+Vector3(0,0.55,0)-puck.position).normalized()*27.0
+	var shot_clock:float=replay.clock
+	for i in range(int(0.6*Engine.physics_ticks_per_second)):
+		await get_tree().physics_frame
+		if replay._save_t>=shot_clock or puck.linear_velocity.length()<12.0: break
+	# No hard save registered (stick/glancing contact): mark it where the shot died.
+	if replay._save_t<shot_clock: replay.big_save(end_,0.4)
+	for i in range(int(0.4*Engine.physics_ticks_per_second)): await get_tree().physics_frame
+	if match_state.phase==MatchState.Phase.PLAY:
+		match_state.phase=MatchState.Phase.STOPPAGE
+		match_state.phase_timer=2
+		match_state.event="Goalkeeper catch"
+	for i in range(1200):
+		await get_tree().physics_frame
+		if replay.playing() and replay.play_t>replay.goal_time-0.5: get_viewport().disable_3d=false
+		if replay.playing() and replay.play_t>replay.goal_time-0.06: break
 	get_viewport().disable_3d=false
 
 func goalkeeper_at_end(end_sign: float) -> CharacterBody3D:

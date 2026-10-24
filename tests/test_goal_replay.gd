@@ -135,7 +135,85 @@ func run() -> void:
 		await physics_frame
 		if scene.match_state.phase == scene.MatchState.Phase.PLAY: break
 	check(scene.match_state.phase != scene.MatchState.Phase.STOPPAGE, "Match moves on to the faceoff after the replay")
+	await check_save_replay(scene, r)
 	finish(scene)
+
+## Big saves: replayed at the next whistle (never during live play), with a
+## crisp puck trail in the slow motion.
+func check_save_replay(scene, r) -> void:
+	var GoalReplay = preload("res://scripts/goal_replay.gd")
+	var d: float = GoalReplay.clip_duration("save")
+	check(d >= 4.0 and d <= 6.0, "Save replay runs 4-6 s on screen (%.2f)" % d)
+	for i in range(int(4.0 * Engine.physics_ticks_per_second)):
+		await physics_frame
+		if scene.match_state.phase == scene.MatchState.Phase.PLAY: break
+	check(scene.match_state.phase == scene.MatchState.Phase.PLAY, "Back in play for the save checks")
+	var Phase = scene.MatchState.Phase
+	# A soft save is not replayed.
+	r.big_save(1.0, 0.1)
+	scene.match_state.phase = Phase.STOPPAGE
+	scene.match_state.phase_timer = 0.3
+	await physics_frame
+	await physics_frame
+	check(not r.pending(), "Soft save not replayed")
+	await back_to_play(scene)
+	# A big save long before the whistle is not replayed either.
+	r.big_save(1.0, 0.4)
+	for i in range(int((GoalReplay.SAVE_WINDOW + 0.5) * Engine.physics_ticks_per_second)): await physics_frame
+	scene.match_state.phase = Phase.STOPPAGE
+	scene.match_state.phase_timer = 0.3
+	await physics_frame
+	await physics_frame
+	check(not r.pending(), "Save long before the whistle not replayed")
+	await back_to_play(scene)
+	# A hard shot is stopped: play goes on, no replay yet.
+	var end_sign := 1.0
+	scene.puck.position = Vector3(1.0, 0.05, end_sign * 14.0)
+	scene.puck.linear_velocity = Vector3(-0.1, 0.0, end_sign * 22.0)
+	for i in range(int(0.3 * Engine.physics_ticks_per_second)): await physics_frame
+	r.big_save(end_sign, 0.4)
+	var save_t: float = r.clock
+	for i in range(int(0.5 * Engine.physics_ticks_per_second)): await physics_frame
+	check(not r.pending() and not r.playing(), "A save never interrupts live play")
+	# Whistle (goalie covers): the save replay is queued and plays.
+	scene.match_state.phase = Phase.STOPPAGE
+	scene.match_state.phase_timer = 2.0
+	await physics_frame
+	await physics_frame
+	check(r.pending() and r.kind == "save", "Whistle after a big save queues a save replay")
+	check(is_equal_approx(r.goal_time, save_t), "Save replay centred on the save")
+	for i in range(int((GoalReplay.SAVE_DELAY + 0.6) * Engine.physics_ticks_per_second)):
+		await physics_frame
+		if r.playing(): break
+	check(r.playing(), "Save replay plays during the stoppage")
+	check(r.tag.visible and r.angle_label.text.begins_with("GREAT SAVE"), "Tag names the save (%s)" % r.angle_label.text)
+	check(r.play_t < r.goal_time - 2.0, "Save clip starts seconds before the save")
+	check(not r.trail.visible, "No puck trail at full speed")
+	# Slow motion as the shot arrives: a trail follows the puck back up its path.
+	r.play_t = r.goal_time - 0.1
+	await physics_frame
+	check(r.slow_motion(), "Slow motion as the shot arrives")
+	check(r.trail.visible, "Puck trail shown in slow motion")
+	var pts: PackedVector3Array = r.trail_points()
+	check(pts.size() >= 6, "Trail has a path (%d points)" % pts.size())
+	if pts.size() >= 2:
+		check(pts[0].distance_to(scene.puck.global_position) < 0.05, "Trail starts at the puck")
+		var length := 0.0
+		for i in range(1, pts.size()): length += pts[i].distance_to(pts[i - 1])
+		check(length > 3.0 and length < 15.0, "Trail covers the puck's recent path (%.1f m)" % length)
+		check((pts[0].z - pts[-1].z) * end_sign > 2.0, "Trail runs back up the shot line")
+	r.skip()
+	check(not r.trail.visible, "Trail gone when the replay ends")
+	var guard := 0
+	while r.playing() and guard < 400:
+		await physics_frame
+		guard += 1
+	check(not r.playing() and not r.trail.visible, "Save replay ends cleanly")
+
+func back_to_play(scene) -> void:
+	for i in range(int(6.0 * Engine.physics_ticks_per_second)):
+		await physics_frame
+		if scene.match_state.phase == scene.MatchState.Phase.PLAY: return
 
 func finish(scene) -> void:
 	scene.queue_free()
