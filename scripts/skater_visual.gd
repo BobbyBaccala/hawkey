@@ -4,6 +4,7 @@ const Human = preload("res://assets/player-base-v1.glb")
 const Uniform = preload("res://assets/uniform.gdshader")
 const Arena = preload("res://scripts/arena.gd")
 const Gear = preload("res://scripts/gear_builder.gd")
+const JerseySurface = preload("res://scripts/jersey_surface.gd")
 const Mocap = preload("res://scripts/mocap.gd")
 const MOCAP_HIP_HEIGHT := 0.958
 # Captured clip blended over the procedural pose (celebrations, save reactions).
@@ -71,6 +72,7 @@ var rest: Dictionary = {}
 var feet: Array[Vector3] = [Vector3.ZERO,Vector3.ZERO]
 var skates: Array[Node3D] = []
 var helmet: Node3D
+var neck_guard: MeshInstance3D
 var shirt: Node3D
 var sticks: Node3D
 var pads: Array[Node3D] = []
@@ -155,6 +157,7 @@ func _ready() -> void:
 	helmet = Node3D.new()
 	rig.add_child(helmet)
 	build_helmet()
+	neck_guard=ellipsoid(rig,Vector3(.16,.14,.15),Vector3.ZERO,Color("#17242f"))
 	shirt = Node3D.new()
 	rig.add_child(shirt)
 	build_jersey()
@@ -175,7 +178,7 @@ func _ready() -> void:
 	for side in [1.0,-1.0]:
 		var sleeve:=MeshInstance3D.new()
 		sleeve.mesh=ArrayMesh.new()
-		sleeve.material_override=material(kit,0.87)
+		sleeve.material_override=material(kit,0.87) if referee else JerseySurface.fabric(kit,accent,true)
 		rig.add_child(sleeve)
 		cloth_sleeves.append(sleeve)
 		if not referee:
@@ -280,75 +283,47 @@ func build_helmet() -> void:
 		var mask := add_mesh(helmet,Gear.goalie_mask(kit,accent))
 		mask.position = Vector3(0,-0.035,0.01)
 		return
-	var mesh := ImmediateMesh.new()
-	mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES,material(Color("#c6ced4") if goalie else Color("#132434"),0.27))
-	for row in range(10):
-		for column in range(32):
-			var vertices: Array[Vector3] = []
-			for ij in [Vector2(row,column),Vector2(row+1,column),Vector2(row+1,column+1),Vector2(row,column),Vector2(row+1,column+1),Vector2(row,column+1)]:
-				var a: float = ij.x / 10 * PI * 0.59
-				var b: float = ij.y / 32 * TAU
-				var normal := Vector3(sin(a)*cos(b),cos(a),sin(a)*sin(b))
-				mesh.surface_set_normal(normal)
-				mesh.surface_add_vertex(Vector3(normal.x*0.115,normal.y*0.13,normal.z*0.135))
-	mesh.surface_end()
+	var mesh := JerseySurface.helmet_mesh()
 	var shell := MeshInstance3D.new()
 	shell.mesh = mesh
+	shell.material_override=material(Color("#101e2b"),0.43)
 	helmet.add_child(shell)
-	var visor := block(helmet,Vector3(0.19,0.065,0.018),Vector3(0,-0.018,0.128),Color("#91b9c7"))
-	var glass := material(Color(0.55,0.75,0.82,0.25),0.15)
-	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	visor.material_override = glass
-	if goalie:
-		visor.visible=false
-		for x in [-0.08,0.0,0.08]:
-			segment(helmet,Vector3(x,0.035,0.14),Vector3(x,-0.12,0.16),0.005,Color("#56646d"))
-		for y in [0.02,-0.04,-0.10]:
-			segment(helmet,Vector3(-0.10,y,0.15),Vector3(0.10,y,0.15),0.005,Color("#56646d"))
-		ellipsoid(helmet,Vector3(0.14,0.075,0.06),Vector3(0,-0.12,0.13),Color("#c5cdd2"))
-	for x in [-0.055,0.0,0.055]:
-		block(helmet,Vector3(0.018,0.008,0.065),Vector3(x,0.123,-0.02),Color("#050d16"))
-	segment(helmet,Vector3(-0.09,-0.02,0.03),Vector3(0,-0.13,0.1),0.009,Color("#adb9c4"))
-	segment(helmet,Vector3(0.09,-0.02,0.03),Vector3(0,-0.13,0.1),0.009,Color("#adb9c4"))
+	var visor_mesh:=SurfaceTool.new()
+	visor_mesh.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for col in range(24):
+		for uv in [Vector2(col,0),Vector2(col+1,1),Vector2(col+1,0),Vector2(col,0),Vector2(col,1),Vector2(col+1,1)]:
+			var a:float=lerpf(-.80,.80,uv.x/24.0)
+			visor_mesh.add_vertex(Vector3(sin(a)*.143,-.026-uv.y*.066,cos(a)*.153))
+	visor_mesh.generate_normals()
+	var visor:=MeshInstance3D.new()
+	visor.mesh=visor_mesh.commit()
+	var glass:=material(Color(.70,.84,.91,.20),.12)
+	glass.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA
+	visor.material_override=glass
+	helmet.add_child(visor)
+	# Small recessed vent slots, with a restrained crown reinforcement ridge.
+	for x in [-.048,.048]:
+		for z in [-.035,.015,.060]:
+			var vent:=block(helmet,Vector3(.013,.004,.025),Vector3(x,.112*sqrt(maxf(.0,1.0-pow(x/.112,2)-pow(z/.142,2)))-.001,z),Color("#050b10"))
+			vent.rotation.z=-signf(x)*.30
+	for side in [-1.0,1.0]:
+		segment(helmet,Vector3(side*.099,-.033,.012),Vector3(side*.070,-.171,.075),.005,Color("#273139"))
+		segment(helmet,Vector3(side*.070,-.171,.075),Vector3(0,-.185,.075),.005,Color("#273139"))
 
 func build_jersey() -> void:
-	var mesh := ImmediateMesh.new()
-	var sections := [Vector3(0.24,0.98,0.16),Vector3(0.22,1.10,0.155),Vector3(0.25,1.31,0.17),Vector3(0.27,1.44,0.14),Vector3(0.11,1.50,0.09)]
-	if goalie:
-		# Oversized sweater over a chest protector with shoulder floaters.
-		sections = [Vector3(0.255,0.95,0.17),Vector3(0.25,1.10,0.185),Vector3(0.28,1.30,0.20),Vector3(0.30,1.44,0.17),Vector3(0.13,1.53,0.10)]
-	jersey_sections = sections
-	mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
-	for row in range(sections.size()-1):
-		for column in range(32):
-			for ij in [Vector2(row,column),Vector2(row+1,column),Vector2(row+1,column+1),Vector2(row,column),Vector2(row+1,column+1),Vector2(row,column+1)]:
-				var section: Vector3 = sections[int(ij.x)]
-				var a: float = ij.y / 32 * TAU
-				var normal := Vector3(cos(a),0,sin(a))
-				mesh.surface_set_normal(normal)
-				mesh.surface_set_uv(Vector2(ij.y/32,section.y))
-				mesh.surface_add_vertex(Vector3(section.x*cos(a),section.y,section.z*sin(a)-0.02))
-	mesh.surface_end()
+	jersey_sections = JerseySurface.dimensions(goalie)
 	var instance := MeshInstance3D.new()
-	instance.mesh = mesh
-	var shader := Shader.new()
-	shader.code = "shader_type spatial; render_mode cull_disabled; uniform vec4 kit:source_color; uniform vec4 stripe_color:source_color=vec4(0.68,0.68,0.68,1.0); void fragment(){float stripe=(step(1.005,UV.y)-step(1.035,UV.y))+(step(1.05,UV.y)-step(1.064,UV.y));float weave=sin(UV.x*700.0)*sin(UV.y*700.0)*0.003;ALBEDO=mix(kit.rgb,stripe_color.rgb,stripe)+weave;ROUGHNESS=0.86;SPECULAR=0.18;}"
-	var m := ShaderMaterial.new()
-	m.shader = shader
-	m.set_shader_parameter("kit",kit)
-	m.set_shader_parameter("stripe_color",accent)
+	instance.name = "SweaterTorso"
+	instance.mesh = JerseySurface.torso(goalie)
+	instance.material_override = JerseySurface.fabric(kit,accent)
 	if referee:
-		var ref_shader:=Shader.new()
+		var ref_shader := Shader.new()
 		ref_shader.code="shader_type spatial; render_mode cull_disabled; void fragment(){float stripe=step(0.0,sin(UV.x*62.83));ALBEDO=mix(vec3(0.015),vec3(0.7),stripe);ROUGHNESS=0.8;}"
-		m.shader=ref_shader
-	instance.material_override = m
+		var ref_material := ShaderMaterial.new()
+		ref_material.shader=ref_shader
+		instance.material_override=ref_material
 	shirt.add_child(instance)
-	# Shoulder pads (or a goalie's shoulder floaters) shape the sweater.
-	if not referee:
-		var cap:=Vector3(0.18,0.12,0.20) if goalie else Vector3(0.16,0.10,0.18)
-		for x in [-1.0,1.0]:
-			var shoulder_cap:=ellipsoid(shirt,cap,Vector3(x*(0.20 if goalie else 0.185),1.425,-0.01),kit)
-			shoulder_cap.material_override=material(kit,0.86)
+	JerseySurface.collar(shirt,goalie,kit,accent)
 	var jersey_number := Label3D.new()
 	number_label = jersey_number
 	jersey_number.text = number
@@ -619,6 +594,8 @@ func pose(speed: float, turn: float) -> void:
 	head_pose.origin = posed_head
 	override_pose("head",head_pose)
 	helmet.position = posed_head+Vector3(0,0.095,0.015)
+	neck_guard.position=posed_head+Vector3(0,-.073,-.005)
+	neck_guard.basis=bend.scaled(Vector3(.16,.14,.15))
 	for i in range(2):
 		var side := 1.0 if i==0 else -1.0
 		var suffix := ".L" if i==0 else ".R"
@@ -928,6 +905,7 @@ func update_cloth_sleeve(instance: MeshInstance3D, shoulder: Vector3, elbow: Vec
 	var vertices:=PackedVector3Array()
 	var normals:=PackedVector3Array()
 	var indices:=PackedInt32Array()
+	var uvs:=PackedVector2Array()
 	for row in range(9):
 		var t:=float(row)/8
 		var center:Vector3=(1-t)*(1-t)*shoulder+2*(1-t)*t*control+t*t*wrist
@@ -942,6 +920,7 @@ func update_cloth_sleeve(instance: MeshInstance3D, shoulder: Vector3, elbow: Vec
 			var radial:Vector3=across*cos(angle)+depth*sin(angle)
 			vertices.append(center+radial*radius_)
 			normals.append(radial)
+			uvs.append(Vector2(float(column)/16,t))
 			if row<8 and column<16:
 				var a:=row*17+column
 				indices.append_array(PackedInt32Array([a,a+17,a+18,a,a+18,a+1]))
@@ -950,6 +929,7 @@ func update_cloth_sleeve(instance: MeshInstance3D, shoulder: Vector3, elbow: Vec
 	arrays[Mesh.ARRAY_VERTEX]=vertices
 	arrays[Mesh.ARRAY_NORMAL]=normals
 	arrays[Mesh.ARRAY_INDEX]=indices
+	arrays[Mesh.ARRAY_TEX_UV]=uvs
 	var mesh:ArrayMesh=instance.mesh
 	mesh.clear_surfaces()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
