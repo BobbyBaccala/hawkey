@@ -1047,16 +1047,25 @@ func capture_replay(wipe_frame: bool) -> void:
 	puck.linear_velocity=Vector3(-0.4,0,end_*6.0)
 	for i in range(int(0.9*Engine.physics_ticks_per_second)): await get_tree().physics_frame
 	puck.position=Vector3(2.2,0.05,net_z-end_*7.5)
-	puck.linear_velocity=(Vector3(-0.55,0.35,net_z)-puck.position).normalized()*26.0
+	# The goalie cheats to the shooter's post so the far-side shot goes in: a
+	# saved shot left the replay showing the puck at his pads (behind him from
+	# the ice-level camera) and a trail cut short by the old teleport.
+	var keeper:=goalkeeper_at_end(end_)
+	keeper.position.x+=1.3
+	puck.linear_velocity=(Vector3(-0.6,0.3,net_z)-puck.position).normalized()*26.0
 	var scored:int=match_state.score[0]+match_state.score[1]
 	for i in range(60):
 		await get_tree().physics_frame
 		if match_state.score[0]+match_state.score[1]!=scored: break
 	if match_state.score[0]+match_state.score[1]==scored:
-		# Saved: put it in anyway so there is a replay to show.
+		# Saved anyway: fire it in from just outside the crease (no teleport
+		# across the goal line, so the replay trail stays continuous).
 		match_state.phase=MatchState.Phase.PLAY
-		previous_puck=Vector3(0.1,0.02,net_z-end_*0.25)
-		puck.position=Vector3(0.1,0.02,net_z+end_*0.4)
+		puck.position=Vector3(-0.2,0.03,net_z-end_*1.6)
+		puck.linear_velocity=Vector3(-0.3,0,end_*14.0)
+		for i in range(40):
+			await get_tree().physics_frame
+			if match_state.score[0]+match_state.score[1]!=scored: break
 	for i in range(1200):
 		await get_tree().physics_frame
 		if wipe_frame and replay.wipe_progress()>0.2: get_viewport().disable_3d=false

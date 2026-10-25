@@ -50,8 +50,10 @@ const SAVE_DELAY := 1.0
 const SAVE_MIN := 0.2
 const TRAIL_TIME := 0.4
 const TRAIL_STEPS := 24
-const TRAIL_WIDTH := 0.07
-const TRAIL_COLOR := Color(0.78, 0.92, 1.0)
+const TRAIL_WIDTH := 0.09
+## Saturated broadcast blue: the old pale blue-white vanished against the white
+## ice (the ribbon drew, but at ~3% contrast it read as nothing).
+const TRAIL_COLOR := Color(0.05, 0.42, 1.0)
 const ANGLES := ["reverse", "ice", "overhead", "follow"]
 const ANGLE_NAMES := {"reverse": "REVERSE ANGLE", "ice": "ICE LEVEL", "overhead": "OVERHEAD", "follow": "SHOOTER CAM"}
 const Arena := preload("res://scripts/arena.gd")
@@ -388,7 +390,7 @@ func update_trail() -> void:
 		var along := (pts[maxi(i - 1, 0)] - pts[mini(i + 1, pts.size() - 1)])
 		if along.length() < 0.0001: along = Vector3.FORWARD
 		var side := along.cross(eye - pts[i]).normalized() * TRAIL_WIDTH * 0.5 * (1.0 - 0.7 * u)
-		var c := Color(TRAIL_COLOR, 0.85 * pow(1.0 - u, 1.5))
+		var c := Color(TRAIL_COLOR, 0.95 * pow(1.0 - u, 1.2))
 		# Lift the ribbon just off the ice so it never fights the ice surface.
 		var p := pts[i] + Vector3(0, 0.012, 0)
 		_trail_mesh.surface_set_color(c)

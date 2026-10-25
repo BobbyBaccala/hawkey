@@ -202,6 +202,11 @@ func check_save_replay(scene, r) -> void:
 		for i in range(1, pts.size()): length += pts[i].distance_to(pts[i - 1])
 		check(length > 3.0 and length < 15.0, "Trail covers the puck's recent path (%.1f m)" % length)
 		check((pts[0].z - pts[-1].z) * end_sign > 2.0, "Trail runs back up the shot line")
+		# The ribbon itself: a built strip in world space, on the camera's layers.
+		var mesh: ImmediateMesh = r.trail.mesh
+		check(mesh.get_surface_count() == 1 and mesh.surface_get_array_len(0) == pts.size() * 2, "Trail ribbon mesh built")
+		check(r.trail.global_transform.is_equal_approx(Transform3D.IDENTITY), "Trail mesh in world space")
+		check((r.trail.layers & r.camera.cull_mask) != 0, "Replay camera renders the trail's layer")
 	r.skip()
 	check(not r.trail.visible, "Trail gone when the replay ends")
 	var guard := 0
