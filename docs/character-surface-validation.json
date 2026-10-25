@@ -1,0 +1,178 @@
+{
+  "engine": "Godot 4.6 stable Linux",
+  "date": "2026-10-25",
+  "mode": "headless --fixed-fps 120",
+  "suites": [
+    {
+      "suite": "test_animation",
+      "reported": [
+        "Animation integration failures: 0"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": false
+    },
+    {
+      "suite": "test_boards",
+      "reported": [
+        "Board failures: 0"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": true
+    },
+    {
+      "suite": "test_clipping",
+      "reported": [
+        "Clipping failures: 0"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": false
+    },
+    {
+      "suite": "test_controller",
+      "reported": [
+        "Controller failures: 0 (synthetic events; hardware untested)"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": true
+    },
+    {
+      "suite": "test_controls",
+      "reported": [
+        "Control integration failures: 0"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": false
+    },
+    {
+      "suite": "test_gear_graphics",
+      "reported": [
+        "Gear graphic failures: 0"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": false
+    },
+    {
+      "suite": "test_goalie_gear",
+      "reported": [
+        "Goalie gear failures: 0"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": true
+    },
+    {
+      "suite": "test_goalie_saves",
+      "reported": [
+        "Goalie save failures: 0"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": false
+    },
+    {
+      "suite": "test_ice",
+      "reported": [
+        "Ice failures: 0"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": true
+    },
+    {
+      "suite": "test_jersey_surface",
+      "reported": [
+        "Jersey surface failures: 0"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": false
+    },
+    {
+      "suite": "test_lab",
+      "reported": [
+        "Integration failures: 0"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": false
+    },
+    {
+      "suite": "test_lighting",
+      "reported": [
+        "Lighting failures: 0"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": true
+    },
+    {
+      "suite": "test_match",
+      "reported": [
+        "Match integration failures: 0"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": true
+    },
+    {
+      "suite": "test_match_loop",
+      "reported": [
+        "20-second match-loop failures: 0 \u2022 score [0, 0] \u2022 clock 18:54"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": true
+    },
+    {
+      "suite": "test_match_state",
+      "reported": [
+        "Match-state failures: 0"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": false
+    },
+    {
+      "suite": "test_mocap",
+      "reported": [
+        "Mocap failures: 0 (skipped: clips not installed in assets/mixamo/)"
+      ],
+      "script_errors": false,
+      "optional_skip": true,
+      "exit_resource_warning": false
+    },
+    {
+      "suite": "test_puck_flight",
+      "reported": [
+        "Puck flight failures: 0"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": false
+    },
+    {
+      "suite": "test_simulation",
+      "reported": [
+        "PASS: rating acceleration, deceleration, front-mouth goal, back entry, wide and high misses"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": false
+    },
+    {
+      "suite": "test_stride",
+      "reported": [
+        "Stride failures: 0"
+      ],
+      "script_errors": false,
+      "optional_skip": false,
+      "exit_resource_warning": false
+    }
+  ]
+}
