@@ -251,6 +251,22 @@ var travel := Vector3.ZERO
 ## Smoothed low-speed brake turn of both skates (the old Ctrl brake look).
 var brake_turn := 0.0
 var sprays: Array = []
+## Faceoff stance (match.gd sets it when players line up at a dot): 0..1 blend,
+## the target it eases toward, and the role - 0 centre (deep crouch, blade on
+## the ice by the dot), 1 winger, 2 defenceman (taller, stick on the ice).
+var faceoff := 0.0
+var faceoff_target := 0.0
+var faceoff_role := 0
+const FACEOFF_DROP := [Vector3(0,-0.30,-0.07),Vector3(0,-0.24,-0.05),Vector3(0,-0.17,-0.03)]
+const FACEOFF_BEND := [1.02,0.80,0.66]
+const FACEOFF_FEET := [0.33,0.28,0.24]
+## Centre's blade: square on the ice just right of his line, ahead of the skates.
+const FACEOFF_BLADE := [Vector3(-0.16,0.029,0.80),Vector3(-0.30,0.029,0.88),Vector3(-0.34,0.029,0.92)]
+## Eased 0..1 weight of the faceoff stance.
+func faceoff_blend() -> float:
+	if goalie or referee: return 0.0
+	var x := clampf(faceoff,0.0,1.0)
+	return x*x*(3.0-2.0*x)
 
 func material(color: Color, roughness: float = 0.7) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -873,6 +889,23 @@ func pose(speed: float, turn: float) -> void:
 		# turned a little toward where the skater was going.
 		drop = drop.lerp(Vector3(s*0.13,-0.30,-0.05),stop_w)
 		shoulder_turn = lerpf(shoulder_turn,-s*0.22,stop_w)
+	# Faceoff: skates set wide and square (a centre's a touch staggered, strong
+	# side back), knees deep, weight low and forward over the dot.
+	var fo_w := faceoff_blend()
+	if fo_w > 0.0 and not goalie:
+		var width: float = FACEOFF_FEET[faceoff_role]
+		for i in range(2):
+			var side := 1.0 if i==0 else -1.0
+			var f: Dictionary = stride[i]
+			var set_at := Vector3(side*width,0.115,0.05-0.05*side*(1.0 if faceoff_role==0 else 0.4))
+			f.ankle = (f.ankle as Vector3).lerp(set_at,fo_w)
+			f.yaw = lerpf(f.yaw,side*0.22,fo_w)
+			f.pitch = f.pitch*(1.0-fo_w)
+			f.edge = lerpf(f.edge,0.35,fo_w)
+			f.ext = f.ext*(1.0-fo_w)
+			f.lift = f.lift*(1.0-fo_w)
+		drop = drop.lerp(FACEOFF_DROP[faceoff_role],fo_w)
+		shoulder_turn = shoulder_turn*(1.0-fo_w)
 	# Board hop: gather low, then knees tuck to the chest over the boards and
 	# the legs extend again for the landing (board_hop.gd sample()).
 	if not goalie and not hop_state.is_empty():
@@ -1012,6 +1045,8 @@ func pose(speed: float, turn: float) -> void:
 	override_pose("root",root_pose)
 	bend = Basis(Vector3.RIGHT,lerpf(0.52,0.26,butterfly) if goalie else 0.50+minf(speed/40,0.18))
 	if shoulder_turn != 0.0: bend = Basis(Vector3.UP,shoulder_turn)*bend
+	# Faceoff: chest down over the knees, eyes on the dot.
+	if fo_w > 0.0: bend = bend.slerp(Basis(Vector3.RIGHT,FACEOFF_BEND[faceoff_role]),fo_w)
 	# Stop: the upper body leans back against the skid.
 	if stop_w > 0.0: bend = Basis(Vector3.BACK,-stop_side*0.24*stop_w)*bend
 	if not hop_state.is_empty(): bend = Basis(Vector3.RIGHT,0.38*float(hop_state.lean))*bend
@@ -1374,6 +1409,10 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	blade_position=Vector3(-0.02+butterfly*0.05,0.042,0.60-butterfly*0.04) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
 	# Stop: the stick reaches out in front for balance.
 	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
+	# Faceoff: settle into the stance quickly, break out of it a little slower.
+	faceoff = move_toward(faceoff,faceoff_target,delta*(4.0 if faceoff_target > faceoff else 3.0))
+	var fo_w := faceoff_blend()
+	if fo_w > 0.0: blade_position = blade_position.lerp(FACEOFF_BLADE[faceoff_role],fo_w)
 	# Board hop: lift the stick clear of the boards (blade rises first, so it
 	# never sweeps through the dasher on the way up or down).
 	stick_carry = float(hop_state.get("carry",0.0)) if not goalie and not referee and not hop_state.is_empty() else 0.0
@@ -1482,6 +1521,8 @@ func stick_grip() -> Vector3:
 	var grip := shoulder_of(0)+Vector3(-0.11-stick_intent.x*0.20-shot_follow*0.12,-0.235+shot_charge*0.06,0.15-stick_intent.y*0.05-shot_charge*0.12+shot_follow*0.22)
 	# Stop: hands come down with the hips and push the stick out front.
 	grip += Vector3(0,-0.10,0.06)*stop_blend()
+	# Faceoff: the top hand comes down and forward so the shaft lies low.
+	grip += Vector3(0.04,-0.08,0.08)*faceoff_blend()*(1.0 if faceoff_role==0 else 0.5)
 	# Board hop: the knob comes down to the hip as the stick is carried.
 	if stick_carry>0.0: grip = grip.lerp(carry_knob(),stick_carry)
 	# Bench: knob held up in front of the chin, stick leaning back against him.

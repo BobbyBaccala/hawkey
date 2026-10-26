@@ -57,6 +57,13 @@ var shot_lift := 0.0
 var next_faceoff := Vector3.ZERO
 var puck_shadow: MeshInstance3D
 var controller_help := false
+## Set by setup_faceoff(): the next camera update cuts (no blend) to the
+## close faceoff framing.
+var faceoff_cut := false
+## How the close faceoff framing sits relative to the dot, per camera mode
+## (Dynamic and Broadcast; Overhead and Full rink keep their wide views).
+const FACEOFF_CAM_DYNAMIC := Vector3(2.2,5.2,7.6)
+const FACEOFF_CAM_BROADCAST := Vector3(8.5,4.2,0)
 
 func _init() -> void:
 	arena_title = "HAWKEY ARENA"
@@ -135,6 +142,12 @@ func _ready() -> void:
 	if "--capture" in OS.get_cmdline_user_args():
 		# Normal live match, no staged image substitution.
 		match_state.phase_timer = 0.3
+		# --faceoff holds the lineup (--faceoff-end: at an end-zone dot).
+		if "--faceoff" in OS.get_cmdline_user_args() or "--faceoff-end" in OS.get_cmdline_user_args():
+			match_state.phase_timer = 999.0
+			if "--faceoff-end" in OS.get_cmdline_user_args():
+				next_faceoff = Vector3(Arena.DOT_X,0,-Arena.END_DOT_Z)
+				setup_faceoff()
 	# The title screen shows in a real window only: headless tests and captures
 	# go straight to the game (--title forces it for screenshots).
 	var args := OS.get_cmdline_user_args()
@@ -239,7 +252,9 @@ func setup_faceoff() -> void:
 	puck.linear_velocity = Vector3.ZERO
 	puck.angular_velocity = Vector3.ZERO
 	previous_puck = puck.position
-	var spots := [Vector3(0,0,1.25),Vector3(-6,0,1),Vector3(6,0,1),Vector3(-4,0,8),Vector3(4,0,8)]
+	# Centres square up just off the dot (blades meet over it), wingers on
+	# the wings, D back at the points.
+	var spots := [Vector3(0,0,0.95),Vector3(-6,0,1),Vector3(6,0,1),Vector3(-4,0,8),Vector3(4,0,8)]
 	for actor in skaters:
 		var team := body_team(actor)
 		var sign_ := attack_direction(team)
@@ -260,6 +275,12 @@ func setup_faceoff() -> void:
 		actor.position.z=clampf(actor.position.z,-28,28)
 		actor.velocity = Vector3.ZERO
 		actor.get_child(1).rotation.y = 0 if sign_<0 else PI
+		# Players arrive set in their faceoff stance (the camera cuts to them).
+		var visual = actor.get_child(1)
+		visual.faceoff_role = 0 if slot==0 else (1 if slot<3 else 2)
+		visual.faceoff = 1.0
+		visual.faceoff_target = 1.0
+	faceoff_cut = true
 	sync_strength()
 	if not bool(player.get_meta("eligible",true)): switch_player()
 
@@ -583,6 +604,8 @@ func _physics_process(delta: float) -> void:
 	if old_phase==MatchState.Phase.FACEOFF and match_state.phase==MatchState.Phase.PLAY:
 		puck.freeze=false
 		puck.linear_velocity=Vector3(-1,0,-1.5) if match_state.period%2 else Vector3(1,0,1.5)
+		# Puck dropped: everyone breaks out of the stance.
+		for actor in skaters: actor.get_child(1).faceoff_target=0.0
 	sync_strength()
 	update_roster_stamina(delta)
 	if match_state.phase==MatchState.Phase.PLAY:
@@ -913,8 +936,10 @@ func update_camera(delta: float) -> void:
 	# the camera sits behind the end Toronto defends and flips between periods.
 	var side:=-signf(attack_direction(0))
 	if side==0: side=1.0
-	var snap:=side!=camera_side
+	var snap:=side!=camera_side or faceoff_cut
+	faceoff_cut=false
 	camera_side=side
+	var at_faceoff:=match_state.phase==MatchState.Phase.FACEOFF and camera_mode in [0,2]
 	var lead:=-side*2.5
 	var focus:=Vector3(clampf(puck.position.x*0.35,-6,6),0,clampf(puck.position.z+lead,-(Arena.GOAL_LINE-3.0),Arena.GOAL_LINE-3.0))
 	if camera_mode==3: focus=Vector3.ZERO
@@ -935,8 +960,21 @@ func update_camera(delta: float) -> void:
 		_: # Full rink.
 			desired=Vector3(0,51,side*27)
 			look=Vector3(0,0.4,-side*3.0)
-	camera.position=desired if snap else camera.position.lerp(desired,1-exp(-delta*5))
-	if camera_mode!=2: camera.position.x=camera_target.x
+	if at_faceoff:
+		# Faceoff: cut in close and low on the dot, both centres in frame, the
+		# wingers either side; after the drop the normal framing eases back.
+		var dot:=Vector3(next_faceoff.x,0,next_faceoff.z)
+		camera_target=Vector3(dot.x,0,clampf(dot.z+lead,-(Arena.GOAL_LINE-3.0),Arena.GOAL_LINE-3.0))
+		if camera_mode==0:
+			# Off the user's centre's shoulder so the opposing centre and both
+			# blades over the dot are not hidden behind him.
+			desired=dot+Vector3(-side*FACEOFF_CAM_DYNAMIC.x,FACEOFF_CAM_DYNAMIC.y,side*FACEOFF_CAM_DYNAMIC.z)
+			look=dot+Vector3(0,0.45,-side*1.2)
+		else:
+			desired=dot+Vector3(side*FACEOFF_CAM_BROADCAST.x,FACEOFF_CAM_BROADCAST.y,0)
+			look=dot+Vector3(0,0.5,0)
+	camera.position=desired if snap else camera.position.lerp(desired,1-exp(-delta*(8 if at_faceoff else 5)))
+	if camera_mode!=2 and not at_faceoff: camera.position.x=camera_target.x
 	# A camera up among the rigging over the sheet (Overhead, Full rink, a
 	# zoomed-out Dynamic) hides the trusses and jumbotron so they never sit
 	# between it and the ice.
@@ -1013,7 +1051,7 @@ func capture_preview() -> void:
 		if arg.begins_with("--capture-time="): capture_time = clampf(float(arg.substr(15)), 0.5, 120.0)
 	await get_tree().create_timer(capture_time).timeout
 	for frame in range(600):
-		if match_state.phase==MatchState.Phase.PLAY: break
+		if match_state.phase==MatchState.Phase.PLAY or match_state.phase_timer>100.0: break
 		await get_tree().physics_frame
 	if "--paused" in OS.get_cmdline_user_args():
 		set_paused(true)
