@@ -262,6 +262,42 @@ const FACEOFF_BEND := [1.02,0.80,0.66]
 const FACEOFF_FEET := [0.33,0.28,0.24]
 ## Centre's blade: square on the ice just right of his line, ahead of the skates.
 const FACEOFF_BLADE := [Vector3(-0.16,0.029,0.80),Vector3(-0.30,0.029,0.88),Vector3(-0.34,0.029,0.92)]
+## Faceoff draw (centres; match.gd drives it): seconds since the linesman let
+## go of the puck (-1: no draw), and the result once the puck hits the ice -
+## +1 won (blade sweeps the puck back to the forehand side), -1 lost (blade
+## jabs across to tie up the winner's stick), 0 still falling (blade poised).
+var draw_time := -1.0
+var draw_result := 0
+var draw_result_time := 0.0
+## How long the winning sweep / losing jab takes once the puck lands.
+const DRAW_SWEEP := 0.22
+## Rig-space blade travel: poised over the drop, winning pull, losing jab.
+const DRAW_POISED := Vector3(0.0,0.035,-0.07)
+const DRAW_WIN := Vector3(-0.30,0.0,-0.46)
+const DRAW_LOSE := Vector3(0.24,0.0,0.12)
+## Linesman: 0..1 weight of the right arm held out over the dot with the puck,
+## and the target it eases toward (match.gd sets it while lining up).
+var drop_hand := 0.0
+var drop_hand_target := 0.0
+## Rig-space wrist when holding the puck out over the dot, bent at the waist.
+const DROP_HAND := Vector3(-0.06,0.80,0.95)
+## Linesman's lean over the dot while holding the puck (radians).
+const DROP_LEAN := 0.72
+
+## Rig-space blade offset of the faceoff draw (zero when not drawing).
+func draw_blade_offset() -> Vector3:
+	if draw_time < 0.0 or faceoff_role != 0 or goalie or referee: return Vector3.ZERO
+	# Poised: the blade lifts a touch and cocks back as the puck falls.
+	var poised := DRAW_POISED*smoothstep(0.0,0.10,draw_time)
+	if draw_result == 0: return poised
+	var t := clampf((draw_time-draw_result_time)/DRAW_SWEEP,0.0,1.0)
+	var e := 1.0-pow(1.0-t,3.0)
+	return poised*(1.0-e)+(DRAW_WIN if draw_result > 0 else DRAW_LOSE)*e
+
+## Rig-space wrist the linesman holds the puck in (for match.gd to place it).
+func drop_hand_world() -> Vector3:
+	return rig.to_global(posed_wrists[1]+Vector3(0,-0.05,0.03))
+
 ## Eased 0..1 weight of the faceoff stance.
 func faceoff_blend() -> float:
 	if goalie or referee: return 0.0
@@ -1039,6 +1075,9 @@ func pose(speed: float, turn: float) -> void:
 		var shift:Vector3=(idle.points.Hips-idle_data.mean.points.Hips)*MOCAP_HIP_HEIGHT*(1.0-butterfly)
 		drop += Vector3(shift.x*0.25,shift.y*0.8,0)
 	var capture_weight := mocap_weight*mocap_strength
+	# Linesman bends at the knees and waist over the dot to drop the puck.
+	var drop_w := drop_hand*drop_hand*(3.0-2.0*drop_hand) if referee else 0.0
+	if drop_w > 0.0: drop += Vector3(0,-0.10,-0.04)*drop_w
 	posed_drop = drop
 	var root_pose := root_rest
 	root_pose.origin += drop
@@ -1047,6 +1086,7 @@ func pose(speed: float, turn: float) -> void:
 	if shoulder_turn != 0.0: bend = Basis(Vector3.UP,shoulder_turn)*bend
 	# Faceoff: chest down over the knees, eyes on the dot.
 	if fo_w > 0.0: bend = bend.slerp(Basis(Vector3.RIGHT,FACEOFF_BEND[faceoff_role]),fo_w)
+	if drop_w > 0.0: bend = bend.slerp(Basis(Vector3.RIGHT,DROP_LEAN),drop_w)
 	# Stop: the upper body leans back against the skid.
 	if stop_w > 0.0: bend = Basis(Vector3.BACK,-stop_side*0.24*stop_w)*bend
 	if not hop_state.is_empty(): bend = Basis(Vector3.RIGHT,0.38*float(hop_state.lean))*bend
@@ -1212,6 +1252,10 @@ func pose(speed: float, turn: float) -> void:
 			if shoulder.distance_to(wrist)>STICK_ARM_REACH:
 				wrist = shoulder+(wrist-shoulder).normalized()*STICK_ARM_REACH
 		if referee: wrist=Vector3(side*0.32,0.96,0.03)
+		if referee and i==1 and drop_hand > 0.0:
+			# Linesman: puck held out over the dot, arm reaching from the shoulder.
+			var held := shoulder+(DROP_HAND-shoulder).limit_length(0.60)
+			wrist = wrist.lerp(held,drop_hand*drop_hand*(3.0-2.0*drop_hand))
 		if not goalie and not referee and (seat > 0.0 or cheer > 0.0):
 			# Bench: gloves rest on top of the knees (no stick), and go up to cheer.
 			var w := 0.0
@@ -1413,6 +1457,11 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	faceoff = move_toward(faceoff,faceoff_target,delta*(4.0 if faceoff_target > faceoff else 3.0))
 	var fo_w := faceoff_blend()
 	if fo_w > 0.0: blade_position = blade_position.lerp(FACEOFF_BLADE[faceoff_role],fo_w)
+	# The draw: poised over the drop, then the winner's sweep or loser's jab.
+	if draw_time >= 0.0:
+		draw_time += delta
+		blade_position += draw_blade_offset()*fo_w
+	drop_hand = move_toward(drop_hand,drop_hand_target,delta*(5.0 if drop_hand_target > drop_hand else 2.5))
 	# Board hop: lift the stick clear of the boards (blade rises first, so it
 	# never sweeps through the dasher on the way up or down).
 	stick_carry = float(hop_state.get("carry",0.0)) if not goalie and not referee and not hop_state.is_empty() else 0.0

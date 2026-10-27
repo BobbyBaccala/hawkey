@@ -64,11 +64,36 @@ var faceoff_cut := false
 ## (Dynamic and Broadcast; Overhead and Full rink keep their wide views).
 const FACEOFF_CAM_DYNAMIC := Vector3(2.2,5.2,7.6)
 const FACEOFF_CAM_BROADCAST := Vector3(8.5,4.2,0)
+## The drop: the linesman stands this far off the dot (across the rink, on the
+## side away from the Broadcast camera) holding the puck out over it, and
+## throws it down at DROP_SPEED; the draw is decided when it lands.
+const LINESMAN_OFFSET := 0.9
+const DROP_SPEED := 1.6
+## Winning draw: the puck comes back off the winner's blade at this speed, this
+## far (radians) round from straight back toward his forehand side.
+const DRAW_BACK_SPEED := 6.0
+const DRAW_BACK_ANGLE := 0.70
+## The official holding the puck at the current faceoff (null in play).
+var linesman: Node3D
+## Seconds since the puck left the linesman's hand (-1: no drop under way),
+## its vertical speed while falling, and whether it has landed.
+var drop_timer := -1.0
+var drop_velocity := 0.0
+var draw_landed := false
+## The centres taking the current draw, and the winner once it lands.
+var draw_centres: Array = []
+var faceoff_winner: CharacterBody3D
+## Faceoffs won per team (for the stats screens).
+var faceoff_wins := [0,0]
+var faceoff_rng := RandomNumberGenerator.new()
+## 1 at the faceoff framing, easing to 0 as the camera glides back to play.
+var faceoff_cam_ease := 0.0
 
 func _init() -> void:
 	arena_title = "HAWKEY ARENA"
 
 func _ready() -> void:
+	faceoff_rng.seed = 20261027
 	super._ready()
 	celebration=GoalCelebration.new()
 	add_child(celebration)
@@ -96,7 +121,7 @@ func _ready() -> void:
 	var names := ["E. Vale","N. March","A. Renaud","M. Holt","L. Voss","J. Belisle","D. Mercer","O. Lind","T. Keene","I. Caron","S. Adler","P. Kent","R. Cole","V. Baird","G. Laurent","K. Stone","F. Noel","B. Arvid"]
 	for team in range(2):
 		for i in range(18):
-			rosters[team].append({"name":names[(i+team*7)%18],"number":numbers[i],"stamina":1.0,"speed":88-i%5*3,"goals":0,"shots":0})
+			rosters[team].append({"name":names[(i+team*7)%18],"number":numbers[i],"stamina":1.0,"speed":88-i%5*3,"faceoff":44+(i*29+team*17)%45,"goals":0,"shots":0})
 		for slot in range(5):
 			var roster_id := slot if slot<3 else 12+slot-3
 			var actor := make_skater(Vector3.ZERO,team_color(team),str(rosters[team][roster_id].number),false,team_accent(team))
@@ -143,7 +168,9 @@ func _ready() -> void:
 		# Normal live match, no staged image substitution.
 		match_state.phase_timer = 0.3
 		# --faceoff holds the lineup (--faceoff-end: at an end-zone dot).
-		if "--faceoff" in OS.get_cmdline_user_args() or "--faceoff-end" in OS.get_cmdline_user_args():
+		# --faceoff-drop / --faceoff-draw: drop it and capture the puck falling
+		# from the linesman's hand / the winner's sweep.
+		if Array(OS.get_cmdline_user_args()).any(func(a): return str(a).begins_with("--faceoff")):
 			match_state.phase_timer = 999.0
 			if "--faceoff-end" in OS.get_cmdline_user_args():
 				next_faceoff = Vector3(Arena.DOT_X,0,-Arena.END_DOT_Z)
@@ -281,8 +308,143 @@ func setup_faceoff() -> void:
 		visual.faceoff = 1.0
 		visual.faceoff_target = 1.0
 	faceoff_cut = true
+	draw_centres = []
+	for actor in skaters:
+		if int(actor.get_meta("slot"))==0: draw_centres.append(actor)
+		actor.get_child(1).draw_time = -1.0
+		actor.get_child(1).draw_result = 0
+	drop_timer = -1.0
+	draw_landed = false
+	faceoff_winner = null
+	place_linesman()
 	sync_strength()
 	if not bool(player.get_meta("eligible",true)): switch_player()
+
+## An official skates in to the dot and holds the puck out over it, on the
+## side that keeps him out of the camera's line to the centres (the far side
+## for Broadcast, away from the Dynamic camera's shoulder offset); the other
+## stays by the boards.
+func place_linesman() -> void:
+	if referee_nodes.is_empty(): return
+	var across := linesman_side()
+	var dot := Vector3(next_faceoff.x,0,next_faceoff.z)
+	var spot := dot+Vector3(across*LINESMAN_OFFSET,0,0)
+	linesman = referee_nodes[0] if across<0 else referee_nodes[1]
+	if is_instance_valid(linesman):
+		linesman.position = spot
+		var to_dot := dot-spot
+		linesman.rotation.y = atan2(-to_dot.x,-to_dot.z)
+		linesman.drop_hand_target = 1.0
+		linesman.drop_hand = 1.0
+	for i in range(referee_nodes.size()):
+		var official := referee_nodes[i]
+		if official==linesman: continue
+		official.drop_hand_target = 0.0
+		official.drop_hand = 0.0
+		# The other official keeps to his boards, clear of the draw.
+		if Vector2(official.position.x-dot.x,official.position.z-dot.z).length()<3.0:
+			official.position = Vector3(-(Arena.HALF_WIDTH-2.0) if i==0 else Arena.HALF_WIDTH-2.0,0,clampf(dot.z+(-9 if i==0 else 9),-(Arena.GOAL_LINE-1.0),Arena.GOAL_LINE-1.0))
+
+## Which side of the dot (x sign) the linesman stands for this camera.
+func linesman_side() -> float:
+	var side := -signf(attack_direction(0))
+	if side==0: side=1.0
+	var across := -side if camera_mode==2 else side
+	if absf(next_faceoff.x+across*LINESMAN_OFFSET)>Arena.HALF_WIDTH-1.2: across = -across
+	return across
+
+## Faceoff set: officials hold their pose, the puck sits in the linesman's hand.
+func update_linesman(delta: float) -> void:
+	# The camera changed during the lineup: he steps round to the other side.
+	if linesman!=null and signf(linesman.position.x-next_faceoff.x)!=linesman_side():
+		linesman.drop_hand_target = 0.0
+		linesman.position.x = clampf(linesman.position.x,-(Arena.HALF_WIDTH-2.0),Arena.HALF_WIDTH-2.0)
+		place_linesman()
+	for official in referee_nodes:
+		official.animate(0,delta,0,false)
+	if linesman!=null:
+		# Keep his hand right over the dot: shuffle him by whatever it is off.
+		var off: Vector3 = linesman.drop_hand_world()-next_faceoff
+		off.y = 0
+		linesman.position -= off
+		puck.position = linesman.drop_hand_world()
+		previous_puck = puck.position
+
+## The linesman lets go: the puck falls to the dot, the centres' blades poise.
+func start_drop() -> void:
+	drop_timer = 0.0
+	drop_velocity = -DROP_SPEED
+	draw_landed = false
+	puck.position = Vector3(next_faceoff.x,puck.position.y,next_faceoff.z)
+	previous_puck = puck.position
+	if linesman!=null: linesman.drop_hand_target = 0.0
+	for actor in draw_centres:
+		actor.get_child(1).draw_time = 0.0
+		actor.get_child(1).draw_result = 0
+
+## Puck in the air: falls under gravity (kinematic, so it never clips a blade
+## on the way down); on landing the draw is decided and the winner's blade
+## pulls it back toward his forehand side.
+func step_drop(delta: float) -> void:
+	drop_timer += delta
+	if draw_landed:
+		# Centres come out of their stance once the sweep has played.
+		if drop_timer > 0.0 and faceoff_winner!=null and drop_timer-float(faceoff_winner.get_child(1).draw_result_time) > 0.14:
+			for actor in draw_centres: actor.get_child(1).faceoff_target = 0.0
+			drop_timer = -1.0
+			linesman = null
+		return
+	# Something else moved the puck (a test, a reset): no draw this time.
+	if Vector2(puck.position.x-next_faceoff.x,puck.position.z-next_faceoff.z).length()>0.25:
+		cancel_drop()
+		return
+	drop_velocity -= 9.8*delta
+	puck.position.y += drop_velocity*delta
+	previous_puck = puck.position
+	if puck.position.y > 0.017: return
+	puck.position.y = 0.017
+	draw_landed = true
+	faceoff_winner = pick_faceoff_winner()
+	var winning_team := body_team(faceoff_winner)
+	faceoff_wins[winning_team] += 1
+	for actor in draw_centres:
+		var v = actor.get_child(1)
+		v.draw_result = 1 if actor==faceoff_winner else -1
+		v.draw_result_time = v.draw_time
+	var v = faceoff_winner.get_child(1)
+	var origin: Vector3 = v.rig.to_global(Vector3.ZERO)
+	var back: Vector3 = v.rig.to_global(Vector3(-sin(DRAW_BACK_ANGLE),0,-cos(DRAW_BACK_ANGLE)))-origin
+	back.y = 0
+	puck.freeze = false
+	puck.linear_velocity = back.normalized()*DRAW_BACK_SPEED
+	puck.angular_velocity = Vector3.ZERO
+	# Nobody (the winner included) picks it up before it is clear of the centres.
+	cooldown = 0.35
+
+## Abandons a drop under way: everyone breaks out, the puck is left to physics.
+func cancel_drop() -> void:
+	drop_timer = -1.0
+	draw_landed = false
+	for actor in draw_centres:
+		actor.get_child(1).faceoff_target = 0.0
+		actor.get_child(1).draw_time = -1.0
+	if linesman!=null: linesman.drop_hand_target = 0.0
+	linesman = null
+	puck.freeze = false
+
+## Who wins the draw: the centres' faceoff ratings and stamina weight the odds.
+func pick_faceoff_winner() -> CharacterBody3D:
+	if draw_centres.size()<2: return draw_centres[0] if not draw_centres.is_empty() else skaters[0]
+	var a: CharacterBody3D = draw_centres[0]
+	var b: CharacterBody3D = draw_centres[1]
+	var ra := float(roster(a).get("faceoff",50))*lerpf(0.8,1.0,float(roster(a).stamina))
+	var rb := float(roster(b).get("faceoff",50))*lerpf(0.8,1.0,float(roster(b).stamina))
+	var p_a := clampf(0.5+(ra-rb)/120.0,0.2,0.8)
+	return a if faceoff_rng.randf()<p_a else b
+
+## True while the puck is falling from the linesman's hand.
+func puck_in_air_at_drop() -> bool:
+	return drop_timer>=0.0 and not draw_landed
 
 func sync_strength() -> void:
 	for team in range(2):
@@ -572,7 +734,7 @@ func _physics_process(delta: float) -> void:
 			actor.get_child(1).animate(0, delta, 0, false)
 		return
 	process_controller_edges()
-	puck.freeze=paused or match_state.phase!=MatchState.Phase.PLAY
+	puck.freeze=paused or match_state.phase!=MatchState.Phase.PLAY or puck_in_air_at_drop()
 	if paused:
 		if not hud_node.pause_panel.visible: set_paused(true)
 		return
@@ -602,13 +764,24 @@ func _physics_process(delta: float) -> void:
 		last_faceoff_serial=match_state.faceoff_serial
 		setup_faceoff()
 	if old_phase==MatchState.Phase.FACEOFF and match_state.phase==MatchState.Phase.PLAY:
-		puck.freeze=false
-		puck.linear_velocity=Vector3(-1,0,-1.5) if match_state.period%2 else Vector3(1,0,1.5)
-		# Puck dropped: everyone breaks out of the stance.
-		for actor in skaters: actor.get_child(1).faceoff_target=0.0
+		# Puck dropped: wingers and D break out of the stance; the centres
+		# stay down for the draw (step_drop()).
+		for actor in skaters:
+			if not actor in draw_centres: actor.get_child(1).faceoff_target=0.0
+		start_drop()
 	sync_strength()
 	update_roster_stamina(delta)
-	if match_state.phase==MatchState.Phase.PLAY:
+	if match_state.phase==MatchState.Phase.FACEOFF:
+		update_linesman(delta)
+	if match_state.phase==MatchState.Phase.PLAY and drop_timer>=0.0:
+		step_drop(delta)
+	if match_state.phase==MatchState.Phase.PLAY and puck_in_air_at_drop():
+		# Everyone waits for the puck to hit the ice.
+		for actor in skaters:
+			actor.velocity = Vector3.ZERO
+			actor.get_child(1).animate(0,delta,0,false)
+		for official in referee_nodes: official.animate(0,delta,0,false)
+	elif match_state.phase==MatchState.Phase.PLAY:
 		control_player(delta)
 		update_team_ai(delta)
 		update_possession(delta)
@@ -939,7 +1112,7 @@ func update_camera(delta: float) -> void:
 	var snap:=side!=camera_side or faceoff_cut
 	faceoff_cut=false
 	camera_side=side
-	var at_faceoff:=match_state.phase==MatchState.Phase.FACEOFF and camera_mode in [0,2]
+	var at_faceoff:=(match_state.phase==MatchState.Phase.FACEOFF or puck_in_air_at_drop()) and camera_mode in [0,2]
 	var lead:=-side*2.5
 	var focus:=Vector3(clampf(puck.position.x*0.35,-6,6),0,clampf(puck.position.z+lead,-(Arena.GOAL_LINE-3.0),Arena.GOAL_LINE-3.0))
 	if camera_mode==3: focus=Vector3.ZERO
@@ -974,7 +1147,10 @@ func update_camera(delta: float) -> void:
 			desired=dot+Vector3(side*FACEOFF_CAM_BROADCAST.x,FACEOFF_CAM_BROADCAST.y,0)
 			look=dot+Vector3(0,0.5,0)
 	camera.position=desired if snap else camera.position.lerp(desired,1-exp(-delta*(8 if at_faceoff else 5)))
-	if camera_mode!=2 and not at_faceoff: camera.position.x=camera_target.x
+	# Leaving the faceoff framing, the camera glides back onto the play line
+	# instead of snapping across.
+	faceoff_cam_ease = 1.0 if at_faceoff else (0.0 if snap else move_toward(faceoff_cam_ease,0.0,delta*1.6))
+	if camera_mode!=2 and not at_faceoff: camera.position.x=lerpf(camera.position.x,camera_target.x,1.0-faceoff_cam_ease*faceoff_cam_ease)
 	# A camera up among the rigging over the sheet (Overhead, Full rink, a
 	# zoomed-out Dynamic) hides the trusses and jumbotron so they never sit
 	# between it and the ice.
@@ -1050,6 +1226,18 @@ func capture_preview() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--capture-time="): capture_time = clampf(float(arg.substr(15)), 0.5, 120.0)
 	await get_tree().create_timer(capture_time).timeout
+	var args := OS.get_cmdline_user_args()
+	if "--faceoff-drop" in args or "--faceoff-draw" in args:
+		match_state.phase_timer = 0.0
+		for f in range(240):
+			await get_tree().physics_frame
+			if "--faceoff-drop" in args and puck_in_air_at_drop() and puck.position.y < 0.42: break
+			if "--faceoff-draw" in args and draw_landed and faceoff_winner!=null:
+				var wv = faceoff_winner.get_child(1)
+				if float(wv.draw_time)-float(wv.draw_result_time) > 0.10: break
+		# Hold that instant while the frame is drawn.
+		get_tree().paused = true
+		for i in range(2): await get_tree().process_frame
 	for frame in range(600):
 		if match_state.phase==MatchState.Phase.PLAY or match_state.phase_timer>100.0: break
 		await get_tree().physics_frame
