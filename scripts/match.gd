@@ -88,6 +88,18 @@ var faceoff_wins := [0,0]
 var faceoff_rng := RandomNumberGenerator.new()
 ## 1 at the faceoff framing, easing to 0 as the camera glides back to play.
 var faceoff_cam_ease := 0.0
+## User timing on the draw (EA-style): shoot or pass pressed while the puck
+## falls tips the odds toward the user's centre, best just before it lands.
+## draw_press is drop_timer at the press; DRAW_JUMPED: pressed in the last
+## DRAW_JUMP_WINDOW s before the linesman let go; DRAW_NO_PRESS: no press.
+const DRAW_NO_PRESS := -2.0
+const DRAW_JUMPED := -1.0
+const DRAW_JUMP_WINDOW := 0.6
+const DRAW_TIMING_BONUS := 0.24
+const DRAW_JUMP_PENALTY := 0.12
+var draw_press := DRAW_NO_PRESS
+## Grade of the user's last draw ("PERFECT", "GOOD", "EARLY", "JUMPED" or "").
+var draw_timing := ""
 
 func _init() -> void:
 	arena_title = "HAWKEY ARENA"
@@ -316,6 +328,8 @@ func setup_faceoff() -> void:
 	drop_timer = -1.0
 	draw_landed = false
 	faceoff_winner = null
+	draw_press = DRAW_NO_PRESS
+	draw_timing = ""
 	place_linesman()
 	sync_strength()
 	if not bool(player.get_meta("eligible",true)): switch_player()
@@ -411,6 +425,11 @@ func step_drop(delta: float) -> void:
 		var v = actor.get_child(1)
 		v.draw_result = 1 if actor==faceoff_winner else -1
 		v.draw_result_time = v.draw_time
+	# FACEOFF WON / LOST cue for the user's team, with the timing grade.
+	if hud_node!=null:
+		var won := winning_team==user_team()
+		var sub := (draw_timing+" TIMING") if not draw_timing.is_empty() else ""
+		hud_node.show_faceoff_cue(won, sub, hud_node.team_colors[winning_team])
 	var v = faceoff_winner.get_child(1)
 	var origin: Vector3 = v.rig.to_global(Vector3.ZERO)
 	var back: Vector3 = v.rig.to_global(Vector3(-sin(DRAW_BACK_ANGLE),0,-cos(DRAW_BACK_ANGLE)))-origin
@@ -440,7 +459,39 @@ func pick_faceoff_winner() -> CharacterBody3D:
 	var ra := float(roster(a).get("faceoff",50))*lerpf(0.8,1.0,float(roster(a).stamina))
 	var rb := float(roster(b).get("faceoff",50))*lerpf(0.8,1.0,float(roster(b).stamina))
 	var p_a := clampf(0.5+(ra-rb)/120.0,0.2,0.8)
+	# The user's timing shifts the odds toward (or away from) his centre.
+	var quality := draw_timing_quality(draw_press, drop_timer)
+	draw_timing = draw_timing_grade(quality)
+	var shift := quality*DRAW_TIMING_BONUS if quality>=0.0 else -DRAW_JUMP_PENALTY
+	p_a = clampf(p_a+(shift if body_team(a)==user_team() else -shift),0.1,0.9)
 	return a if faceoff_rng.randf()<p_a else b
+
+## The team the user controls.
+func user_team() -> int:
+	return body_team(player) if player!=null else 0
+
+## How well-timed a draw press was: -1 jumped (before the drop), 0 no press,
+## else 0.5 (the instant the puck left the hand) rising to 1 at the landing.
+static func draw_timing_quality(press: float, land_time: float) -> float:
+	if press==DRAW_JUMPED: return -1.0
+	if press<0.0 or land_time<=0.0: return 0.0
+	return lerpf(0.5,1.0,clampf(press/land_time,0.0,1.0))
+
+static func draw_timing_grade(quality: float) -> String:
+	if quality<0.0: return "JUMPED"
+	if quality==0.0: return ""
+	if quality>=0.85: return "PERFECT"
+	if quality>=0.7: return "GOOD"
+	return "EARLY"
+
+## Shoot or pass pressed around a faceoff: the user's timing on the draw.
+## Only the first press counts; presses long before the drop are ignored.
+func register_draw_press() -> void:
+	if draw_press!=DRAW_NO_PRESS: return
+	if match_state.phase==MatchState.Phase.FACEOFF:
+		if match_state.phase_timer<=DRAW_JUMP_WINDOW: draw_press=DRAW_JUMPED
+	elif puck_in_air_at_drop():
+		draw_press=maxf(drop_timer,0.0)
 
 ## True while the puck is falling from the linesman's hand.
 func puck_in_air_at_drop() -> bool:
@@ -599,6 +650,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_L: auto_lines=not auto_lines
 			KEY_E: defensive_action(false)
 			KEY_F: defensive_action(true)
+	if event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_LEFT,MOUSE_BUTTON_RIGHT] and not paused and not in_menu:
+		register_draw_press()
 	if paused or match_state.phase!=MatchState.Phase.PLAY: return
 	if event is InputEventMouseButton:
 		if event.button_index==MOUSE_BUTTON_WHEEL_UP and event.pressed: zoom=clampf(zoom-0.08,0.55,1.5)
@@ -1231,10 +1284,13 @@ func capture_preview() -> void:
 		match_state.phase_timer = 0.0
 		for f in range(240):
 			await get_tree().physics_frame
+			# --faceoff-timing: the user presses shoot just before the landing.
+			if "--faceoff-timing" in args and puck_in_air_at_drop() and puck.position.y < 0.2: register_draw_press()
 			if "--faceoff-drop" in args and puck_in_air_at_drop() and puck.position.y < 0.42: break
 			if "--faceoff-draw" in args and draw_landed and faceoff_winner!=null:
 				var wv = faceoff_winner.get_child(1)
-				if float(wv.draw_time)-float(wv.draw_result_time) > 0.10: break
+				# (Long enough for the FACEOFF WON / LOST cue to fade in.)
+				if float(wv.draw_time)-float(wv.draw_result_time) > 0.16: break
 		# Hold that instant while the frame is drawn.
 		get_tree().paused = true
 		for i in range(2): await get_tree().process_frame
@@ -1363,6 +1419,7 @@ func process_controller_edges() -> void:
 		if controller.pair_delta!=0: request_line(0,defense_pairs[0]+controller.pair_delta,true)
 		if controller.check_pressed: defensive_action(true)
 		if controller.poke_pressed: defensive_action(false)
+		if controller.shoot_pressed or controller.pass_pressed: register_draw_press()
 		if match_state.phase==MatchState.Phase.PLAY:
 			if controller.shoot_released:
 				strike(shot_direction(),lerpf(16,36,charge),false,controller.lift*0.32)

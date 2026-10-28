@@ -36,6 +36,11 @@ var banner_title: Label
 var banner_sub: Label
 var banner_band: ColorRect
 var banner_tween: Tween
+var faceoff_cue: PanelContainer
+var faceoff_cue_title: Label
+var faceoff_cue_sub: Label
+var faceoff_cue_style: StyleBoxFlat
+var faceoff_cue_tween: Tween
 var line_panel: PanelContainer
 var line_title: Label
 var line_rows: Array = []
@@ -88,6 +93,7 @@ func _ready() -> void:
 	build_bug()
 	build_status()
 	build_banner()
+	build_faceoff_cue()
 	build_line_panel()
 	build_power()
 	build_hint()
@@ -234,6 +240,51 @@ func show_banner(title: String, sub: String, color: Color, seconds := 2.6) -> vo
 	banner_tween.tween_interval(seconds)
 	banner_tween.tween_property(banner, "modulate:a", 0.0, 0.3)
 	banner_tween.tween_callback(func(): banner.visible = false)
+
+# ------------------------------------------------------------ faceoff cue
+## Compact FACEOFF WON / LOST pill, top centre, with the timing grade under it.
+func build_faceoff_cue() -> void:
+	faceoff_cue = PanelContainer.new()
+	faceoff_cue.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	faceoff_cue.offset_left = -150
+	faceoff_cue.offset_right = 150
+	faceoff_cue.offset_top = 30
+	faceoff_cue.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	faceoff_cue.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	faceoff_cue.pivot_offset = Vector2(150, 30)
+	# Team-colour band down the left edge (the panel's left border).
+	faceoff_cue_style = panel_style(Color(SLATE, 0.9), 4, Vector4(26, 6, 18, 8))
+	faceoff_cue_style.border_width_left = 10
+	faceoff_cue.add_theme_stylebox_override("panel", faceoff_cue_style)
+	root_ui.add_child(faceoff_cue)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 0)
+	faceoff_cue.add_child(box)
+	faceoff_cue_title = label("FACEOFF WON", 30, INK, 700)
+	faceoff_cue_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	faceoff_cue_sub = label("", 15, ACCENT, 600)
+	faceoff_cue_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(faceoff_cue_title)
+	box.add_child(faceoff_cue_sub)
+	faceoff_cue.visible = false
+
+func show_faceoff_cue(won: bool, sub: String, color: Color, seconds := 1.3) -> void:
+	faceoff_cue_title.text = "FACEOFF WON" if won else "FACEOFF LOST"
+	faceoff_cue_title.add_theme_color_override("font_color", INK if won else MUTED)
+	faceoff_cue_sub.text = sub
+	faceoff_cue_sub.visible = not sub.is_empty()
+	faceoff_cue_sub.add_theme_color_override("font_color", ACCENT if sub.begins_with("PERFECT") or sub.begins_with("GOOD") else MUTED)
+	faceoff_cue_style.border_color = color
+	faceoff_cue.visible = true
+	faceoff_cue.modulate.a = 0.0
+	faceoff_cue.scale = Vector2(0.9, 0.9)
+	if faceoff_cue_tween: faceoff_cue_tween.kill()
+	faceoff_cue_tween = create_tween()
+	faceoff_cue_tween.tween_property(faceoff_cue, "modulate:a", 1.0, 0.12)
+	faceoff_cue_tween.parallel().tween_property(faceoff_cue, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	faceoff_cue_tween.tween_interval(seconds)
+	faceoff_cue_tween.tween_property(faceoff_cue, "modulate:a", 0.0, 0.25)
+	faceoff_cue_tween.tween_callback(func(): faceoff_cue.visible = false)
 
 # ------------------------------------------------------------ line panel
 func build_line_panel() -> void:
