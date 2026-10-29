@@ -275,6 +275,16 @@ const DRAW_SWEEP := 0.22
 const DRAW_POISED := Vector3(0.0,0.035,-0.07)
 const DRAW_WIN := Vector3(-0.30,0.0,-0.46)
 const DRAW_LOSE := Vector3(0.24,0.0,0.12)
+## Tie-up after the draw: the loser drives his hip and shoulder into the winner
+## (rig slides forward and rolls toward his stick side) while the winner gives
+## a little ground. tie_up_weight() envelope, seconds after the puck lands.
+const TIE_UP_IN := 0.12
+const TIE_UP_HOLD := 0.42
+const TIE_UP_OUT := 0.72
+const TIE_UP_LOSER_SHIFT := Vector3(0.05,-0.02,0.15)
+const TIE_UP_LOSER_ROLL := -0.14
+const TIE_UP_WINNER_SHIFT := Vector3(0.0,0.0,-0.06)
+const TIE_UP_WINNER_ROLL := 0.06
 ## Linesman: 0..1 weight of the right arm held out over the dot with the puck,
 ## and the target it eases toward (match.gd sets it while lining up).
 var drop_hand := 0.0
@@ -293,6 +303,22 @@ func draw_blade_offset() -> Vector3:
 	var t := clampf((draw_time-draw_result_time)/DRAW_SWEEP,0.0,1.0)
 	var e := 1.0-pow(1.0-t,3.0)
 	return poised*(1.0-e)+(DRAW_WIN if draw_result > 0 else DRAW_LOSE)*e
+
+## 0..1 weight of the post-draw tie-up body contact (0 when not drawing).
+func tie_up_weight() -> float:
+	if draw_time < 0.0 or draw_result == 0 or faceoff_role != 0 or goalie or referee: return 0.0
+	var t := draw_time-draw_result_time
+	if t <= 0.0 or t >= TIE_UP_OUT: return 0.0
+	if t < TIE_UP_IN: return smoothstep(0.0,TIE_UP_IN,t)
+	if t < TIE_UP_HOLD: return 1.0
+	return 1.0-smoothstep(TIE_UP_HOLD,TIE_UP_OUT,t)
+
+## Rig offset (rig-space shift, roll) of the tie-up for this centre.
+func tie_up_offset() -> Array:
+	var w := tie_up_weight()
+	if w <= 0.0: return [Vector3.ZERO,0.0]
+	if draw_result < 0: return [TIE_UP_LOSER_SHIFT*w,TIE_UP_LOSER_ROLL*w]
+	return [TIE_UP_WINNER_SHIFT*w,TIE_UP_WINNER_ROLL*w]
 
 ## Rig-space wrist the linesman holds the puck in (for match.gd to place it).
 func drop_hand_world() -> Vector3:
@@ -1320,6 +1346,10 @@ func pose(speed: float, turn: float) -> void:
 	rig.rotation.z = clampf(turn,-0.13,0.13)
 	# Stop: hips (and the whole rig) turn across the line of travel.
 	rig.rotation.y = PI+stop_yaw*stop_w
+	# Faceoff tie-up: the loser leans his body into the winner.
+	var tie: Array = tie_up_offset()
+	rig.rotation.z += float(tie[1])
+	rig.position = rig.basis*(tie[0] as Vector3)
 	update_stick()
 
 ## Rolls the two thigh rises outward until their inner edges clear each other,

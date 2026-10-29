@@ -98,6 +98,14 @@ const DRAW_JUMP_WINDOW := 0.6
 const DRAW_TIMING_BONUS := 0.24
 const DRAW_JUMP_PENALTY := 0.12
 var draw_press := DRAW_NO_PRESS
+## After the drop the linesman backs out of the circle facing the dot with a
+## backward glide (no turn, no stride) for LINESMAN_BACK_TIME s, speeding up to
+## LINESMAN_BACK_SPEED, then turns and skates to his line as usual.
+const LINESMAN_BACK_TIME := 1.1
+const LINESMAN_BACK_SPEED := 2.6
+var backing_official: Node3D
+var backing_time := -1.0
+var backing_dir := Vector3.ZERO
 ## Grade of the user's last draw ("PERFECT", "GOOD", "EARLY", "JUMPED" or "").
 var draw_timing := ""
 
@@ -330,6 +338,8 @@ func setup_faceoff() -> void:
 	faceoff_winner = null
 	draw_press = DRAW_NO_PRESS
 	draw_timing = ""
+	backing_official = null
+	backing_time = -1.0
 	place_linesman()
 	sync_strength()
 	if not bool(player.get_meta("eligible",true)): switch_player()
@@ -418,6 +428,7 @@ func step_drop(delta: float) -> void:
 	if puck.position.y > 0.017: return
 	puck.position.y = 0.017
 	draw_landed = true
+	start_linesman_backing()
 	faceoff_winner = pick_faceoff_winner()
 	var winning_team := body_team(faceoff_winner)
 	faceoff_wins[winning_team] += 1
@@ -439,6 +450,15 @@ func step_drop(delta: float) -> void:
 	puck.angular_velocity = Vector3.ZERO
 	# Nobody (the winner included) picks it up before it is clear of the centres.
 	cooldown = 0.35
+
+## The puck is down: the linesman backs straight out from the dot, still
+## facing it (and clear of the centres, on his own side of the dot).
+func start_linesman_backing() -> void:
+	if linesman==null or not is_instance_valid(linesman): return
+	backing_official = linesman
+	backing_time = 0.0
+	backing_dir = Vector3(linesman.position.x-next_faceoff.x,0,linesman.position.z-next_faceoff.z)
+	backing_dir = backing_dir.normalized() if backing_dir.length()>0.05 else Vector3(signf(linesman.position.x-next_faceoff.x+0.001),0,0)
 
 ## Abandons a drop under way: everyone breaks out, the puck is left to physics.
 func cancel_drop() -> void:
@@ -1398,6 +1418,17 @@ func goalkeeper_at_end(end_sign: float) -> CharacterBody3D:
 func update_officials(delta: float) -> void:
 	for i in range(referee_nodes.size()):
 		var official:=referee_nodes[i]
+		if official==backing_official and backing_time>=0.0:
+			backing_time+=delta
+			if backing_time<LINESMAN_BACK_TIME:
+				# Backward glide: eases up to speed, holds his facing on the dot.
+				var back_speed:=LINESMAN_BACK_SPEED*smoothstep(0.0,0.35,backing_time)*(1.0-0.5*smoothstep(0.7,1.0,backing_time/LINESMAN_BACK_TIME))
+				official.position+=backing_dir*back_speed*delta
+				official.position.x=clampf(official.position.x,-(Arena.HALF_WIDTH-1.2),Arena.HALF_WIDTH-1.2)
+				official.animate(back_speed,delta,0,false)
+				continue
+			backing_official=null
+			backing_time=-1.0
 		var target:=Vector3(-(Arena.HALF_WIDTH-2.0) if i==0 else Arena.HALF_WIDTH-2.0,0,clampf(puck.position.z+(-9 if i==0 else 9),-(Arena.GOAL_LINE-1.0),Arena.GOAL_LINE-1.0))
 		var move:Vector3=(target-official.position).limit_length(1)*4
 		official.position+=move*delta
