@@ -291,6 +291,10 @@ var drop_hand := 0.0
 var drop_hand_target := 0.0
 ## Rig-space wrist when holding the puck out over the dot, bent at the waist.
 const DROP_HAND := Vector3(-0.06,0.80,0.95)
+## Linesman waving a centre out of the circle (faceoff violation): 0..1 weight
+## of the free (left) arm thrown out to the side, swinging with wave_phase.
+var wave_out := 0.0
+var wave_phase := 0.0
 ## Linesman's lean over the dot while holding the puck (radians).
 const DROP_LEAN := 0.72
 
@@ -1282,6 +1286,11 @@ func pose(speed: float, turn: float) -> void:
 			# Linesman: puck held out over the dot, arm reaching from the shoulder.
 			var held := shoulder+(DROP_HAND-shoulder).limit_length(0.60)
 			wrist = wrist.lerp(held,drop_hand*drop_hand*(3.0-2.0*drop_hand))
+		if referee and i==0 and wave_out > 0.0:
+			# Faceoff violation: the free arm sweeps out to the side, "out you go".
+			var swing := 0.5+0.5*sin(wave_phase)
+			var reach := Vector3(side*lerpf(0.25,0.62,swing),lerpf(0.10,0.22,swing),lerpf(0.42,0.20,swing)).normalized()*0.58
+			wrist = wrist.lerp(shoulder+reach,wave_out*wave_out*(3.0-2.0*wave_out))
 		if not goalie and not referee and (seat > 0.0 or cheer > 0.0):
 			# Bench: gloves rest on top of the knees (no stick), and go up to cheer.
 			var w := 0.0

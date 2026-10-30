@@ -37,6 +37,9 @@ var banner_sub: Label
 var banner_band: ColorRect
 var banner_tween: Tween
 var faceoff_cue: PanelContainer
+## Small "time your draw" hint under the score bug during the lineup.
+var draw_hint: PanelContainer
+var draw_hint_label: Label
 var faceoff_cue_title: Label
 var faceoff_cue_sub: Label
 var faceoff_cue_style: StyleBoxFlat
@@ -94,6 +97,7 @@ func _ready() -> void:
 	build_status()
 	build_banner()
 	build_faceoff_cue()
+	build_draw_hint()
 	build_line_panel()
 	build_power()
 	build_hint()
@@ -268,8 +272,8 @@ func build_faceoff_cue() -> void:
 	box.add_child(faceoff_cue_sub)
 	faceoff_cue.visible = false
 
-func show_faceoff_cue(won: bool, sub: String, color: Color, seconds := 1.3) -> void:
-	faceoff_cue_title.text = "FACEOFF WON" if won else "FACEOFF LOST"
+func show_faceoff_cue(won: bool, sub: String, color: Color, seconds := 1.3, title := "") -> void:
+	faceoff_cue_title.text = title if not title.is_empty() else ("FACEOFF WON" if won else "FACEOFF LOST")
 	faceoff_cue_title.add_theme_color_override("font_color", INK if won else MUTED)
 	faceoff_cue_sub.text = sub
 	faceoff_cue_sub.visible = not sub.is_empty()
@@ -285,6 +289,28 @@ func show_faceoff_cue(won: bool, sub: String, color: Color, seconds := 1.3) -> v
 	faceoff_cue_tween.tween_interval(seconds)
 	faceoff_cue_tween.tween_property(faceoff_cue, "modulate:a", 0.0, 0.25)
 	faceoff_cue_tween.tween_callback(func(): faceoff_cue.visible = false)
+
+## Draw-timing hint for new players: a compact key-cap pill above the shot
+## meter while the teams line up (match.gd shows it at the first few faceoffs).
+func build_draw_hint() -> void:
+	draw_hint = PanelContainer.new()
+	draw_hint.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	draw_hint.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	draw_hint.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	draw_hint.offset_bottom = -92
+	draw_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := panel_style(Color(SLATE, 0.82), 4, Vector4(16, 6, 16, 7))
+	style.border_width_bottom = 3
+	style.border_color = ACCENT
+	draw_hint.add_theme_stylebox_override("panel", style)
+	draw_hint_label = label("TIME THE DRAW  ·  SHOOT / RT AS THE PUCK HITS THE ICE", 15, INK, 600)
+	draw_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	draw_hint.add_child(draw_hint_label)
+	root_ui.add_child(draw_hint)
+	draw_hint.visible = false
+
+func show_draw_hint(on: bool) -> void:
+	if draw_hint != null: draw_hint.visible = on
 
 # ------------------------------------------------------------ line panel
 func build_line_panel() -> void:

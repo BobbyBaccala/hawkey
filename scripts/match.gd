@@ -108,12 +108,36 @@ var backing_time := -1.0
 var backing_dir := Vector3.ZERO
 ## Grade of the user's last draw ("PERFECT", "GOOD", "EARLY", "JUMPED" or "").
 var draw_timing := ""
+## Faceoff violations: just before the drop the linesman may wave a centre out
+## (VIOLATION_CHANCE per draw, or VIOLATION_JUMP_CHANCE when the user jumped
+## it); the centre skates out to a winger's spot and that winger (the better
+## faceoff man of the two) comes in to take the draw. The faceoff phase (and
+## so the clock) is held VIOLATION_TIME s: the wave, the swap, the set.
+const VIOLATION_CHANCE := 0.06
+const VIOLATION_JUMP_CHANCE := 0.6
+const VIOLATION_WAVE := 0.55
+const VIOLATION_SWAP := 1.35
+const VIOLATION_TIME := 2.4
+var violation_rng := RandomNumberGenerator.new()
+var violation_checked := false
+## Seconds since the wave-out (-1: no violation at this faceoff).
+var violation_timer := -1.0
+var violator: CharacterBody3D
+var violation_sub: CharacterBody3D
+var violation_from := Vector3.ZERO
+var violation_to := Vector3.ZERO
+## Faceoff violations per team (a second one costs nothing yet).
+var faceoff_violations := [0,0]
+## The draw-timing hint shows at the user's first FACEOFF_HINT_COUNT faceoffs.
+const FACEOFF_HINT_COUNT := 3
+var faceoff_hints_shown := 0
 
 func _init() -> void:
 	arena_title = "HAWKEY ARENA"
 
 func _ready() -> void:
 	faceoff_rng.seed = 20261027
+	violation_rng.seed = 20261030
 	super._ready()
 	celebration=GoalCelebration.new()
 	add_child(celebration)
@@ -340,6 +364,13 @@ func setup_faceoff() -> void:
 	draw_timing = ""
 	backing_official = null
 	backing_time = -1.0
+	violation_checked = false
+	end_violation_wave()
+	violation_timer = -1.0
+	violator = null
+	violation_sub = null
+	faceoff_hints_shown += 1
+	if hud_node!=null: hud_node.show_draw_hint(faceoff_hints_shown<=FACEOFF_HINT_COUNT)
 	place_linesman()
 	sync_strength()
 	if not bool(player.get_meta("eligible",true)): switch_player()
@@ -512,6 +543,97 @@ func register_draw_press() -> void:
 		if match_state.phase_timer<=DRAW_JUMP_WINDOW: draw_press=DRAW_JUMPED
 	elif puck_in_air_at_drop():
 		draw_press=maxf(drop_timer,0.0)
+
+## Called once per faceoff just before the drop: does the linesman throw a
+## centre out? Returns the offending centre or null.
+func pick_violator() -> CharacterBody3D:
+	if draw_centres.size()<2: return null
+	var roll := violation_rng.randf()
+	var user_centre: CharacterBody3D = null
+	for c in draw_centres:
+		if body_team(c)==user_team(): user_centre=c
+	if draw_press==DRAW_JUMPED and user_centre!=null and roll<VIOLATION_JUMP_CHANCE:
+		return user_centre
+	if roll<VIOLATION_CHANCE:
+		return draw_centres[violation_rng.randi()%draw_centres.size()]
+	return null
+
+## The winger who comes in for a waved-out centre: the better faceoff man of
+## the two wingers who are on the ice and not changing.
+func violation_replacement(centre: CharacterBody3D) -> CharacterBody3D:
+	var best: CharacterBody3D = null
+	for actor in skaters:
+		if body_team(actor)!=body_team(centre) or not int(actor.get_meta("slot")) in [1,2]: continue
+		if not bool(actor.get_meta("eligible",true)) or bool(actor.get_meta("changing",false)) or is_hopping(actor): continue
+		if best==null or float(roster(actor).get("faceoff",50))>float(roster(best).get("faceoff",50)): best=actor
+	return best
+
+## The linesman waves the centre out: he stands up and skates to the
+## winger's spot, the winger comes in; the drop waits (phase held).
+func start_violation(centre: CharacterBody3D) -> bool:
+	var sub := violation_replacement(centre)
+	if sub==null: return false
+	violator = centre
+	violation_sub = sub
+	violation_from = centre.position
+	violation_to = sub.position
+	violation_timer = 0.0
+	faceoff_violations[body_team(centre)] += 1
+	draw_press = DRAW_NO_PRESS
+	match_state.phase_timer = VIOLATION_TIME
+	match_state.event = "Faceoff violation"
+	centre.get_child(1).faceoff_target = 0.0
+	sub.get_child(1).faceoff_target = 0.0
+	# The user takes over whoever will take the draw.
+	if player==centre:
+		player = sub
+		player_visual = sub.get_child(1)
+	if linesman!=null and is_instance_valid(linesman): linesman.wave_out = 0.0
+	if hud_node!=null:
+		var team := body_team(centre)
+		hud_node.show_faceoff_cue(false, "#%s %s WAVED OUT" % [str(roster(centre).number), str(roster(centre).name).to_upper()], hud_node.team_colors[team], 1.6, "FACEOFF VIOLATION")
+		hud_node.show_draw_hint(false)
+	return true
+
+## Violation under way: the linesman's wave, then the two players swap spots
+## (skating, turned to their travel), then both set in their new stance.
+func step_violation(delta: float) -> void:
+	violation_timer += delta
+	if linesman!=null and is_instance_valid(linesman):
+		linesman.wave_out = move_toward(linesman.wave_out, 1.0 if violation_timer<VIOLATION_WAVE+0.35 else 0.0, delta*4.0)
+		linesman.wave_phase += delta*9.0
+	var u := clampf((violation_timer-VIOLATION_WAVE*0.6)/VIOLATION_SWAP,0.0,1.0)
+	var s := u*u*(3.0-2.0*u)
+	for pair in [[violator,violation_from,violation_to],[violation_sub,violation_to,violation_from]]:
+		var actor: CharacterBody3D = pair[0]
+		if actor==null: continue
+		var from: Vector3 = pair[1]
+		var to: Vector3 = pair[2]
+		var pos := from.lerp(to,s)
+		var speed := (pos-actor.position).length()/maxf(delta,0.0001)
+		actor.position = pos
+		actor.velocity = Vector3.ZERO
+		var visual = actor.get_child(1)
+		var set_yaw := 0.0 if attack_direction(body_team(actor))<0 else PI
+		var travel := to-from
+		var target_yaw := atan2(-travel.x,-travel.z) if u>0.0 and u<0.85 else set_yaw
+		visual.rotation.y = lerp_angle(visual.rotation.y,target_yaw,1.0-exp(-delta*9.0))
+		visual.animate(speed,delta,0,speed>0.5)
+	if u>=1.0 and draw_centres.has(violator):
+		# Both set: the winger takes the draw in the centre's stance.
+		draw_centres[draw_centres.find(violator)] = violation_sub
+		violation_sub.get_child(1).faceoff_role = 0
+		violator.get_child(1).faceoff_role = 1
+		for actor in [violator,violation_sub]:
+			actor.get_child(1).faceoff_target = 1.0
+
+## Is this skater being moved by a faceoff violation swap right now?
+func violation_moving(actor: CharacterBody3D) -> bool:
+	return violation_timer>=0.0 and (actor==violator or actor==violation_sub)
+
+func end_violation_wave() -> void:
+	for official in referee_nodes:
+		if is_instance_valid(official): official.wave_out = 0.0
 
 ## True while the puck is falling from the linesman's hand.
 func puck_in_air_at_drop() -> bool:
@@ -824,6 +946,11 @@ func _physics_process(delta: float) -> void:
 	action_cooldown=maxf(0,action_cooldown-delta)
 	goalie_contact_timer=maxf(0,goalie_contact_timer-delta)
 	var old_phase := match_state.phase
+	# Last tick of the lineup: the linesman may throw a centre out first.
+	if match_state.phase==MatchState.Phase.FACEOFF and not violation_checked and match_state.phase_timer<=delta:
+		violation_checked = true
+		var offender := pick_violator()
+		if offender!=null: start_violation(offender)
 	match_state.advance(delta)
 	if match_state.period!=known_period:
 		known_period=match_state.period
@@ -841,11 +968,14 @@ func _physics_process(delta: float) -> void:
 		# stay down for the draw (step_drop()).
 		for actor in skaters:
 			if not actor in draw_centres: actor.get_child(1).faceoff_target=0.0
+		end_violation_wave()
+		if hud_node!=null: hud_node.show_draw_hint(false)
 		start_drop()
 	sync_strength()
 	update_roster_stamina(delta)
 	if match_state.phase==MatchState.Phase.FACEOFF:
 		update_linesman(delta)
+		if violation_timer>=0.0: step_violation(delta)
 	if match_state.phase==MatchState.Phase.PLAY and drop_timer>=0.0:
 		step_drop(delta)
 	if match_state.phase==MatchState.Phase.PLAY and puck_in_air_at_drop():
@@ -891,6 +1021,7 @@ func _physics_process(delta: float) -> void:
 			match_state.event="Puck out of play"
 	else:
 		for actor in skaters:
+			if violation_moving(actor): continue
 			actor.velocity=Vector3.ZERO
 			actor.get_child(1).animate(0,delta,0,false)
 	last_puck_velocity=puck.linear_velocity
@@ -1300,6 +1431,18 @@ func capture_preview() -> void:
 		if arg.begins_with("--capture-time="): capture_time = clampf(float(arg.substr(15)), 0.5, 120.0)
 	await get_tree().create_timer(capture_time).timeout
 	var args := OS.get_cmdline_user_args()
+	# --faceoff-violation[=<s>]: the user's centre is waved out; capture <s>
+	# (default 0.9) seconds into the violation (wave, then the swap).
+	for arg in args:
+		if str(arg).begins_with("--faceoff-violation"):
+			var at := float(str(arg).substr(20)) if str(arg).contains("=") else 0.9
+			for c in draw_centres:
+				if body_team(c)==user_team(): start_violation(c)
+			for f in range(600):
+				if violation_timer<0.0 or violation_timer>=at: break
+				await get_tree().physics_frame
+			get_tree().paused = true
+			for i in range(2): await get_tree().process_frame
 	if "--faceoff-drop" in args or "--faceoff-draw" in args:
 		match_state.phase_timer = 0.0
 		for f in range(240):
@@ -1315,7 +1458,7 @@ func capture_preview() -> void:
 		get_tree().paused = true
 		for i in range(2): await get_tree().process_frame
 	for frame in range(600):
-		if match_state.phase==MatchState.Phase.PLAY or match_state.phase_timer>100.0: break
+		if match_state.phase==MatchState.Phase.PLAY or match_state.phase_timer>100.0 or get_tree().paused: break
 		await get_tree().physics_frame
 	if "--paused" in OS.get_cmdline_user_args():
 		set_paused(true)
