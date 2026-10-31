@@ -98,8 +98,8 @@ const DRAW_JUMP_WINDOW := 0.6
 const DRAW_TIMING_BONUS := 0.24
 const DRAW_JUMP_PENALTY := 0.12
 var draw_press := DRAW_NO_PRESS
-## After the drop the linesman backs out of the circle facing the dot with a
-## backward glide (no turn, no stride) for LINESMAN_BACK_TIME s, speeding up to
+## After the drop the linesman backs out of the circle facing the dot,
+## skating backward with C-cuts (no turn) for LINESMAN_BACK_TIME s, speeding up to
 ## LINESMAN_BACK_SPEED, then turns and skates to his line as usual.
 const LINESMAN_BACK_TIME := 1.1
 const LINESMAN_BACK_SPEED := 2.6
@@ -126,8 +126,16 @@ var violator: CharacterBody3D
 var violation_sub: CharacterBody3D
 var violation_from := Vector3.ZERO
 var violation_to := Vector3.ZERO
-## Faceoff violations per team (a second one costs nothing yet).
+## Faceoff violations per team (match totals).
 var faceoff_violations := [0,0]
+## Violations per team on the faceoff being set up now: a team's second one
+## costs a minor (delay of game, rule 76.4) and the faceoff is set up again.
+## Once a swap has set, the linesman checks again on the new last tick (up to
+## VIOLATION_MAX_CHECKS times a faceoff).
+var draw_violations := [0,0]
+var violation_checks := 0
+const VIOLATION_MAX_CHECKS := 3
+const DELAY_OF_GAME := "Delay of game"
 ## The draw-timing hint shows at the user's first FACEOFF_HINT_COUNT faceoffs.
 const FACEOFF_HINT_COUNT := 3
 var faceoff_hints_shown := 0
@@ -369,6 +377,8 @@ func setup_faceoff() -> void:
 	violation_timer = -1.0
 	violator = null
 	violation_sub = null
+	draw_violations = [0,0]
+	violation_checks = 0
 	faceoff_hints_shown += 1
 	if hud_node!=null: hud_node.show_draw_hint(faceoff_hints_shown<=FACEOFF_HINT_COUNT)
 	place_linesman()
@@ -416,6 +426,7 @@ func update_linesman(delta: float) -> void:
 		linesman.position.x = clampf(linesman.position.x,-(Arena.HALF_WIDTH-2.0),Arena.HALF_WIDTH-2.0)
 		place_linesman()
 	for official in referee_nodes:
+		official.back_skate_target = 0.0
 		official.animate(0,delta,0,false)
 	if linesman!=null:
 		# Keep his hand right over the dot: shuffle him by whatever it is off.
@@ -571,8 +582,11 @@ func violation_replacement(centre: CharacterBody3D) -> CharacterBody3D:
 ## The linesman waves the centre out: he stands up and skates to the
 ## winger's spot, the winger comes in; the drop waits (phase held).
 func start_violation(centre: CharacterBody3D) -> bool:
+	# A team's second violation on the same faceoff: delay of game.
+	if draw_violations[body_team(centre)]>=1: return delay_of_game(centre)
 	var sub := violation_replacement(centre)
 	if sub==null: return false
+	draw_violations[body_team(centre)] += 1
 	violator = centre
 	violation_sub = sub
 	violation_from = centre.position
@@ -592,6 +606,21 @@ func start_violation(centre: CharacterBody3D) -> bool:
 	if hud_node!=null:
 		var team := body_team(centre)
 		hud_node.show_faceoff_cue(false, "#%s %s WAVED OUT" % [str(roster(centre).number), str(roster(centre).name).to_upper()], hud_node.team_colors[team], 1.6, "FACEOFF VIOLATION")
+		hud_node.show_draw_hint(false)
+	return true
+
+## Second faceoff violation by the same team on one faceoff: the linesman
+## waves him out and he takes a two-minute minor for delay of game (the
+## faceoff is set up again after the stoppage, with his team short-handed).
+func delay_of_game(centre: CharacterBody3D) -> bool:
+	var team := body_team(centre)
+	faceoff_violations[team] += 1
+	draw_violations[team] += 1
+	if linesman!=null and is_instance_valid(linesman): linesman.wave_out = 1.0
+	assess_penalty(centre, DELAY_OF_GAME)
+	if not match_state.penalized(team,int(centre.get_meta("roster_id"))): return false
+	if hud_node!=null:
+		hud_node.show_faceoff_cue(false, "#%s %s · 2:00 MINOR" % [str(roster(centre).number), str(roster(centre).name).to_upper()], hud_node.team_colors[team], 2.0, "DELAY OF GAME")
 		hud_node.show_draw_hint(false)
 	return true
 
@@ -626,6 +655,9 @@ func step_violation(delta: float) -> void:
 		violator.get_child(1).faceoff_role = 1
 		for actor in [violator,violation_sub]:
 			actor.get_child(1).faceoff_target = 1.0
+		# Set again: the linesman watches the new draw's last tick too.
+		violation_checks += 1
+		if violation_checks<VIOLATION_MAX_CHECKS: violation_checked = false
 
 ## Is this skater being moved by a faceoff violation swap right now?
 func violation_moving(actor: CharacterBody3D) -> bool:
@@ -1443,6 +1475,30 @@ func capture_preview() -> void:
 				await get_tree().physics_frame
 			get_tree().paused = true
 			for i in range(2): await get_tree().process_frame
+	# --faceoff-delay: the user's team is thrown out twice on one faceoff; the
+	# DELAY OF GAME cue as the stoppage starts.
+	if "--faceoff-delay" in args:
+		for c in draw_centres:
+			if body_team(c)==user_team(): start_violation(c)
+		for f in range(600):
+			if violation_checks>=1: break
+			await get_tree().physics_frame
+		if violation_sub!=null: start_violation(violation_sub)
+		for f in range(60): await get_tree().physics_frame
+		get_tree().paused = true
+		for i in range(2): await get_tree().process_frame
+	# --faceoff-backing[=<s>]: drop the puck and capture <s> (default 0.5)
+	# seconds after it lands, the linesman skating backward out of the circle.
+	for arg in args:
+		if str(arg).begins_with("--faceoff-backing"):
+			var after := float(str(arg).substr(18)) if str(arg).contains("=") else 0.5
+			violation_checked = true
+			match_state.phase_timer = 0.0
+			for f in range(600):
+				await get_tree().physics_frame
+				if draw_landed and backing_time>=after: break
+			get_tree().paused = true
+			for i in range(2): await get_tree().process_frame
 	if "--faceoff-drop" in args or "--faceoff-draw" in args:
 		match_state.phase_timer = 0.0
 		for f in range(240):
@@ -1568,10 +1624,13 @@ func update_officials(delta: float) -> void:
 				var back_speed:=LINESMAN_BACK_SPEED*smoothstep(0.0,0.35,backing_time)*(1.0-0.5*smoothstep(0.7,1.0,backing_time/LINESMAN_BACK_TIME))
 				official.position+=backing_dir*back_speed*delta
 				official.position.x=clampf(official.position.x,-(Arena.HALF_WIDTH-1.2),Arena.HALF_WIDTH-1.2)
+				# Real backward skating: alternating C-cuts (skater_visual.gd back_skate).
+				official.back_skate_target=1.0
 				official.animate(back_speed,delta,0,false)
 				continue
 			backing_official=null
 			backing_time=-1.0
+		official.back_skate_target=0.0
 		var target:=Vector3(-(Arena.HALF_WIDTH-2.0) if i==0 else Arena.HALF_WIDTH-2.0,0,clampf(puck.position.z+(-9 if i==0 else 9),-(Arena.GOAL_LINE-1.0),Arena.GOAL_LINE-1.0))
 		var move:Vector3=(target-official.position).limit_length(1)*4
 		official.position+=move*delta

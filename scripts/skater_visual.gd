@@ -297,6 +297,19 @@ var wave_out := 0.0
 var wave_phase := 0.0
 ## Linesman's lean over the dot while holding the puck (radians).
 const DROP_LEAN := 0.72
+## Backward skating (C-cuts): back_skate eases toward back_skate_target; while
+## it is up each skate in turn pushes a C on the ice (out to the side with the
+## heel turned out, curling round in front and back in under the hip) while
+## the other glides under the body; hips sit low and back over the glide foot.
+## back_phase advances with speed (one full two-foot cycle per BACK_CYCLE m).
+var back_skate := 0.0
+var back_skate_target := 0.0
+var back_phase := 0.0
+const BACK_CYCLE := 2.4
+const BACK_BASE := Vector3(0.13,0.115,0.0)    # glide foot under the hip
+const BACK_C := Vector3(0.22,0.0,0.11)        # C half-axes: out, forward
+const BACK_TOE_IN := 0.34                     # heel-out turn at the start of a cut
+const BACK_DROP := Vector3(0,-0.23,-0.07)     # sat down, weight back
 
 ## Rig-space blade offset of the faceoff draw (zero when not drawing).
 func draw_blade_offset() -> Vector3:
@@ -823,6 +836,35 @@ func stride_foot(i: int, speed: float) -> Dictionary:
 		"edge": edge*amount,
 	}
 
+## One skate's place on the backward C-cut cycle (rig space): the first half
+## of its cycle it cuts the C (eased round half an ellipse from under the hip,
+## out BACK_C.x and forward, curling in BACK_C.z*2 ahead), the second half it
+## slides back under the hip to glide while the other cuts. Never leaves the
+## ice by more than a 1.5 cm skim on the way back in.
+func back_cut_foot(i: int) -> Dictionary:
+	var side := 1.0 if i==0 else -1.0
+	var cycle := fposmod(back_phase/TAU+float(i)*0.5,1.0)
+	var ankle := BACK_BASE
+	var yaw := 0.0
+	var edge := 0.0
+	var ext := 0.0
+	if cycle < 0.5:
+		var u := cycle/0.5
+		var e := u*u*(3.0-2.0*u)
+		var theta := -PI*0.5+PI*e
+		ankle = BACK_BASE+Vector3(BACK_C.x*cos(theta),0,BACK_C.z*(1.0+sin(theta)))
+		ext = cos(theta)
+		edge = sin(PI*u)
+		# Heel out (toe in) as the cut starts, straightening as it curls in.
+		yaw = -side*BACK_TOE_IN*(1.0-e)
+	else:
+		var u := (cycle-0.5)/0.5
+		var e := u*u*(3.0-2.0*u)
+		ankle = BACK_BASE+Vector3(0,0.015*sin(PI*u),2.0*BACK_C.z*(1.0-e))
+		yaw = -side*BACK_TOE_IN*e
+	ankle.x *= side
+	return {"ankle": ankle, "yaw": yaw, "edge": edge, "ext": ext}
+
 ## Smooth maximum: like maxf() but with a rounded corner of width k, so a
 ## curve switching from one input to the other never kinks (no visible pop).
 static func soft_max(a: float, b: float, k: float) -> float:
@@ -955,6 +997,23 @@ func pose(speed: float, turn: float) -> void:
 		# turned a little toward where the skater was going.
 		drop = drop.lerp(Vector3(s*0.13,-0.30,-0.05),stop_w)
 		shoulder_turn = lerpf(shoulder_turn,-s*0.22,stop_w)
+	# Backward C-cuts (see back_skate): blend both feet onto the C-cut cycle.
+	var back_w := back_skate*back_skate*(3.0-2.0*back_skate) if not goalie else 0.0
+	if back_w > 0.0:
+		var sway := 0.0
+		for i in range(2):
+			var c := back_cut_foot(i)
+			var f: Dictionary = stride[i]
+			f.ankle = (f.ankle as Vector3).lerp(c.ankle,back_w)
+			f.yaw = lerpf(f.yaw,c.yaw,back_w)
+			f.pitch = f.pitch*(1.0-back_w)
+			f.edge = lerpf(f.edge,c.edge,back_w)
+			f.ext = lerpf(f.ext,c.ext,back_w)
+			f.lift = lerpf(f.lift,(c.ankle as Vector3).y-BACK_BASE.y,back_w)
+			sway += float(c.ext)*(1.0 if i==0 else -1.0)
+		# Weight over the gliding skate, away from the one cutting.
+		drop = drop.lerp(BACK_DROP+Vector3(-sway*0.06,0,0),back_w)
+		shoulder_turn = shoulder_turn*(1.0-back_w)
 	# Faceoff: skates set wide and square (a centre's a touch staggered, strong
 	# side back), knees deep, weight low and forward over the dot.
 	var fo_w := faceoff_blend()
@@ -1282,6 +1341,9 @@ func pose(speed: float, turn: float) -> void:
 			if shoulder.distance_to(wrist)>STICK_ARM_REACH:
 				wrist = shoulder+(wrist-shoulder).normalized()*STICK_ARM_REACH
 		if referee: wrist=Vector3(side*0.32,0.96,0.03)
+		# Skating backward he sits down: hands drop to just over the knees,
+		# out in front, instead of riding up level with the lowered shoulders.
+		if referee and back_w > 0.0: wrist = wrist.lerp(Vector3(side*0.27,0.70,0.22),back_w)
 		if referee and i==1 and drop_hand > 0.0:
 			# Linesman: puck held out over the dot, arm reaching from the shoulder.
 			var held := shoulder+(DROP_HAND-shoulder).limit_length(0.60)
@@ -1524,6 +1586,11 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 		push_blend = clampf(push_blend+push_rate*h,0.0,1.0)
 	if push_blend > 0.01:
 		phase += delta * TAU * lerpf(0.7,1.25,clampf(speed/10,0,1))
+	# Backward skating: restart the C-cut cycle (left skate cuts first) each
+	# time it blends in from nothing.
+	if back_skate == 0.0 and back_skate_target > 0.0: back_phase = 0.0
+	back_skate = move_toward(back_skate,back_skate_target,delta*(5.0 if back_skate_target > back_skate else 2.5))
+	if back_skate > 0.0: back_phase += delta*TAU*clampf(speed,0.8,4.0)/BACK_CYCLE
 	pose(speed,turn)
 	update_spray(speed)
 
