@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://b422hgbybimyy"
-path="res://.godot/imported/skater-kit-v1.glb-d2ebfeff1597432ad58bcb32fbc916d1.scn"
+uid="uid://boqb2ygf2axgp"
+path="res://.godot/imported/skater-kit-v2.glb-ee4c483f82d8432fbf660cfa7d1afd8f.scn"
 
 [deps]
 
-source_file="res://assets/kit/skater-kit-v1.glb"
-dest_files=["res://.godot/imported/skater-kit-v1.glb-d2ebfeff1597432ad58bcb32fbc916d1.scn"]
+source_file="res://assets/kit/skater-kit-v2.glb"
+dest_files=["res://.godot/imported/skater-kit-v2.glb-ee4c483f82d8432fbf660cfa7d1afd8f.scn"]
 
 [params]
 

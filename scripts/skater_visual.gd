@@ -7,12 +7,12 @@ const StickModel = preload("res://scripts/stick_model.gd")
 const Gear = preload("res://scripts/gear_builder.gd")
 const Mocap = preload("res://scripts/mocap.gd")
 const Kit = preload("res://scripts/kit_materials.gd")
-## Sculpted sweater and breezers modelled in Blender (tools/blender/kit_v1.py),
+## Sculpted sweater and breezers modelled in Blender (tools/blender/kit_v2.py),
 ## skinned to the same base skeleton. Goalies and officials keep the
 ## procedural kit.
-const KitMeshes = preload("res://assets/kit/skater-kit-v1.glb")
+const KitMeshes = preload("res://assets/kit/skater-kit-v2.glb")
 const MESH_KIT := true
-const KIT_HEM := 0.889
+const KIT_HEM := 0.9
 const KIT_COLLAR := 1.535
 const BREEZER_SHELL := Color("#151c24")
 static var _kit_cache := {}

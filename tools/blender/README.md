@@ -1,6 +1,30 @@
 # Blender kit pipeline
 
-`kit_v1.py` builds the skater sweater (body + sleeves) and breezers as real
+**Current kit: `kit_v2.py` (pass 2) -> `assets/kit/skater-kit-v2.glb`.**
+Pass 2 replaces pass 1's shrink-wrap (which printed the navel, hips and shoulder
+blades into the cloth as dents and lumps, and made the breezers crumple in a
+crouch) with deliberately shaped garments:
+
+- lofted superellipse sections sized from body measurements, the profile
+  smoothed along its length; shoulder pads, chest protector, a loose hem sized
+  over the breezer rings so it clears them by construction (then levelled);
+- padded breezers: straight-cut legs kept apart at the crotch, hip pads, thigh
+  guards, tailbone pad, raised belt band, rolled (thick) leg openings;
+- the body is never a wrap target. Garments are only lifted off the body parts
+  the game draws (head/neck and legs below the breezers, regions 0 and 3);
+  the torso, arms and shorts region are discarded under the kit in
+  `assets/uniform.gdshader`, so lifting off them only added lumps. A lift
+  only trusts a body surface facing the same way as the garment (so the torso
+  never balloons a sleeve), is capped and spread into a soft bulge;
+- stiff skinning: breezer weights smoothed over the surface and limited to
+  pelvis/spine/thigh bones; sweater weights drop the leg bones and are
+  smoothed round the waist and hem (the hem used to fold when a leg lifted);
+- vertex budgets: sweater ~4.0k, breezers ~3.7k.
+
+Previews written next to the GLB: front, back, side, crouch_side, crouch_34.
+Pass 1 (`kit_v1.py`) is kept for reference.
+
+Pass 1: `kit_v1.py` builds the skater sweater (body + sleeves) and breezers as real
 meshes around the CC0 base body (`assets/player-base-v1.glb`), skins them to
 the same skeleton and exports `kit_v1.glb` (copied into the game as
 `assets/kit/skater-kit-v1.glb`). Everything is generated from code: no
