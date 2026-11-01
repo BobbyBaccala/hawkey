@@ -69,6 +69,27 @@ class Solid:
 						grid[key] = PackedInt32Array()
 					grid[key].append(t)
 
+	## Posed (skeleton-space) vertices of a skinned mesh surface.
+	static func skinned(instance: MeshInstance3D, skel: Skeleton3D, arrays: Array) -> PackedVector3Array:
+		var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
+		var weights: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
+		var per := bones.size() / maxi(1, verts.size())
+		var mats := []
+		for b in range(instance.skin.get_bind_count()):
+			var bone := skel.find_bone(instance.skin.get_bind_name(b))
+			mats.append(skel.get_bone_global_pose(bone) * instance.skin.get_bind_pose(b) if bone >= 0 else Transform3D())
+		var out := PackedVector3Array()
+		out.resize(verts.size())
+		for i in range(verts.size()):
+			var p := Vector3.ZERO
+			for k in range(per):
+				var w := weights[i * per + k]
+				if w > 0.0:
+					p += ((mats[bones[i * per + k]] as Transform3D) * verts[i]) * w
+			out[i] = p
+		return out
+
 	func contains(p: Vector3) -> bool:
 		if not aabb.grow(0.001).has_point(p):
 			return false
@@ -124,10 +145,13 @@ func gear_solids(v) -> Dictionary:
 	for i in range(v.skates.size()):
 		var side := "L" if i == 0 else "R"
 		solids["skate" + side] = Solid.new("skate" + side, meshes(v.skates[i]))
-		if v.pant_legs.size() > i:
+		if v.pant_legs.size() > i and not v.mesh_kit:
 			solids["pants" + side] = Solid.new("pants" + side, [v.pant_legs[i]])
 		if v.socks.size() > i:
 			solids["sock" + side] = Solid.new("sock" + side, [v.socks[i]])
+	if v.mesh_kit:
+		# Sculpted breezers: one skinned mesh over both legs.
+		solids["pants"] = Solid.new("pants", [v.kit_pants])
 	if v.goalie:
 		for i in range(2):
 			var side := "L" if i == 0 else "R"
@@ -149,7 +173,7 @@ func gear_solids(v) -> Dictionary:
 ## paddle and blade, and a pad's boot channel sits over its own skate.
 const ALLOWED := [
 	["blocker", "shaft"], ["blocker", "paddle"], ["gloveL", "shaft"], ["gloveR", "shaft"],
-	["sockL", "skateL"], ["sockR", "skateR"], ["sockL", "pantsL"], ["sockR", "pantsR"],
+	["sockL", "skateL"], ["sockR", "skateR"], ["sockL", "pantsL"], ["sockR", "pantsR"], ["sockL", "pants"], ["sockR", "pants"],
 	["padL", "thighL"], ["padR", "thighR"], ["shaft", "paddle"], ["shaft", "blade"], ["paddle", "blade"],
 ]
 

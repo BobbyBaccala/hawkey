@@ -105,7 +105,7 @@ func run() -> void:
 	for i in range(verts.size()):
 		var p := verts[i]
 		if p.y > 1.36 and p.y < 1.40 and absf(p.x) < 0.12: chest.append(i)
-		if p.y < Visual.JERSEY_HEM + 0.01 and p.y > Visual.JERSEY_HEM - 0.01: hem.append(i)
+		if p.y < v.jersey_hem_height() + 0.012 and p.y > v.jersey_hem_height() - 0.004: hem.append(i)
 	check(chest.size() > 4 and hem.size() > 20, "could not find chest/hem vertices")
 
 	# Poses: upright coast, a deep skating lean, and a twist toward the stick.
@@ -122,7 +122,9 @@ func run() -> void:
 		for i in chest:
 			var expected: Vector3 = v.shirt.transform * verts[i]
 			worst = maxf(worst, skinned(v, arrays, i).distance_to(expected))
-		check(worst < 0.003, "pose %s: jersey chest is %.1f cm off the chest bone" % [str(pose), worst * 100])
+		# Sculpted sweater weights blend the chest with the clavicles/breast
+		# bones of the base rig, so allow a few millimetres more.
+		check(worst < (0.008 if v.mesh_kit else 0.003), "pose %s: jersey chest is %.1f cm off the chest bone" % [str(pose), worst * 100])
 		var spine01: int = v.skeleton.find_bone("spine01")
 		var bone_err: float = (v.skeleton.get_bone_global_pose(spine01).origin).distance_to(v.shirt.transform * (v.rest["spine01"] as Transform3D).origin)
 		check(bone_err < 0.003, "pose %s: chest bone not where the torso is posed (%.1f cm)" % [str(pose), bone_err * 100])
@@ -138,6 +140,53 @@ func run() -> void:
 
 	# --- Pants: rounded padded breezers, not boxes.
 	var pants: Mesh = v.pant_legs[0].mesh
+	if v.mesh_kit:
+		check_mesh_pants(v, pants)
+	else:
+		check_procedural_pants(Gear, pants)
+	gloves_and_helmet(v, Gear)
+	v.queue_free()
+	await process_frame
+	print("Kit geometry failures: ", failures)
+	quit(failures)
+
+## Sculpted breezers: one skinned smooth mesh, round legs, hanging from the
+## waist under the sweater hem to above the knee, never into the other leg.
+func check_mesh_pants(v, pants: Mesh) -> void:
+	check(v.kit_pants.skin != null and v.kit_pants.get_parent() == v.skeleton, "pants are not skinned to the rig")
+	check(sharing(pants) > 4.0, "pants are not smooth-shaded")
+	var pants_crease := worst_crease(pants)
+	check(pants_crease < 8.0, "pants have hard facets (%.0f deg)" % pants_crease)
+	check(vertex_count(pants) <= 4000, "pants are too heavy (%d vertices)" % vertex_count(pants))
+	var pv: PackedVector3Array = pants.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var top := -INF
+	var bottom := INF
+	for q in pv:
+		top = maxf(top, q.y)
+		bottom = minf(bottom, q.y)
+	# Mid-thigh section of the left leg: elliptical, not a box. Normalised by
+	# the section's own extents, box corners would reach ~1.41.
+	var mid := lerpf(bottom, top, 0.3)
+	var lo := Vector2(INF, INF)
+	var hi := -lo
+	var ring: Array[Vector2] = []
+	for q in pv:
+		if absf(q.y - mid) < 0.012 and q.x > 0.01:
+			ring.append(Vector2(q.x, q.z))
+			lo = lo.min(Vector2(q.x, q.z))
+			hi = hi.max(Vector2(q.x, q.z))
+	check(ring.size() > 12, "no mid-thigh section on the pants")
+	var c2 := (lo + hi) * 0.5
+	var half := (hi - lo) * 0.5
+	var corner := 0.0
+	for q in ring:
+		corner = maxf(corner, ((q - c2) / half).length())
+	check(corner < 1.25, "pants leg cross-section is boxy (%.2f)" % corner)
+	var knee: float = (v.rest["lowerleg01.L"] as Transform3D).origin.y
+	check(top > v.jersey_hem_height() + 0.1, "pants top does not reach under the sweater")
+	check(bottom > knee and bottom < knee + 0.2, "pants should stop just above the knee (%.2f, knee %.2f)" % [bottom, knee])
+
+func check_procedural_pants(Gear, pants: Mesh) -> void:
 	check(Gear.PANTS_RINGS >= 20 and Gear.PANTS_SIDES >= 32, "pants have too few segments")
 	var pants_crease := worst_crease(pants)
 	check(sharing(pants) > 4.0, "pants are not smooth-shaded")
@@ -162,6 +211,8 @@ func run() -> void:
 		knee_r = maxf(knee_r, absf(pv[Gear.PANTS_SIDES * int((Gear.PANTS_RINGS - 3) * 0.86) + k].z))
 	check(hem_r > knee_r + 0.003, "pants hem does not flare over the knee")
 
+func gloves_and_helmet(v, Gear) -> void:
+
 	# --- Gloves: smooth, many-part, cuff toward the elbow.
 	for i in range(2):
 		var glove_meshes := meshes(v.skater_gloves[i])
@@ -183,16 +234,14 @@ func run() -> void:
 	check(aabb.size.z > aabb.size.x * 1.08, "helmet is ball-shaped (depth %.3f vs width %.3f)" % [aabb.size.z, aabb.size.x])
 	check(vertex_count(shell.mesh) > 48 * 16, "helmet shell is low-poly")
 	var shell_crease := worst_crease(shell.mesh)
-	print("faceting: jersey %.1f pants %.1f glove %.1f helmet %.1f" % [crease, pants_crease, worst_crease(meshes(v.skater_gloves[0])[0].mesh), shell_crease])
+	print("faceting: jersey %.1f pants %.1f glove %.1f helmet %.1f" % [worst_crease(v.jersey.mesh), worst_crease(v.pant_legs[0].mesh), worst_crease(meshes(v.skater_gloves[0])[0].mesh), shell_crease])
 	check(shell_crease < 8.0, "helmet shell has hard facets (%.0f deg)" % shell_crease)
 	# Ear pieces and the back of the shell come down lower than the brow.
 	check(Gear.helmet_edge(PI) > Gear.helmet_edge(0.0) + 0.3, "helmet has no low back / raised brow")
 	check(meshes(v.helmet).size() >= 3, "helmet is missing fittings")
 
 	# --- Sleeves: enough segments for a clean silhouette.
-	check(Visual.SLEEVE_ROWS >= 12 and Visual.SLEEVE_SIDES >= 20, "sleeves are low-poly")
-
-	v.queue_free()
-	await process_frame
-	print("Kit geometry failures: ", failures)
-	quit(failures)
+	check(v.SLEEVE_ROWS >= 12 and v.SLEEVE_SIDES >= 20, "sleeves are low-poly")
+	if v.mesh_kit:
+		check(v.kit_sleeves != null and v.kit_sleeves.skin != null and vertex_count(v.kit_sleeves.mesh) > 400, "sculpted sleeves missing")
+		check(vertex_count(v.jersey.mesh) + vertex_count(v.kit_sleeves.mesh) <= 4400, "sweater too heavy for 12 players")

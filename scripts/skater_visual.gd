@@ -7,6 +7,15 @@ const StickModel = preload("res://scripts/stick_model.gd")
 const Gear = preload("res://scripts/gear_builder.gd")
 const Mocap = preload("res://scripts/mocap.gd")
 const Kit = preload("res://scripts/kit_materials.gd")
+## Sculpted sweater and breezers modelled in Blender (tools/blender/kit_v1.py),
+## skinned to the same base skeleton. Goalies and officials keep the
+## procedural kit.
+const KitMeshes = preload("res://assets/kit/skater-kit-v1.glb")
+const MESH_KIT := true
+const KIT_HEM := 0.889
+const KIT_COLLAR := 1.535
+const BREEZER_SHELL := Color("#151c24")
+static var _kit_cache := {}
 const MOCAP_HIP_HEIGHT := 0.958
 # Captured clip blended over the procedural pose (celebrations, save reactions).
 var mocap := {}
@@ -406,6 +415,7 @@ func _ready() -> void:
 	build_helmet()
 	shirt = Node3D.new()
 	rig.add_child(shirt)
+	mesh_kit = MESH_KIT and not goalie and not referee
 	build_jersey()
 	if not goalie and not referee:
 		neck_guard = MeshInstance3D.new()
@@ -436,16 +446,20 @@ func _ready() -> void:
 	if goalie:
 		goalie_paddle=block(sticks,Vector3(0.088,1,0.026),Vector3.ZERO,Color("#e3e7e9"))
 	grip_tape=block(sticks,Vector3(0.035,0.11,0.035),Vector3.ZERO,Color("#cad2d7"))
+	if mesh_kit:
+		build_mesh_kit_lower()
 	for side in [1.0,-1.0]:
-		var sleeve:=MeshInstance3D.new()
-		sleeve.mesh=ArrayMesh.new()
-		sleeve.material_override=Kit.sleeve(kit,accent,referee)
-		rig.add_child(sleeve)
-		cloth_sleeves.append(sleeve)
-		if not referee:
+		if not mesh_kit:
+			var sleeve:=MeshInstance3D.new()
+			sleeve.mesh=ArrayMesh.new()
+			sleeve.material_override=Kit.sleeve(kit,accent,referee)
+			rig.add_child(sleeve)
+			cloth_sleeves.append(sleeve)
+		if not referee and not mesh_kit:
 			var pants := add_mesh(rig,Gear.pants_leg(side,kit,Color("#151c24"),0.0 if goalie else 1.0))
 			pants.material_override=Kit.breezers()
 			pant_legs.append(pants)
+		if not referee:
 			if not goalie:
 				var sock := add_mesh(rig,Gear.sock(kit,Color("#e4e8ea")))
 				sock.material_override=Kit.socks(kit,Color("#e4e8ea"))
@@ -579,6 +593,10 @@ const JERSEY_WIDTH := [[0.86,0.258],[0.95,0.240],[1.02,0.224],[1.10,0.221],[1.20
 const JERSEY_FRONT := [[0.86,0.180],[0.97,0.160],[1.08,0.154],[1.20,0.164],[1.30,0.176],[1.38,0.166],[1.45,0.140],[1.50,0.104],[1.555,0.064]]
 const JERSEY_BACK := [[0.86,0.180],[0.97,0.156],[1.08,0.150],[1.22,0.160],[1.34,0.172],[1.42,0.166],[1.48,0.140],[1.52,0.094],[1.555,0.062]]
 var jersey: MeshInstance3D
+## Skaters wear the Blender-made sweater (body + sleeves) and breezers.
+var mesh_kit := false
+var kit_sleeves: MeshInstance3D
+var kit_pants: MeshInstance3D
 
 ## Rest-space point of the sweater surface at angle a (0 = +X, PI/2 = front)
 ## and height y, with static cloth folds.
@@ -647,6 +665,9 @@ func build_jersey() -> void:
 		# Oversized sweater over a chest protector with shoulder floaters.
 		sections = [Vector3(0.255,0.95,0.17),Vector3(0.25,1.10,0.185),Vector3(0.28,1.30,0.20),Vector3(0.30,1.44,0.17),Vector3(0.13,1.53,0.10)]
 	jersey_sections = sections
+	if mesh_kit:
+		build_mesh_jersey()
+		return
 	# One continuous sweater: rolled hem inside, hem, body, shoulders, V-neck
 	# and a rolled collar, as rings of JERSEY_COLUMNS points.
 	var b = Gear.MeshBuilder.new()
@@ -733,8 +754,158 @@ func build_jersey() -> void:
 ## number and name; the generated textures are shared by everyone).
 func apply_jersey_material() -> void:
 	if not is_instance_valid(jersey): return
+	if mesh_kit:
+		jersey.material_override = Kit.jersey(kit,accent,number,nameplate_text,false,KIT_HEM,KIT_COLLAR)
+		return
 	var hem := JERSEY_HEM-(0.03 if goalie else 0.0)
 	jersey.material_override = Kit.jersey(kit,accent,number,nameplate_text,referee,hem,0.0)
+
+## Rest height of the sweater's hem.
+func jersey_hem_height() -> float:
+	if mesh_kit: return KIT_HEM
+	return JERSEY_HEM-(0.03 if goalie else 0.0)
+
+## Skinned instance of a cached garment surface, bound to the rig skeleton.
+func skinned_garment(name_: String, entry: Array) -> MeshInstance3D:
+	var instance := MeshInstance3D.new()
+	instance.name = name_
+	instance.mesh = entry[0]
+	instance.skin = entry[1]
+	instance.skeleton = NodePath("..")
+	skeleton.add_child(instance)
+	return instance
+
+func build_mesh_jersey() -> void:
+	var parts: Dictionary = kit_garments()
+	jersey = skinned_garment("Jersey",parts["body"])
+	apply_jersey_material()
+	kit_sleeves = skinned_garment("JerseySleeves",parts["sleeves"])
+	kit_sleeves.material_override = Kit.sleeve(kit,accent,false)
+
+func build_mesh_kit_lower() -> void:
+	var parts: Dictionary = kit_garments()
+	kit_pants = skinned_garment("Pants",parts["pants"])
+	kit_pants.material_override = Kit.breezers()
+	pant_legs.append(kit_pants)
+
+## Imported garments, built once and shared by every skater: the sweater is
+## split into the body (UV mirrored round the body, UV2 = angle / rest height
+## for the number, nameplate and hem stripes) and the sleeves (u round the
+## arm, v shoulder -> wrist for elbow stripes and cuffs). Each entry is
+## [ArrayMesh, Skin] with the skin's named binds from the glTF.
+func kit_garments() -> Dictionary:
+	if not _kit_cache.is_empty(): return _kit_cache
+	var scene: Node = KitMeshes.instantiate()
+	var jersey_src: MeshInstance3D = scene.find_child("Jersey",true,false)
+	var pants_src: MeshInstance3D = scene.find_child("Pants",true,false)
+	var arm := {}
+	for sfx in [".L",".R"]:
+		arm[sfx] = [(rest["upperarm01"+sfx] as Transform3D).origin,(rest["lowerarm01"+sfx] as Transform3D).origin,(rest["wrist"+sfx] as Transform3D).origin]
+	var arrays: Array = jersey_src.mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
+	var weights: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
+	var index: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	var per := bones.size()/maxi(1,verts.size())
+	var skin: Skin = jersey_src.skin
+	var arm_bind := PackedByteArray()
+	for b in range(skin.get_bind_count()):
+		var n := skin.get_bind_name(b)
+		arm_bind.append(1 if n.begins_with("upperarm") or n.begins_with("lowerarm") or n.begins_with("wrist") or n.begins_with("elbow") else 0)
+	var arm_w := PackedFloat32Array()
+	arm_w.resize(verts.size())
+	for i in range(verts.size()):
+		var w := 0.0
+		for k in range(per):
+			if arm_bind[bones[i*per+k]] == 1: w += weights[i*per+k]
+		arm_w[i] = w
+	var body_tris := PackedInt32Array()
+	var sleeve_tris := PackedInt32Array()
+	for t in range(0,index.size(),3):
+		var w := arm_w[index[t]]+arm_w[index[t+1]]+arm_w[index[t+2]]
+		# Sleeve: arm-weighted and close round the arm (armpit/back panels
+		# that the arms also pull stay on the body, without elbow stripes).
+		var c := (verts[index[t]]+verts[index[t+1]]+verts[index[t+2]])/3.0
+		var chain: Array = arm[".L" if c.x > 0.0 else ".R"]
+		var near := minf(c.distance_to(Geometry3D.get_closest_point_to_segment(c,chain[0],chain[1])),c.distance_to(Geometry3D.get_closest_point_to_segment(c,chain[1],chain[2])))
+		(sleeve_tris if w > 1.5 and near < 0.12 else body_tris).append_array([index[t],index[t+1],index[t+2]])
+	var body_uv := func(p: Vector3) -> Array:
+		var a := atan2(p.z+0.02,p.x)
+		return [Vector2(absf(wrapf(a-PI*0.5,-PI,PI))/PI,0.98+(p.y-KIT_HEM)),Vector2(fposmod(a,TAU)/TAU,p.y)]
+	var sleeve_uv := func(p: Vector3) -> Array:
+		var chain: Array = arm[".L" if p.x > 0.0 else ".R"]
+		var l1: float = (chain[1]-chain[0]).length()
+		var l2: float = (chain[2]-chain[1]).length()
+		var best := INF
+		var arc := 0.0
+		var axis := Vector3.DOWN
+		for seg in range(2):
+			var a0: Vector3 = chain[seg]
+			var a1: Vector3 = chain[seg+1]
+			var d := a1-a0
+			var t := clampf((p-a0).dot(d)/d.length_squared(),-0.5 if seg == 0 else 0.0,1.0 if seg == 0 else 1.2)
+			var dist := p.distance_to(a0+d*t)
+			if dist < best:
+				best = dist
+				arc = (t*l1) if seg == 0 else (l1+t*l2)
+				axis = d.normalized()
+		var r := p-(chain[0] as Vector3)
+		r -= axis*r.dot(axis)
+		var front := (Vector3.BACK-axis*axis.dot(Vector3.BACK)).normalized()
+		var ang := atan2(r.dot(axis.cross(front)),r.dot(front))
+		return [Vector2(absf(ang)/PI,clampf(arc/(l1+l2),0.0,1.0)),Vector2(0.0,p.y)]
+	_kit_cache["body"] = [garment_surface(arrays,body_tris,per,body_uv,Color.WHITE),skin]
+	_kit_cache["sleeves"] = [garment_surface(arrays,sleeve_tris,per,sleeve_uv,Color.WHITE),skin]
+	var pants_arrays: Array = pants_src.mesh.surface_get_arrays(0)
+	var pants_index: PackedInt32Array = pants_arrays[Mesh.ARRAY_INDEX]
+	var pants_per: int = (pants_arrays[Mesh.ARRAY_BONES] as PackedInt32Array).size()/maxi(1,(pants_arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size())
+	_kit_cache["pants"] = [garment_surface(pants_arrays,pants_index,pants_per,func(p: Vector3) -> Array: return [Vector2(p.x,p.y),Vector2(0.0,p.y)],BREEZER_SHELL),pants_src.skin]
+	scene.free()
+	return _kit_cache
+
+## One welded, smooth-shaded surface holding the given triangles of an
+## imported skinned mesh, with UVs from uv_of(rest point) and tangents.
+func garment_surface(arrays: Array, tris: PackedInt32Array, per: int, uv_of: Callable, tint: Color) -> ArrayMesh:
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+	var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
+	var weights: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
+	var remap := {}
+	var out_v := PackedVector3Array()
+	var out_n := PackedVector3Array()
+	var out_uv := PackedVector2Array()
+	var out_uv2 := PackedVector2Array()
+	var out_b := PackedInt32Array()
+	var out_w := PackedFloat32Array()
+	var out_i := PackedInt32Array()
+	var out_c := PackedColorArray()
+	for src in tris:
+		if not remap.has(src):
+			remap[src] = out_v.size()
+			out_v.append(verts[src])
+			out_n.append(normals[src])
+			var uvs: Array = uv_of.call(verts[src])
+			out_uv.append(uvs[0])
+			out_uv2.append(uvs[1])
+			out_c.append(tint)
+			for k in range(4):
+				out_b.append(bones[src*per+k] if k < per else 0)
+				out_w.append(weights[src*per+k] if k < per else 0.0)
+		out_i.append(remap[src])
+	var out := []
+	out.resize(Mesh.ARRAY_MAX)
+	out[Mesh.ARRAY_VERTEX] = out_v
+	out[Mesh.ARRAY_NORMAL] = out_n
+	out[Mesh.ARRAY_TEX_UV] = out_uv
+	out[Mesh.ARRAY_TEX_UV2] = out_uv2
+	out[Mesh.ARRAY_COLOR] = out_c
+	out[Mesh.ARRAY_BONES] = out_b
+	out[Mesh.ARRAY_WEIGHTS] = out_w
+	out[Mesh.ARRAY_INDEX] = out_i
+	var st := SurfaceTool.new()
+	st.create_from_arrays(out)
+	st.generate_tangents()
+	return st.commit()
 
 func override_pose(name: String, transform_: Transform3D) -> void:
 	var bone := skeleton.find_bone(name)
@@ -1263,7 +1434,7 @@ func pose(speed: float, turn: float) -> void:
 		knees[i]=knee
 		align_bone("upperleg01"+suffix,"lowerleg01"+suffix,hip,knee)
 		align_bone("lowerleg01"+suffix,"foot"+suffix,knee,ankle)
-		if pant_legs.size()>i:
+		if pant_legs.size()>i and not mesh_kit:
 			# Goalie pants stop short of the pads; the legs meet but don't overlap.
 			var fill:=1.06 if goalie else 0.96
 			var reach:=lerpf(0.68,0.52,butterfly) if goalie else 0.94
@@ -1407,7 +1578,7 @@ func pose(speed: float, turn: float) -> void:
 		posed_wrists[i]=wrist
 		posed_elbows[i]=elbow
 		if not goalie: fit_glove(i,wrist,elbow,grip_point if not referee and captured_elbow==Vector3.ZERO else Vector3.INF)
-		update_cloth_sleeve(cloth_sleeves[i],shoulder,elbow,wrist)
+		if cloth_sleeves.size()>i: update_cloth_sleeve(cloth_sleeves[i],shoulder,elbow,wrist)
 		align_bone("upperarm01"+suffix,"lowerarm01"+suffix,shoulder,elbow)
 		align_bone("lowerarm01"+suffix,"wrist"+suffix,elbow,wrist)
 		var wrist_pose: Transform3D = rest["wrist"+suffix]

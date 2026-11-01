@@ -71,7 +71,7 @@ func run() -> void:
 	check(lo < 40 and hi > 180, "Number SDF has inside and outside (%d..%d)" % [lo, hi])
 
 	# Sleeves: UV-mapped knit with stripes.
-	var sleeve: MeshInstance3D = a.cloth_sleeves[0]
+	var sleeve: MeshInstance3D = a.kit_sleeves if a.mesh_kit else a.cloth_sleeves[0]
 	check(param(sleeve, "knit_tex") is Texture2D and int(param(sleeve, "garment")) == 2, "Sleeves use striped knit cloth")
 	var arrays: Array = (sleeve.mesh as ArrayMesh).surface_get_arrays(0)
 	check(arrays[Mesh.ARRAY_TEX_UV] != null and (arrays[Mesh.ARRAY_TEX_UV] as PackedVector2Array).size() > 0, "Sleeve cloth has UVs for stripes and knit")
@@ -90,13 +90,16 @@ func run() -> void:
 	# Skin keeps garment hiding and gains detail.
 	var body: MeshInstance3D = null
 	for child in a.skeleton.get_children():
-		if child is MeshInstance3D and child != a.jersey: body = child
+		if child is MeshInstance3D and not (child in [a.jersey, a.kit_sleeves, a.kit_pants]): body = child
 	check(param(body, "has_skin_detail") == true and param(body, "skin_detail") is Texture2D, "Skin has pore detail")
 	check(param(body, "hide_pants") == true and param(body, "hide_socks") == true, "Skin shader still hides the body's pants and socks")
 
 	# Caching: textures generated once, materials shared within a colourway.
 	check(param(a.jersey, "knit_tex") == param(b.jersey, "knit_tex"), "Two skaters share the knit texture")
-	check(a.cloth_sleeves[0].material_override == b.cloth_sleeves[0].material_override, "Same kit shares the sleeve material")
+	var sleeve_a: MeshInstance3D = a.kit_sleeves if a.mesh_kit else a.cloth_sleeves[0]
+	var sleeve_b: MeshInstance3D = b.kit_sleeves if b.mesh_kit else b.cloth_sleeves[0]
+	check(sleeve_a.material_override == sleeve_b.material_override, "Same kit shares the sleeve material")
+	check(not a.mesh_kit or a.jersey.mesh == b.jersey.mesh, "Skaters share one sculpted sweater mesh")
 	check(a.pant_legs[0].material_override == b.pant_legs[0].material_override, "Same kit shares the breezer material")
 	check(a.socks[1].material_override == b.socks[0].material_override, "Same kit shares the sock material")
 	check(param(a.jersey, "number_tex") != param(b.jersey, "number_tex"), "Different numbers get different twill")
