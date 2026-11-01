@@ -7,6 +7,7 @@ const BroadcastHud = preload("res://scripts/broadcast_hud.gd")
 const GoalCelebration = preload("res://scripts/goal_celebration.gd")
 const Benches = preload("res://scripts/arena_benches.gd")
 const GoalReplay = preload("res://scripts/goal_replay.gd")
+const GameStats = preload("res://scripts/game_stats.gd")
 const CAMERA_NAMES := ["DYNAMIC", "OVERHEAD", "BROADCAST", "FULL RINK"]
 ## Bench gate (changing skaters head here) just inside the west side boards.
 const BENCH_X := -(Arena.HALF_WIDTH - 0.75)
@@ -27,6 +28,8 @@ var team_shots: Array[int] = [0, 0]
 var last_event := ""
 var last_phase := -1
 var match_state := MatchState.new()
+## Per-period team stats for the intermission / final screens (game_stats.gd).
+var game_stats := GameStats.new()
 ## Goal light, arena light flash and jumbotron GOAL (scripts/goal_celebration.gd).
 var celebration: Node3D
 ## Instant replay after goals (scripts/goal_replay.gd).
@@ -898,6 +901,7 @@ func defensive_action(body_check: bool) -> void:
 		var push := (victim.position-player.position).normalized()
 		victim.velocity+=push*(4 if body_check else 1.2)
 		victim.set_meta("stun",0.35 if body_check else 0.08)
+		if body_check: game_stats.add_hit(body_team(player),match_state.period)
 		if victim==carrier:
 			carrier=null
 			puck.linear_velocity=push*5
@@ -1406,6 +1410,8 @@ func screen_to_rink(input: Vector3) -> Vector3:
 	return right*input.x+forward*(-input.z)
 
 func update_match_hud() -> void:
+	# Book this tick's goals/shots/faceoffs/penalties to the period (stats screens).
+	game_stats.sync(match_state,team_shots,faceoff_wins)
 	var pp:=""
 	for team in range(2):
 		var advantage:=match_state.count(team)-match_state.count(1-team)
@@ -1425,19 +1431,21 @@ func update_match_hud() -> void:
 	# Event banners for the moments a broadcast would mark.
 	if match_state.event!=last_event:
 		var e:=match_state.event
+		# Intermission / final: the stats card (stats_screen.gd) replaces the old banner.
 		if e.begins_with("END OF PERIOD"):
-			hud_node.show_banner("END OF "+["1ST","2ND","3RD"][clampi(match_state.period-1,0,2)], "TOR %d   –   %d MTL"%[match_state.score[0],match_state.score[1]], Color("#93a3b3"), 3.5)
+			hud_node.show_stats(game_stats,match_state.score,match_state.period,false)
 		elif e.begins_with("Period "):
+			hud_node.hide_stats()
 			hud_node.show_banner(["1ST","2ND","3RD"][clampi(match_state.period-1,0,2)]+" PERIOD", "Ends switched", Color("#93a3b3"), 1.6)
 		elif e.begins_with("FINAL"):
-			hud_node.show_banner("FINAL", "TOR %d   –   %d MTL"%[match_state.score[0],match_state.score[1]], hud_node.ACCENT, 600.0)
+			hud_node.show_stats(game_stats,match_state.score,match_state.period,true)
 		elif " — " in e and (e.begins_with("TOR") or e.begins_with("MTL")):
 			var team:=0 if e.begins_with("TOR") else 1
 			hud_node.show_banner("PENALTY", e.substr(6).to_upper(), hud_node.team_colors[team], 2.0)
 		last_event=e
 	var stopped:=match_state.phase!=MatchState.Phase.PLAY
 	var quiet_events:=["Play","Centre faceoff","Opening faceoff"]
-	status.text=("" if not stopped or match_state.event in quiet_events or match_state.event.ends_with("GOAL") else match_state.event.to_upper())
+	status.text=("" if not stopped or match_state.event in quiet_events or match_state.event.ends_with("GOAL") or hud_node.stats_screen.mode!="" else match_state.event.to_upper())
 	if debug:
 		status.text+="  FPS %d  ·  puck %.1f m/s  ·  height %.2f m  ·  %s"%[Engine.get_frames_per_second(),puck.linear_velocity.length(),puck.position.y,("TOR POSSESSION" if carrier!=null and body_team(carrier)==0 else ("MTL POSSESSION" if carrier!=null else "LOOSE PUCK"))]
 	hud_node.status_panel.visible=not status.text.strip_edges().is_empty()
@@ -1523,12 +1531,36 @@ func capture_preview() -> void:
 		await capture_save_replay()
 	elif "--replay" in OS.get_cmdline_user_args() or "--replay-wipe" in OS.get_cmdline_user_args():
 		await capture_replay("--replay-wipe" in OS.get_cmdline_user_args())
+	for arg in OS.get_cmdline_user_args():
+		if str(arg).begins_with("--stats-screen"):
+			await capture_stats_screen(str(arg).substr(15) if str(arg).contains("=") else "intermission", "--stats-demo" in OS.get_cmdline_user_args())
 	if "--goal-banner" in OS.get_cmdline_user_args():
 		hud_node.show_banner("GOAL", "TORONTO  ·  VALE", hud_node.team_colors[0], 5.0)
 		for i in range(20): await get_tree().process_frame
 	await RenderingServer.frame_post_draw
 	get_viewport().get_texture().get_image().save_png("/tmp/hawkey-match-preview.png")
 	get_tree().quit()
+
+## --stats-screen=intermission|final [--stats-demo]: run the clock out of the
+## 1st (intermission) or 3rd (final) period and capture the stats card;
+## --stats-demo fills a plausible game first (game_stats.gd fill_demo()).
+func capture_stats_screen(which: String, demo: bool) -> void:
+	var final_ := which=="final"
+	match_state.period=3 if final_ else 1
+	if demo:
+		var d:=game_stats.fill_demo(match_state.period)
+		match_state.score.assign(d.score)
+		team_shots.assign(d.shots)
+		faceoff_wins=d.faceoffs.duplicate()
+	match_state.phase=MatchState.Phase.PLAY
+	match_state.clock=0.01
+	for f in range(120):
+		await get_tree().physics_frame
+		if hud_node.stats_screen.mode!="": break
+	# Let the card's fade-in finish (real time: physics ticks outrun frames here).
+	await get_tree().create_timer(0.8).timeout
+	get_tree().paused=true
+	for i in range(2): await get_tree().process_frame
 
 ## --replay / --replay-wipe screenshots: a skater carries the puck in on the
 ## net Toronto attacks and it is put over the line; capture during the replay's

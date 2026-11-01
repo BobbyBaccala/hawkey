@@ -12,6 +12,8 @@ var penalties: Array[Dictionary] = []
 var event := "Opening faceoff"
 var ended_period := false
 var faceoff_serial := 0
+## Real seconds between periods (the intermission stats card shows meanwhile).
+const INTERMISSION_SECONDS := 8.0
 
 func count(team: int) -> int:
 	return 5 - mini(2, active_penalties(team).size())
@@ -75,7 +77,7 @@ func advance(delta: float) -> void:
 				event = "FINAL" if score[0] != score[1] else "FINAL — DRAW (overtime not implemented)"
 			else:
 				phase = Phase.INTERMISSION
-				phase_timer = 5.0
+				phase_timer = INTERMISSION_SECONDS
 				event = "END OF PERIOD "+str(period)
 		return
 	phase_timer = maxf(0,phase_timer-delta)

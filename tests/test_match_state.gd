@@ -37,7 +37,7 @@ func _initialize()->void:
 	m.clock=1
 	m.advance(1)
 	check(m.phase==Match.Phase.INTERMISSION,"Period horn must stop play")
-	m.advance(6)
+	m.advance(Match.INTERMISSION_SECONDS+1)
 	check(m.period==2 and m.clock==1200,"Next period resets clock")
 	m.period=3
 	m.phase=Match.Phase.PLAY

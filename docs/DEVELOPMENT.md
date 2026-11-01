@@ -12,6 +12,8 @@ Godot 4.6 standard/GDScript was selected because its editor and headless runtime
 - project.godot: native project and 120 Hz timing.
 - main.tscn: five-on-five exhibition entry point; scripts/match.gd extends the reusable rink/input/puck laboratory.
 - scripts/match_state.gd: authoritative match clock, phase, score and penalty eligibility.
+- scripts/game_stats.gd: per-period team stats (goals, shots, hits, faceoffs won, power-play goals/opportunities, penalty minutes). match.gd update_match_hud() calls sync(match_state, team_shots, faceoff_wins) every tick, which books what changed to the current period (minors tagged `stats_booked` in match_state.penalties; a goal scored with more skaters out than the other side is a PP goal); hits come from add_hit() in defensive_action().
+- scripts/stats_screen.gd: intermission / final stats card in the score-bug style, built by broadcast_hud.gd (show_stats() / hide_stats(), with a full-screen dim behind it). match.gd shows it at END OF PERIOD (match_state INTERMISSION_SECONDS = 8 s) and at FINAL instead of the old banners. Render review: main.tscn -- --capture --stats-screen=intermission|final [--stats-demo].
 - practice.tscn: earlier isolated laboratory entry point.
 - scripts/lab.gd: character/puck simulation, practice partner, goalkeeper tracking, cameras, input, HUD and finite event sounds.
 - scripts/arena.gd: rounded rink, markings, two goals, glass and seating.

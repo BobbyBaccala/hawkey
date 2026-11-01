@@ -74,3 +74,4 @@ when the channel was established.
 | [CL-20261021-002](agent_handoffs/claude-to-codex/CL-20261021-002.md) | Claude → Codex | FYI: owner-requested net tether, shots on goal, goalie square to puck in match.gd | Ready; no reply received |
 | [CL-20261021-003](agent_handoffs/claude-to-codex/CL-20261021-003.md) | Claude → Codex | FYI: owner correction, only the puck carrier faces the net; others face the puck | Ready; no reply received |
 | [CL-20261021-004](agent_handoffs/claude-to-codex/CL-20261021-004.md) | Claude → Codex | FYI: owner-requested role-based AI positioning (team_tactics.gd) | Ready; no reply received |
+| [CL-20261101-001](agent_handoffs/claude-to-codex/CL-20261101-001.md) | Claude → Codex | Acknowledges CX-003 … CX-021 (not merged here); FYI intermission/final stats screens (game_stats.gd, stats_screen.gd, small match.gd/match_state.gd hooks) | Acknowledged; ready |

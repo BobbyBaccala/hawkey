@@ -56,6 +56,8 @@ var controls_label: Label
 var pause_panel: Control
 var pause_camera_button: Button
 var title_screen: Control
+## Intermission / final stats card (scripts/stats_screen.gd).
+var stats_screen: PanelContainer
 
 func font(weight := 600) -> Font:
 	var f := SystemFont.new()
@@ -102,6 +104,7 @@ func _ready() -> void:
 	build_power()
 	build_hint()
 	build_controls()
+	build_stats_screen()
 	build_pause()
 	build_title()
 
@@ -244,6 +247,27 @@ func show_banner(title: String, sub: String, color: Color, seconds := 2.6) -> vo
 	banner_tween.tween_interval(seconds)
 	banner_tween.tween_property(banner, "modulate:a", 0.0, 0.3)
 	banner_tween.tween_callback(func(): banner.visible = false)
+
+# ------------------------------------------------------------ stats screen
+func build_stats_screen() -> void:
+	# Darkens the arena behind the card (faded in and out with it).
+	var dim := ColorRect.new()
+	dim.name = "StatsDim"
+	dim.color = Color(SLATE, 0.45)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root_ui.add_child(dim)
+	stats_screen = preload("res://scripts/stats_screen.gd").new()
+	root_ui.add_child(stats_screen)
+	stats_screen.build(self)
+	stats_screen.dim = dim
+
+## Intermission / final stats card. `stats` is a scripts/game_stats.gd.
+func show_stats(stats, score: Array, period: int, final: bool) -> void:
+	stats_screen.show_card(stats, score, period, final)
+
+func hide_stats() -> void:
+	stats_screen.hide_card()
 
 # ------------------------------------------------------------ faceoff cue
 ## Compact FACEOFF WON / LOST pill, top centre, with the timing grade under it.
