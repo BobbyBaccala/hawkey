@@ -31,6 +31,13 @@ const HELMET_MESH_OFFSET := Vector3(0, -0.086, -0.0025)
 ## base head's temples.
 const HELMET_MESH_SCALE := Vector3(1.04, 1.0, 1.0)
 static var helmet_parts := {}
+## Skater gloves from Blender (night shift item 4: our own design, built by
+## tools/blender/glove_v1.py): closed fist with three padded segments per
+## finger, backhand rolls, thumb lock and a banded cuff. Vertex colours are
+## masks recoloured per team (glove_part). false = procedural Gear.skater_glove().
+const MESH_GLOVE := true
+const GloveMeshes = preload("res://assets/gear/glove-v1.glb")
+static var glove_parts := {}
 const KIT_HEM := 0.9
 const KIT_COLLAR := 1.535
 const BREEZER_SHELL := Color("#151c24")
@@ -2112,7 +2119,35 @@ func get_goalie_gear() -> Dictionary:
 
 func build_player_glove(parent: Node3D) -> void:
 	# Thumbs on opposite sides so each hand is a mirror of the other.
-	add_mesh(parent,Gear.skater_glove(kit,1.0 if skater_gloves.size()==0 else -1.0)).material_override=Kit.gloves()
+	var side := 1.0 if skater_gloves.size()==0 else -1.0
+	var mesh: Mesh = glove_part("glove_L" if side>0.0 else "glove_R",kit) if MESH_GLOVE else Gear.skater_glove(kit,side)
+	add_mesh(parent,mesh).material_override=Kit.gloves()
+
+## Blender glove ("glove_L"/"glove_R") with its colour masks replaced by the
+## same palette as Gear.skater_glove(): black palm leather, red kit, green kit
+## roll, blue cuff, white binding. Cached per hand and kit colour.
+static func glove_part(part: String, kit_color: Color) -> Mesh:
+	var key := part+kit_color.to_html()
+	if glove_parts.has(key): return glove_parts[key]
+	if not glove_parts.has(part):
+		var scene: Node = GloveMeshes.instantiate()
+		glove_parts[part] = (scene.find_child(part,true,false) as MeshInstance3D).mesh
+		scene.free()
+	var src: Mesh = glove_parts[part]
+	var palette := {Color(0,0,0):Color("#18232c"),Color(1,0,0):kit_color,Color(0,1,0):kit_color.darkened(0.25),Color(0,0,1):kit_color.lightened(0.08),Color(1,1,1):Color.WHITE}
+	var out := ArrayMesh.new()
+	for si in range(src.get_surface_count()):
+		var arrays := src.surface_get_arrays(si)
+		var masks: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
+		var cols := PackedColorArray()
+		cols.resize(masks.size())
+		for vi in range(masks.size()):
+			var m := masks[vi]
+			cols[vi] = palette[Color(roundf(m.r),roundf(m.g),roundf(m.b))]
+		arrays[Mesh.ARRAY_COLOR] = cols
+		out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+	glove_parts[key] = out
+	return out
 
 ## Closes glove i round the stick at the wrist: cuff (+Y) back along the
 ## forearm toward the elbow, shaft through the fist along local X, back of

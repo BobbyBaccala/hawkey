@@ -53,3 +53,4 @@ Python preparation tools are development-only dependencies; obtain their licence
 ## Third-party models (CC-BY)
 See assets/CREDITS.md. assets/gear/skate-v1.glb: "Hockey Skate" by HKY (Sketchfab, CC-BY 4.0), de-materialised, re-cut and decimated in Blender; used for skaters' skates (skater_visual.gd MESH_SKATE).
 assets/gear/helmet-v2.glb: "Hockey Helmet" by Andrey Novichkov (Sketchfab, CC-BY 4.0), all logos/markings removed (textures dropped, plain team-colour shell), decimated and smoothed in Blender; used for skaters' helmets (skater_visual.gd MESH_HELMET).
+assets/gear/glove-v1.glb: original Hawkey design modelled procedurally in Blender (tools/blender/glove_v1.py); no third-party source.

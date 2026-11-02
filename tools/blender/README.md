@@ -70,6 +70,7 @@ on the owner's PC: double-click `Start Blender bridge.bat`; it runs any
 
 - `skate_v1.py` -> `assets/gear/skate-v1.glb` (HKY skate, CC-BY 4.0).
 - `helmet_v2_debrand.py` -> `helmet_v2_smooth.py` -> `helmet_v2_normals.py` -> `assets/gear/helmet-v2.glb`
+- `glove_v1.py` -> `assets/gear/glove-v1.glb` (own design, no source asset; vertex-colour masks recoloured per team in Godot).
   (Novichkov helmet, CC-BY 4.0): drops every texture/UV (all logos, numbers, signature), vertex-colour
   team shell, decimate, Taubin smooth, split shell/fittings, sharp normals above 35 deg. They read the
   owner's `Hawkey/art` folder by absolute path, so run them through the bridge.
