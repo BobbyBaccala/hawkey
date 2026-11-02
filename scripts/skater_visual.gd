@@ -18,6 +18,19 @@ const MESH_KIT := true
 const MESH_SKATE := true
 const SkateMeshes = preload("res://assets/gear/skate-v1.glb")
 static var skate_parts := {}
+## Skater helmet from Blender (night shift item 3: Novichkov helmet, CC-BY 4.0,
+## all logos/markings removed, see assets/CREDITS.md): helmet_shell (team
+## colour), helmet_fittings (liner, ear clips, chin strap), helmet_visor.
+## false = procedural Gear.skater_helmet()/helmet_fittings()/visor().
+const MESH_HELMET := true
+const HelmetMeshes = preload("res://assets/gear/helmet-v2.glb")
+## Puts the GLB's crown on the procedural crown (centre + HELMET_H) and its
+## length centre on the procedural shell's (back is 4% deeper).
+const HELMET_MESH_OFFSET := Vector3(0, -0.086, -0.0025)
+## 4% wider than modelled so the inner wall of the side vents clears the
+## base head's temples.
+const HELMET_MESH_SCALE := Vector3(1.04, 1.0, 1.0)
+static var helmet_parts := {}
 const KIT_HEM := 0.9
 const KIT_COLLAR := 1.535
 const BREEZER_SHELL := Color("#151c24")
@@ -512,6 +525,15 @@ static func skate_part(part: String) -> Mesh:
 		scene.free()
 	return skate_parts[part]
 
+## Mesh of one part of the Blender helmet ("helmet_shell", ...).
+static func helmet_part(part: String) -> Mesh:
+	if helmet_parts.is_empty():
+		var scene: Node = HelmetMeshes.instantiate()
+		for n in ["helmet_shell","helmet_fittings","helmet_visor"]:
+			helmet_parts[n] = (scene.find_child(n,true,false) as MeshInstance3D).mesh
+		scene.free()
+	return helmet_parts[part]
+
 func build_skate(parent: Node3D) -> void:
 	var side := "_L" if skates.size()==0 else "_R"
 	var mesh_skate := MESH_SKATE and not goalie
@@ -591,15 +613,21 @@ func build_helmet() -> void:
 		return
 	# Sculpted shell (raised crown, vents, ear pieces, occipital lock) with the
 	# same glossy material as before, fittings and a curved visor.
-	var shell := add_mesh(helmet,Gear.skater_helmet())
+	var mesh_helmet := MESH_HELMET
+	var shell := add_mesh(helmet,helmet_part("helmet_shell") if mesh_helmet else Gear.skater_helmet())
 	# Painted shell with a clearcoat; plastic/webbing fittings; clear visor.
 	shell.material_override = Kit.helmet_shell(Color("#132434"))
 	shell.name = "Shell"
-	var fittings := add_mesh(helmet,Gear.helmet_fittings())
+	var fittings := add_mesh(helmet,helmet_part("helmet_fittings") if mesh_helmet else Gear.helmet_fittings())
 	fittings.material_override = Kit.plastic(Color("#0b1621"),0.6)
-	var visor := add_mesh(helmet,Gear.visor())
+	fittings.name = "Fittings"
+	var visor := add_mesh(helmet,helmet_part("helmet_visor") if mesh_helmet else Gear.visor())
 	visor.material_override = Kit.visor()
 	visor.name = "Visor"
+	if mesh_helmet:
+		for part: Node3D in [shell,fittings,visor]:
+			part.position = HELMET_MESH_OFFSET
+			part.scale = HELMET_MESH_SCALE
 
 ## Torso of the sweater in rest (shirt) space: half-width and front/back
 ## half-depths by height. Shoulder pads under the sweater give the wide,

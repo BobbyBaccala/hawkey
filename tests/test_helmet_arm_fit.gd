@@ -44,6 +44,8 @@ func run() -> void:
 			var q := (p - hc) / hr
 			if q.length() < 0.98: inside += 1
 	check(inside == 0, "Helmet shell never cuts into the head (%d points)" % inside)
+	if v.MESH_HELMET:
+		check_mesh_helmet(v, centre, hc, hr, mx)
 	# Neck guard and sleeves after some skating.
 	for k in range(60): v.animate(6.0, 1.0 / 120, 0, true)
 	check(v.neck_guard != null and v.neck_guard.mesh.get_surface_count() == 1, "Skaters wear a neck guard")
@@ -115,3 +117,33 @@ func check_sculpted_sleeves(v) -> void:
 	print("cuff to wrist %.3f" % worst)
 	check(cuffs > 10, "Sleeve cuffs found (%d)" % cuffs)
 	check(worst < 0.10, "Sleeve cuffs follow the posed wrists (%.3f m)" % worst)
+
+## Blender helmet (assets/gear/helmet-v2.glb): same fit rules as the procedural
+## shell, checked on the real vertices, plus the gear triangle budget.
+func check_mesh_helmet(v, centre: Vector3, hc: Vector3, hr: Vector3, head_max: Vector3) -> void:
+	var shell: MeshInstance3D = v.helmet.get_node("Shell")
+	var fittings: MeshInstance3D = v.helmet.get_node("Fittings")
+	var visor: MeshInstance3D = v.helmet.get_node("Visor")
+	check(shell.mesh == v.helmet_part("helmet_shell") and visor.mesh == v.helmet_part("helmet_visor"), "Skaters wear the Blender helmet")
+	var tris := 0
+	for mi: MeshInstance3D in [shell, fittings, visor]:
+		for s in range(mi.mesh.get_surface_count()):
+			tris += (mi.mesh.surface_get_arrays(s)[Mesh.ARRAY_INDEX] as PackedInt32Array).size() / 3
+	check(tris <= 3200, "Helmet stays inside the 3k triangle budget (%d)" % tris)
+	var top := -9.0
+	var half_w := 0.0
+	var inside := 0
+	var verts: PackedVector3Array = shell.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	for p0 in verts:
+		var p: Vector3 = centre + shell.position + p0 * shell.scale
+		top = maxf(top, p.y)
+		half_w = maxf(half_w, absf(p.x - centre.x))
+		if ((p - hc) / hr).length() < 0.98:
+			inside += 1
+			print("helmet vertex inside the head: ", p - centre, " q=%.3f" % ((p - hc) / hr).length())
+	print("Blender helmet crown gap %.3f, side gap %.3f" % [top - head_max.y, half_w - head_max.x])
+	check(top - head_max.y > 0.015 and top - head_max.y < 0.045, "Blender helmet crown sits 1.5-4.5 cm above the head (%.3f)" % (top - head_max.y))
+	check(half_w - head_max.x > 0.012 and half_w - head_max.x < 0.04, "Blender helmet sides sit close to the head (%.3f)" % (half_w - head_max.x))
+	check(inside == 0, "Blender helmet shell never cuts into the head (%d vertices)" % inside)
+	var vaabb: AABB = visor.mesh.get_aabb()
+	check(vaabb.position.z + visor.position.z > 0.0, "Visor sits in front of the face")

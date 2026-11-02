@@ -65,3 +65,11 @@ bone name. Goalies and officials keep the procedural kit.
 on the owner's PC: double-click `Start Blender bridge.bat`; it runs any
 `jobs/<name>.py` once `jobs/<name>.ready` appears and writes
 `out/<name>.log` and `out/<name>.done`.
+
+## Gear from downloaded models (night shift)
+
+- `skate_v1.py` -> `assets/gear/skate-v1.glb` (HKY skate, CC-BY 4.0).
+- `helmet_v2_debrand.py` -> `helmet_v2_smooth.py` -> `helmet_v2_normals.py` -> `assets/gear/helmet-v2.glb`
+  (Novichkov helmet, CC-BY 4.0): drops every texture/UV (all logos, numbers, signature), vertex-colour
+  team shell, decimate, Taubin smooth, split shell/fittings, sharp normals above 35 deg. They read the
+  owner's `Hawkey/art` folder by absolute path, so run them through the bridge.
