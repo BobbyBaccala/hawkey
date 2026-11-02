@@ -16,6 +16,26 @@ func run() -> void:
 	root.add_child(v)
 	await process_frame
 	check(v.skate_cuffs.size() == 2, "Each player skate has an ankle cuff")
+	# Blender skate (MESH_SKATE): boot rigid on the foot, cuff on the ankle pivot,
+	# within the gear budget, runner on the ice plane like Gear.skate(), toe +Z.
+	if v.MESH_SKATE:
+		for i in range(2):
+			var boot: MeshInstance3D = v.skates[i].get_child(0)
+			var cuff: MeshInstance3D = v.skate_cuffs[i]
+			var side := "_L" if i == 0 else "_R"
+			check(boot.mesh == v.skate_part("boot" + side), "Skater skate %d uses the Blender boot" % i)
+			check(cuff.mesh == v.skate_part("cuff" + side), "Skater skate %d uses the Blender cuff" % i)
+			var tris := 0
+			for m in [boot.mesh, cuff.mesh]:
+				for sfc in range(m.get_surface_count()):
+					tris += m.surface_get_arrays(sfc)[Mesh.ARRAY_INDEX].size() / 3
+			check(tris <= 3200, "Skate %d boot+cuff within budget (%d tris)" % [i, tris])
+			var box: AABB = boot.mesh.get_aabb()
+			check(absf(box.position.y + 0.06) < 0.003, "Runner bottom on the ice plane (%.3f)" % box.position.y)
+			check(box.end.z > 0.20 and box.position.z < -0.07, "Boot runs heel to toe along +Z (%.3f..%.3f)" % [box.position.z, box.end.z])
+			check(absf(box.size.z - 0.31) < 0.01, "Skate length matches Gear.skate() (%.3f)" % box.size.z)
+			var cbox: AABB = cuff.mesh.get_aabb()
+			check(cbox.position.y < 0.0 and cbox.end.y > 0.14, "Cuff spans the ankle pivot up the shin (%.3f..%.3f)" % [cbox.position.y, cbox.end.y])
 	var worst_sock := 0.0
 	var worst_flex := 0.0
 	var worst_toe := 1.0

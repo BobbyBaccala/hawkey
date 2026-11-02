@@ -49,3 +49,6 @@ Python preparation tools are development-only dependencies; obtain their licence
 - Sponsor names on the boards (Northline, Glacier Cola, Ironwood Bank, Polar Air, Summit Tire, Bluewater, Maplefield, Rinkside) are invented and do not depict real companies.
 - Team identities use city names and generic colours only; no NHL or club logos.
 - Camera layouts and presentation were modelled on how EA's NHL games present hockey (camera families, score bug, banners) from public descriptions; no EA code, art or assets were used.
+
+## Third-party models (CC-BY)
+See assets/CREDITS.md. assets/gear/skate-v1.glb: "Hockey Skate" by HKY (Sketchfab, CC-BY 4.0), de-materialised, re-cut and decimated in Blender; used for skaters' skates (skater_visual.gd MESH_SKATE).

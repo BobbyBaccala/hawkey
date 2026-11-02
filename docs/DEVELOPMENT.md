@@ -33,6 +33,7 @@ Godot 4.6 standard/GDScript was selected because its editor and headless runtime
 - scripts/skating.gd: deterministic velocity update and directional goal-mouth crossing.
 - tests/test_simulation.gd: executable regression scenarios.
 - data/roster.schema.json: future roster interface, currently unused by laboratory.
+- assets/gear/skate-v1.glb: skaters' skates from Blender (HKY CC-BY 4.0 skate, see assets/CREDITS.md): boot_L/R rigid on the skate node, cuff_L/R on the shin-following cuff node; skater_visual.gd MESH_SKATE / skate_part(), procedural Gear.skate() for goalies and rollback. Built by the night-shift Blender job night_skate_v2_0250 (Hawkey art/night/skates/).
 - tools/capture_showcase.gd: character showcase capture, the yardstick for player-model work (owner's EA customisation-screen reference, Hawkey art/NIGHT_SHIFT_PLAYER_MODELS.md 0b): one skater and one goalie in the team kit on a dark teal studio floor (warm key with shadows, dim fill, two cool rim spots, light fog, glossy floor + reflection probe), turned front / three-quarter / back plus a pair shot. Run under xvfb with gl_compatibility, `--out=<prefix>`, `--only=skater|goalie`.
 
 Physics owns puck movement. Player motion is an explicit velocity model. Assisted possession is a proximity velocity spring, not a teleport or permanent parent-child attachment. Rendered geometry is separate from skating velocity. Goal detection uses interpolation across the mouth plane. Boards/posts use static collision and puck uses continuous collision detection.

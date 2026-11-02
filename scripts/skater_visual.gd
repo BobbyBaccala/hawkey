@@ -12,6 +12,12 @@ const Kit = preload("res://scripts/kit_materials.gd")
 ## procedural kit.
 const KitMeshes = preload("res://assets/kit/skater-kit-v2.glb")
 const MESH_KIT := true
+## Skater skates from Blender (night shift item 2: HKY skate, CC-BY 4.0, see
+## assets/CREDITS.md): boot_L/R rigid on the foot, cuff_L/R on the ankle pivot.
+## false = procedural Gear.skate()/skate_cuff() (goalies always use those).
+const MESH_SKATE := true
+const SkateMeshes = preload("res://assets/gear/skate-v1.glb")
+static var skate_parts := {}
 const KIT_HEM := 0.9
 const KIT_COLLAR := 1.535
 const BREEZER_SHELL := Color("#151c24")
@@ -497,12 +503,23 @@ func add_mesh(parent: Node3D, mesh: Mesh) -> MeshInstance3D:
 	parent.add_child(instance)
 	return instance
 
+## Mesh of one part of the Blender skate ("boot_L", "cuff_R", ...).
+static func skate_part(part: String) -> Mesh:
+	if skate_parts.is_empty():
+		var scene: Node = SkateMeshes.instantiate()
+		for n in ["boot_L","boot_R","cuff_L","cuff_R"]:
+			skate_parts[n] = (scene.find_child(n,true,false) as MeshInstance3D).mesh
+		scene.free()
+	return skate_parts[part]
+
 func build_skate(parent: Node3D) -> void:
-	add_mesh(parent,Gear.skate(goalie,goalie)).material_override=Kit.skate_boot()
+	var side := "_L" if skates.size()==0 else "_R"
+	var mesh_skate := MESH_SKATE and not goalie
+	add_mesh(parent,skate_part("boot"+side) if mesh_skate else Gear.skate(goalie,goalie)).material_override=Kit.skate_boot()
 	if not goalie:
 		# Ankle cuff follows the shin (posed in pose()), so the leg always
 		# enters the boot.
-		var cuff := add_mesh(parent,Gear.skate_cuff())
+		var cuff := add_mesh(parent,skate_part("cuff"+side) if mesh_skate else Gear.skate_cuff())
 		cuff.material_override=Kit.skate_boot()
 		cuff.name = "Cuff"
 		skate_cuffs.append(cuff)
