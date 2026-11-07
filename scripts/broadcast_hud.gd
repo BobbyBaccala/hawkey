@@ -56,6 +56,12 @@ var controls_label: Label
 var pause_panel: Control
 var pause_camera_button: Button
 var title_screen: Control
+## Play Now setup chosen on the title screen (read by match.gd on start).
+var play_options := {"team": 0, "style": "team", "position": 0, "difficulty": "ALL-STAR"}
+const STYLE_LABELS := {"team": "WHOLE TEAM", "position": "ONE POSITION"}
+const POSITION_LABELS := ["CENTRE", "LEFT WING", "RIGHT WING", "LEFT D", "RIGHT D"]
+const DIFFICULTY_ORDER := ["ROOKIE", "PRO", "ALL-STAR", "SUPERSTAR"]
+var option_buttons := {}
 ## Intermission / final stats card (scripts/stats_screen.gd).
 var stats_screen: PanelContainer
 
@@ -524,17 +530,46 @@ func build_title() -> void:
 	var gap := Control.new()
 	gap.custom_minimum_size.y = 28
 	box.add_child(gap)
-	var play := menu_button("Play exhibition", func(): play_requested.emit())
+	# PLAY NOW is the game's one mode: every position is a seat a CPU holds
+	# until a player takes it (control_slots.gd), ready for online play.
+	var play := menu_button("PLAY NOW", func(): play_requested.emit())
 	box.add_child(play)
-	box.add_child(menu_button("Practice", func(): practice_requested.emit()))
+	for key in ["team", "style", "position", "difficulty"]:
+		var b := menu_button("", func(): cycle_option(key))
+		b.custom_minimum_size = Vector2(380, 40)
+		b.add_theme_font_size_override("font_size", 17)
+		option_buttons[key] = b
+		box.add_child(b)
+	refresh_options()
 	box.add_child(menu_button("Controls", func(): controls_panel.visible = not controls_panel.visible))
 	box.add_child(menu_button("Quit", func(): quit_requested.emit()))
 	var gap2 := Control.new()
-	gap2.custom_minimum_size.y = 20
+	gap2.custom_minimum_size.y = 14
 	box.add_child(gap2)
 	box.add_child(label("TORONTO  vs  MONTREAL   ·   3 × 20:00", 16, MUTED, 500))
+	box.add_child(label("CPUS FILL EVERY SPOT UNTIL A PLAYER TAKES IT", 13, MUTED, 500))
 	title_screen.visible = false
 	root_ui.add_child(title_screen)
+
+## Title-screen Play Now options: each press steps to the next value.
+func cycle_option(key: String) -> void:
+	match key:
+		"team": play_options.team = 1 - int(play_options.team)
+		"style": play_options.style = "position" if play_options.style == "team" else "team"
+		"position": play_options.position = (int(play_options.position) + 1) % POSITION_LABELS.size()
+		"difficulty":
+			var i := DIFFICULTY_ORDER.find(str(play_options.difficulty))
+			play_options.difficulty = DIFFICULTY_ORDER[(i + 1) % DIFFICULTY_ORDER.size()]
+	refresh_options()
+
+func refresh_options() -> void:
+	if option_buttons.is_empty():
+		return
+	option_buttons.team.text = "YOUR TEAM      %s" % team_names[int(play_options.team)]
+	option_buttons.style.text = "YOU CONTROL    %s" % STYLE_LABELS[str(play_options.style)]
+	option_buttons.position.text = "POSITION       %s" % POSITION_LABELS[int(play_options.position)]
+	option_buttons.position.disabled = play_options.style != "position"
+	option_buttons.difficulty.text = "CPU SKILL      %s" % str(play_options.difficulty)
 
 func show_title(on: bool) -> void:
 	title_screen.visible = on

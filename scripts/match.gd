@@ -8,6 +8,10 @@ const GoalCelebration = preload("res://scripts/goal_celebration.gd")
 const Benches = preload("res://scripts/arena_benches.gd")
 const GoalReplay = preload("res://scripts/goal_replay.gd")
 const GameStats = preload("res://scripts/game_stats.gd")
+const ControlSlots = preload("res://scripts/control_slots.gd")
+const SkaterAI = preload("res://scripts/skater_ai.gd")
+## The local human's owner id in the seat model (a network lobby adds others).
+const LOCAL_HUMAN := "local:1"
 const CAMERA_NAMES := ["DYNAMIC", "OVERHEAD", "BROADCAST", "FULL RINK"]
 ## Bench gate (changing skaters head here) just inside the west side boards.
 const BENCH_X := -(Arena.HALF_WIDTH - 0.75)
@@ -30,6 +34,23 @@ var last_phase := -1
 var match_state := MatchState.new()
 ## Per-period team stats for the intermission / final screens (game_stats.gd).
 var game_stats := GameStats.new()
+## PLAY NOW seats: who (CPU or human) controls each position (control_slots.gd).
+var slots := ControlSlots.new()
+## Play Now setup (title screen): the local human's team, control style
+## (team / position), position for position-lock, and CPU difficulty.
+static var play_team := 0
+static var play_style := ControlSlots.STYLE_TEAM
+static var play_position := 0
+static var play_difficulty := SkaterAI.DEFAULT_DIFFICULTY
+static var play_spectate := false
+var ai_rng := RandomNumberGenerator.new()
+var passes_by_team := [0,0]
+## The teammate a CPU pass is meant for: he skates to meet it (skater_ai.gd
+## intercept_point) and can take a firmer pass than a loose puck.
+var pass_receiver: CharacterBody3D
+var pass_timer := 0.0
+## How often CPU carriers chose each option (tests / tuning).
+var ai_log := {}
 ## Goal light, arena light flash and jumbotron GOAL (scripts/goal_celebration.gd).
 var celebration: Node3D
 ## Instant replay after goals (scripts/goal_replay.gd).
@@ -195,8 +216,9 @@ func _ready() -> void:
 	var bench_node=arena.get_node_or_null("Benches")
 	if bench_node!=null:
 		for team in range(2): bench_node.set_bench_numbers(team,range(3,12).map(func(i): return rosters[team][i].number))
-	player = skaters[0]
-	teammate = skaters[1]
+	setup_seats()
+	player = seat_actor()
+	teammate = skaters[1] if player!=skaters[1] else skaters[0]
 	player_visual = player.get_child(1)
 	teammate_visual = teammate.get_child(1)
 	for goalie in goalkeepers:
@@ -304,7 +326,6 @@ func build_hud() -> void:
 		get_tree().reload_current_scene())
 	hud_node.quit_requested.connect(func(): get_tree().quit())
 	hud_node.play_requested.connect(start_from_title)
-	hud_node.practice_requested.connect(func(): get_tree().change_scene_to_file("res://practice.tscn"))
 
 func set_paused(on: bool) -> void:
 	paused = on
@@ -319,6 +340,7 @@ func cycle_camera() -> void:
 	else: hud_node.show_banner(CAMERA_NAMES[camera_mode] + " CAMERA", "C or the pause menu to change", Color("#93a3b3"), 0.8)
 
 func start_from_title() -> void:
+	apply_play_now(hud_node.play_options)
 	in_menu = false
 	hud_node.show_title(false)
 	camera_side = 0.0
@@ -533,7 +555,60 @@ func pick_faceoff_winner() -> CharacterBody3D:
 
 ## The team the user controls.
 func user_team() -> int:
-	return body_team(player) if player!=null else 0
+	var team := slots.team_of(LOCAL_HUMAN)
+	return team if team>=0 else play_team
+
+## Play Now: the local human takes a seat (unless spectating: all 12 CPU).
+## Command line for captures/tests: --spectate, --team=0|1,
+## --style=team|position, --position=C|LW|RW|LD|RD, --difficulty=PRO etc.
+func setup_seats() -> void:
+	ai_rng.seed = 20261107
+	for arg in OS.get_cmdline_user_args():
+		var a := str(arg)
+		if a=="--spectate": play_spectate=true
+		elif a.begins_with("--team="): play_team=clampi(int(a.substr(7)),0,1)
+		elif a.begins_with("--style="): play_style=a.substr(8)
+		elif a.begins_with("--position="): play_position=maxi(0,ControlSlots.POSITIONS.find(a.substr(11).to_upper()))
+		elif a.begins_with("--difficulty="): play_difficulty=a.substr(13).to_upper()
+	slots = ControlSlots.new()
+	if play_spectate: return
+	if play_style==ControlSlots.STYLE_POSITION:
+		slots.claim(LOCAL_HUMAN,play_team,clampi(play_position,0,4),ControlSlots.STYLE_POSITION)
+	else:
+		slots.join(LOCAL_HUMAN,play_team,ControlSlots.STYLE_TEAM)
+
+## Title screen PLAY NOW: take the chosen seat (team, whole-team or one
+## position) and set the CPU skill.
+func apply_play_now(options: Dictionary) -> void:
+	play_team=int(options.get("team",0))
+	play_style=str(options.get("style",ControlSlots.STYLE_TEAM))
+	play_position=int(options.get("position",0))
+	play_difficulty=str(options.get("difficulty",SkaterAI.DEFAULT_DIFFICULTY))
+	play_spectate=false
+	slots=ControlSlots.new()
+	if play_style==ControlSlots.STYLE_POSITION:
+		slots.claim(LOCAL_HUMAN,play_team,clampi(play_position,0,4),ControlSlots.STYLE_POSITION)
+	else:
+		slots.join(LOCAL_HUMAN,play_team,ControlSlots.STYLE_TEAM)
+	player=seat_actor()
+	player_visual=player.get_child(1)
+
+## Is this skater driven by the local human right now?
+func human_controls(actor: CharacterBody3D) -> bool:
+	return actor==player and slots.humans.has(LOCAL_HUMAN)
+
+## The skater on the ice in the local human's seat (or any skater to follow
+## with the camera when spectating).
+func seat_actor() -> CharacterBody3D:
+	var seat := slots.seat_of(LOCAL_HUMAN)
+	var team := int(seat.get("team",play_team))
+	var position_ := int(seat.get("position",0))
+	for actor in skaters:
+		if body_team(actor)==team and int(actor.get_meta("slot"))==position_: return actor
+	return skaters[0]
+
+func ai_skill(_team: int) -> Dictionary:
+	return SkaterAI.skill(play_difficulty)
 
 ## How well-timed a draw press was: -1 jumped (before the drop), 0 no press,
 ## else 0.5 (the instant the puck left the hand) rising to 1 at the landing.
@@ -782,10 +857,19 @@ func request_line(team: int, line_: int, defense: bool = false) -> bool:
 	return true
 
 func switch_player() -> void:
+	var seat := slots.seat_of(LOCAL_HUMAN)
+	if not seat.is_empty() and seat.style==ControlSlots.STYLE_POSITION:
+		# Position lock: always the skater in that position (back after a penalty).
+		var mine := seat_actor()
+		if bool(mine.get_meta("eligible")) or not bool(player.get_meta("eligible")):
+			player=mine
+			player_visual=player.get_child(1)
+			velocity=player.velocity
+		return
 	var best: CharacterBody3D
 	var score_ := INF
 	for actor in skaters:
-		if body_team(actor)!=0 or not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")) or is_hopping(actor): continue
+		if body_team(actor)!=user_team() or not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")) or is_hopping(actor): continue
 		var distance_ := actor.position.distance_to(puck.position)
 		if actor==player: distance_ += 4
 		if actor==carrier: distance_ -= 10
@@ -796,6 +880,7 @@ func switch_player() -> void:
 		player=best
 		player_visual=player.get_child(1)
 		velocity=player.velocity
+		slots.move(LOCAL_HUMAN,int(player.get_meta("slot")))
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventJoypadMotion or event is InputEventJoypadButton:
@@ -819,11 +904,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		if paused: return
 		match event.keycode:
 			KEY_SPACE: switch_player()
-			KEY_1: request_line(0,0)
-			KEY_2: request_line(0,1)
-			KEY_3: request_line(0,2)
-			KEY_4: request_line(0,3)
-			KEY_Q: request_line(0,defense_pairs[0]+1,true)
+			KEY_1: request_line(user_team(),0)
+			KEY_2: request_line(user_team(),1)
+			KEY_3: request_line(user_team(),2)
+			KEY_4: request_line(user_team(),3)
+			KEY_Q: request_line(user_team(),defense_pairs[user_team()]+1,true)
 			KEY_L: auto_lines=not auto_lines
 			KEY_E: defensive_action(false)
 			KEY_F: defensive_action(true)
@@ -880,7 +965,7 @@ func defensive_action(body_check: bool) -> void:
 	var victim: CharacterBody3D
 	var distance_ := 1.7 if body_check else 1.35
 	for other in skaters:
-		if body_team(other)==0 or not bool(other.get_meta("eligible")): continue
+		if body_team(other)==body_team(player) or not bool(other.get_meta("eligible")): continue
 		var d := player.position.distance_to(other.position)
 		if d<distance_: distance_=d;victim=other
 	if victim==null:
@@ -1021,7 +1106,7 @@ func _physics_process(delta: float) -> void:
 			actor.get_child(1).animate(0,delta,0,false)
 		for official in referee_nodes: official.animate(0,delta,0,false)
 	elif match_state.phase==MatchState.Phase.PLAY:
-		control_player(delta)
+		if slots.humans.has(LOCAL_HUMAN): control_player(delta)
 		update_team_ai(delta)
 		update_possession(delta)
 		update_goalkeepers(delta)
@@ -1135,7 +1220,13 @@ func update_roster_stamina(delta: float) -> void:
 			if total/maxi(count_,1)<0.70 and puck.position.z*attack_direction(team)>-8:
 				request_line(team,active_lines[team]+1)
 
+var ai_opponents: Array = [[],[]]
+var ai_coverage: Array = [{},{}]
+
 func update_team_ai(delta: float) -> void:
+	refresh_ai_reads()
+	pass_timer=maxf(0.0,pass_timer-delta)
+	if carrier!=null or pass_timer<=0.0: pass_receiver=null
 	# Chaser per team: the nearest skater allowed to chase (TeamTactics.may_chase:
 	# D don't chase into the offensive zone).
 	var nearest: Array[CharacterBody3D]=[null,null]
@@ -1147,7 +1238,7 @@ func update_team_ai(delta: float) -> void:
 			nearest[team]=actor
 	for actor in skaters:
 		if not bool(actor.get_meta("eligible")): continue
-		if actor==player and not bool(actor.get_meta("changing")) and not is_hopping(actor): continue
+		if human_controls(actor) and not bool(actor.get_meta("changing")) and not is_hopping(actor): continue
 		var team:=body_team(actor)
 		var attack:=attack_direction(team)
 		var slot:=int(actor.get_meta("slot"))
@@ -1198,35 +1289,58 @@ func update_team_ai(delta: float) -> void:
 				visual_.animate(0,delta,0,false)
 				continue
 		elif actor==carrier:
-			target=Vector3(clampf(actor.position.x*0.6,-5,5),0,attack*(Arena.GOAL_LINE-3.0))
+			# CPU puck carrier (skater_ai.gd): every reaction interval he reads
+			# the ice and picks shoot / pass / carry / dump / protect.
 			var is_d:=TeamTactics.is_defence(slot)
-			if is_d:
-				# A defenceman carries it to the point, not to the net.
-				target=Vector3(clampf(actor.position.x,-6,6),0,attack*(TeamTactics.D_MAX_ATTACK-0.5))
-			var distance_to_goal:=actor.position.distance_to(Vector3(0,0,attack*Arena.GOAL_LINE))
 			var timer:=float(actor.get_meta("decision"))-delta
+			var plan:Dictionary=actor.get_meta("plan",{})
 			if timer<=0 and cooldown<=0:
-				actor.set_meta("decision",0.4)
-				var pressure:=closest_opponent_distance(actor)
-				if distance_to_goal<(21.0 if is_d else 16.0) and distance_to_goal>3:
-					var goalie:=goalkeeper_at_end(attack)
-					var target_x:float= -0.65 if goalie.position.x>=0 else 0.65
-					var shot_dir:Vector3=Vector3(target_x,0.1,attack*Arena.GOAL_LINE)-puck.position
-					var distance_:float=Vector2(shot_dir.x,shot_dir.z).length()
-					var elevation_:float=PuckPhysics.solve_elevation(distance_,29,0.85,puck.position.y)
-					release_puck(actor,shot_dir,29,elevation_)
-					roster(actor).shots+=1
-				elif pressure<2.6:
-					var other:=pass_target(actor,Vector3(0,0,attack))
-					if other!=null: release_puck(actor,other.position+other.velocity*0.25-puck.position,17)
+				var sk:=ai_skill(team)
+				actor.set_meta("decision",float(sk.react)*lerpf(0.8,1.25,ai_rng.randf()))
+				plan=SkaterAI.carrier_decision(ai_context(actor,team,attack,is_d))
+				actor.set_meta("plan",plan)
+				ai_log[str(plan.kind)]=int(ai_log.get(str(plan.kind),0))+1
+				match str(plan.kind):
+					"shoot": ai_shoot(actor,attack,is_d)
+					"pass": ai_pass(actor,plan)
+					"dump": release_puck(actor,SkaterAI.flat(plan.target-puck.position),19,0.08)
 			else: actor.set_meta("decision",timer)
-		elif nearest[team]==actor:
-			target=Vector3(puck.position.x,0,puck.position.z)+Vector3(puck.linear_velocity.x,0,puck.linear_velocity.z)*0.08
+			if plan.is_empty() or str(plan.kind) in ["shoot","pass","dump"]:
+				target=SkaterAI.carry_target(actor.position,attack,ai_opponents[team])
+			else:
+				target=plan.target
+				# Re-steer every tick around whoever is closing in.
+				if str(plan.kind)=="carry": target=SkaterAI.carry_target(actor.position,attack,ai_opponents[team])
+		elif actor==pass_receiver:
+			# Meet the pass: skate to where it can be taken, don't wait for it.
+			var meet_pass:=SkaterAI.intercept_point(puck.position,puck.linear_velocity,actor.position,8.5,1.6)
+			target=meet_pass if meet_pass!=Vector3.INF else Vector3(puck.position.x,0,puck.position.z)
+		elif nearest[team]==actor and not (pass_receiver!=null and body_team(pass_receiver)==team):
+			if carrier!=null and body_team(carrier)!=team:
+				# Take the middle away: inside-out angle on the carrier.
+				target=SkaterAI.pursue_target(carrier.position,carrier.velocity,attack,actor.position)
+			else:
+				# Loose or passed puck: go to where he can first get to it.
+				var meet:=SkaterAI.intercept_point(puck.position,puck.linear_velocity,actor.position,8.5)
+				target=meet if meet!=Vector3.INF else Vector3(puck.position.x,0,puck.position.z)+Vector3(puck.linear_velocity.x,0,puck.linear_velocity.z)*0.08
 		else:
 			# Role-based support positioning (scripts/team_tactics.gd): D stay
-			# home, forwards don't go too deep defensively.
+			# home, forwards don't go too deep defensively; then read the play
+			# (skater_ai.gd): get open for a pass, gap up on a rush, mark a man
+			# goal-side in the own zone, jump a passing lane.
 			var possession:=carrier!=null and body_team(carrier)==team
 			target=TeamTactics.support_target(slot,attack,puck.position,possession)
+			var pa:=puck.position.z*attack
+			if possession:
+				target=SkaterAI.open_spot(target,carrier.position,ai_opponents[team])
+			elif carrier!=null:
+				if ai_coverage[team].has(actor):
+					target=SkaterAI.mark_target(ai_coverage[team][actor],attack)
+				elif TeamTactics.is_defence(slot) and pa>-Arena.BLUE_LINE and pa<Arena.BLUE_LINE+2.0:
+					target=SkaterAI.gap_target(carrier.position,attack,TeamTactics.side(slot))
+			else:
+				var meet:=SkaterAI.intercept_point(puck.position,puck.linear_velocity,actor.position,8.0,0.6)
+				if meet!=Vector3.INF and puck.linear_velocity.length()>6.0: target=meet
 		var to_target:=target-actor.position
 		var intent:=to_target.limit_length(1)
 		if to_target.length()<0.6: intent=Vector3.ZERO
@@ -1242,8 +1356,97 @@ func update_team_ai(delta: float) -> void:
 		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-face.x,-face.z),6.0*delta)
 		visual.animate(actor.velocity.length(),delta,0,intent.length_squared()>0.01)
 		sync_skater_contacts(actor)
-		# Poke separation only within physical reach; AI uses the same puck object.
-		if carrier!=null and body_team(carrier)!=team and actor.position.distance_to(puck.position)<1.0 and cooldown<=0:
+		# Stick checks and hits (skater_ai.gd skill): a poke only works some of
+		# the time, and each skater gets one try every half second.
+		ai_defend(actor,team,delta)
+
+## Positions the CPUs read this tick: opponents per team and, for a team
+## defending in its own zone, who marks whom (skater_ai.gd assign_coverage).
+func refresh_ai_reads() -> void:
+	var on_ice: Array=[[],[]]
+	var bodies: Array=[[],[]]
+	for actor in skaters:
+		if not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")) or is_hopping(actor): continue
+		on_ice[body_team(actor)].append(actor.position)
+		bodies[body_team(actor)].append(actor)
+	for team in range(2):
+		ai_opponents[team]=on_ice[1-team]
+		ai_coverage[team]={}
+		var attack:=attack_direction(team)
+		if carrier==null or body_team(carrier)==team or puck.position.z*attack>-Arena.BLUE_LINE: continue
+		var defenders:=[]
+		var defender_pos:=[]
+		for actor in bodies[team]:
+			if human_controls(actor): continue
+			if actor.position.distance_to(carrier.position)<2.0: continue   # the chaser
+			defenders.append(actor)
+			defender_pos.append(actor.position)
+		var attackers:=[]
+		for actor in bodies[1-team]:
+			if actor!=carrier: attackers.append(actor.position)
+		var pairs:=SkaterAI.assign_coverage(defender_pos,attackers,attack)
+		for di in pairs: ai_coverage[team][defenders[di]]=attackers[pairs[di]]
+
+func ai_context(actor: CharacterBody3D, team: int, attack: float, is_d: bool) -> Dictionary:
+	var mates:=[]
+	for i in range(skaters.size()):
+		var other:=skaters[i]
+		if other==actor or body_team(other)!=team or not bool(other.get_meta("eligible")) or bool(other.get_meta("changing")) or is_hopping(other): continue
+		mates.append({"pos":other.position,"vel":other.velocity,"index":i})
+	return {"pos":actor.position,"vel":actor.velocity,"attack":attack,"is_d":is_d,"goalie":goalkeeper_at_end(attack).position,"opponents":ai_opponents[team],"teammates":mates,"skill":ai_skill(team),"roll":ai_rng.randf()}
+
+## CPU shot: the corner away from the goalie, accuracy by difficulty; D take
+## a harder slapper from the point, forwards a quick wrister.
+func ai_shoot(actor: CharacterBody3D, attack: float, is_d: bool) -> void:
+	var sk:=ai_skill(body_team(actor))
+	var goalie:=goalkeeper_at_end(attack)
+	var aim:=SkaterAI.shot_aim(puck.position,attack,goalie.position,float(sk.shot_noise),ai_rng.randf(),ai_rng.randf())
+	var direction:Vector3=aim-puck.position
+	var distance_:=Vector2(direction.x,direction.z).length()
+	var speed:=(33.0 if is_d and distance_>14.0 else 27.0)+ai_rng.randf()*3.0
+	var elevation_:float=PuckPhysics.solve_elevation(distance_,speed,aim.y,puck.position.y)
+	release_puck(actor,direction,speed,elevation_)
+	roster(actor).shots+=1
+
+## CPU pass: to the lead point, off by up to the difficulty's pass error.
+func ai_pass(actor: CharacterBody3D, plan: Dictionary) -> void:
+	var direction:=SkaterAI.flat(plan.target-puck.position)
+	var error:=(ai_rng.randf()*2.0-1.0)*float(ai_skill(body_team(actor)).pass_noise)
+	# Firm but catchable: softer for short feeds.
+	var speed:=clampf(9.0+direction.length()*0.45,10.0,SkaterAI.PASS_SPEED)
+	release_puck(actor,direction.rotated(Vector3.UP,error),speed)
+	passes_by_team[body_team(actor)]+=1
+	if int(plan.get("receiver",-1))>=0:
+		pass_receiver=skaters[int(plan.receiver)]
+		pass_timer=1.6
+
+## A CPU defender within reach of the carrier: stick check (pokes work some
+## of the time, by skill) or, with speed toward a carrier near the boards, a
+## hit (rarely too late: interference/charging).
+func ai_defend(actor: CharacterBody3D, team: int, delta: float) -> void:
+	var try_:=maxf(0.0,float(actor.get_meta("poke",0.0))-delta)
+	actor.set_meta("poke",try_)
+	if carrier==null or body_team(carrier)==team or cooldown>0 or try_>0: return
+	var reach:=actor.position.distance_to(puck.position)
+	var gap_:=actor.position.distance_to(carrier.position)
+	var sk:=ai_skill(team)
+	var closing:=(actor.velocity-carrier.velocity).dot((carrier.position-actor.position).normalized())
+	if gap_<1.35 and closing>3.0 and absf(carrier.position.x)>Arena.HALF_WIDTH-3.5:
+		actor.set_meta("poke",1.6)
+		if ai_rng.randf()<float(sk.check):
+			var push:=(carrier.position-actor.position).normalized()
+			carrier.velocity+=push*4.0
+			carrier.set_meta("stun",0.35)
+			game_stats.add_hit(team,match_state.period)
+			ai_log["hit"]=int(ai_log.get("hit",0))+1
+			puck.linear_velocity=push*4.5
+			carrier=null
+			cooldown=0.22
+		return
+	if reach<1.05:
+		actor.set_meta("poke",0.5)
+		if ai_rng.randf()<float(sk.check)*0.6:
+			ai_log["poke"]=int(ai_log.get("poke",0))+1
 			puck.linear_velocity=(puck.position-actor.position).normalized()*5
 			carrier=null
 			cooldown=0.22
@@ -1264,9 +1467,15 @@ func update_possession(delta: float) -> void:
 		for actor in skaters:
 			if not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")) or is_hopping(actor): continue
 			var distance_:=actor.position.distance_to(Vector3(puck.position.x,0,puck.position.z))
-			if distance_<best and (puck.linear_velocity-actor.velocity).length()<17:
+			var soft_hands:=24.0 if actor==pass_receiver else 20.0
+			if distance_<best and (puck.linear_velocity-actor.velocity).length()<soft_hands:
 				best=distance_
 				carrier=actor
+				if actor==pass_receiver: ai_log["pass_done"]=int(ai_log.get("pass_done",0))+1
+				elif pass_receiver!=null and body_team(actor)!=body_team(pass_receiver): ai_log["intercepted"]=int(ai_log.get("intercepted",0))+1
+				# A fresh read on gaining it: a short reaction, no stale plan.
+				actor.set_meta("plan",{})
+				actor.set_meta("decision",float(ai_skill(body_team(actor)).react)*0.5)
 	if carrier!=null:
 		var visual:=carrier.get_child(1)
 		var target:Vector3=visual.get_blade_world()
@@ -1458,9 +1667,9 @@ func update_match_hud() -> void:
 		for t in range(2): benches.set_penalty_count(t,match_state.penalties.filter(func(p): return p.team==t).size())
 	var players:=[]
 	for actor in skaters:
-		if body_team(actor)==0 and int(actor.get_meta("slot"))<3:
+		if body_team(actor)==user_team() and int(actor.get_meta("slot"))<3:
 			players.append({"number":roster(actor).number,"name":str(roster(actor).name).split(" ")[-1],"stamina":float(roster(actor).stamina),"changing":bool(actor.get_meta("changing"))})
-	hud_node.update_line(active_lines[0],defense_pairs[0],players)
+	hud_node.update_line(active_lines[user_team()],defense_pairs[user_team()],players)
 	power.visible=charge>0
 	power.value=charge
 	help.text=("START  PAUSE   ·   VIEW  CONTROLS" if controller.active else "ESC  PAUSE   ·   F2  CONTROLS   ·   C  CAMERA")
@@ -1680,8 +1889,8 @@ func process_controller_edges() -> void:
 		aim=screen_to_rink(Vector3(controller.left_stick.x,0,controller.left_stick.y)).normalized()
 	if not paused and not in_menu:
 		if controller.switch_pressed: switch_player()
-		if controller.line_delta!=0: request_line(0,active_lines[0]+controller.line_delta)
-		if controller.pair_delta!=0: request_line(0,defense_pairs[0]+controller.pair_delta,true)
+		if controller.line_delta!=0: request_line(user_team(),active_lines[user_team()]+controller.line_delta)
+		if controller.pair_delta!=0: request_line(user_team(),defense_pairs[user_team()]+controller.pair_delta,true)
 		if controller.check_pressed: defensive_action(true)
 		if controller.poke_pressed: defensive_action(false)
 		if controller.shoot_pressed or controller.pass_pressed: register_draw_press()
