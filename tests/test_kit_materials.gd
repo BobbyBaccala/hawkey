@@ -90,7 +90,7 @@ func run() -> void:
 	# Skin keeps garment hiding and gains detail.
 	var body: MeshInstance3D = null
 	for child in a.skeleton.get_children():
-		if child is MeshInstance3D and not (child in [a.jersey, a.kit_sleeves, a.kit_pants]): body = child
+		if child is MeshInstance3D and not (child in [a.jersey, a.kit_sleeves, a.kit_pants] + a.head_nodes): body = child
 	check(param(body, "has_skin_detail") == true and param(body, "skin_detail") is Texture2D, "Skin has pore detail")
 	check(param(body, "hide_pants") == true and param(body, "hide_socks") == true, "Skin shader still hides the body's pants and socks")
 

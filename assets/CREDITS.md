@@ -27,3 +27,7 @@
 ## Bench coach
 
 `gear/coach-v1.glb`: **commanding_gesture_coach** by **restore50** (Sketchfab, CC BY 4.0, supplied in art/incoming). Modified: voxel-remeshed to ~14k triangles, scaled to 1.82 m, scan texture baked to vertex colours (no markings on the source).
+
+## Skater head
+
+`gear/head-v1.glb` (+ `head-v1_T_MH_Reference_BASECOLOR.jpg`): head derived from an Epic Games **MetaHuman** reference head (MetaHuman licence). Modified: split by material, teeth dropped, skin decimated to ~7.6k triangles and eyes to 900, neck cut and blended under the neck guard, base-colour texture resized to 1024, eye colours baked to vertex colours, skin weights transferred from the game's base rig (head/neck binds). Used for skaters only (`MESH_HEAD` in `scripts/skater_visual.gd`).

@@ -10,6 +10,7 @@ uniform bool hide_socks = false;
 uniform sampler2D skin_detail : filter_linear_mipmap_anisotropic, repeat_enable;
 uniform bool has_skin_detail = false;
 uniform bool hide_neck = false;
+uniform bool hide_head = false; // skaters: scanned head mesh replaces the base head
 uniform float skin_detail_tiles = 24.0;
 uniform float skin_wrap = 0.45;
 uniform vec3 scatter_color = vec3(0.75, 0.2, 0.1);
@@ -30,6 +31,7 @@ void fragment() {
 	// Skaters wear a neck guard (skater_visual.gd): the base mesh's neck and
 	// upper chest skin under it would only poke through as jagged edges.
 	if(hide_neck && region<0.5 && rest_height<1.545) discard;
+	if(hide_head && region<0.5 && rest_height>=1.545) discard;
 	// Retain the continuous skinned undershirt at shoulders/armpits.
 	// Discarding it left visible gaps when the arms moved away from the shell.
 	vec3 navy = vec3(0.018,0.032,0.052);

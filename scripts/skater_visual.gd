@@ -31,6 +31,13 @@ static var skate_parts := {}
 ## colour), helmet_fittings (liner, ear clips, chin strap), helmet_visor.
 ## false = procedural Gear.skater_helmet()/helmet_fittings()/visor().
 const MESH_HELMET := true
+## Skater head from the MetaHuman-derived scan (assets/CREDITS.md): decimated
+## to ~8.5k tris, skinned to the base rig's head/neck binds, with the base
+## mesh's head surface hidden (uniform.gdshader hide_head). Eyes carry baked
+## vertex colours. false = the base MakeHuman head (goalies/referees always).
+const MESH_HEAD := true
+const HeadMeshes = preload("res://assets/gear/head-v1.glb")
+static var _head_cache := {}
 const HelmetMeshes = preload("res://assets/gear/helmet-v2.glb")
 ## Puts the GLB's crown on the procedural crown (centre + HELMET_H) and its
 ## length centre on the procedural shell's (back is 4% deeper).
@@ -439,11 +446,14 @@ func _ready() -> void:
 	uniform.set_shader_parameter("hide_pants",not referee)
 	uniform.set_shader_parameter("hide_socks",not referee and not goalie)
 	uniform.set_shader_parameter("hide_neck",not referee and not goalie)
+	mesh_head = MESH_HEAD and not referee and not goalie
+	uniform.set_shader_parameter("hide_head",mesh_head)
 	uniform.set_shader_parameter("skin_detail",Kit.skin_texture())
 	uniform.set_shader_parameter("has_skin_detail",true)
 	for child in skeleton.get_children():
 		if child is MeshInstance3D:
 			child.material_override = uniform
+	if mesh_head: build_mesh_head()
 	helmet = Node3D.new()
 	rig.add_child(helmet)
 	build_helmet()
@@ -846,6 +856,40 @@ func apply_jersey_material() -> void:
 func jersey_hem_height() -> float:
 	if mesh_kit: return KIT_HEM
 	return JERSEY_HEM-(0.03 if goalie else 0.0)
+
+var mesh_head := false
+var head_nodes: Array[MeshInstance3D] = []
+
+## Shared head surfaces: [mesh, skin] for "Head" and "Eyes".
+static func head_parts() -> Dictionary:
+	if _head_cache.is_empty():
+		var scene: Node = HeadMeshes.instantiate()
+		for n in ["Head","Eyes"]:
+			var src := scene.find_child(n,true,false) as MeshInstance3D
+			_head_cache[n] = [src.mesh,src.skin]
+		scene.free()
+	return _head_cache
+
+func build_mesh_head() -> void:
+	var parts := head_parts()
+	for n in ["Head","Eyes"]:
+		var inst := skinned_garment("Mesh"+n,parts[n])
+		if n == "Eyes":
+			var m := StandardMaterial3D.new()
+			m.vertex_color_use_as_albedo = true
+			m.roughness = 0.12
+			m.metallic_specular = 0.8
+			inst.material_override = m
+		else:
+			var m := (parts[n][0] as Mesh).surface_get_material(0)
+			if m is StandardMaterial3D:
+				m = m.duplicate()
+				m.vertex_color_use_as_albedo = false
+				m.albedo_color = Color(0.95,0.9,0.88)
+				m.roughness = 0.62
+				m.metallic_specular = 0.25
+			inst.material_override = m
+		head_nodes.append(inst)
 
 ## Skinned instance of a cached garment surface, bound to the rig skeleton.
 func skinned_garment(name_: String, entry: Array) -> MeshInstance3D:
