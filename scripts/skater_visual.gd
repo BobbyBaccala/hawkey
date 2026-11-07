@@ -911,7 +911,7 @@ func build_mesh_jersey() -> void:
 func build_mesh_kit_lower() -> void:
 	var parts: Dictionary = kit_garments()
 	kit_pants = skinned_garment("Pants",parts["pants"])
-	kit_pants.material_override = Kit.breezers()
+	kit_pants.material_override = Kit.breezers_striped(Color(0.92,0.94,0.96))
 	pant_legs.append(kit_pants)
 
 ## Imported garments, built once and shared by every skater: the sweater is
@@ -985,7 +985,7 @@ func kit_garments() -> Dictionary:
 	var pants_arrays: Array = pants_src.mesh.surface_get_arrays(0)
 	var pants_index: PackedInt32Array = pants_arrays[Mesh.ARRAY_INDEX]
 	var pants_per: int = (pants_arrays[Mesh.ARRAY_BONES] as PackedInt32Array).size()/maxi(1,(pants_arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size())
-	_kit_cache["pants"] = [garment_surface(pants_arrays,pants_index,pants_per,func(p: Vector3) -> Array: return [Vector2(p.x,p.y),Vector2(0.0,p.y)],BREEZER_SHELL),pants_src.skin]
+	_kit_cache["pants"] = [garment_surface(pants_arrays,pants_index,pants_per,func(p: Vector3,n: Vector3) -> Array: return [Vector2(p.x,p.y),Vector2(clampf(n.x*signf(p.x),0.0,1.0),p.y)],BREEZER_SHELL),pants_src.skin]
 	scene.free()
 	return _kit_cache
 
@@ -1010,7 +1010,7 @@ func garment_surface(arrays: Array, tris: PackedInt32Array, per: int, uv_of: Cal
 			remap[src] = out_v.size()
 			out_v.append(verts[src])
 			out_n.append(normals[src])
-			var uvs: Array = uv_of.call(verts[src])
+			var uvs: Array = uv_of.call(verts[src],normals[src]) if uv_of.get_argument_count() >= 2 else uv_of.call(verts[src])
 			out_uv.append(uvs[0])
 			out_uv2.append(uvs[1])
 			out_c.append(tint)

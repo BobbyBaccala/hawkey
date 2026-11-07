@@ -406,6 +406,15 @@ static func breezers() -> ShaderMaterial:
 		m.set_shader_parameter("quilting", 1.0)
 		return m)
 
+## Breezers with a lateral leg stripe in the team's trim colour (the stripe
+## is driven by the outward-normal value baked into UV2.x).
+static func breezers_striped(stripe: Color) -> ShaderMaterial:
+	return cached("breezers_striped|%s" % stripe.to_html(), func() -> ShaderMaterial:
+		var m := breezers().duplicate() as ShaderMaterial
+		m.set_shader_parameter("pants_stripe", true)
+		m.set_shader_parameter("pants_stripe_color", stripe)
+		return m)
+
 static func socks(kit: Color, stripe: Color) -> ShaderMaterial:
 	return cached("socks|%s|%s" % [kit.to_html(), stripe.to_html()], func() -> ShaderMaterial:
 		var m := _gear(rib_texture(), 34.0, 0.9, 0.86, 0.25)

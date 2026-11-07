@@ -33,11 +33,18 @@ uniform bool sock_stripes = false;
 uniform vec4 sock_color : source_color = vec4(0.1, 0.3, 0.4, 1.0);
 uniform vec4 sock_stripe : source_color = vec4(0.78, 0.8, 0.81, 1.0);
 
+// Breezer side stripe: UV2.x carries the outward-facing amount of the leg
+// surface (1 = straight out to the side), so a band of it is the trim stripe.
+uniform bool pants_stripe = false;
+uniform vec4 pants_stripe_color : source_color = vec4(0.8, 0.8, 0.8, 1.0);
+varying float side_out;
+
 varying vec3 obj_pos;
 varying vec3 obj_n;
 varying float limb_t;
 
 void vertex() {
+	side_out = UV2.x;
 	pad_rest = VERTEX;
 	vec3 sc = vec3(length(MODEL_MATRIX[0].xyz), length(MODEL_MATRIX[1].xyz), length(MODEL_MATRIX[2].xyz));
 	obj_pos = VERTEX * sc;
@@ -59,6 +66,11 @@ void fragment() {
 		float stripe = 1.0 - smoothstep(0.011 - aa, 0.011 + aa, abs(diagonal + 0.04));
 		float front = smoothstep(-0.005, 0.018, pad_rest.z);
 		col = mix(col, pad_team.rgb, max(rail * 0.85, stripe) * front);
+	}
+	if (pants_stripe) {
+		float aa = fwidth(side_out) * 0.8 + 0.002;
+		float band = smoothstep(0.955 - aa, 0.955 + aa, side_out);
+		col = mix(col, pants_stripe_color.rgb, band);
 	}
 	if (sock_stripes) {
 		float aa = fwidth(limb_t) * 0.7 + 0.001;
