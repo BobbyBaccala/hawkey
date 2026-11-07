@@ -32,6 +32,20 @@ func run() -> void:
 		finish()
 		return
 	check(benches.benches.size() == 2 and benches.penalty_boxes.size() == 2, "Two benches and two penalty boxes")
+	# Bench coaches are the Blender scan (assets/gear/coach-v1.glb): within the
+	# triangle budget, about 1.8 m tall, standing on the bench floor.
+	var coaches: Array = benches.find_children("Coach", "Node3D", true, false)
+	check(coaches.size() == 2, "Both benches have a coach (%d)" % coaches.size())
+	for c in coaches:
+		var cm: MeshInstance3D = c.get_node_or_null("CoachMesh")
+		check(cm != null, "Coach uses the Blender mesh")
+		if cm:
+			var arrays: Array = cm.mesh.surface_get_arrays(0)
+			var idx: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+			check(idx.size() / 3 <= 15000, "Coach mesh over 15k tris (%d)" % (idx.size() / 3))
+			var box: AABB = cm.mesh.get_aabb()
+			check(box.size.y > 1.7 and box.size.y < 1.95, "Coach is %.2f m tall" % box.size.y)
+			check(absf(box.position.y) < 0.03, "Coach stands on the floor (%.3f)" % box.position.y)
 	# Benches on the bench-gate side used by line changes; boxes straight across.
 	check(signf(m.BENCH_X) == Benches.BENCH_SIDE, "Benches are on the side match.gd changes lines")
 	for team in range(2):

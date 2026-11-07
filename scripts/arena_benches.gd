@@ -634,6 +634,12 @@ func _dress(rig: Dictionary) -> void:
 	rig.erase("posed")
 	_pose_rig(rig, true)
 
+## Bench coach from Blender (night shift: restore50 scan, CC-BY 4.0, see
+## assets/CREDITS.md): remeshed to ~14k tris with the scan colours baked to
+## vertex colours. false = the primitive figure below.
+const MESH_COACH := true
+const CoachMesh = preload("res://assets/gear/coach-v1.glb")
+
 func build_coach(parent: Node3D, pos: Vector3, side: float) -> void:
 	var suit := _mat(Color("#1b1e24"), 0.7)
 	var fig := Node3D.new()
@@ -641,6 +647,21 @@ func build_coach(parent: Node3D, pos: Vector3, side: float) -> void:
 	parent.add_child(fig)
 	fig.position = pos
 	fig.rotation.y = -side * PI / 2
+	if MESH_COACH:
+		var scene: Node = CoachMesh.instantiate()
+		var mi := scene.find_child("coach", true, false) as MeshInstance3D
+		if mi:
+			var inst := MeshInstance3D.new()
+			inst.name = "CoachMesh"
+			inst.mesh = mi.mesh
+			var cm := StandardMaterial3D.new()
+			cm.vertex_color_use_as_albedo = true
+			cm.roughness = 0.85
+			inst.material_override = cm
+			fig.add_child(inst)
+			scene.free()
+			return
+		scene.free()
 	for x in [-0.1, 0.1]:
 		_limb(fig, Vector3(x, 0.9, 0), Vector3(x, 0.08, 0.02), 0.075, suit)
 	_part(fig, CapsuleMesh.new(), Vector3(0.2, 0.68, 0.0), Vector3(0, 1.22, 0), suit)

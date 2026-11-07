@@ -23,3 +23,7 @@
 
 `gear/goalie-pads-v1.glb`: **pads** by **gurjbakshi**, [source](https://sketchfab.com/3d-models/pads-e6313b4e57a04a198fbe3f8598929c05), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Modified: extracted/mirrored, scaled, split at the thigh hinge, decimated, original texture markings removed, plain materials.
 
+
+## Bench coach
+
+`gear/coach-v1.glb`: **commanding_gesture_coach** by **restore50** (Sketchfab, CC BY 4.0, supplied in art/incoming). Modified: voxel-remeshed to ~14k triangles, scaled to 1.82 m, scan texture baked to vertex colours (no markings on the source).
