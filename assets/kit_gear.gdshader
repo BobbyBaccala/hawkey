@@ -22,6 +22,9 @@ uniform float clearcoat = 0.0;
 uniform bool metal_from_grey = false;
 // Helmet: moulded panel grooves on top and a rubber edge trim at the rim.
 uniform bool helmet_panels = false;
+uniform bool pad_graphics = false;
+uniform vec4 pad_team : source_color = vec4(0.08, 0.3, 0.4, 1.0);
+varying vec3 pad_rest;
 
 // Socks: crisp knitted-in stripes along the unit-length limb shell (t = 0 at
 // the knee, 1 at the ankle), matching Gear.sock()'s bands, instead of colours
@@ -35,6 +38,7 @@ varying vec3 obj_n;
 varying float limb_t;
 
 void vertex() {
+	pad_rest = VERTEX;
 	vec3 sc = vec3(length(MODEL_MATRIX[0].xyz), length(MODEL_MATRIX[1].xyz), length(MODEL_MATRIX[2].xyz));
 	obj_pos = VERTEX * sc;
 	obj_n = NORMAL;
@@ -48,6 +52,14 @@ vec3 srgb_to_linear(vec3 c) {
 void fragment() {
 	vec3 col = base_color.rgb;
 	if (use_vertex_color) col *= srgb_to_linear(COLOR.rgb);
+	if (pad_graphics) {
+		float aa = max(fwidth(pad_rest.x), fwidth(pad_rest.y)) + 0.0005;
+		float rail = smoothstep(0.090 - aa, 0.090 + aa, abs(pad_rest.x));
+		float diagonal = pad_rest.y + abs(pad_rest.x) * 0.55;
+		float stripe = 1.0 - smoothstep(0.011 - aa, 0.011 + aa, abs(diagonal + 0.04));
+		float front = smoothstep(-0.005, 0.018, pad_rest.z);
+		col = mix(col, pad_team.rgb, max(rail * 0.85, stripe) * front);
+	}
 	if (sock_stripes) {
 		float aa = fwidth(limb_t) * 0.7 + 0.001;
 		float s = smoothstep(0.30 - aa, 0.30 + aa, limb_t) - smoothstep(0.40 - aa, 0.40 + aa, limb_t);

@@ -20,10 +20,10 @@ uniform vec2 uv_metres = vec2(1.55, 1.0);
 uniform sampler2D knit_tex : filter_linear_mipmap_anisotropic, repeat_enable;
 uniform sampler2D fold_tex : filter_linear_mipmap_anisotropic, repeat_enable;
 uniform float knit_tiles = 42.0;
-uniform float knit_strength = 0.85;
+uniform float knit_strength = 0.35;
 uniform float fold_tiles = 1.7;
-uniform float fold_strength = 0.30;
-uniform float cavity_tint = 0.16;
+uniform float fold_strength = 0.12;
+uniform float cavity_tint = 0.08;
 uniform float roughness = 0.84;
 uniform float sheen = 0.35;
 // Jersey layout (metres up the body).

@@ -1,6 +1,10 @@
 # Blender kit pipeline
 
-**Current kit: `kit_v2.py` (pass 2) -> `assets/kit/skater-kit-v2.glb`.**
+**Current kit: `kit_v7.py` -> `assets/kit/skater-kit-v7.glb`** (selected in `skater_visual.gd` `KitMeshes`).
+v5 (`kit_v5.py`, Codex model session: rounder torso loft, tapered legs) and v2 stay in `assets/kit/` for rollback. v7 = v5 plus a strong breezer taper
+(legs narrow 26 % wide / 22 % deep by the knee) and slimmer thighs (ease 0.034, max radius 0.135), checked by
+`tests/test_kit_geometry.gd` (pants opening < 0.88 x upper-thigh width) and `tests/test_clipping.gd`.
+Pass 2 (`kit_v2.py`) notes below still describe the method.
 Pass 2 replaces pass 1's shrink-wrap (which printed the navel, hips and shoulder
 blades into the cloth as dents and lumps, and made the breezers crumple in a
 crouch) with deliberately shaped garments:

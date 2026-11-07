@@ -10,8 +10,16 @@ const Kit = preload("res://scripts/kit_materials.gd")
 ## Sculpted sweater and breezers modelled in Blender (tools/blender/kit_v2.py),
 ## skinned to the same base skeleton. Goalies and officials keep the
 ## procedural kit.
-const KitMeshes = preload("res://assets/kit/skater-kit-v2.glb")
+# Kit v6 (tools/blender/kit_v6.py): v5 plus a strong breezer leg taper. v2/v5 GLBs stay in assets/kit for rollback.
+const KitMeshes = preload("res://assets/kit/skater-kit-v7.glb")
 const MESH_KIT := true
+## Local incoming-pad candidate; false retains the original procedural pad.
+const MESH_GOALIE_PAD := true
+const PadMeshes = preload("res://assets/gear/goalie-pads-v1.glb")
+static var pad_parts := {}
+const MESH_GOALIE_MASK := true
+const GoalieMaskMeshes = preload("res://assets/gear/goalie-mask-v1.glb")
+static var goalie_mask_parts := {}
 ## Skater skates from Blender (night shift item 2: HKY skate, CC-BY 4.0, see
 ## assets/CREDITS.md): boot_L/R rigid on the foot, cuff_L/R on the ankle pivot.
 ## false = procedural Gear.skate()/skate_cuff() (goalies always use those).
@@ -555,14 +563,25 @@ func build_skate(parent: Node3D) -> void:
 
 func build_pad(parent: Node3D, side: float) -> void:
 	# Sculpted box-style pad: flat face, outer roll, knee/boot breaks, toe bridge.
-	add_mesh(parent,Gear.goalie_pad(side,kit,accent,-1.0,Gear.PAD_BREAK))
+	var hand := "L" if side > 0 else "R"
+	var lower := add_mesh(parent,pad_part("pad_lower_"+hand) if MESH_GOALIE_PAD else Gear.goalie_pad(side,kit,accent,-1.0,Gear.PAD_BREAK))
+	if MESH_GOALIE_PAD: lower.material_override = Kit.goalie_pad(kit)
 	# Thigh rise hinges back along the thigh at the break above the knee.
 	var hinge := Node3D.new()
 	hinge.position = Vector3(0,Gear.PAD_BREAK,-0.04)
 	parent.add_child(hinge)
-	var upper := add_mesh(hinge,Gear.goalie_pad(side,kit,accent,Gear.PAD_BREAK,1.0))
+	var upper := add_mesh(hinge,pad_part("pad_upper_"+hand) if MESH_GOALIE_PAD else Gear.goalie_pad(side,kit,accent,Gear.PAD_BREAK,1.0))
 	upper.position = Vector3(0,-Gear.PAD_BREAK,0.04)
+	if MESH_GOALIE_PAD: upper.material_override = Kit.goalie_pad(kit)
 	thigh_rises.append(hinge)
+
+static func pad_part(part: String) -> Mesh:
+	if pad_parts.is_empty():
+		var scene: Node = PadMeshes.instantiate()
+		for name_ in ["pad_lower_L", "pad_lower_R", "pad_upper_L", "pad_upper_R"]:
+			pad_parts[name_] = (scene.find_child(name_, true, false) as MeshInstance3D).mesh
+		scene.free()
+	return pad_parts[part]
 
 ## Collision box over the part of the pad that faces the shooter: the whole
 ## pad when standing, the shin-to-knee section once the thigh rise folds back.
@@ -615,6 +634,17 @@ func blade_section(t: float, length_: float, height_: float, thickness: float) -
 
 func build_helmet() -> void:
 	if goalie:
+		if MESH_GOALIE_MASK:
+			if goalie_mask_parts.is_empty():
+				var scene: Node = GoalieMaskMeshes.instantiate()
+				for part in ["mask_shell", "mask_cage"]:
+					goalie_mask_parts[part] = (scene.find_child(part, true, false) as MeshInstance3D).mesh
+				scene.free()
+			for part in ["mask_shell", "mask_cage"]:
+				var instance := add_mesh(helmet, goalie_mask_parts[part])
+				instance.position = Vector3(0, -0.035, 0.01)
+				if part == "mask_shell": instance.material_override = Kit.helmet_shell(kit)
+			return
 		var mask := add_mesh(helmet,Gear.goalie_mask(kit,accent))
 		mask.position = Vector3(0,-0.035,0.01)
 		return

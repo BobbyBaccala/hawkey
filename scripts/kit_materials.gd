@@ -424,6 +424,16 @@ static func gloves() -> ShaderMaterial:
 		m.set_shader_parameter("quilting", 0.6)
 		return m)
 
+static func goalie_pad(kit: Color) -> ShaderMaterial:
+	return cached("goalie-pad|%s" % kit.to_html(), func() -> ShaderMaterial:
+		var m := _gear(leather_texture(), 45.0, 0.28, 0.67, 0.28)
+		m.set_shader_parameter("use_vertex_color", false)
+		m.set_shader_parameter("base_color", Color("#bdc6cc"))
+		m.set_shader_parameter("albedo_variation", 0.05)
+		m.set_shader_parameter("pad_graphics", true)
+		m.set_shader_parameter("pad_team", kit)
+		return m)
+
 static func skate_boot() -> ShaderMaterial:
 	return cached("skate", func() -> ShaderMaterial:
 		var m := _gear(leather_texture(), 55.0, 0.45, 0.34, 0.5)

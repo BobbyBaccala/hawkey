@@ -182,6 +182,26 @@ func check_mesh_pants(v, pants: Mesh) -> void:
 	for q in ring:
 		corner = maxf(corner, ((q - c2) / half).length())
 	check(corner < 1.25, "pants leg cross-section is boxy (%.2f)" % corner)
+	# Breezers hang tapered like real pants, not a drum: the leg opening (just
+	# above the knee) is clearly narrower than the upper thigh (kit v7: ~0.80).
+	var open_w := 0.0
+	var thigh_w := 0.0
+	var open_lo := INF
+	var open_hi := -INF
+	var thigh_lo := INF
+	var thigh_hi := -INF
+	for q in pv:
+		if q.x <= 0.01:
+			continue
+		if q.y < bottom + 0.02:
+			open_lo = minf(open_lo, q.x)
+			open_hi = maxf(open_hi, q.x)
+		elif absf(q.y - lerpf(bottom, top, 0.45)) < 0.02:
+			thigh_lo = minf(thigh_lo, q.x)
+			thigh_hi = maxf(thigh_hi, q.x)
+	open_w = open_hi - open_lo
+	thigh_w = thigh_hi - thigh_lo
+	check(thigh_w > 0.1 and open_w < thigh_w * 0.88, "pants leg does not taper to the knee (opening %.3f vs thigh %.3f)" % [open_w, thigh_w])
 	var knee: float = (v.rest["lowerleg01.L"] as Transform3D).origin.y
 	check(top > v.jersey_hem_height() + 0.1, "pants top does not reach under the sweater")
 	check(bottom > knee and bottom < knee + 0.2, "pants should stop just above the knee (%.2f, knee %.2f)" % [bottom, knee])

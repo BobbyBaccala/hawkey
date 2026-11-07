@@ -16,3 +16,10 @@
   logo, league shield, maker name, number and signature were texture-only), rebuilt as flat vertex colours
   with a plain team-colour shell; reoriented and scaled to a 0.27 m shell; decimated to 2.7k opaque triangles,
   Taubin-smoothed, sharp normals on rims above 35 deg, split into shell / fittings / visor. No club or brand identity remains.
+
+## Goalie pads and mask (Codex model session, adopted by the night shift)
+
+`gear/goalie-mask-v1.glb`: **Hockey Goalie Mask** by **matýsek**, [source](https://sketchfab.com/3d-models/hockey-goalie-mask-12fe01ffe0d4443b96292815bb79958a), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Modified: welded, oriented/scaled, reduced geometry, weighted normals, all paint removed (plain team colour and metal cage).
+
+`gear/goalie-pads-v1.glb`: **pads** by **gurjbakshi**, [source](https://sketchfab.com/3d-models/pads-e6313b4e57a04a198fbe3f8598929c05), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Modified: extracted/mirrored, scaled, split at the thigh hinge, decimated, original texture markings removed, plain materials.
+

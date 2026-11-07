@@ -96,12 +96,21 @@ class Solid:
 		var key := Vector2i(floori(p.y / CELL), floori(p.z / CELL))
 		if not grid.has(key):
 			return false
-		var hits := 0
-		var dir := Vector3(1, 0.0013, 0.0007).normalized()
+		var hits: Array[float] = []
+		# Buckets cover a fixed Y/Z cell, so the ray must stay parallel to X.
+		# Tilting it can omit the exit face in a neighbouring cell.
+		var dir := Vector3.RIGHT
 		for t in grid[key]:
-			if Geometry3D.ray_intersects_triangle(p, dir, tris[t], tris[t + 1], tris[t + 2]) != null:
-				hits += 1
-		return hits % 2 == 1
+			var hit = Geometry3D.ray_intersects_triangle(p, dir, tris[t], tris[t + 1], tris[t + 2])
+			if hit != null:
+				var distance: float = hit.x - p.x
+				var duplicate := false
+				for previous in hits:
+					if absf(previous - distance) < 0.000001:
+						duplicate = true
+						break
+				if not duplicate: hits.append(distance)
+		return hits.size() % 2 == 1
 
 	func depth(p: Vector3) -> float:
 		var best := INF
