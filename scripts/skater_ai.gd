@@ -301,3 +301,9 @@ static func shot_aim(shooter: Vector3, attack: float, goalie: Vector3, noise: fl
 	var height := 0.12 if flat(net(attack) - shooter).length() > 12.0 else 0.55
 	height += (roll_y * 2.0 - 1.0) * noise * 0.5
 	return Vector3(x, clampf(height, 0.05, 1.0), attack * Arena.GOAL_LINE)
+
+## One-timer: a pass received where the shot is clearly on (a bit better than
+## the player's usual shooting bar) is fired first time, before the goalie
+## can get across.
+static func one_timer(quality: float, shot_bar: float) -> bool:
+	return quality >= shot_bar + 0.08

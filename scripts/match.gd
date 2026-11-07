@@ -1299,7 +1299,12 @@ func update_team_ai(delta: float) -> void:
 			if timer<=0 and cooldown<=0:
 				var sk:=ai_skill(team)
 				actor.set_meta("decision",float(sk.react)*lerpf(0.8,1.25,ai_rng.randf()))
-				plan=SkaterAI.carrier_decision(ai_context(actor,team,attack,is_d))
+				if bool(actor.get_meta("one_timer",false)):
+					actor.set_meta("one_timer",false)
+					plan={"kind":"shoot","target":SkaterAI.net(attack),"receiver":-1,"value":1.0}
+					ai_log["one_timer"]=int(ai_log.get("one_timer",0))+1
+				else:
+					plan=SkaterAI.carrier_decision(ai_context(actor,team,attack,is_d))
 				actor.set_meta("plan",plan)
 				ai_log[str(plan.kind)]=int(ai_log.get(str(plan.kind),0))+1
 				match str(plan.kind):
@@ -1476,11 +1481,19 @@ func update_possession(delta: float) -> void:
 			if distance_<best and (puck.linear_velocity-actor.velocity).length()<soft_hands:
 				best=distance_
 				carrier=actor
-				if actor==pass_receiver: ai_log["pass_done"]=int(ai_log.get("pass_done",0))+1
+				if actor==pass_receiver:
+					ai_log["pass_done"]=int(ai_log.get("pass_done",0))+1
+					# A CPU taking a pass in a scoring spot can shoot it first time.
+					if not human_controls(actor):
+						var team_:=body_team(actor)
+						var attack_:=attack_direction(team_)
+						var q_:=SkaterAI.shot_quality(actor.position,attack_,goalkeeper_at_end(attack_).position,ai_opponents[team_])
+						if SkaterAI.one_timer(q_,float(ai_skill(team_).shot_bar)):
+							actor.set_meta("one_timer",true)
 				elif pass_receiver!=null and body_team(actor)!=body_team(pass_receiver): ai_log["intercepted"]=int(ai_log.get("intercepted",0))+1
 				# A fresh read on gaining it: a short reaction, no stale plan.
 				actor.set_meta("plan",{})
-				actor.set_meta("decision",float(ai_skill(body_team(actor)).react)*0.5)
+				actor.set_meta("decision",0.06 if bool(actor.get_meta("one_timer",false)) else float(ai_skill(body_team(actor)).react)*0.5)
 	if carrier!=null:
 		var visual:=carrier.get_child(1)
 		var target:Vector3=visual.get_blade_world()

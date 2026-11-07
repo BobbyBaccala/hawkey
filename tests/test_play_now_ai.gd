@@ -89,6 +89,12 @@ func check_decisions() -> void:
 	# Stuck at the red line, checkers in front, nobody open: dump it in.
 	d = SkaterAI.carrier_decision(ctx(Vector3(3, 0, 1.0), [Vector3(3, 0, 3.0), Vector3(1, 0, 4.0), Vector3(5.5, 0, 3.0)], []))
 	check(d.kind == "dump" or d.kind == "protect", "Stuck in the neutral zone: dump or protect (got %s)" % d.kind)
+	# One-timers: a feed into a prime spot is shot first time, a so-so one isn't.
+	var bar: float = SkaterAI.skill("ALL-STAR").shot_bar
+	var prime := SkaterAI.shot_quality(Vector3(-1.0, 0, Arena.GOAL_LINE - 5.0), 1.0, Vector3(1.0, 0, Arena.GOAL_LINE - 0.7), [])
+	var wide := SkaterAI.shot_quality(Vector3(-9.0, 0, Arena.GOAL_LINE - 3.0), 1.0, Vector3(-0.5, 0, Arena.GOAL_LINE - 0.7), [])
+	check(SkaterAI.one_timer(prime, bar), "Cross-crease feed in the slot is one-timed (%.2f)" % prime)
+	check(not SkaterAI.one_timer(wide, bar), "Wide feed at a bad angle is settled first (%.2f)" % wide)
 	# The pass never goes through a defender.
 	var blocked_mate := {"pos": Vector3(0, 0, 12.0), "vel": Vector3.ZERO, "index": 1}
 	d = SkaterAI.carrier_decision(ctx(Vector3(0, 0, 0.0), [Vector3(0.3, 0, 6.0)], [blocked_mate]))
