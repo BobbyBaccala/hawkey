@@ -1,6 +1,6 @@
 # Hawkey — 0.10 game-night presentation
 
-Native Godot 4.6 PC hockey exhibition prototype. Uses a CC0 skinned human foundation with original hockey equipment, procedural skating and generated crowd/ice textures. This is an early exhibition prototype, not EA NHL-level photorealism or a complete regulation ruleset.
+Native Godot 4.6 PC hockey prototype with one mode, PLAY NOW: every position is a seat a CPU plays until a human takes it (built to go online). Uses a CC0 skinned human foundation with original hockey equipment, procedural skating and generated crowd/ice textures. This is an early exhibition prototype, not EA NHL-level photorealism or a complete regulation ruleset.
 
 ## Open this version
 Download the ZIP from the **prototype/skating-puck-lab** branch, extract to a new folder, then import that folder's **project.godot** in Godot 4.6. Press F5. Opening an older downloaded folder will continue running the old build.

@@ -343,6 +343,8 @@ func start_from_title() -> void:
 	apply_play_now(hud_node.play_options)
 	in_menu = false
 	hud_node.show_title(false)
+	# The first faceoff's draw hint was held back while the menu was up.
+	if match_state.phase==MatchState.Phase.FACEOFF: hud_node.show_draw_hint(faceoff_hints_shown<=FACEOFF_HINT_COUNT)
 	camera_side = 0.0
 	hud_node.show_banner("TORONTO  vs  MONTREAL", "1ST PERIOD", hud_node.team_colors[0], 1.6)
 
@@ -1316,7 +1318,10 @@ func update_team_ai(delta: float) -> void:
 			var meet_pass:=SkaterAI.intercept_point(puck.position,puck.linear_velocity,actor.position,8.5,1.6)
 			target=meet_pass if meet_pass!=Vector3.INF else Vector3(puck.position.x,0,puck.position.z)
 		elif nearest[team]==actor and not (pass_receiver!=null and body_team(pass_receiver)==team):
-			if carrier!=null and body_team(carrier)!=team:
+			if actor.get_child(1).has_method("tie_up_weight") and actor.get_child(1).tie_up_weight()>0.0:
+				# Faceoff tie-up: drive straight into the man on the puck.
+				target=Vector3(puck.position.x,0,puck.position.z)
+			elif carrier!=null and body_team(carrier)!=team:
 				# Take the middle away: inside-out angle on the carrier.
 				target=SkaterAI.pursue_target(carrier.position,carrier.velocity,attack,actor.position)
 			else:

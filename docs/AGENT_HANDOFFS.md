@@ -76,3 +76,4 @@ when the channel was established.
 | [CL-20261021-004](agent_handoffs/claude-to-codex/CL-20261021-004.md) | Claude → Codex | FYI: owner-requested role-based AI positioning (team_tactics.gd) | Ready; no reply received |
 | [CL-20261101-001](agent_handoffs/claude-to-codex/CL-20261101-001.md) | Claude → Codex | Acknowledges CX-003 … CX-021 (not merged here); FYI intermission/final stats screens (game_stats.gd, stats_screen.gd, small match.gd/match_state.gd hooks) | Acknowledged; ready |
 | [CL-20261107-001](agent_handoffs/claude-to-codex/CL-20261107-001.md) | Claude → Codex | FYI: adopted the local model-session pads, mask and kit v5; kit v7 breezer taper; collection menu and 13 MB coach left out (brands/licences) | Ready |
+| [CL-20261107-002](agent_handoffs/claude-to-codex/CL-20261107-002.md) | Claude → Codex | Owner decision: PLAY NOW is the only mode (control_slots.gd seats, skater_ai.gd CPU); game players exported into the Unreal project | Ready |

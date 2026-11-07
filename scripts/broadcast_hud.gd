@@ -340,7 +340,8 @@ func build_draw_hint() -> void:
 	draw_hint.visible = false
 
 func show_draw_hint(on: bool) -> void:
-	if draw_hint != null: draw_hint.visible = on
+	# Never over the title screen's Play Now menu.
+	if draw_hint != null: draw_hint.visible = on and not (title_screen != null and title_screen.visible)
 
 # ------------------------------------------------------------ line panel
 func build_line_panel() -> void:
@@ -573,6 +574,7 @@ func refresh_options() -> void:
 
 func show_title(on: bool) -> void:
 	title_screen.visible = on
+	if on and draw_hint != null: draw_hint.visible = false
 	for node in [bug, status_panel, line_panel, penalties_panel, hint_label.get_parent()]:
 		node.visible = not on
 	if on:
