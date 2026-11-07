@@ -861,6 +861,7 @@ var mesh_head := false
 ## Skin-tone multipliers over the scanned face texture (light to deep).
 const FACE_TONES := [Color(1.0,0.97,0.95),Color(0.97,0.88,0.80),Color(0.90,0.76,0.64),Color(0.76,0.60,0.48),Color(0.58,0.44,0.34),Color(0.42,0.31,0.24)]
 static var _face_mats := {}
+const HAIR_COLORS := [Color(0.05,0.04,0.03),Color(0.16,0.10,0.06),Color(0.30,0.20,0.10),Color(0.55,0.42,0.22),Color(0.42,0.40,0.38),Color(0.03,0.03,0.03)]
 const FACE_SHADER := preload("res://assets/skater_face.gdshader")
 ## Which face this skater wears; defaults to a stable pick from the jersey number.
 var face_variant := -1
@@ -872,9 +873,29 @@ static func head_parts() -> Dictionary:
 		var scene: Node = HeadMeshes.instantiate()
 		for n in ["Head","Eyes"]:
 			var src := scene.find_child(n,true,false) as MeshInstance3D
-			_head_cache[n] = [src.mesh,src.skin]
+			var mesh: Mesh = src.mesh
+			if n == "Head": mesh = head_with_hair_mask(src.mesh)
+			_head_cache[n] = [mesh,src.skin]
 		scene.free()
 	return _head_cache
+
+## Copy of the head surface whose vertex colour red channel marks where hair
+## grows (crown, back and sides of the skull) in the head's rest pose.
+static func head_with_hair_mask(src: Mesh) -> ArrayMesh:
+	var arrays := src.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var cols := PackedColorArray()
+	cols.resize(verts.size())
+	for i in range(verts.size()):
+		var p := verts[i]
+		var hair := maxf(smoothstep(1.742,1.756,p.y),smoothstep(0.02,-0.02,p.z)*smoothstep(1.60,1.64,p.y))
+		hair = maxf(hair,smoothstep(1.66,1.70,p.y)*smoothstep(0.055,0.075,absf(p.x))*smoothstep(0.06,0.0,p.z))
+		cols[i] = Color(hair,0,0,1)
+	arrays[Mesh.ARRAY_COLOR] = cols
+	var out := ArrayMesh.new()
+	out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+	out.surface_set_material(0,src.surface_get_material(0))
+	return out
 
 func build_mesh_head() -> void:
 	var parts := head_parts()
@@ -894,6 +915,7 @@ func build_mesh_head() -> void:
 				var m := ShaderMaterial.new()
 				m.shader = FACE_SHADER
 				m.set_shader_parameter("albedo_tex",src.albedo_texture)
+				m.set_shader_parameter("hair_color",HAIR_COLORS[[3,2,1,0,5,0][v]])
 				m.set_shader_parameter("tone",(FACE_TONES[v] as Color)*Color(0.97,0.94,0.92))
 				_face_mats[v] = m
 			inst.material_override = _face_mats[v]
