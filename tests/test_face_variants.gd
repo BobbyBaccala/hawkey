@@ -10,7 +10,7 @@ func _initialize() -> void: call_deferred("run")
 func tone_of(v: Node3D) -> Color:
 	for n in v.head_nodes:
 		if n.name == "MeshHead":
-			return (n.material_override as StandardMaterial3D).albedo_color
+			return (n.material_override as ShaderMaterial).get_shader_parameter("tone")
 	return Color.BLACK
 func run() -> void:
 	var SV = preload("res://scripts/skater_visual.gd")

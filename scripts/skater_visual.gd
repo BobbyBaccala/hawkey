@@ -861,6 +861,7 @@ var mesh_head := false
 ## Skin-tone multipliers over the scanned face texture (light to deep).
 const FACE_TONES := [Color(1.0,0.97,0.95),Color(0.97,0.88,0.80),Color(0.90,0.76,0.64),Color(0.76,0.60,0.48),Color(0.58,0.44,0.34),Color(0.42,0.31,0.24)]
 static var _face_mats := {}
+const FACE_SHADER := preload("res://assets/skater_face.gdshader")
 ## Which face this skater wears; defaults to a stable pick from the jersey number.
 var face_variant := -1
 var head_nodes: Array[MeshInstance3D] = []
@@ -889,13 +890,11 @@ func build_mesh_head() -> void:
 			var v := face_variant if face_variant >= 0 else (number.hash()*7 + int(number)) % FACE_TONES.size()
 			v = posmod(v,FACE_TONES.size())
 			if not _face_mats.has(v):
-				var m := (parts[n][0] as Mesh).surface_get_material(0)
-				if m is StandardMaterial3D:
-					m = m.duplicate()
-					m.vertex_color_use_as_albedo = false
-					m.albedo_color = (FACE_TONES[v] as Color)*Color(0.97,0.94,0.92)
-					m.roughness = 0.62
-					m.metallic_specular = 0.25
+				var src := (parts[n][0] as Mesh).surface_get_material(0) as StandardMaterial3D
+				var m := ShaderMaterial.new()
+				m.shader = FACE_SHADER
+				m.set_shader_parameter("albedo_tex",src.albedo_texture)
+				m.set_shader_parameter("tone",(FACE_TONES[v] as Color)*Color(0.97,0.94,0.92))
 				_face_mats[v] = m
 			inst.material_override = _face_mats[v]
 		head_nodes.append(inst)
