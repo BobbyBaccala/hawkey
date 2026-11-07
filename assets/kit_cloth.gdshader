@@ -117,9 +117,16 @@ void fragment() {
 		float collar = smoothstep(neck - aa_l, neck + aa_l, L.y);
 		col = mix(col, stripe_color.rgb, collar);
 		ao *= mix(1.0, 0.85, smoothstep(neck - 0.04, neck + 0.02, L.y));
+		// Side gusset panels: a darker strip down each flank from hem to armpit
+		// with a sewn seam line either side, as on a cut-and-sew pro sweater.
+		float flank = abs(cos(TAU * L.x));
+		float panel = smoothstep(0.985 - 0.012, 0.985 + 0.012, flank) * smoothstep(hem_v + 0.09, hem_v + 0.11, L.y) * (1.0 - smoothstep(1.20, 1.22, L.y));
+		col = mix(col, stripe_color.rgb, 0.42 * panel);
+		float seam_l = (1.0 - smoothstep(0.0, 0.0022, abs(flank - 0.985))) * smoothstep(hem_v + 0.09, hem_v + 0.11, L.y) * (1.0 - smoothstep(1.20, 1.22, L.y));
+		col *= 1.0 - 0.18 * seam_l;
 		// Under the arms: the sides of the upper torso sit in shadow.
 		float side = pow(abs(cos(TAU * L.x)), 6.0);
-		ao *= 1.0 - 0.30 * side * smoothstep(1.16, 1.30, L.y) * (1.0 - smoothstep(1.40, 1.46, L.y));
+		ao *= 1.0 - 0.14 * side * smoothstep(1.16, 1.30, L.y) * (1.0 - smoothstep(1.40, 1.46, L.y));
 		// The sweater bunches over the pants at the waist.
 		fold_amt *= 1.0 + 1.4 * (1.0 - smoothstep(hem_v + 0.05, hem_v + 0.2, L.y));
 		// The inside of the sweater: no twill, and in shadow.

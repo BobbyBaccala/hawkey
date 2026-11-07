@@ -69,7 +69,7 @@ void fragment() {
 	}
 	if (pants_stripe) {
 		float aa = fwidth(side_out) * 0.8 + 0.002;
-		float band = smoothstep(0.955 - aa, 0.955 + aa, side_out);
+		float band = smoothstep(0.975 - aa, 0.975 + aa, side_out) * 0.8;
 		col = mix(col, pants_stripe_color.rgb, band);
 	}
 	if (sock_stripes) {

@@ -11,7 +11,7 @@ const Kit = preload("res://scripts/kit_materials.gd")
 ## skinned to the same base skeleton. Goalies and officials keep the
 ## procedural kit.
 # Kit v6 (tools/blender/kit_v6.py): v5 plus a strong breezer leg taper. v2/v5 GLBs stay in assets/kit for rollback.
-const KitMeshes = preload("res://assets/kit/skater-kit-v8.glb")
+const KitMeshes = preload("res://assets/kit/skater-kit-v9.glb")
 const MESH_KIT := true
 ## Local incoming-pad candidate; false retains the original procedural pad.
 const MESH_GOALIE_PAD := true
@@ -858,6 +858,11 @@ func jersey_hem_height() -> float:
 	return JERSEY_HEM-(0.03 if goalie else 0.0)
 
 var mesh_head := false
+## Skin-tone multipliers over the scanned face texture (light to deep).
+const FACE_TONES := [Color(1.0,0.97,0.95),Color(0.97,0.88,0.80),Color(0.90,0.76,0.64),Color(0.76,0.60,0.48),Color(0.58,0.44,0.34),Color(0.42,0.31,0.24)]
+static var _face_mats := {}
+## Which face this skater wears; defaults to a stable pick from the jersey number.
+var face_variant := -1
 var head_nodes: Array[MeshInstance3D] = []
 
 ## Shared head surfaces: [mesh, skin] for "Head" and "Eyes".
@@ -881,14 +886,18 @@ func build_mesh_head() -> void:
 			m.metallic_specular = 0.8
 			inst.material_override = m
 		else:
-			var m := (parts[n][0] as Mesh).surface_get_material(0)
-			if m is StandardMaterial3D:
-				m = m.duplicate()
-				m.vertex_color_use_as_albedo = false
-				m.albedo_color = Color(0.95,0.9,0.88)
-				m.roughness = 0.62
-				m.metallic_specular = 0.25
-			inst.material_override = m
+			var v := face_variant if face_variant >= 0 else (number.hash()*7 + int(number)) % FACE_TONES.size()
+			v = posmod(v,FACE_TONES.size())
+			if not _face_mats.has(v):
+				var m := (parts[n][0] as Mesh).surface_get_material(0)
+				if m is StandardMaterial3D:
+					m = m.duplicate()
+					m.vertex_color_use_as_albedo = false
+					m.albedo_color = (FACE_TONES[v] as Color)*Color(0.97,0.94,0.92)
+					m.roughness = 0.62
+					m.metallic_specular = 0.25
+				_face_mats[v] = m
+			inst.material_override = _face_mats[v]
 		head_nodes.append(inst)
 
 ## Skinned instance of a cached garment surface, bound to the rig skeleton.
