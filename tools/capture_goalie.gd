@@ -31,9 +31,17 @@ func run()->void:
 		["glove","",Vector2(0,0.8),Vector3(-2.0,1.1,1.5),Vector3(0,0.85,0),44.0],
 		["blocker","",Vector2(0,0.8),Vector3(2.0,1.1,1.5),Vector3(0,0.85,0),44.0],
 		["butterfly","butterfly",Vector2(0.1,0.15),Vector3(0.4,1.0,2.6),Vector3(0,0.55,0),46.0],
+		["legs-front","",Vector2(0,0.8),Vector3(0.0,0.55,1.9),Vector3(0,0.42,0),44.0],
+		["legs-side","",Vector2(0,0.8),Vector3(1.9,0.5,0.25),Vector3(0,0.42,0),44.0],
+		["legs-back","",Vector2(0,0.8),Vector3(0.5,0.6,-1.8),Vector3(0,0.42,0),44.0],
+		["legs-bfly","butterfly",Vector2(0.1,0.15),Vector3(1.3,0.8,1.6),Vector3(0,0.3,0),44.0],
 		["catch","glove",Vector2(0.75,1.35),Vector3(-1.2,1.3,2.3),Vector3(-0.2,0.95,0),46.0],
 	]
+	var only:=""
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--only="):only=arg.substr(7)
 	for s in shots:
+		if only!="" and not String(s[0]).begins_with(only):continue
 		var kind:String=s[1]
 		for k in range(90):
 			v.butterfly=move_toward(v.butterfly,1.0 if kind in ["butterfly","pad_left","pad_right"] else 0.0,6.0/60)

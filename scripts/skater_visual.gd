@@ -113,6 +113,9 @@ var grip_tape: MeshInstance3D
 var goalie_paddle: MeshInstance3D
 var knees: Array[Vector3] = [Vector3.ZERO,Vector3.ZERO]
 var pad_size := Vector3(0.28,0.73,0.14)
+## Pad centre in front of the shin axis: the pad back sits on the shin.
+const PAD_STANDOFF := 0.09
+const RISE_SIGN := 1.0
 var stick_blade_length := 0.28
 var torso_pose := Transform3D.IDENTITY
 var number_label: Label3D
@@ -567,9 +570,10 @@ static func helmet_part(part: String) -> Mesh:
 
 func build_skate(parent: Node3D) -> void:
 	var side := "_L" if skates.size()==0 else "_R"
-	var mesh_skate := MESH_SKATE and not goalie
+	# Goalies wear the same Blender boot and shin-following cuff as skaters.
+	var mesh_skate := MESH_SKATE
 	add_mesh(parent,skate_part("boot"+side) if mesh_skate else Gear.skate(goalie,goalie)).material_override=Kit.skate_boot()
-	if not goalie:
+	if mesh_skate or not goalie:
 		# Ankle cuff follows the shin (posed in pose()), so the leg always
 		# enters the boot.
 		var cuff := add_mesh(parent,skate_part("cuff"+side) if mesh_skate else Gear.skate_cuff())
@@ -1685,19 +1689,17 @@ func pose(speed: float, turn: float) -> void:
 			pads[i].basis=Basis(shin.cross(face),shin,face)
 			# Ride a few centimetres up the shin so the skate toe cap shows below.
 			# Standing, the pad is anchored to the ankle so it always clears the skate.
-			pads[i].position=(ankle+shin*0.48).lerp(knee-shin*(Gear.PAD_KNEE-0.065),butterfly)+face*0.09
+			pads[i].position=(ankle+shin*0.48).lerp(knee-shin*(Gear.PAD_KNEE-0.065),butterfly)+face*PAD_STANDOFF
 			# The thigh rise follows the thigh: it leans out toward the hip as it
 			# rises in the stance, and folds back along the thigh in the butterfly.
-			var thigh_local:Vector3=pads[i].basis.inverse()*(hip-knee).normalized()
-			var roll:float=clampf(atan2(-thigh_local.x,thigh_local.y),-0.6,0.6)
-			var standing:=Quaternion(Basis(Vector3.BACK,-roll*0.6-side*0.08)*Basis(Vector3.RIGHT,-0.12))
-			# Butterfly: the thigh rise folds flat along the thigh and its foam
-			# compresses where the two meet behind the wall of pads.
-			var folded:=Quaternion(Vector3.UP,thigh_local)
-			# Compress early in the drop so the halves never cross mid-transition.
-			var squash:=smoothstep(0.0,0.3,butterfly)
-			thigh_rises[i].position=Vector3(0,Gear.PAD_BREAK-0.08*squash,-0.04+0.05*squash)
-			thigh_rises[i].basis=Basis(standing.slerp(folded,smoothstep(0.0,0.6,butterfly))).scaled_local(Vector3(lerpf(1.0,0.42,squash),1,lerpf(1.0,0.7,squash)))
+			# One solid pad: the thigh rise stays in line with the shin section
+			# (no hinge at the knee break). In the butterfly it only shortens so
+			# the two rises meet in front of the five-hole instead of crossing.
+			var squash:=smoothstep(0.0,0.25,butterfly)
+			# The rise tapers a little and sits toward the outside of the leg, as on
+			# a real pad, so the two never cross at the five-hole in the stance.
+			thigh_rises[i].position=Vector3(RISE_SIGN*side*0.02,Gear.PAD_BREAK-0.08*squash,-0.04+0.05*squash)
+			thigh_rises[i].basis=Basis().scaled_local(Vector3(lerpf(0.88,0.6,squash),lerpf(1.0,0.12,squash),lerpf(1.0,0.7,squash)))
 			thigh_rises[i].set_meta("rest_basis",thigh_rises[i].basis)
 			# Pad lower edges seal against the ice in butterfly.
 			var box:Array=pad_box()
@@ -1806,24 +1808,10 @@ func pose(speed: float, turn: float) -> void:
 	rig.position = rig.basis*(tie[0] as Vector3)
 	update_stick()
 
-## Rolls the two thigh rises outward until their inner edges clear each other,
-## whatever the knees, idle sway or shuffle footwork are doing.
+## Solid one-piece pads are never bent apart: the thigh rises stay in line with
+## the shin sections and may touch at the five-hole. Kept as a no-op hook.
 func separate_thigh_rises() -> void:
-	var extra := 0.0
-	for iteration in range(14):
-		var gap := INF
-		var rise:=Gear.PAD_LENGTH*0.5-Gear.PAD_BREAK
-		for height in [rise,rise*0.66,rise*0.33]:
-			for depth in [-0.04,0.04,0.11]:
-				var left_edge:Vector3=pads[0].transform*thigh_rises[0].transform*Vector3(-Gear.PAD_WIDTH*0.5,height,depth)
-				var right_edge:Vector3=pads[1].transform*thigh_rises[1].transform*Vector3(Gear.PAD_WIDTH*0.5,height,depth)
-				gap=minf(gap,left_edge.x-right_edge.x)
-		if gap>=0.045 or butterfly>0.3: return
-		extra+=0.05
-		for i in range(2):
-			var side:=1.0 if i==0 else -1.0
-			var rest_basis:Basis=thigh_rises[i].get_meta("rest_basis")
-			thigh_rises[i].basis=Basis(Vector3.BACK,-side*extra)*rest_basis
+	pass
 
 ## Plays a captured clip over the procedural pose. Mask entries: "spine",
 ## "arms", "stick_up". Returns false when the clip file is not installed.

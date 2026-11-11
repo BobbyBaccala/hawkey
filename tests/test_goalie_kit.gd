@@ -39,5 +39,15 @@ func run() -> void:
 		check((pad_mat.get_shader_parameter("pad_accent") as Color).is_equal_approx(g.accent), "pad accent follows the kit accent")
 		check((pad_mat.get_shader_parameter("base_color") as Color).get_luminance() > 0.8, "pad base is white, not grey")
 	check(Kit.goalie_pad(Color.RED, Color.BLUE) != Kit.goalie_pad(Color.RED, Color.GREEN), "pad materials are per accent")
+	# One solid pad: the thigh rise never rotates against the shin section,
+	# standing or in the butterfly, and goalies wear the laced boot with a cuff.
+	for b in [0.0, 0.5, 1.0]:
+		g.butterfly = b
+		g.animate(0, 1.0/60, 0, false)
+		for rise in g.thigh_rises:
+			var q: Quaternion = (rise.basis as Basis).orthonormalized().get_rotation_quaternion()
+			check(q.is_equal_approx(Quaternion.IDENTITY), "thigh rise in line with the pad at butterfly %.1f" % b)
+			check(absf(rise.position.x) < 0.03, "thigh rise stays on the pad")
+	check(g.skate_cuffs.size() == 2, "goalie skates have shin-following cuffs")
 	print("Goalie kit failures: ", failures)
 	quit(1 if failures > 0 else 0)
