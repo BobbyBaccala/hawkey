@@ -30,9 +30,11 @@ func run() -> void:
 	check(gw > 0.31, "goalie shoulders are protector-wide: %.3f" % gw)
 	check(gwaist > 0.24, "goalie waist is not pinched: %.3f" % gwaist)
 	var pad_mat: ShaderMaterial = null
-	for pad in g.pads:
-		for c in pad.get_children():
+	for vis in g.pad_visuals:
+		for c in vis.get_children():
 			if c is MeshInstance3D: pad_mat = c.material_override
+		# The visible pad reaches down over the boot and is thicker than the 10 cm source.
+		check(vis.scale.y > 1.05 and vis.scale.z >= 1.4, "pad lengthened over the skate and thickened (%s)" % vis.scale)
 	check(pad_mat != null and pad_mat.get_shader_parameter("pad_graphics") == true, "pads use pad graphics")
 	if pad_mat != null:
 		check((pad_mat.get_shader_parameter("pad_team") as Color).is_equal_approx(g.kit), "pad team colour follows the kit")

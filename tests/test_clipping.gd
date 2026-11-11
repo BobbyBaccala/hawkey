@@ -164,7 +164,7 @@ func gear_solids(v) -> Dictionary:
 	if v.goalie:
 		for i in range(2):
 			var side := "L" if i == 0 else "R"
-			solids["pad" + side] = Solid.new("pad" + side, [v.pads[i].get_child(0)])
+			solids["pad" + side] = Solid.new("pad" + side, [v.pad_visuals[i].get_child(0)])
 			solids["thigh" + side] = Solid.new("thigh" + side, meshes(v.thigh_rises[i]))
 		solids["catcher"] = Solid.new("catcher", meshes(v.goalie_gloves[0]))
 		solids["blocker"] = Solid.new("blocker", meshes(v.goalie_gloves[1]))
@@ -205,6 +205,12 @@ func check_pose(v, label: String) -> void:
 			var deepest: float = maxf(ab[1], ba[1])
 			if report and count > 0:
 				print("  %s: %s x %s  points=%d  depth=%.1f cm" % [label, names[i], names[j], count, deepest * 100])
+			# A goalie pad's boot channel sits down over its own skate (the boot
+			# break rests on the instep), so that pair may overlap by a few cm.
+			var own_boot: bool = names[i].begins_with("skate") and names[j] == "pad" + names[i].substr(5) or names[j].begins_with("skate") and names[i] == "pad" + names[j].substr(5)
+			if own_boot:
+				check(deepest <= 0.055, "%s: %s sinks %.1f cm into %s (boot channel allows 5.5)" % [label, names[i], deepest * 100, names[j]])
+				continue
 			check(count == 0, "%s: %s clips into %s by %.1f cm" % [label, names[i], names[j], deepest * 100])
 
 func run() -> void:

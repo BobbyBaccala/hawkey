@@ -115,6 +115,14 @@ var knees: Array[Vector3] = [Vector3.ZERO,Vector3.ZERO]
 var pad_size := Vector3(0.28,0.73,0.14)
 ## Pad centre in front of the shin axis: the pad back sits on the shin.
 const PAD_STANDOFF := 0.09
+var pad_visuals: Array[Node3D] = []
+## Visible pad thickness multiplier over the 10 cm source mesh (pro pads are
+## about 15 cm deep at the shin) and how far it may extend down over the boot.
+const PAD_THICKEN := 1.5
+## Goalie sweater hem above the skater hem: it ends at the hips, over the top
+## of the wide pants, instead of hanging through the crouched thighs.
+const GOALIE_HEM_RISE := 0.075
+const PAD_DROP_MAX := 0.19
 const RISE_SIGN := 1.0
 var stick_blade_length := 0.28
 var torso_pose := Transform3D.IDENTITY
@@ -584,6 +592,13 @@ func build_skate(parent: Node3D) -> void:
 func build_pad(parent: Node3D, side: float) -> void:
 	# Sculpted box-style pad: flat face, outer roll, knee/boot breaks, toe bridge.
 	var hand := "L" if side > 0 else "R"
+	# The visible pad hangs in its own node so its fit on the leg (length down
+	# over the skate, thickness) is independent of the save collision box.
+	var vis := Node3D.new()
+	vis.name = "PadVisual"
+	parent.add_child(vis)
+	pad_visuals.append(vis)
+	parent = vis
 	var lower := add_mesh(parent,pad_part("pad_lower_"+hand) if MESH_GOALIE_PAD else Gear.goalie_pad(side,kit,accent,-1.0,Gear.PAD_BREAK))
 	if MESH_GOALIE_PAD: lower.material_override = Kit.goalie_pad(kit,accent)
 	# Thigh rise hinges back along the thigh at the break above the knee.
@@ -712,6 +727,12 @@ func jersey_point(a: float, y: float, scale_: float = 1.0) -> Vector3:
 		w *= 1.08+0.07*smoothstep(1.24,1.40,y)+0.035*(1.0-smoothstep(1.0,1.2,y))
 		front *= 1.12
 		back *= 1.10
+		# The sweater hangs outside the wide goalie pants: the lower third
+		# belts out over the hips and seat so the pants never poke through.
+		var over_pants := 1.0-smoothstep(1.0,1.22,y)
+		w *= 1.0+0.13*over_pants
+		front *= 1.0+0.10*over_pants
+		back *= 1.0+0.24*over_pants
 	# Rounder at the waist, squarer across the shoulder pads.
 	var square := 1.0+0.10*smoothstep(1.18,1.42,y)*pow(sin(2.0*a),2)
 	var c := cos(a)
@@ -778,7 +799,7 @@ func build_jersey() -> void:
 	var ring_colors := []
 	var ring_uvs := []
 	var levels := []  # [y or -1 for neck rows, v along the neck rise, scale, dy, uv_y]
-	var hem := JERSEY_HEM-(0.03 if goalie else 0.0)
+	var hem := JERSEY_HEM+(GOALIE_HEM_RISE if goalie else 0.0)
 	levels.append([hem+0.03,0.0,0.965,0.0,0.97])
 	levels.append([hem-0.004,0.0,1.004,0.0,0.975])
 	var body_rows := 24
@@ -860,7 +881,7 @@ func apply_jersey_material() -> void:
 	if mesh_kit:
 		jersey.material_override = Kit.jersey(kit,accent,number,nameplate_text,false,KIT_HEM,KIT_COLLAR)
 		return
-	var hem := JERSEY_HEM-(0.03 if goalie else 0.0)
+	var hem := JERSEY_HEM+(GOALIE_HEM_RISE if goalie else 0.0)
 	jersey.material_override = Kit.jersey(kit,accent,number,nameplate_text,referee,hem,0.0,GOALIE_YOKE if goalie else 0.0)
 
 ## Height where the goalie sweater's accent shoulder yoke starts (at the sides).
@@ -869,7 +890,7 @@ const GOALIE_YOKE := 1.415
 ## Rest height of the sweater's hem.
 func jersey_hem_height() -> float:
 	if mesh_kit: return KIT_HEM
-	return JERSEY_HEM-(0.03 if goalie else 0.0)
+	return JERSEY_HEM+(GOALIE_HEM_RISE if goalie else 0.0)
 
 var mesh_head := false
 ## The base body's shader material (assets/uniform.gdshader).
@@ -1652,8 +1673,8 @@ func pose(speed: float, turn: float) -> void:
 		align_bone("lowerleg01"+suffix,"foot"+suffix,knee,ankle)
 		if pant_legs.size()>i and not mesh_kit:
 			# Goalie pants stop short of the pads; the legs meet but don't overlap.
-			var fill:=1.06 if goalie else 0.96
-			var reach:=lerpf(0.68,0.52,butterfly) if goalie else 0.94
+			var fill:=1.13 if goalie else 0.96
+			var reach:=lerpf(0.80,0.56,butterfly) if goalie else 0.94
 			fit_limb(pant_legs[i],hip+Vector3(side*(0.03+butterfly*0.02),0.10,0),hip.lerp(knee,reach),fill)
 		var foot_pose: Transform3D = rest["foot"+suffix]
 		foot_pose.origin = ankle
@@ -1699,7 +1720,7 @@ func pose(speed: float, turn: float) -> void:
 			# The rise tapers a little and sits toward the outside of the leg, as on
 			# a real pad, so the two never cross at the five-hole in the stance.
 			thigh_rises[i].position=Vector3(RISE_SIGN*side*0.02,Gear.PAD_BREAK-0.08*squash,-0.04+0.05*squash)
-			thigh_rises[i].basis=Basis().scaled_local(Vector3(lerpf(0.88,0.6,squash),lerpf(1.0,0.12,squash),lerpf(1.0,0.7,squash)))
+			thigh_rises[i].basis=Basis().scaled_local(Vector3(lerpf(0.88,0.6,squash),lerpf(1.0,0.12,squash),lerpf(1.35,0.47,squash)))
 			thigh_rises[i].set_meta("rest_basis",thigh_rises[i].basis)
 			# Pad lower edges seal against the ice in butterfly.
 			var box:Array=pad_box()
@@ -1707,6 +1728,16 @@ func pose(speed: float, turn: float) -> void:
 			var box_center:Vector3=pads[i].transform*box[0].origin
 			var extent:float=absf(pads[i].basis.x.y)*size_.x/2+absf(pads[i].basis.y.y)*size_.y/2+absf(pads[i].basis.z.y)*size_.z/2
 			pads[i].position.y+=maxf(0,extent+0.012-box_center.y)
+			# Visible pad: lengthened downward so the boot break sits on the skate
+			# (the toe just shows below it), never through the ice; full length
+			# only standing - in the butterfly the collision pad is already down.
+			if pad_visuals.size()>i:
+				var bottom:Vector3=pads[i].transform*Vector3(0,-Gear.PAD_LENGTH*0.5,0.03)
+				var down:float=maxf(0.2,pads[i].basis.y.y)
+				var pad_drop:float=clampf((bottom.y-0.045)/down,0.0,PAD_DROP_MAX)*(1.0-smoothstep(0.0,0.5,butterfly))
+				var stretch:float=1.0+pad_drop/Gear.PAD_LENGTH
+				pad_visuals[i].scale=Vector3(1.0,stretch,lerpf(PAD_THICKEN,1.0,smoothstep(0.0,0.4,butterfly)))
+				pad_visuals[i].position=Vector3(0,-pad_drop*0.5,0.02*(1.0-smoothstep(0.0,0.4,butterfly)))
 		# Elbows and wrists stay on a two-hand stick posture, never running arm swings.
 		var shoulder := shoulder_of(i)
 		# Right-handed shot: the blade is on the skater's right (-x), so the right

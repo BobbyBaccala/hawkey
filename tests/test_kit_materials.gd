@@ -106,7 +106,7 @@ func run() -> void:
 	check(Kit.text_texture("17", 0.92) == Kit.text_texture("17", 0.92), "Number textures are cached")
 
 	# Goalie and referee variants build.
-	check(keeper.jersey.material_override is ShaderMaterial and float(param(keeper.jersey, "hem_v")) < float(param(a.jersey, "hem_v")), "Goalie sweater gets its own hem height")
+	check(keeper.jersey.material_override is ShaderMaterial and not is_equal_approx(float(param(keeper.jersey, "hem_v")), float(param(a.jersey, "hem_v"))), "Goalie sweater gets its own hem height")
 	check(int(param(ref.jersey, "garment")) == 3, "Referee keeps the striped sweater")
 
 	print("Kit material failures: %d" % failures)

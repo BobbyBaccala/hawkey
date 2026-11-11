@@ -36,6 +36,10 @@ func run()->void:
 		["legs-back","",Vector2(0,0.8),Vector3(0.5,0.6,-1.8),Vector3(0,0.42,0),44.0],
 		["legs-bfly","butterfly",Vector2(0.1,0.15),Vector3(1.3,0.8,1.6),Vector3(0,0.3,0),44.0],
 		["catch","glove",Vector2(0.75,1.35),Vector3(-1.2,1.3,2.3),Vector3(-0.2,0.95,0),46.0],
+		["mitt","",Vector2(0,0.8),Vector3(0.75,1.05,1.3),Vector3(0.48,1.0,0.25),30.0],
+		["rear-close","",Vector2(0,0.8),Vector3(0.0,1.0,-1.5),Vector3(0,0.8,0),46.0],
+		["rear-side","",Vector2(0,0.8),Vector3(-1.2,0.9,-1.1),Vector3(0,0.75,0),46.0],
+		["rear-bfly","butterfly",Vector2(0.1,0.15),Vector3(0.6,1.0,-1.5),Vector3(0,0.5,0),46.0],
 	]
 	var only:=""
 	for arg in OS.get_cmdline_user_args():

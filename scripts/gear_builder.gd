@@ -638,7 +638,7 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 			var col := WHITE
 			if i <= 2:
 				# Pocket leather, darker with use.
-				col = OFFWHITE.darkened(0.16)
+				col = Color("#262c34")
 			elif i <= 7:
 				# Padded white palm face around the pocket.
 				col = WHITE
@@ -677,13 +677,37 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 	b.add_tube(PackedVector3Array([thumb[3], thumb[4], thumb[4] + Vector3(0.012 * side, 0.014, 0)]), 0.0245, kit, 12)
 	# T-trap: a leather T bar up the middle of the pocket, and a laced web
 	# strung between the thumb tip and the finger tip.
-	b.add_rounded_box(Vector3(0.010 * side, 0.150, 0.030), Vector3(0.026, 0.16, 0.012), 0.005, DARK, Basis(Vector3.RIGHT, -0.22))
-	b.add_rounded_box(Vector3(0.000 * side, 0.236, 0.042), Vector3(0.11, 0.018, 0.012), 0.005, DARK)
-	for k in range(5):
-		var x := lerpf(-0.062, 0.050, k / 4.0)
-		b.add_tube(PackedVector3Array([Vector3(x * side, 0.206, 0.040), Vector3((x + 0.008) * side, 0.252, 0.046)]), 0.0045, LACE, 6)
-	for yy: float in [0.212, 0.250]:
-		b.add_tube(PackedVector3Array([Vector3(-0.070 * side, yy, 0.040), Vector3(0.0, yy + 0.004, 0.046), Vector3(0.060 * side, yy, 0.042)]), 0.0045, LACE, 6)
+	# Single-T web: a wide leather spine and crossbar, with a laced net strung
+	# across the whole pocket opening between the thumb and the finger roll
+	# (sagging into the well), so the trap reads as a webbed basket.
+	var web_c := Vector2(0.006, 0.150)
+	var web_z := func(x: float, y: float) -> float:
+		var r := Vector2((x - web_c.x) / 0.085, (y - web_c.y) / 0.105).length()
+		return 0.042 - 0.034 * maxf(0.0, 1.0 - r * r)
+	for k in range(7):
+		var x := lerpf(-0.066, 0.078, k / 6.0)
+		var pts := PackedVector3Array()
+		for j in range(7):
+			var y := lerpf(0.060, 0.246, j / 6.0)
+			pts.append(Vector3(x * side, y, web_z.call(x, y)))
+		b.add_tube(pts, 0.0042, WHITE, 5)
+	for k in range(8):
+		var y := lerpf(0.066, 0.240, k / 7.0)
+		var half := 0.085 * sqrt(maxf(0.05, 1.0 - pow((y - web_c.y) / 0.115, 2.0)))
+		var pts := PackedVector3Array()
+		for j in range(7):
+			var x := web_c.x + lerpf(-half, half, j / 6.0)
+			pts.append(Vector3(x * side, y, web_z.call(x, y) + 0.002))
+		b.add_tube(pts, 0.0042, WHITE, 5)
+	var spine := PackedVector3Array()
+	for j in range(6):
+		var y := lerpf(0.058, 0.240, j / 5.0)
+		spine.append(Vector3(web_c.x * side, y, web_z.call(web_c.x, y) + 0.006))
+	b.add_tube(spine, 0.013, DARK, 8)
+	b.add_rounded_box(Vector3(0.004 * side, 0.240, 0.044), Vector3(0.13, 0.024, 0.014), 0.006, DARK)
+	for k in range(6):
+		var x := lerpf(-0.058, 0.064, k / 5.0)
+		b.add_tube(PackedVector3Array([Vector3(x * side, 0.226, 0.046), Vector3((x + 0.006) * side, 0.254, 0.050)]), 0.004, WHITE, 6)
 	# Cuff and cheater: the flat padded panel down the wrist on the thumb side,
 	# carrying the glove's graphic toward the shooter.
 	b.add_panel(Vector3(-0.030 * side, -0.215, -0.018), Vector2(0.17, 0.15), 0.052, 0.03, Basis(Vector3.BACK, 0.10 * side), WHITE, kit, OFFWHITE)
@@ -951,7 +975,7 @@ static func pants_leg(side: float, kit: Color, base: Color, flare := 1.0) -> Arr
 			r -= 0.003 * exp(-pow((front - 0.55) / 0.08, 2)) * smoothstep(0.15, 0.3, t) * smoothstep(0.9, 0.75, t)
 			ring.append(Vector3(cos(a) * r, -t, front * r * 0.94))
 			var col := base
-			if outer > 0.93 and t > 0.08 and t < 0.97: col = kit
+			if outer > 0.86 and t > 0.08 and t < 0.97: col = kit
 			elif t > 0.94: col = base.lightened(0.12)
 			elif _band(t, 0.045, 0.03) > 0.5: col = base.lightened(0.05)
 			cols.append(col)
