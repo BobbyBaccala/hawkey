@@ -517,7 +517,7 @@ func _ready() -> void:
 			rig.add_child(sleeve)
 			cloth_sleeves.append(sleeve)
 		if not referee and not mesh_kit:
-			var pants := add_mesh(rig,Gear.pants_leg(side,kit,Color("#151c24"),0.0 if goalie else 1.0))
+			var pants := add_mesh(rig,Gear.pants_leg(side,kit,accent.darkened(0.08) if goalie else Color("#151c24"),0.0 if goalie else 1.0))
 			pants.material_override=Kit.breezers()
 			pant_legs.append(pants)
 		if not referee:
@@ -1691,7 +1691,21 @@ func pose(speed: float, turn: float) -> void:
 		override_pose("foot"+suffix,foot_pose)
 		skates[i].position = ankle+Vector3(0,-0.0525,0)
 		# Butterfly: skates turn out flat so the toes clear the pad backs.
-		skates[i].rotation = Vector3(0,side*lerpf(0.12,1.45,smoothstep(0.0,0.4,butterfly)),0) if goalie else boot
+		skates[i].rotation = Vector3(0,side*0.12,0) if goalie else boot
+		if goalie:
+			# The boot stays on the leg: as the shin tips over (butterfly, pad
+			# saves, kicks) the skate turns with it about the ankle - sole away
+			# along the shin, toe up and a little toward the shooter - instead
+			# of lying flat on the ice by itself.
+			var shin_up:Vector3=(knee-ankle).normalized()
+			var tipped:=smoothstep(0.12,0.55,1.0-shin_up.y)
+			var toe_dir:Vector3=Vector3(0,0.85,0.5)
+			toe_dir=(toe_dir-shin_up*shin_up.dot(toe_dir)).normalized()
+			var on_leg:=Basis(shin_up.cross(toe_dir),shin_up,toe_dir)
+			skates[i].basis=Basis(skates[i].basis.get_rotation_quaternion().slerp(on_leg.get_rotation_quaternion(),tipped))
+			skates[i].position=ankle-skates[i].basis*Vector3(0,0.0525,0)
+			# Never through the ice: the boot is about 5 cm from its axis to its side.
+			skates[i].position.y=maxf(skates[i].position.y,lerpf(0.0,0.05,tipped))
 		if socks.size()>i:
 			# Sock and shin-guard knee cap overlap the bottom of the pants.
 			# The sock runs down the shin into the skate cuff (cuff top ~0.15 m).
@@ -1734,7 +1748,7 @@ func pose(speed: float, turn: float) -> void:
 			if pad_visuals.size()>i:
 				var bottom:Vector3=pads[i].transform*Vector3(0,-Gear.PAD_LENGTH*0.5,0.03)
 				var down:float=maxf(0.2,pads[i].basis.y.y)
-				var pad_drop:float=clampf((bottom.y-0.045)/down,0.0,PAD_DROP_MAX)*(1.0-smoothstep(0.0,0.5,butterfly))
+				var pad_drop:float=clampf((bottom.y-0.045)/down,0.0,PAD_DROP_MAX)*(1.0-smoothstep(0.0,0.15,butterfly))
 				var stretch:float=1.0+pad_drop/Gear.PAD_LENGTH
 				pad_visuals[i].scale=Vector3(1.0,stretch,lerpf(PAD_THICKEN,1.0,smoothstep(0.0,0.4,butterfly)))
 				pad_visuals[i].position=Vector3(0,-pad_drop*0.5,0.02*(1.0-smoothstep(0.0,0.4,butterfly)))
