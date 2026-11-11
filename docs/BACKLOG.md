@@ -79,7 +79,7 @@ Rules for every run:
 - [ ] Shooting animations: wrist-shot and slapshot wind-up/follow-through driven by charge; stick flex look.
 - [ ] Crossovers and tight turns: leg crossover cycle when turning at speed; lean into turns.
 - [x] Hockey stops: snow spray particles and a skid pose when braking hard.
-- [ ] Body checks: hit reaction lean/stumble, glass rattle when near boards.
+- [x] Body checks: hit reaction lean/stumble, glass rattle when near boards. (2026-11-11)
 - [ ] Jersey detail: numbers on sleeves and back via proper decals, team stripe on socks matching jersey, nameplate polish.
 
 - [ ] Hockey stop polish: snow spray reads faint against the white ice (more density/contrast, maybe a darker-edged spray); Ctrl braking stops so fast the spray lasts ~0.25 s.
@@ -178,3 +178,4 @@ Rules for every run:
 - [ ] Unreal export follow-ups: jersey numbers/nameplates/stripes are drawn by kit_cloth.gdshader so they don't export - bake them to a texture; goalie neck gap under the mask in the export; Codex's v3 hero still wears the original Capitals-marked helmet - swap in assets/gear/helmet-v2.glb.
 - 2026-11-07 — CPU one-timers: a CPU receiving a pass where the shot is clearly on (shot quality ≥ his shooting bar + 0.08, skater_ai.gd one_timer()) fires it first time (0.06 s) instead of settling it. All 42 suites pass.
 - 2026-11-08 — Godot vs Unreal comparison: Godot --spectate (AI v AI, TOR v MTL) captured from two cameras; Unreal has no gameplay (reference/render stage only), so its side is the game-export player render. Screenshot: docs/screenshots/godot-vs-unreal-auto-20261108.png. Follow-up: an Unreal gameplay port does not exist; build one only if the owner wants it.
+- 2026-11-11 — Round 1 (two parallel agents): (a) head close-up cleanup - scanned head bound rigidly to the head bone, baked hair/liner/ear masks (vents show dark liner, no orange patches), smooth neck guard, goalies and referees on the scanned head, tools/capture_head.gd; (b) CPU body checks in open ice with per-skater cooldown, shared land_body_check(), hit stagger (skater_visual.gd take_hit) and glass rattle (arena.gd), tests/test_cpu_checks.gd. All 43 suites pass. Screenshots: docs/screenshots/head-cleanup-auto-20261111.png, docs/screenshots/cpu-check-auto-20261111.png. Follow-ups: tune open-ice hit frequency over a full game; crowd reaction to hits; textured hair fringe.
