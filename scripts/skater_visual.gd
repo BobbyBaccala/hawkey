@@ -442,11 +442,12 @@ func _ready() -> void:
 		rest[skeleton.get_bone_name(i)] = skeleton.get_bone_global_rest(i)
 	var uniform := ShaderMaterial.new()
 	uniform.shader = Uniform
+	body_material = uniform
 	uniform.set_shader_parameter("team_color",kit)
 	uniform.set_shader_parameter("hide_pants",not referee)
 	uniform.set_shader_parameter("hide_socks",not referee and not goalie)
-	uniform.set_shader_parameter("hide_neck",not referee and not goalie)
-	mesh_head = MESH_HEAD and not referee and not goalie
+	mesh_head = MESH_HEAD
+	uniform.set_shader_parameter("hide_neck",mesh_head or (not referee and not goalie))
 	uniform.set_shader_parameter("hide_head",mesh_head)
 	uniform.set_shader_parameter("skin_detail",Kit.skin_texture())
 	uniform.set_shader_parameter("has_skin_detail",true)
@@ -461,11 +462,16 @@ func _ready() -> void:
 	rig.add_child(shirt)
 	mesh_kit = MESH_KIT and not goalie and not referee
 	build_jersey()
-	if not goalie and not referee:
+	if mesh_head or (not goalie and not referee):
 		neck_guard = MeshInstance3D.new()
 		neck_guard.name = "NeckGuard"
 		neck_guard.mesh = ArrayMesh.new()
-		neck_guard.material_override = Kit.plastic(Color("#141a21"),0.85)
+		var guard_mat := StandardMaterial3D.new()
+		guard_mat.albedo_color = Color("#10151b")
+		guard_mat.roughness = 0.95
+		guard_mat.metallic_specular = 0.12
+		guard_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		neck_guard.material_override = guard_mat
 		rig.add_child(neck_guard)
 	sticks = Node3D.new()
 	rig.add_child(sticks)
@@ -858,10 +864,12 @@ func jersey_hem_height() -> float:
 	return JERSEY_HEM-(0.03 if goalie else 0.0)
 
 var mesh_head := false
+## The base body's shader material (assets/uniform.gdshader).
+var body_material: ShaderMaterial
 ## Skin-tone multipliers over the scanned face texture (light to deep).
 const FACE_TONES := [Color(1.0,0.97,0.95),Color(0.97,0.88,0.80),Color(0.90,0.76,0.64),Color(0.76,0.60,0.48),Color(0.58,0.44,0.34),Color(0.42,0.31,0.24)]
 static var _face_mats := {}
-const HAIR_COLORS := [Color(0.05,0.04,0.03),Color(0.16,0.10,0.06),Color(0.30,0.20,0.10),Color(0.55,0.42,0.22),Color(0.42,0.40,0.38),Color(0.03,0.03,0.03)]
+const HAIR_COLORS := [Color(0.05,0.04,0.03),Color(0.16,0.10,0.06),Color(0.30,0.20,0.10),Color(0.40,0.31,0.17),Color(0.42,0.40,0.38),Color(0.03,0.03,0.03)]
 const FACE_SHADER := preload("res://assets/skater_face.gdshader")
 ## Which face this skater wears; defaults to a stable pick from the jersey number.
 var face_variant := -1
@@ -874,26 +882,65 @@ static func head_parts() -> Dictionary:
 		for n in ["Head","Eyes"]:
 			var src := scene.find_child(n,true,false) as MeshInstance3D
 			var mesh: Mesh = src.mesh
-			if n == "Head": mesh = head_with_hair_mask(src.mesh)
+			if n == "Head": mesh = head_with_hair_mask(src.mesh,src.skin)
 			_head_cache[n] = [mesh,src.skin]
 		scene.free()
 	return _head_cache
 
+## Hair mask for a rest-pose point of the scanned head: x = hair amount
+## (crown, back and sides of the skull, never the ears or face), y = how far
+## that hair sits under the helmet (drawn as a near-black liner so the shell's
+## vents never show scalp or bright hair).
+static func hair_mask_at(p: Vector3) -> Vector2:
+	# Hairline: high on the forehead, dropping behind the temples to the nape.
+	var line := 1.728+0.030*smoothstep(0.075,0.14,p.z)
+	var hair := smoothstep(line,line+0.012,p.y)
+	hair = maxf(hair,smoothstep(0.050,0.030,p.z)*smoothstep(1.622,1.648,p.y))
+	hair = maxf(hair,smoothstep(1.675,1.70,p.y)*smoothstep(0.085,0.065,p.z))
+	# Ears stand proud of the skull below the temples.
+	var ear := smoothstep(0.074,0.079,absf(p.x))*smoothstep(1.718,1.708,p.y)*smoothstep(-0.02,0.0,p.z)
+	hair *= 1.0-ear
+	var liner := smoothstep(1.640,1.675,p.y)
+	return Vector2(hair,liner)
+
 ## Copy of the head surface whose vertex colour red channel marks where hair
 ## grows (crown, back and sides of the skull) in the head's rest pose.
-static func head_with_hair_mask(src: Mesh) -> ArrayMesh:
+static func head_with_hair_mask(src: Mesh, skin: Skin = null) -> ArrayMesh:
 	var arrays := src.surface_get_arrays(0)
 	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var cols := PackedColorArray()
 	cols.resize(verts.size())
 	for i in range(verts.size()):
 		var p := verts[i]
-		var hair := maxf(smoothstep(1.742,1.756,p.y),smoothstep(0.02,-0.02,p.z)*smoothstep(1.60,1.64,p.y))
-		hair = maxf(hair,smoothstep(1.66,1.70,p.y)*smoothstep(0.055,0.075,absf(p.x))*smoothstep(0.06,0.0,p.z))
-		cols[i] = Color(hair,0,0,1)
+		var hm := hair_mask_at(p)
+		# Blue: skin high on the forehead/crown that only shows through vents.
+		# Alpha: 0 on the ears (goalie masks hide them, see skater_face.gdshader).
+		var ear := smoothstep(0.072,0.076,absf(p.x))*smoothstep(1.725,1.715,p.y)*smoothstep(1.595,1.605,p.y)
+		cols[i] = Color(hm.x,hm.y,smoothstep(1.708,1.720,p.y),1.0-ear)
 	arrays[Mesh.ARRAY_COLOR] = cols
+	# Rigid head: the scan's neck stump was weighted to the neck bones, which
+	# the rig never poses, so the nape stretched back to the rest neck whenever
+	# the head moved. Everything follows the head bone instead and the stump
+	# tucks into the neck guard.
+	var head_bind := -1
+	if skin != null:
+		for b in range(skin.get_bind_count()):
+			if skin.get_bind_name(b) == "head": head_bind = b
+	var flags := 0
+	if head_bind >= 0 and arrays[Mesh.ARRAY_BONES] != null:
+		var per := (arrays[Mesh.ARRAY_BONES] as PackedInt32Array).size()/maxi(1,verts.size())
+		var bones := PackedInt32Array()
+		var weights := PackedFloat32Array()
+		bones.resize(verts.size()*per)
+		weights.resize(verts.size()*per)
+		for i in range(verts.size()):
+			bones[i*per] = head_bind
+			weights[i*per] = 1.0
+		arrays[Mesh.ARRAY_BONES] = bones
+		arrays[Mesh.ARRAY_WEIGHTS] = weights
+		if per == 8: flags = Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS
 	var out := ArrayMesh.new()
-	out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+	out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays,[],{},flags)
 	out.surface_set_material(0,src.surface_get_material(0))
 	return out
 
@@ -910,15 +957,17 @@ func build_mesh_head() -> void:
 		else:
 			var v := face_variant if face_variant >= 0 else (number.hash()*7 + int(number)) % FACE_TONES.size()
 			v = posmod(v,FACE_TONES.size())
-			if not _face_mats.has(v):
+			var fk := v+(100 if goalie else 0)
+			if not _face_mats.has(fk):
 				var src := (parts[n][0] as Mesh).surface_get_material(0) as StandardMaterial3D
 				var m := ShaderMaterial.new()
 				m.shader = FACE_SHADER
 				m.set_shader_parameter("albedo_tex",src.albedo_texture)
 				m.set_shader_parameter("hair_color",HAIR_COLORS[[3,2,1,0,5,0][v]])
 				m.set_shader_parameter("tone",(FACE_TONES[v] as Color)*Color(0.97,0.94,0.92))
-				_face_mats[v] = m
-			inst.material_override = _face_mats[v]
+				m.set_shader_parameter("hide_ears",goalie)
+				_face_mats[fk] = m
+			inst.material_override = _face_mats[fk]
 		head_nodes.append(inst)
 
 ## Skinned instance of a cached garment surface, bound to the rig skeleton.
@@ -2299,41 +2348,66 @@ func fit_glove(i: int, wrist: Vector3, elbow: Vector3, grip_point := Vector3.INF
 	var origin := wrist if grip_point==Vector3.INF else grip_point-basis_*GLOVE_HOLE
 	skater_gloves[i].transform = Transform3D(basis_,origin)
 
+## Neck guard top ring relative to the posed head joint, and its half-width /
+## half-depth (the scanned neck stump is ~0.069 wide and reaches z 0.14).
+const NECK_GUARD_TOP := Vector3(0,-0.066,0.006)
+const NECK_GUARD_RADII := Vector2(0.086,0.108)
 const SLEEVE_ROWS := 14
 const SLEEVE_SIDES := 22
 ## Neck guard: a padded collar tube from inside the jersey neckline up under
 ## the jaw, following the posed torso and head.
 func update_neck_guard() -> void:
 	var bottom: Vector3 = shirt.transform*Vector3(0,1.47,0.006)
-	var top: Vector3 = posed_head+Vector3(0,0.012,0.0)
+	# The top ring sits level under the jaw in head space (the head stays
+	# upright while the torso leans) and is wide enough to swallow the scanned
+	# head's neck stump, whose ragged lower edge would otherwise poke through.
+	var top: Vector3 = posed_head+NECK_GUARD_TOP
 	var old:Array=neck_guard.get_meta("pose",[])
 	if old.size()==2 and bottom.is_equal_approx(old[0]) and top.is_equal_approx(old[1]):return
 	neck_guard.set_meta("pose",[bottom,top])
-	var axis:=(top-bottom).normalized()
-	var across:=axis.cross(Vector3.FORWARD).normalized()
-	if across.length_squared()<0.01: across=Vector3.RIGHT
-	var depth:=axis.cross(across).normalized()
-	var st:=SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	const SIDES:=20
-	const ROWS:=6
-	# Radius: flares into the collar, snug round the neck, rolled top edge.
-	var radii:=[0.105,0.090,0.077,0.070,0.068,0.068,0.064]
+	var bx: Vector3 = shirt.transform.basis.x.normalized()
+	var bz: Vector3 = shirt.transform.basis.z.normalized()
+	const SIDES:=28
+	const ROWS:=8
 	var rings:=[]
 	for r in range(ROWS+1):
 		var t:=float(r)/ROWS
-		var c:=bottom.lerp(top,t)
+		var e:=smoothstep(0.0,1.0,t)
+		# Flares into the collar, snug round the neck, then the head-space ring.
+		var pinch:=1.0-0.04*sin(PI*t)
 		var ring:=[]
-		for k in range(SIDES+1):
-			var a:=TAU*k/SIDES
-			var radial:=across*cos(a)+depth*sin(a)*0.92
-			ring.append([c+radial*float(radii[r]),radial.normalized()])
-		rings.append(ring)
-	for r in range(ROWS):
 		for k in range(SIDES):
-			for v in [rings[r][k],rings[r+1][k],rings[r+1][k+1],rings[r][k],rings[r+1][k+1],rings[r][k+1]]:
-				st.set_normal(v[1])
-				st.add_vertex(v[0])
+			var a:=TAU*k/SIDES
+			var low:=bottom+(bx*cos(a)*0.105+bz*sin(a)*0.097)
+			var high:=top+Vector3(cos(a)*NECK_GUARD_RADII.x,0.0,sin(a)*NECK_GUARD_RADII.y)
+			var c:=bottom.lerp(top,t)
+			ring.append(c+(low.lerp(high,e)-bottom.lerp(top,e))*pinch)
+		rings.append(ring)
+	# Rolled top edge turned inward so the rim reads as padded, not a cut tube.
+	var rim:=[]
+	for k in range(SIDES):
+		var p: Vector3 = rings[ROWS][k]
+		rim.append(top+(p-top)*0.86+Vector3(0,0.006,0))
+	rings.append(rim)
+	var verts:=PackedVector3Array()
+	var indices:=PackedInt32Array()
+	for ring in rings:
+		for p in ring: verts.append(p)
+	for r in range(rings.size()-1):
+		for k in range(SIDES):
+			var k1:=(k+1)%SIDES
+			var i0:=r*SIDES+k
+			var i1:=r*SIDES+k1
+			var i2:=(r+1)*SIDES+k
+			var i3:=(r+1)*SIDES+k1
+			indices.append_array([i0,i3,i2,i0,i1,i3])
+	var arrays:=[]
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX]=verts
+	arrays[Mesh.ARRAY_INDEX]=indices
+	var st:=SurfaceTool.new()
+	st.create_from_arrays(arrays)
+	st.generate_normals()
 	var mesh:ArrayMesh=neck_guard.mesh
 	mesh.clear_surfaces()
 	st.commit(mesh)

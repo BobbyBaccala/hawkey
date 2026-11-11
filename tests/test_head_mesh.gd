@@ -37,7 +37,44 @@ func run() -> void:
 	r.referee = true
 	root.add_child(r)
 	await physics_frame
-	check(not g.mesh_head and g.head_nodes.is_empty(), "goalie keeps base head")
-	check(not r.mesh_head and r.head_nodes.is_empty(), "referee keeps base head")
+	check(g.mesh_head and g.head_nodes.size() == 2, "goalie wears the scanned head")
+	check(r.mesh_head and r.head_nodes.size() == 2, "referee wears the scanned head")
+	for fig in [v, g, r]:
+		check(fig.body_material.get_shader_parameter("hide_head") and fig.body_material.get_shader_parameter("hide_neck"), "base head and neck hidden under the scanned head")
+		check(fig.neck_guard != null, "neck guard covers the stump")
+	# Baked masks (vertex colour): r hair, g under-helmet liner, b crown skin, a ears.
+	var hm: Mesh = parts["Head"][0]
+	var ha := hm.surface_get_arrays(0)
+	var hv: PackedVector3Array = ha[Mesh.ARRAY_VERTEX]
+	var hc: PackedColorArray = ha[Mesh.ARRAY_COLOR]
+	check(hc.size() == hv.size(), "head has a mask colour per vertex")
+	var crown_dark := true
+	var face_clean := true
+	var ears := 0
+	for i in range(hv.size()):
+		var p := hv[i]
+		if p.y > 1.745 and maxf(hc[i].r*hc[i].g, hc[i].b) < 0.9: crown_dark = false
+		if p.z > 0.11 and p.y > 1.60 and p.y < 1.70 and (hc[i].r > 0.05 or hc[i].b > 0.05): face_clean = false
+		if hc[i].a < 0.5:
+			ears += 1
+			if absf(p.x) < 0.07: face_clean = false
+	check(crown_dark, "everything under the helmet crown is liner-dark (vents never show skin)")
+	check(face_clean, "no hair or liner on the face; ear mask only on the ears")
+	check(ears > 20, "ears are masked for goalie masks: %d verts" % ears)
+	# Rigid head: every vertex follows the head bone only.
+	var skin_h: Skin = parts["Head"][1]
+	var hb: PackedInt32Array = ha[Mesh.ARRAY_BONES]
+	var hw: PackedFloat32Array = ha[Mesh.ARRAY_WEIGHTS]
+	var per := hb.size()/hv.size()
+	var rigid := true
+	for i in range(hv.size()):
+		if skin_h.get_bind_name(hb[i*per]) != "head" or absf(hw[i*per]-1.0) > 0.001: rigid = false
+	check(rigid, "head mesh is rigidly bound to the head bone")
+	check((g.head_nodes[0].material_override as ShaderMaterial).get_shader_parameter("hide_ears") == true, "goalie hides the ears")
+	check((v.head_nodes[0].material_override as ShaderMaterial).get_shader_parameter("hide_ears") != true, "skaters keep their ears")
+	# Neck guard top ring encloses the neck stump (rest pose, head space).
+	v.animate(0.0, 1.0/120, 0, false)
+	var ga: AABB = v.neck_guard.mesh.get_aabb()
+	check(ga.size.x > 0.15 and ga.size.x < 0.25, "neck guard wider than the neck stump: %.3f" % ga.size.x)
 	print("head tris ", tris, " failures: ", failures)
 	quit(1 if failures > 0 else 0)

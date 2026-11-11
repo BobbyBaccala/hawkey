@@ -68,7 +68,7 @@ func run() -> void:
 	goalie.goalie = true
 	root.add_child(goalie)
 	await process_frame
-	check(goalie.neck_guard == null, "Goalies keep their mask and no neck guard")
+	check(goalie.neck_guard != null, "Goalies wear a throat/neck guard under the scanned head")
 	print("Helmet/arm fit failures: %d" % failures)
 	quit(failures)
 
