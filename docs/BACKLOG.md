@@ -103,7 +103,7 @@ Rules for every run:
 ## Gameplay feel
 - [ ] Passing feel: pass speed by distance, receiver stick reach, saucer passes clearing sticks.
 - [x] AI positioning: forwards support, defence gap control, back-checking (basic roles, scripts/team_tactics.gd).
-- [ ] Offside and icing rules with linesman whistle and banner.
+- [x] Offside and icing rules with linesman whistle and banner. (2026-11-11; follow-ups in run log)
 - [ ] Shot variety: one-timers, backhands, deflections off sticks and bodies.
 
 ## Audio
@@ -179,3 +179,4 @@ Rules for every run:
 - 2026-11-07 — CPU one-timers: a CPU receiving a pass where the shot is clearly on (shot quality ≥ his shooting bar + 0.08, skater_ai.gd one_timer()) fires it first time (0.06 s) instead of settling it. All 42 suites pass.
 - 2026-11-08 — Godot vs Unreal comparison: Godot --spectate (AI v AI, TOR v MTL) captured from two cameras; Unreal has no gameplay (reference/render stage only), so its side is the game-export player render. Screenshot: docs/screenshots/godot-vs-unreal-auto-20261108.png. Follow-up: an Unreal gameplay port does not exist; build one only if the owner wants it.
 - 2026-11-11 — Round 1 (two parallel agents): (a) head close-up cleanup - scanned head bound rigidly to the head bone, baked hair/liner/ear masks (vents show dark liner, no orange patches), smooth neck guard, goalies and referees on the scanned head, tools/capture_head.gd; (b) CPU body checks in open ice with per-skater cooldown, shared land_body_check(), hit stagger (skater_visual.gd take_hit) and glass rattle (arena.gd), tests/test_cpu_checks.gd. All 43 suites pass. Screenshots: docs/screenshots/head-cleanup-auto-20261111.png, docs/screenshots/cpu-check-auto-20261111.png. Follow-ups: tune open-ice hit frequency over a full game; crowd reaction to hits; textured hair fringe.
+- 2026-11-11 — Round 2 (two parallel agents): (a) goalie pass - accent shoulder yoke + chest diamond crest (kit_cloth.gdshader yoke_v), protector-wide shoulders/arms, white pads with team/accent graphics (Kit.goalie_pad(kit, accent)), tests/test_goalie_kit.gd, tools/capture_goalie.gd; (b) offside and icing - scripts/rules_offside_icing.gd (pure logic), match.gd step_rules()/rule_whistle(), CPU tag-up, --no-rules, --rule-banner=offside|icing, tests/test_offside_icing.gd, tools/sim_rules.gd (about 2-3 icings per period CPU v CPU; CPUs never go offside). All 45 suites pass. Screenshots: docs/screenshots/goalie-pass-auto-20261111.png, docs/screenshots/offside-banner-auto-20261111.png. Follow-ups: delayed-offside indicator and linesman arm signal; event text hard-codes TOR/MTL; catcher back/blocker palm detail; test_play_now_ai is sensitive to AI timing.
