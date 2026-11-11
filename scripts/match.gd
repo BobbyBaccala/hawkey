@@ -10,6 +10,7 @@ const GoalReplay = preload("res://scripts/goal_replay.gd")
 const GameStats = preload("res://scripts/game_stats.gd")
 const ControlSlots = preload("res://scripts/control_slots.gd")
 const SkaterAI = preload("res://scripts/skater_ai.gd")
+const Rules = preload("res://scripts/rules_offside_icing.gd")
 ## The local human's owner id in the seat model (a network lobby adds others).
 const LOCAL_HUMAN := "local:1"
 const CAMERA_NAMES := ["DYNAMIC", "OVERHEAD", "BROADCAST", "FULL RINK"]
@@ -43,6 +44,13 @@ static var play_style := ControlSlots.STYLE_TEAM
 static var play_position := 0
 static var play_difficulty := SkaterAI.DEFAULT_DIFFICULTY
 static var play_spectate := false
+## Offside and icing (rules_offside_icing.gd). Off with --no-rules or by
+## clearing this before the match scene loads; lab/practice never use them.
+static var rules_on := true
+## Share of own-half dumps a CPU still makes with icing on (the rest carry
+## the puck to the red line first).
+const ICE_IT_ANYWAY := 0.2
+var rules := Rules.new()
 var ai_rng := RandomNumberGenerator.new()
 var passes_by_team := [0,0]
 ## The teammate a CPU pass is meant for: he skates to meet it (skater_ai.gd
@@ -175,6 +183,12 @@ func _ready() -> void:
 	super._ready()
 	celebration=GoalCelebration.new()
 	add_child(celebration)
+	rules.enabled=rules_on and not "--no-rules" in OS.get_cmdline_user_args()
+	rules.blue_line=Arena.BLUE_LINE
+	rules.goal_line=Arena.GOAL_LINE
+	rules.end_dot_z=Arena.END_DOT_Z
+	rules.neutral_dot_z=Arena.NEUTRAL_DOT_Z
+	rules.dot_x=Arena.DOT_X
 	Input.joy_connection_changed.connect(on_controller_connection)
 	var devices:=Input.get_connected_joypads()
 	if not devices.is_empty():
@@ -353,6 +367,7 @@ func start_from_title() -> void:
 func setup_faceoff() -> void:
 	for actor in skaters: actor.get_child(1).stop_mocap()
 	carrier = null
+	rules.reset()
 	pickup_owner = false
 	charge = 0
 	cooldown = 0.3
@@ -1016,6 +1031,7 @@ func _on_puck_contact(body: Node) -> void:
 	var actor:=hit_actor(body)
 	if actor is CharacterBody3D and actor in goalkeepers and goalie_contact_timer<=0:
 		goalie_contact_timer=0.25
+		rules.goalie_touch()
 		saves+=1
 		if absf(last_puck_velocity.z)>6: team_shots[0 if attack_direction(0)==signf(actor.position.z) else 1]+=1
 		# A hard shot stopped: the crowd comes up off its seats (arena_dressing.gd).
@@ -1041,8 +1057,10 @@ func _on_puck_contact(body: Node) -> void:
 			puck.linear_velocity=Vector3.ZERO
 			puck.freeze=true
 		beep(115)
-	elif puck.linear_velocity.length()>8:
-		beep(300)
+	else:
+		# A skater's body or stick got a piece of it: no icing after that.
+		if actor is CharacterBody3D and actor in skaters and actor!=carrier: rules.note_touch(body_team(actor),puck.position)
+		if puck.linear_velocity.length()>8: beep(300)
 
 func _physics_process(delta: float) -> void:
 	if skaters.is_empty(): return
@@ -1142,6 +1160,7 @@ func _physics_process(delta: float) -> void:
 				carrier=null
 				break
 		previous_puck=puck.position
+		if match_state.phase==MatchState.Phase.PLAY: step_rules()
 		if puck.position.y< -2 or absf(puck.position.x)>18 or absf(puck.position.z)>33:
 			match_state.phase=MatchState.Phase.STOPPAGE
 			match_state.phase_timer=1.5
@@ -1164,6 +1183,32 @@ func _physics_process(delta: float) -> void:
 		puck_shadow.position=Vector3(puck.position.x,0.003,puck.position.z)
 		var shadow_scale:=clampf(1+puck.position.y*0.15,1,1.8)
 		puck_shadow.scale=Vector3(shadow_scale,1,shadow_scale)
+
+## Offside / icing: feed the rules one snapshot per tick; on a call the
+## linesman's whistle stops play, the banner names it and the next faceoff
+## goes to the spot the rules give (rules_offside_icing.gd).
+func step_rules() -> void:
+	if not rules.enabled: return
+	var snapshot: Array = []
+	var carrier_index := -1
+	for actor in skaters:
+		if not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")) or is_hopping(actor): continue
+		if actor==carrier: carrier_index=snapshot.size()
+		snapshot.append({"team":body_team(actor),"pos":actor.position})
+	var attack := [attack_direction(0),attack_direction(1)]
+	var short := [match_state.count(0)<match_state.count(1),match_state.count(1)<match_state.count(0)]
+	var verdict: Dictionary = rules.step({"puck":puck.position,"carrier":carrier_index,"skaters":snapshot,"attack":attack,"shorthanded":short})
+	if str(verdict.call)!=Rules.NONE: rule_whistle(str(verdict.call),int(verdict.team),verdict.spot)
+
+func rule_whistle(kind: String, team: int, spot: Vector3) -> void:
+	match_state.phase=MatchState.Phase.STOPPAGE
+	match_state.phase_timer=2.2
+	match_state.event=kind.capitalize()+" — "+("TOR" if team==0 else "MTL")
+	next_faceoff=spot
+	carrier=null
+	puck.linear_velocity=Vector3.ZERO
+	if hud_node!=null: hud_node.show_banner(kind,str(hud_node.team_names[team]),hud_node.team_colors[team],2.0)
+	beep(880)
 
 func control_player(delta: float) -> void:
 	if not bool(player.get_meta("eligible")): switch_player()
@@ -1314,7 +1359,11 @@ func update_team_ai(delta: float) -> void:
 				match str(plan.kind):
 					"shoot": ai_shoot(actor,attack,is_d)
 					"pass": ai_pass(actor,plan)
-					"dump": release_puck(actor,SkaterAI.flat(plan.target-puck.position),19,0.08)
+					"dump":
+						# Gain the red line first: a dump from his own half is an icing.
+						# Under pressure he still fires it away now and then (ICE_IT_ANYWAY).
+						if rules.enabled and puck.position.z*attack<0.4 and ai_rng.randf()>ICE_IT_ANYWAY: plan.kind="carry"
+						else: release_puck(actor,SkaterAI.flat(plan.target-puck.position),19,0.08)
 			else: actor.set_meta("decision",timer)
 			if plan.is_empty() or str(plan.kind) in ["shoot","pass","dump"]:
 				target=SkaterAI.carry_target(actor.position,attack,ai_opponents[team])
@@ -1355,6 +1404,8 @@ func update_team_ai(delta: float) -> void:
 			else:
 				var meet:=SkaterAI.intercept_point(puck.position,puck.linear_velocity,actor.position,8.0,0.6)
 				if meet!=Vector3.INF and puck.linear_velocity.length()>6.0: target=meet
+		if rules.enabled and not changing and not is_hopping(actor):
+			target=onside_target(actor,team,attack,target)
 		var to_target:=target-actor.position
 		var intent:=to_target.limit_length(1)
 		if to_target.length()<0.6: intent=Vector3.ZERO
@@ -1373,6 +1424,26 @@ func update_team_ai(delta: float) -> void:
 		# Stick checks and hits (skater_ai.gd skill): a poke only works some of
 		# the time, and each skater gets one try every half second.
 		ai_defend(actor,team,delta)
+
+## CPUs and the blue line (rules_offside_icing.gd): on a delayed offside every
+## attacker tags up; without the puck in the zone nobody goes in ahead of it;
+## the carrier holds up at the line while a team-mate is still inside.
+func onside_target(actor: CharacterBody3D, team: int, attack: float, target: Vector3) -> Vector3:
+	var line:=Arena.BLUE_LINE
+	var hold:=Vector3(target.x,0,attack*(line-1.2))
+	if rules.delayed_offside(team):
+		return hold if actor!=carrier and (actor.position.z*attack>line-0.8 or target.z*attack>line-0.8) else target
+	var puck_in:=puck.position.z*attack>line+0.1
+	if puck_in: return target
+	if actor==carrier:
+		for mate in skaters:
+			if mate!=actor and body_team(mate)==team and bool(mate.get_meta("eligible")) and mate.position.z*attack>line+Rules.SKATER_MARGIN-0.05:
+				return hold if target.z*attack>line-1.2 else target
+		return target
+	# Loose puck or a team-mate carrying it up ice: wait at the line. With the
+	# other team in possession he is defending and stays outside anyway.
+	if target.z*attack>line-0.5: return Vector3(target.x,0,attack*(line-0.5))
+	return target
 
 ## Positions the CPUs read this tick: opponents per team and, for a team
 ## defending in its own zone, who marks whom (skater_ai.gd assign_coverage).
@@ -1789,6 +1860,12 @@ func capture_preview() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if str(arg).begins_with("--stats-screen"):
 			await capture_stats_screen(str(arg).substr(15) if str(arg).contains("=") else "intermission", "--stats-demo" in OS.get_cmdline_user_args())
+	for arg in OS.get_cmdline_user_args():
+		# --rule-banner=offside|icing: the linesman's call as the match shows it.
+		if str(arg).begins_with("--rule-banner"):
+			var kind:=Rules.ICING if str(arg).ends_with("icing") else Rules.OFFSIDE
+			rule_whistle(kind,0,rules.offside_spot(0,attack_direction(0)) if kind==Rules.OFFSIDE else rules.icing_spot(attack_direction(0)))
+			for i in range(20): await get_tree().process_frame
 	if "--goal-banner" in OS.get_cmdline_user_args():
 		hud_node.show_banner("GOAL", "TORONTO  ·  VALE", hud_node.team_colors[0], 5.0)
 		for i in range(20): await get_tree().process_frame
