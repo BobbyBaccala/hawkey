@@ -1543,6 +1543,7 @@ func pose(speed: float, turn: float) -> void:
 	# Linesman bends at the knees and waist over the dot to drop the puck.
 	var drop_w := drop_hand*drop_hand*(3.0-2.0*drop_hand) if referee else 0.0
 	if drop_w > 0.0: drop += Vector3(0,-0.10,-0.04)*drop_w
+	if hit_stagger > 0.0: drop += Vector3(0,-0.05,0)*hit_amount()
 	posed_drop = drop
 	var root_pose := root_rest
 	root_pose.origin += drop
@@ -1555,6 +1556,8 @@ func pose(speed: float, turn: float) -> void:
 	# Stop: the upper body leans back against the skid.
 	if stop_w > 0.0: bend = Basis(Vector3.BACK,-stop_side*0.24*stop_w)*bend
 	if not hop_state.is_empty(): bend = Basis(Vector3.RIGHT,0.38*float(hop_state.lean))*bend
+	# Body check: the upper body is thrown the way the hit pushed him.
+	if hit_stagger > 0.0: bend = hit_bend()*bend
 	if not goalie and (seat > 0.0 or cheer > 0.0 or stand_tall > 0.0):
 		var tall := maxf(cheer,stand_tall)
 		var upright := lerpf(0.22,0.06,cheer/maxf(tall,0.001))
@@ -1916,7 +1919,34 @@ func update_hop(delta: float) -> void:
 		# Landed: stand normally where the hop ended.
 		hop_state = {}
 
+## --- Body-check reaction -------------------------------------------------
+## take_hit(): the skater staggers for `seconds` - the torso is thrown the way
+## the hit pushed him (sharp at first, then recovering) and he sinks a little
+## at the knees. hit_stagger runs 1 -> 0 over the reaction.
+var hit_stagger := 0.0
+var hit_seconds := 0.7
+var hit_dir := Vector3.ZERO     # push direction in this node's space (-Z = his front)
+
+func take_hit(local_push: Vector3, seconds: float = 0.7) -> void:
+	local_push.y = 0
+	hit_dir = local_push.normalized() if local_push.length() > 0.01 else Vector3(0,0,1)
+	hit_seconds = maxf(seconds,0.1)
+	hit_stagger = 1.0
+
+## Strength of the stagger now: snaps in over the first 15 %, eases back out.
+func hit_amount() -> float:
+	if hit_stagger <= 0.0: return 0.0
+	var t := 1.0-hit_stagger
+	return smoothstep(0.0,0.15,t)*(1.0-smoothstep(0.3,1.0,t))
+
+## Torso lean of the stagger, in rig space (the rig is turned PI, so its +Z is
+## the skater's front and its +X his left).
+func hit_bend() -> Basis:
+	var a := hit_amount()
+	return Basis(Vector3.BACK,hit_dir.x*0.42*a)*Basis(Vector3.RIGHT,-hit_dir.z*0.34*a)
+
 func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, braking: bool = false) -> void:
+	hit_stagger = maxf(0.0,hit_stagger-delta/hit_seconds)
 	update_hop(delta)
 	if hop_u >= 0.0:
 		speed = 0.0

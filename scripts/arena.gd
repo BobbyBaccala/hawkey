@@ -305,6 +305,40 @@ func board_glass(root: Node3D, length_: float) -> void:
 	for piece in pieces:
 		var glass := block(root, Vector3(piece.y - piece.x, 1.55, 0.045), Vector3((piece.x + piece.y) * 0.5, 1.88, 0), glass_color)
 		glass.name = "BoardGlass"
+		glass.add_to_group("board_glass")
+
+## A hit into the boards: the nearest glass pane within `reach` metres of
+## `world_pos` flexes outward and rings back (a damped shake along its
+## thickness). Returns the pane that rattled, or null.
+const GLASS_RATTLE_REACH := 3.0
+static func rattle_glass(tree: SceneTree, world_pos: Vector3, strength: float = 1.0) -> MeshInstance3D:
+	if tree == null: return null
+	var best: MeshInstance3D = null
+	var best_d := GLASS_RATTLE_REACH
+	for node in tree.get_nodes_in_group("board_glass"):
+		var pane := node as MeshInstance3D
+		if pane == null or not pane.is_inside_tree(): continue
+		# Distance to the pane's box along the boards (local x is its length).
+		var local := pane.global_transform.affine_inverse() * world_pos
+		var half := (pane.mesh as BoxMesh).size.x * 0.5
+		var d := Vector2(maxf(0.0, absf(local.x) - half), local.z).length()
+		if d < best_d:
+			best_d = d
+			best = pane
+	if best == null: return null
+	if not best.has_meta("rest_z"): best.set_meta("rest_z", best.position.z)
+	var rest := float(best.get_meta("rest_z"))
+	# Away from the ice: the side of the pane opposite the hit.
+	var side := -signf((best.global_transform.affine_inverse() * world_pos).z)
+	if side == 0.0: side = 1.0
+	var amp := 0.035 * clampf(strength, 0.3, 1.5) * side
+	best.set_meta("rattles", int(best.get_meta("rattles", 0)) + 1)
+	var tween := best.create_tween()
+	tween.tween_property(best, "position:z", rest + amp, 0.04)
+	tween.tween_property(best, "position:z", rest - amp * 0.6, 0.07)
+	tween.tween_property(best, "position:z", rest + amp * 0.3, 0.07)
+	tween.tween_property(best, "position:z", rest, 0.09)
+	return best
 
 ## Half-width of the rink (to the board face) at distance `z` from centre.
 static func corner_half_width(z: float) -> float:

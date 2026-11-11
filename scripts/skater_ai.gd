@@ -307,3 +307,46 @@ static func shot_aim(shooter: Vector3, attack: float, goalie: Vector3, noise: fl
 ## can get across.
 static func one_timer(quality: float, shot_bar: float) -> bool:
 	return quality >= shot_bar + 0.08
+
+## --- Body checks -----------------------------------------------------------
+## A CPU finishes his check on the puck carrier when he is on top of him,
+## closing with real speed and skating into him (not reaching sideways), and
+## the hit is clean: not a run from distance (charging), and not into the
+## numbers of a man facing the boards a stride off the wall (boarding).
+const HIT_RANGE := 1.35          # m, body to body
+const HIT_CLOSING := 3.0         # m/s toward the carrier, along the boards
+const HIT_CLOSING_OPEN := 4.6    # m/s in open ice (needs a real run at him)
+const HIT_CHARGE := 8.5          # m/s relative: the user's charging limit
+const HIT_FACING := 0.55         # cos of the angle between travel and the carrier
+const HIT_BOARDS := 3.5          # m from the side boards: "along the wall"
+const HIT_DANGER := 1.6          # m from any boards: no hits from behind here
+const HIT_COOLDOWN := 4.0        # s before the same skater throws another
+const HIT_STUN := 0.35           # s the victim can't skate (as a user check)
+const HIT_STAGGER := 0.7         # s the visible stumble lasts (skater_visual.gd)
+
+## Distance from `pos` to the nearest boards (side or end; corners rounded off
+## by taking the smaller of the two).
+static func boards_distance(pos: Vector3) -> float:
+	return minf(Arena.HALF_WIDTH-absf(pos.x),Arena.HALF_LENGTH-absf(pos.z))
+
+## Should this checker hit this carrier now? Pure read of positions and
+## velocities; the caller applies skill (a roll) and the cooldown.
+static func wants_hit(checker_pos: Vector3, checker_vel: Vector3, carrier_pos: Vector3, carrier_vel: Vector3) -> bool:
+	var to_carrier:=carrier_pos-checker_pos
+	to_carrier.y=0
+	var gap_:=to_carrier.length()
+	if gap_>HIT_RANGE or gap_<0.05: return false
+	var dir:=to_carrier/gap_
+	var flat_vel:=Vector3(checker_vel.x,0,checker_vel.z)
+	var closing:=(flat_vel-Vector3(carrier_vel.x,0,carrier_vel.z)).dot(dir)
+	var along_wall:=absf(carrier_pos.x)>Arena.HALF_WIDTH-HIT_BOARDS
+	if closing<(HIT_CLOSING if along_wall else HIT_CLOSING_OPEN): return false
+	if (flat_vel-carrier_vel).length()>HIT_CHARGE: return false
+	# Skating into him, not gliding past.
+	if flat_vel.length()<1.0 or flat_vel.normalized().dot(dir)<HIT_FACING: return false
+	# From behind near the boards: the push would drive him face-first into
+	# the wall. Skip it (he gets a stick check instead).
+	if boards_distance(carrier_pos)<HIT_DANGER and carrier_vel.length()>1.0:
+		var wall:=Vector3(signf(carrier_pos.x),0,0) if Arena.HALF_WIDTH-absf(carrier_pos.x)<Arena.HALF_LENGTH-absf(carrier_pos.z) else Vector3(0,0,signf(carrier_pos.z))
+		if dir.dot(wall)>0.5 and carrier_vel.normalized().dot(wall)>0.5: return false
+	return true

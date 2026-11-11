@@ -51,6 +51,8 @@ var pass_receiver: CharacterBody3D
 var pass_timer := 0.0
 ## How often CPU carriers chose each option (tests / tuning).
 var ai_log := {}
+## The glass pane the last hit along the boards rattled (arena.gd rattle_glass()).
+var last_rattle: MeshInstance3D
 ## Goal light, arena light flash and jumbotron GOAL (scripts/goal_celebration.gd).
 var celebration: Node3D
 ## Instant replay after goals (scripts/goal_replay.gd).
@@ -986,9 +988,11 @@ func defensive_action(body_check: bool) -> void:
 		assess_penalty(player,"Tripping")
 	else:
 		var push := (victim.position-player.position).normalized()
-		victim.velocity+=push*(4 if body_check else 1.2)
-		victim.set_meta("stun",0.35 if body_check else 0.08)
-		if body_check: game_stats.add_hit(body_team(player),match_state.period)
+		if body_check:
+			land_body_check(player,victim)
+		else:
+			victim.velocity+=push*1.2
+			victim.set_meta("stun",0.08)
 		if victim==carrier:
 			carrier=null
 			puck.linear_velocity=push*5
@@ -1436,18 +1440,22 @@ func ai_pass(actor: CharacterBody3D, plan: Dictionary) -> void:
 func ai_defend(actor: CharacterBody3D, team: int, delta: float) -> void:
 	var try_:=maxf(0.0,float(actor.get_meta("poke",0.0))-delta)
 	actor.set_meta("poke",try_)
+	var hit_wait:=maxf(0.0,float(actor.get_meta("hit_cd",0.0))-delta)
+	actor.set_meta("hit_cd",hit_wait)
+	# Dead puck (whistle, faceoff set-up, intermission): nobody finishes a check.
+	if match_state.phase!=MatchState.Phase.PLAY: return
 	if carrier==null or body_team(carrier)==team or cooldown>0 or try_>0: return
 	var reach:=actor.position.distance_to(puck.position)
-	var gap_:=actor.position.distance_to(carrier.position)
 	var sk:=ai_skill(team)
-	var closing:=(actor.velocity-carrier.velocity).dot((carrier.position-actor.position).normalized())
-	if gap_<1.35 and closing>3.0 and absf(carrier.position.x)>Arena.HALF_WIDTH-3.5:
+	# Body check (skater_ai.gd wants_hit(): on top of the carrier, closing with
+	# speed and skating into him; along the wall or, with a real run, in open
+	# ice; never from behind into the boards). One try, then HIT_COOLDOWN.
+	if hit_wait<=0.0 and bool(carrier.get_meta("eligible")) and SkaterAI.wants_hit(actor.position,actor.velocity,carrier.position,carrier.velocity):
 		actor.set_meta("poke",1.6)
 		if ai_rng.randf()<float(sk.check):
-			var push:=(carrier.position-actor.position).normalized()
-			carrier.velocity+=push*4.0
-			carrier.set_meta("stun",0.35)
-			game_stats.add_hit(team,match_state.period)
+			var victim:=carrier
+			var push:=land_body_check(actor,victim)
+			actor.set_meta("hit_cd",SkaterAI.HIT_COOLDOWN)
 			ai_log["hit"]=int(ai_log.get("hit",0))+1
 			puck.linear_velocity=push*4.5
 			carrier=null
@@ -1460,6 +1468,26 @@ func ai_defend(actor: CharacterBody3D, team: int, delta: float) -> void:
 			puck.linear_velocity=(puck.position-actor.position).normalized()*5
 			carrier=null
 			cooldown=0.22
+
+## A body check lands (user or CPU, same rules): the victim is knocked along
+## the line of the hit and can't skate for HIT_STUN, the hit is booked for the
+## hitter's team (game_stats.gd), the victim visibly staggers away from the
+## hit (skater_visual.gd take_hit()) and, along the boards, the glass rattles.
+## Returns the push direction.
+func land_body_check(hitter: CharacterBody3D, victim: CharacterBody3D) -> Vector3:
+	var push:=victim.position-hitter.position
+	push.y=0
+	push=push.normalized() if push.length()>0.01 else Vector3(0,0,1)
+	victim.velocity+=push*4.0
+	victim.set_meta("stun",SkaterAI.HIT_STUN)
+	game_stats.add_hit(body_team(hitter),match_state.period)
+	var visual=victim.get_child(1)
+	if visual!=null and visual.has_method("take_hit"):
+		visual.take_hit(visual.global_transform.basis.inverse()*push,SkaterAI.HIT_STAGGER)
+	if SkaterAI.boards_distance(victim.position)<SkaterAI.HIT_DANGER+0.4:
+		last_rattle=Arena.rattle_glass(get_tree(),victim.global_position+push*1.2,1.0)
+		beep(95)
+	return push
 
 func closest_opponent_distance(actor: CharacterBody3D) -> float:
 	var result:=INF
