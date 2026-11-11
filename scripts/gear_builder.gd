@@ -584,7 +584,17 @@ static func blocker(side: float, kit: Color, accent: Color) -> ArrayMesh:
 		wall.append(Vector3(-side * (BLOCKER_SIZE.x * 0.5 - 0.004), wy, 0.016 + pow(maxf(0, wy - 0.09) / (hl - 0.09), 2) * 0.034))
 	b.add_tube(wall, 0.014, kit.lightened(0.06), 10)
 	# Palm glove and cuff behind the board, hand on the stick.
-	b.add_rounded_box(Vector3(-side * 0.03, -0.03, -0.055), Vector3(0.10, 0.14, 0.075), 0.032, DARK)
+	# Glove hand behind the board: a padded white back-of-hand, four finger
+	# rolls wrapped round the stick and a thumb, so the hand reads as gripping.
+	b.add_rounded_box(Vector3(-side * 0.03, -0.03, -0.050), Vector3(0.10, 0.14, 0.060), 0.026, OFFWHITE)
+	for k in range(4):
+		var fy := 0.025 - k * 0.030
+		b.add_rounded_box(Vector3(-side * 0.035, fy, -0.092), Vector3(0.085, 0.026, 0.036), 0.012, WHITE.darkened(0.04 * (k % 2)))
+	b.add_rounded_box(Vector3(-side * 0.075, -0.055, -0.078), Vector3(0.03, 0.085, 0.034), 0.013, OFFWHITE)
+	# Dark palm leather showing between the fingers and the board.
+	b.add_rounded_box(Vector3(-side * 0.03, -0.03, -0.072), Vector3(0.088, 0.12, 0.012), 0.004, DARK)
+	# Wrist strap.
+	b.add_rounded_box(Vector3(-side * 0.025, -0.115, -0.05), Vector3(0.11, 0.026, 0.074), 0.01, DARK)
 	b.add_rounded_box(Vector3(-side * 0.02, -0.22, -0.035), Vector3(0.12, 0.11, 0.095), 0.035, OFFWHITE)
 	b.add_rounded_box(Vector3(-side * 0.02, -0.17, -0.035), Vector3(0.125, 0.022, 0.10), 0.01, kit)
 	var graphic := _cached("blocker|%s|%s" % [kit.to_html(), accent.to_html()], func(): return _paint_blocker(kit, accent))
