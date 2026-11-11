@@ -192,6 +192,14 @@ func allowed(a: String, b: String) -> bool:
 			return true
 	return false
 
+## Boot channel of a goalie pad, in source pad space (pad bottom -0.365 m,
+## knee landing 0.035 m, back -0.04 m, face +0.06 m; drawn 1.25x long).
+const BOOT_CHANNEL_TOP := -0.10
+const BOOT_CHANNEL_FACE := 0.02
+## The toe cap (boot section below the boot break, 11.5 cm source / 14 cm drawn) wraps over the skate toe
+## through the full pad depth, as the toe bridge of a real pad does.
+const TOE_CAP_TOP := -0.25
+
 func check_pose(v, label: String) -> void:
 	var solids := gear_solids(v)
 	var names := solids.keys()
@@ -205,11 +213,30 @@ func check_pose(v, label: String) -> void:
 			var deepest: float = maxf(ab[1], ba[1])
 			if report and count > 0:
 				print("  %s: %s x %s  points=%d  depth=%.1f cm" % [label, names[i], names[j], count, deepest * 100])
-			# A goalie pad's boot channel sits down over its own skate (the boot
-			# break rests on the instep), so that pair may overlap by a few cm.
-			var own_boot: bool = names[i].begins_with("skate") and names[j] == "pad" + names[i].substr(5) or names[j].begins_with("skate") and names[i] == "pad" + names[j].substr(5)
-			if own_boot:
-				check(deepest <= 0.055, "%s: %s sinks %.1f cm into %s (boot channel allows 5.5)" % [label, names[i], deepest * 100, names[j]])
+			# Goalie pad over its own skate: the boot channel is a recess in the
+			# back half of the pad from the bottom up to the top of the skate cuff
+			# and the start of the calf wrap (0.33 m drawn), where the boot sits on
+			# a real pad; plus the toe cap, which wraps over the skate toe.
+			# Skate points inside the pad anywhere else - through the face, or up
+			# by the knee - are real clipping.
+			var sk_name: String = names[i] if names[i].begins_with("skate") else names[j]
+			var pd_name: String = names[j] if sk_name == names[i] else names[i]
+			if pd_name == "pad" + sk_name.substr(5) and v.goalie:
+				var vis: Node3D = v.pad_visuals[0 if sk_name.ends_with("L") else 1]
+				var to_pad: Transform3D = vis.global_transform.affine_inverse()
+				var outside := 0
+				var worst := 0.0
+				for p in (solids[sk_name] as Solid).points:
+					if (solids[pd_name] as Solid).contains(p):
+						var d: float = (solids[pd_name] as Solid).depth(p)
+						if d <= TOLERANCE: continue
+						var q: Vector3 = to_pad * p
+						if q.y < BOOT_CHANNEL_TOP and q.z < BOOT_CHANNEL_FACE: continue
+						if q.y < TOE_CAP_TOP: continue
+						outside += 1
+						if report: print("    out ", q.snapped(Vector3.ONE*0.005), " d=", snappedf(d,0.001))
+						worst = maxf(worst, d)
+				check(outside == 0, "%s: %s clips into %s outside the boot channel by %.1f cm" % [label, sk_name, pd_name, worst * 100])
 				continue
 			check(count == 0, "%s: %s clips into %s by %.1f cm" % [label, names[i], names[j], deepest * 100])
 

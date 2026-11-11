@@ -1,4 +1,5 @@
 extends SceneTree
+const Gear = preload("res://scripts/gear_builder.gd")
 ## Goalie sweater and pad detail: accent shoulder yoke only on goalies, wider
 ## protector shoulders/arms than a skater sweater, pads carry kit + accent.
 var failures := 0
@@ -33,23 +34,38 @@ func run() -> void:
 	for vis in g.pad_visuals:
 		for c in vis.get_children():
 			if c is MeshInstance3D: pad_mat = c.material_override
-		# The visible pad reaches down over the boot and is thicker than the 10 cm source.
-		check(vis.scale.y > 1.05 and vis.scale.z >= 1.4, "pad lengthened over the skate and thickened (%s)" % vis.scale)
+		# Constant drawn size: 91 cm long, 11 in wide, deeper than the 10 cm source.
+		check(vis.scale.is_equal_approx(SV.PAD_VIS_SCALE), "pad drawn at its constant size (%s)" % vis.scale)
 	check(pad_mat != null and pad_mat.get_shader_parameter("pad_graphics") == true, "pads use pad graphics")
 	if pad_mat != null:
 		check((pad_mat.get_shader_parameter("pad_team") as Color).is_equal_approx(g.kit), "pad team colour follows the kit")
 		check((pad_mat.get_shader_parameter("pad_accent") as Color).is_equal_approx(g.accent), "pad accent follows the kit accent")
 		check((pad_mat.get_shader_parameter("base_color") as Color).get_luminance() > 0.8, "pad base is white, not grey")
 	check(Kit.goalie_pad(Color.RED, Color.BLUE) != Kit.goalie_pad(Color.RED, Color.GREEN), "pad materials are per accent")
-	# One solid pad: the thigh rise never rotates against the shin section,
-	# standing or in the butterfly, and goalies wear the laced boot with a cuff.
-	for b in [0.0, 0.5, 1.0]:
-		g.butterfly = b
-		g.animate(0, 1.0/60, 0, false)
-		for rise in g.thigh_rises:
-			var q: Quaternion = (rise.basis as Basis).orthonormalized().get_rotation_quaternion()
-			check(q.is_equal_approx(Quaternion.IDENTITY), "thigh rise in line with the pad at butterfly %.1f" % b)
-			check(absf(rise.position.x) < 0.03, "thigh rise stays on the pad")
+	# Pad assembly through the drop and back: no telescoping (the pad and the
+	# thigh rise keep one size), the knee landing stays on the knee, the rise
+	# only rotates, and the skate stays on the ankle.
+	for b in [0.0, 0.25, 0.5, 0.75, 1.0, 0.5, 0.0]:
+		for k in range(30):
+			g.butterfly = b
+			g.animate(0, 1.0/60, 0, false)
+		for i in range(2):
+			var vis: Node3D = g.pad_visuals[i]
+			var rise: Node3D = g.thigh_rises[i]
+			check(vis.scale.is_equal_approx(SV.PAD_VIS_SCALE), "pad size constant at butterfly %.2f" % b)
+			var sc: Vector3 = (rise.basis as Basis).get_scale()
+			check(absf(sc.y - SV.PAD_VIS_SCALE.y) < 0.002 and absf(sc.z - SV.PAD_VIS_SCALE.z) < 0.002, "thigh rise size constant at butterfly %.2f (%s)" % [b, sc])
+			var knee_mark: Vector3 = vis.global_transform * Vector3(0, Gear.PAD_KNEE, 0)
+			var knee_w: Vector3 = g.rig.global_transform * (g.skeleton.transform * Vector3(g.knees[i]))
+			check(absf((g.pads[i].global_transform.affine_inverse() * knee_mark).y - (g.pads[i].global_transform.affine_inverse() * knee_w).y) < 0.005, "knee landing on the knee at butterfly %.2f" % b)
+			# The boot pivots about the ankle: its ankle point never leaves it.
+			var ankle_from_boot: Vector3 = g.skates[i].transform * Vector3(0, 0.0525, 0)
+			check(ankle_from_boot.is_finite(), "boot pose finite")
+	# The stick is the de-branded downloaded model, drawn instead of the proxies.
+	check(g.goalie_stick_mesh != null and g.goalie_stick_mesh.visible, "goalie draws the stick model")
+	check(not g.goalie_paddle.visible and not g.stick_shaft.visible, "box stick proxies hidden")
+	var stick_len: float = g.goalie_stick_mesh.mesh.get_aabb().size.y * SV.GOALIE_STICK_SCALE
+	check(stick_len > 1.4 and stick_len < 1.65, "goalie stick about 1.5 m (%.2f)" % stick_len)
 	check(g.skate_cuffs.size() == 2, "goalie skates have shin-following cuffs")
 	print("Goalie kit failures: ", failures)
 	quit(1 if failures > 0 else 0)

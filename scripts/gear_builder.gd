@@ -614,15 +614,15 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 	var outline := PackedVector2Array([
 		Vector2(-0.02, -0.18), Vector2(0.06, -0.175), Vector2(0.12, -0.13), Vector2(0.148, -0.05),
 		Vector2(0.158, 0.05), Vector2(0.152, 0.14), Vector2(0.13, 0.205), Vector2(0.095, 0.24),
-		Vector2(0.055, 0.25), Vector2(0.03, 0.232), Vector2(0.008, 0.212), Vector2(-0.018, 0.226),
-		Vector2(-0.055, 0.238), Vector2(-0.095, 0.22), Vector2(-0.118, 0.165), Vector2(-0.126, 0.085),
+		Vector2(0.058, 0.252), Vector2(0.034, 0.222), Vector2(0.014, 0.172), Vector2(-0.006, 0.168),
+		Vector2(-0.030, 0.212), Vector2(-0.058, 0.240), Vector2(-0.095, 0.22), Vector2(-0.118, 0.165), Vector2(-0.126, 0.085),
 		Vector2(-0.118, 0.0), Vector2(-0.102, -0.08), Vector2(-0.072, -0.15)])
 	outline = GearProfiles.resample(outline, 72)
 	# The pocket is a deep well high in the mitt, between the thumb and the
 	# finger roll under the T; the palm below it is a padded, nearly flat face.
 	var center := Vector2(0.012, 0.115)
 	# [scale toward outline, depth] from pocket centre, over the rim, to the back.
-	var sections := [[0.02, -0.058], [0.14, -0.052], [0.28, -0.030], [0.40, -0.002], [0.52, 0.016],
+	var sections := [[0.02, -0.088], [0.14, -0.078], [0.28, -0.046], [0.40, -0.002], [0.52, 0.016],
 		[0.66, 0.026], [0.80, 0.033], [0.92, 0.042], [0.975, 0.049], [1.0, 0.042], [1.014, 0.024],
 		[0.995, -0.022], [0.95, -0.042], [0.82, -0.058], [0.58, -0.067], [0.30, -0.071], [0.02, -0.071]]
 	var rings := []
@@ -662,7 +662,7 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 		Vector3(0.055, 0.250, 0.044), Vector3(0.025, 0.244, 0.042)])
 	for k in range(finger.size()):
 		finger[k].x *= side
-	b.add_tube(finger, 0.030, kit.lightened(0.04), 14)
+	b.add_tube(finger, 0.036, kit.lightened(0.04), 14)
 	# Finger stitching ridges across the roll.
 	for t: float in [0.30, 0.48, 0.66]:
 		var c := finger[int(t * (finger.size() - 1))]
@@ -673,8 +673,8 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 		Vector3(-0.102, 0.170, 0.042), Vector3(-0.075, 0.222, 0.042)])
 	for k in range(thumb.size()):
 		thumb[k].x *= side
-	b.add_tube(thumb, 0.023, WHITE, 12)
-	b.add_tube(PackedVector3Array([thumb[3], thumb[4], thumb[4] + Vector3(0.012 * side, 0.014, 0)]), 0.0245, kit, 12)
+	b.add_tube(thumb, 0.029, WHITE, 12)
+	b.add_tube(PackedVector3Array([thumb[3], thumb[4], thumb[4] + Vector3(0.012 * side, 0.014, 0)]), 0.0305, kit, 12)
 	# T-trap: a leather T bar up the middle of the pocket, and a laced web
 	# strung between the thumb tip and the finger tip.
 	# Single-T web: a wide leather spine and crossbar, with a laced net strung
@@ -683,7 +683,7 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 	var web_c := Vector2(0.006, 0.150)
 	var web_z := func(x: float, y: float) -> float:
 		var r := Vector2((x - web_c.x) / 0.085, (y - web_c.y) / 0.105).length()
-		return 0.042 - 0.034 * maxf(0.0, 1.0 - r * r)
+		return 0.044 - 0.062 * maxf(0.0, 1.0 - r * r)
 	for k in range(7):
 		var x := lerpf(-0.066, 0.078, k / 6.0)
 		var pts := PackedVector3Array()
