@@ -29,6 +29,8 @@ uniform float sheen = 0.35;
 // Jersey layout (metres up the body).
 uniform float hem_v = 0.865;
 uniform float collar_v = 0.0;
+// > 0: accent shoulder yoke above this rest height (goalie sweaters).
+uniform float yoke_v = 0.0;
 uniform float metres_per_u = 1.65;
 uniform bool show_number = false;
 uniform sampler2D number_tex : filter_linear_mipmap, repeat_disable, hint_default_black;
@@ -117,6 +119,27 @@ void fragment() {
 		float collar = smoothstep(neck - aa_l, neck + aa_l, L.y);
 		col = mix(col, stripe_color.rgb, collar);
 		ao *= mix(1.0, 0.85, smoothstep(neck - 0.04, neck + 0.02, L.y));
+		if (yoke_v > 0.0) {
+			// Shoulder yoke: accent across the shoulders, rising to a point at
+			// the chest and back centre, edged with a sewn trim line.
+			float edge = yoke_v + 0.075 * pow(abs(sin(TAU * L.x)), 1.5);
+			float yoke = smoothstep(edge - aa_l, edge + aa_l, L.y);
+			float piping = band(L.y, edge - 0.012, edge, aa_l);
+			col = mix(col, stripe_color.rgb, yoke);
+			col = mix(col, trim_color.rgb, piping);
+			height += piping * 0.0005;
+			// Chest crest: a plain sewn twill diamond (own design, no logo).
+			vec2 cd = vec2((L.x - 0.25) * metres_per_u, L.y - 1.225);
+			float dm = abs(cd.x) / 0.095 + abs(cd.y) / 0.115;
+			float aa_c = fwidth(dm) * 0.7;
+			float crest = (1.0 - smoothstep(1.0 - aa_c, 1.0 + aa_c, dm)) * float(outside);
+			float ring = crest * smoothstep(0.80 - aa_c, 0.80 + aa_c, dm);
+			float core = 1.0 - smoothstep(0.42 - aa_c, 0.42 + aa_c, dm);
+			col = mix(col, stripe_color.rgb, crest);
+			col = mix(col, trim_color.rgb, max(ring, core * crest));
+			height += crest * 0.0012;
+			twill_mask = max(twill_mask, crest);
+		}
 		// Side gusset panels: a darker strip down each flank from hem to armpit
 		// with a sewn seam line either side, as on a cut-and-sew pro sweater.
 		float flank = abs(cos(TAU * L.x));

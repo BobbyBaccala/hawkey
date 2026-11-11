@@ -24,6 +24,7 @@ uniform bool metal_from_grey = false;
 uniform bool helmet_panels = false;
 uniform bool pad_graphics = false;
 uniform vec4 pad_team : source_color = vec4(0.08, 0.3, 0.4, 1.0);
+uniform vec4 pad_accent : source_color = vec4(0.08, 0.1, 0.14, 1.0);
 varying vec3 pad_rest;
 
 // Socks: crisp knitted-in stripes along the unit-length limb shell (t = 0 at
@@ -61,11 +62,26 @@ void fragment() {
 	if (use_vertex_color) col *= srgb_to_linear(COLOR.rgb);
 	if (pad_graphics) {
 		float aa = max(fwidth(pad_rest.x), fwidth(pad_rest.y)) + 0.0005;
-		float rail = smoothstep(0.090 - aa, 0.090 + aa, abs(pad_rest.x));
-		float diagonal = pad_rest.y + abs(pad_rest.x) * 0.55;
-		float stripe = 1.0 - smoothstep(0.011 - aa, 0.011 + aa, abs(diagonal + 0.04));
+		// Pad face graphics (pad space: knee y = 0.035, ankle y = -0.395, break
+		// above the knee at y = 0.15): outer rolls in team colour with accent
+		// piping, a knee block band, a chevron over the shin, a boot-break band
+		// and a team thigh-rise panel.
+		float ax = abs(pad_rest.x);
+		float rail = smoothstep(0.090 - aa, 0.090 + aa, ax);
+		float pipe = smoothstep(0.078 - aa, 0.078 + aa, ax) * (1.0 - rail);
+		float chev_y = pad_rest.y + ax * 0.9;
+		float chev = smoothstep(-0.165 - aa, -0.165 + aa, chev_y) - smoothstep(-0.105 - aa, -0.105 + aa, chev_y);
+		float chev2 = smoothstep(-0.215 - aa, -0.215 + aa, chev_y) - smoothstep(-0.190 - aa, -0.190 + aa, chev_y);
+		float knee = smoothstep(0.005 - aa, 0.005 + aa, pad_rest.y) - smoothstep(0.065 - aa, 0.065 + aa, pad_rest.y);
+		float boot = smoothstep(-0.335 - aa, -0.335 + aa, pad_rest.y) - smoothstep(-0.300 - aa, -0.300 + aa, pad_rest.y);
+		float thigh = smoothstep(0.175 - aa, 0.175 + aa, pad_rest.y) * (1.0 - smoothstep(0.060 - aa, 0.060 + aa, ax));
 		float front = smoothstep(-0.005, 0.018, pad_rest.z);
-		col = mix(col, pad_team.rgb, max(rail * 0.85, stripe) * front);
+		float inner = 1.0 - rail;
+		col = mix(col, pad_team.rgb, max(max(rail * 0.9, chev * inner), thigh) * front);
+		col = mix(col, pad_accent.rgb, max(max(pipe, chev2 * inner), max(knee, boot) * inner) * front);
+		// Stitched seams at the knee and boot breaks.
+		float seam = 1.0 - smoothstep(0.0, 0.003, min(abs(pad_rest.y - 0.15), abs(pad_rest.y + 0.36)));
+		col *= 1.0 - 0.3 * seam * front;
 	}
 	if (pants_stripe) {
 		float aa = fwidth(side_out) * 0.8 + 0.002;

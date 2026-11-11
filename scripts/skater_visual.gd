@@ -581,14 +581,14 @@ func build_pad(parent: Node3D, side: float) -> void:
 	# Sculpted box-style pad: flat face, outer roll, knee/boot breaks, toe bridge.
 	var hand := "L" if side > 0 else "R"
 	var lower := add_mesh(parent,pad_part("pad_lower_"+hand) if MESH_GOALIE_PAD else Gear.goalie_pad(side,kit,accent,-1.0,Gear.PAD_BREAK))
-	if MESH_GOALIE_PAD: lower.material_override = Kit.goalie_pad(kit)
+	if MESH_GOALIE_PAD: lower.material_override = Kit.goalie_pad(kit,accent)
 	# Thigh rise hinges back along the thigh at the break above the knee.
 	var hinge := Node3D.new()
 	hinge.position = Vector3(0,Gear.PAD_BREAK,-0.04)
 	parent.add_child(hinge)
 	var upper := add_mesh(hinge,pad_part("pad_upper_"+hand) if MESH_GOALIE_PAD else Gear.goalie_pad(side,kit,accent,Gear.PAD_BREAK,1.0))
 	upper.position = Vector3(0,-Gear.PAD_BREAK,0.04)
-	if MESH_GOALIE_PAD: upper.material_override = Kit.goalie_pad(kit)
+	if MESH_GOALIE_PAD: upper.material_override = Kit.goalie_pad(kit,accent)
 	thigh_rises.append(hinge)
 
 static func pad_part(part: String) -> Mesh:
@@ -704,7 +704,8 @@ func jersey_point(a: float, y: float, scale_: float = 1.0) -> Vector3:
 	var front: float = Prof.curve(JERSEY_FRONT,y)*scale_
 	var back: float = Prof.curve(JERSEY_BACK,y)*scale_
 	if goalie:
-		w *= 1.08
+		# Chest protector: wide square shoulders, no pinched waist.
+		w *= 1.08+0.07*smoothstep(1.24,1.40,y)+0.035*(1.0-smoothstep(1.0,1.2,y))
 		front *= 1.12
 		back *= 1.10
 	# Rounder at the waist, squarer across the shoulder pads.
@@ -856,7 +857,10 @@ func apply_jersey_material() -> void:
 		jersey.material_override = Kit.jersey(kit,accent,number,nameplate_text,false,KIT_HEM,KIT_COLLAR)
 		return
 	var hem := JERSEY_HEM-(0.03 if goalie else 0.0)
-	jersey.material_override = Kit.jersey(kit,accent,number,nameplate_text,referee,hem,0.0)
+	jersey.material_override = Kit.jersey(kit,accent,number,nameplate_text,referee,hem,0.0,GOALIE_YOKE if goalie else 0.0)
+
+## Height where the goalie sweater's accent shoulder yoke starts (at the sides).
+const GOALIE_YOKE := 1.415
 
 ## Rest height of the sweater's hem.
 func jersey_hem_height() -> float:
@@ -2504,7 +2508,8 @@ func update_cloth_sleeve(instance: MeshInstance3D, shoulder: Vector3, elbow: Vec
 		else: radius_=lerpf(0.058,0.050,u-1.0)
 		# Elbow pad under the sleeve.
 		radius_+=0.008*exp(-pow((u-1.0)/0.16,2))
-		if goalie: radius_*=1.2
+		# Arm protector: bulky upper arm and elbow, tapering into the glove cuff.
+		if goalie: radius_*=lerpf(1.42,1.16,smoothstep(0.9,1.8,u))
 		for column in range(cols+1):
 			var angle:=TAU*column/cols
 			var radial:Vector3=across*cos(angle)+depth*sin(angle)

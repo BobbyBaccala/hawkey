@@ -353,13 +353,14 @@ static func _cloth(kit: Color, accent: Color, garment: int) -> ShaderMaterial:
 
 ## Jersey body with sewn hem stripes, collar and twill number and nameplate.
 ## One material per colourway + number + name (textures are shared).
-static func jersey(kit: Color, accent: Color, number: String, name_: String, referee := false, hem_v := 0.865, collar_v := 0.0) -> ShaderMaterial:
-	var key := "jersey|%s|%s|%s|%s|%s|%s|%s" % [kit.to_html(), accent.to_html(), number, name_, referee, hem_v, collar_v]
+static func jersey(kit: Color, accent: Color, number: String, name_: String, referee := false, hem_v := 0.865, collar_v := 0.0, yoke_v := 0.0) -> ShaderMaterial:
+	var key := "jersey|%s|%s|%s|%s|%s|%s|%s|%s" % [kit.to_html(), accent.to_html(), number, name_, referee, hem_v, collar_v, yoke_v]
 	return cached(key, func() -> ShaderMaterial:
 		var m := _cloth(kit, accent, 3 if referee else 1)
 		m.set_shader_parameter("uv_metres", Vector2(0.8, 1.0))
 		m.set_shader_parameter("hem_v", hem_v)
 		m.set_shader_parameter("collar_v", collar_v)
+		m.set_shader_parameter("yoke_v", yoke_v)
 		if not referee and number != "":
 			var tex := text_texture(number, 0.92)
 			m.set_shader_parameter("number_tex", tex)
@@ -433,14 +434,15 @@ static func gloves() -> ShaderMaterial:
 		m.set_shader_parameter("quilting", 0.6)
 		return m)
 
-static func goalie_pad(kit: Color) -> ShaderMaterial:
-	return cached("goalie-pad|%s" % kit.to_html(), func() -> ShaderMaterial:
+static func goalie_pad(kit: Color, accent := Color(0.08,0.1,0.14)) -> ShaderMaterial:
+	return cached("goalie-pad|%s|%s" % [kit.to_html(), accent.to_html()], func() -> ShaderMaterial:
 		var m := _gear(leather_texture(), 45.0, 0.28, 0.67, 0.28)
 		m.set_shader_parameter("use_vertex_color", false)
-		m.set_shader_parameter("base_color", Color("#bdc6cc"))
+		m.set_shader_parameter("base_color", Color("#e9edf0"))
 		m.set_shader_parameter("albedo_variation", 0.05)
 		m.set_shader_parameter("pad_graphics", true)
 		m.set_shader_parameter("pad_team", kit)
+		m.set_shader_parameter("pad_accent", accent)
 		return m)
 
 static func skate_boot() -> ShaderMaterial:
