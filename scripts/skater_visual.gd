@@ -18,11 +18,11 @@ const MESH_GOALIE_PAD := true
 const PadMeshes = preload("res://assets/gear/goalie-pads-v1.glb")
 ## Goalie stick from the owner's downloaded stick model with every logo
 ## blanked before baking (tools/blender/goalie_stick_v1.py). Origin at the heel,
-## +Y up the shaft, toe toward +X; GOALIE_STICK_SCALE gives a 1.52 m stick with
-## a 69 cm (27 in) paddle.
+## +Y up the shaft, toe toward +X; GOALIE_STICK_SCALE gives a 1.45 m stick with
+## a 66 cm (26 in) paddle.
 const MESH_GOALIE_STICK := true
 const GoalieStickMesh = preload("res://assets/gear/goalie-stick-v1.glb")
-const GOALIE_STICK_SCALE := 12.6
+const GOALIE_STICK_SCALE := 12.0
 static var pad_parts := {}
 const MESH_GOALIE_MASK := true
 const GoalieMaskMeshes = preload("res://assets/gear/goalie-mask-v1.glb")
@@ -126,6 +126,7 @@ const PAD_STANDOFF := 0.09
 ## Goalie ankle in the butterfly: foot pointed 15 degrees past square.
 const ANKLE_PLANTAR := 0.26
 var pad_visuals: Array[Node3D] = []
+var pad_rears: Array[MeshInstance3D] = []
 ## Visible pad thickness multiplier over the 10 cm source mesh (pro pads are
 ## about 15 cm deep at the shin) and how far it may extend down over the boot.
 const PAD_THICKEN := 1.35
@@ -647,6 +648,10 @@ func build_pad(parent: Node3D, side: float) -> void:
 	upper.position = Vector3(0,-Gear.PAD_BREAK,0.04)
 	if MESH_GOALIE_PAD: upper.material_override = Kit.goalie_pad(kit,accent)
 	thigh_rises.append(hinge)
+	# Knee cradle, calf wrap and straps round the back of the leg.
+	var rear := add_mesh(pad_node,Gear.pad_rear(Gear.PAD_WIDTH*0.5*PAD_VIS_SCALE.x,PAD_VIS_Z-0.04*PAD_VIS_SCALE.z,PAD_STANDOFF))
+	rear.name = "PadRear"
+	pad_rears.append(rear)
 
 static func pad_part(part: String) -> Mesh:
 	if pad_parts.is_empty():
@@ -1806,6 +1811,7 @@ func pose(speed: float, turn: float) -> void:
 				# section reaches down over the skate. Dimensions never change.
 				var knee_local:Vector3=pads[i].transform.affine_inverse()*knee
 				pad_visuals[i].scale=PAD_VIS_SCALE
+				if pad_rears.size()>i: pad_rears[i].position=Vector3(0,knee_local.y,0)
 				pad_visuals[i].position=Vector3(0,knee_local.y-Gear.PAD_KNEE*PAD_VIS_SCALE.y,PAD_VIS_Z)
 		# Elbows and wrists stay on a two-hand stick posture, never running arm swings.
 		var shoulder := shoulder_of(i)

@@ -65,7 +65,12 @@ func run() -> void:
 	check(g.goalie_stick_mesh != null and g.goalie_stick_mesh.visible, "goalie draws the stick model")
 	check(not g.goalie_paddle.visible and not g.stick_shaft.visible, "box stick proxies hidden")
 	var stick_len: float = g.goalie_stick_mesh.mesh.get_aabb().size.y * SV.GOALIE_STICK_SCALE
-	check(stick_len > 1.4 and stick_len < 1.65, "goalie stick about 1.5 m (%.2f)" % stick_len)
+	check(stick_len > 1.4 and stick_len < 1.55, "goalie stick about 1.45 m (%.2f)" % stick_len)
+	# Each pad is held on by a knee cradle, calf wrap and straps that follow the knee.
+	check(g.pad_rears.size() == 2, "both pads have rear straps")
+	for i in range(2):
+		var knee_l: Vector3 = g.pads[i].transform.affine_inverse() * g.knees[i]
+		check(absf(g.pad_rears[i].position.y - knee_l.y) < 0.005, "straps ride with the knee")
 	check(g.skate_cuffs.size() == 2, "goalie skates have shin-following cuffs")
 	print("Goalie kit failures: ", failures)
 	quit(1 if failures > 0 else 0)

@@ -605,6 +605,36 @@ static func _paint_blocker(kit: Color, accent: Color) -> Texture2D:
 	g.rect(0.93, 0, 1, 1, kit)
 	return g.texture()
 
+# ---------------------------------------------------------------- pad rear
+## What holds a goalie pad on: the knee cradle (a padded block behind the
+## knee landing), a calf wrap with its strap and an ankle strap, each a band
+## round the back of the leg from one inner edge of the pad to the other.
+## Pad-node space (unscaled): origin at the knee landing, +Y up the shin, the
+## shin axis at z = -shin_back (behind the pad face), +X across the pad.
+static func pad_rear(pad_half_width: float, back_z: float, shin_back: float) -> ArrayMesh:
+	var b := MeshBuilder.new()
+	var strap := Color("#20262c")
+	var wrap := Color("#d9dee1")
+	# Knee cradle: a soft block sitting on the pad back round the knee cap.
+	b.add_rounded_box(Vector3(0, -0.005, back_z - 0.025), Vector3(0.15, 0.11, 0.05), 0.02, wrap)
+	# Calf wrap: a padded panel round the back of the calf.
+	for band: Array in [[-0.17, 0.034, wrap, 0.016], [-0.17, 0.020, strap, 0.019], [-0.34, 0.016, strap, 0.017]]:
+		var y: float = band[0]
+		var r: float = band[3]
+		var pts := PackedVector3Array()
+		var ends := pad_half_width * 0.78
+		for k in range(9):
+			var t := k / 8.0
+			# From one inner pad edge, round behind the shin, to the other.
+			var a := lerpf(-PI * 0.92, -PI * 0.08, t)
+			var radius := 0.075
+			var p := Vector3(cos(a) * radius * 1.15, y, -shin_back + sin(a) * radius)
+			if k == 0: p = Vector3(-ends, y, back_z - 0.004)
+			if k == 8: p = Vector3(ends, y, back_z - 0.004)
+			pts.append(p)
+		b.add_tube(pts, r, band[2], 8)
+	return b.to_mesh(0.7)
+
 # ---------------------------------------------------------------- catcher
 ## Origin at the hand; the pocket opens toward +Z; +X*side is the finger side.
 const CATCHER_SIZE := Vector3(0.28, 0.43, 0.11)
@@ -648,8 +678,6 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 				col = WHITE
 				if q.y < -0.06 and q.y > -0.11:
 					col = kit
-				elif absf(q.x * 0.8 + q.y * 0.5 - 0.03) < 0.014:
-					col = accent
 			cols.append(col)
 		rings.append(ring)
 		ring_colors.append(cols)
