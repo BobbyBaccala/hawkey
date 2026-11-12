@@ -10,6 +10,9 @@ const WHITE := Color("#eceff0")
 const OFFWHITE := Color("#d9dee1")
 const LINE := Color("#9aa6ad")
 const DARK := Color("#1b232b")
+## Glove palm leather (blocker palm side, matching the catcher pocket leather).
+const PALM := Color("#b39a7a")
+const PALM_DARK := Color("#8c7458")
 const LACE := Color("#2a2f33")
 const METAL := Color("#8e979d")
 ## UV for untextured geometry: a reserved white strip along the bottom of every
@@ -571,7 +574,9 @@ static func blocker(side: float, kit: Color, accent: Color) -> ArrayMesh:
 				uv_ring.append(face_uv(outer / BLOCKER_SIZE.x + 0.5, (yy + hl) / BLOCKER_SIZE.y))
 			else:
 				uv_ring.append(BLANK_UV)
-				col = DARK.lerp(WHITE, 0.15) if p.y < 0 else kit
+				# Back of the board: off-white synthetic like the face (not a dark
+				# slab); the sides carry the kit binding.
+				col = OFFWHITE.darkened(0.04) if p.y < 0 else kit
 			cols.append(col)
 		rings.append(ring)
 		ring_colors.append(cols)
@@ -583,20 +588,21 @@ static func blocker(side: float, kit: Color, accent: Color) -> ArrayMesh:
 		var wy := lerpf(-hl + 0.03, hl - 0.05, k / 8.0)
 		wall.append(Vector3(-side * (BLOCKER_SIZE.x * 0.5 - 0.004), wy, 0.016 + pow(maxf(0, wy - 0.09) / (hl - 0.09), 2) * 0.034))
 	b.add_tube(wall, 0.014, kit.lightened(0.06), 10)
-	# Palm glove and cuff behind the board, hand on the stick.
-	# Glove hand behind the board: a padded white back-of-hand, four finger
-	# rolls wrapped round the stick and a thumb, so the hand reads as gripping.
+	# Palm glove behind the board, hand on the stick: a padded back-of-hand
+	# under the board, and on the palm side (what the goalie sees) tan palm
+	# leather with four leather finger rolls wrapped round the stick and a
+	# thumb, so the hand reads as a gloved fist gripping the shaft.
 	b.add_rounded_box(Vector3(-side * 0.03, -0.03, -0.050), Vector3(0.10, 0.14, 0.060), 0.026, OFFWHITE)
 	for k in range(4):
 		var fy := 0.025 - k * 0.030
-		b.add_rounded_box(Vector3(-side * 0.035, fy, -0.092), Vector3(0.085, 0.026, 0.036), 0.012, WHITE.darkened(0.04 * (k % 2)))
-	b.add_rounded_box(Vector3(-side * 0.075, -0.055, -0.078), Vector3(0.03, 0.085, 0.034), 0.013, OFFWHITE)
-	# Dark palm leather showing between the fingers and the board.
-	b.add_rounded_box(Vector3(-side * 0.03, -0.03, -0.072), Vector3(0.088, 0.12, 0.012), 0.004, DARK)
-	# Wrist strap.
-	b.add_rounded_box(Vector3(-side * 0.025, -0.115, -0.05), Vector3(0.11, 0.026, 0.074), 0.01, DARK)
-	b.add_rounded_box(Vector3(-side * 0.02, -0.22, -0.035), Vector3(0.12, 0.11, 0.095), 0.035, OFFWHITE)
-	b.add_rounded_box(Vector3(-side * 0.02, -0.17, -0.035), Vector3(0.125, 0.022, 0.10), 0.01, kit)
+		b.add_rounded_box(Vector3(-side * 0.035, fy, -0.092), Vector3(0.085, 0.026, 0.036), 0.012, PALM.lerp(PALM_DARK, 0.35 * (k % 2)))
+	b.add_rounded_box(Vector3(-side * 0.075, -0.055, -0.078), Vector3(0.03, 0.085, 0.034), 0.013, PALM)
+	# Palm leather between the fingers and the board.
+	b.add_rounded_box(Vector3(-side * 0.03, -0.03, -0.072), Vector3(0.088, 0.12, 0.012), 0.004, PALM_DARK)
+	# Wrist strap in the kit colour.
+	b.add_rounded_box(Vector3(-side * 0.025, -0.115, -0.05), Vector3(0.11, 0.026, 0.074), 0.01, kit.darkened(0.15))
+	# Padded cuff round the wrist, flaring a little, kit binding at both ends.
+	add_cuff(b, Vector2(-side * 0.02, -0.035), -0.155, -0.285, Vector2(0.118, 0.092), WHITE, kit)
 	var graphic := _cached("blocker|%s|%s" % [kit.to_html(), accent.to_html()], func(): return _paint_blocker(kit, accent))
 	return b.to_mesh(0.55, graphic)
 
@@ -758,11 +764,38 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 	for k in range(6):
 		var x := lerpf(-0.058, 0.064, k / 5.0)
 		b.add_tube(PackedVector3Array([Vector3(x * side, 0.226, 0.046), Vector3((x + 0.006) * side, 0.254, 0.050)]), 0.004, WHITE, 6)
-	# Cuff and cheater: the flat padded panel down the wrist on the thumb side,
-	# carrying the glove's graphic toward the shooter.
-	b.add_panel(Vector3(-0.030 * side, -0.215, -0.018), Vector2(0.17, 0.15), 0.052, 0.03, Basis(Vector3.BACK, 0.10 * side), WHITE, kit, OFFWHITE)
+	# Cuff: a padded sleeve round the wrist that starts inside the base of
+	# the mitt (one piece with it, no gap) and flares to a kit binding.
+	add_cuff(b, Vector2(-0.005 * side, -0.030), -0.140, -0.330, Vector2(0.150, 0.104), WHITE, kit)
+	# Cheater: the flat padded panel down the wrist on the thumb side, on the
+	# front of the sleeve, carrying the glove's graphic toward the shooter.
+	b.add_panel(Vector3(-0.030 * side, -0.232, 0.034), Vector2(0.17, 0.17), 0.040, 0.03, Basis(Vector3.BACK, 0.08 * side), WHITE, kit, OFFWHITE)
 	var graphic := _cached("catcher|%s|%s" % [kit.to_html(), accent.to_html()], func(): return _paint_cheater(kit, accent))
 	return b.to_mesh(0.55, graphic)
+
+## Padded glove cuff: a rounded sleeve lofted down the wrist from y0 to y1
+## (y1 below y0) round centre `xz`, `size` wide/deep at the top and flaring
+## 12% toward the open end, in `body` with `band` binding rings at both ends.
+static func add_cuff(b: MeshBuilder, xz: Vector2, y0: float, y1: float, size: Vector2, body: Color, band: Color) -> void:
+	var rings := []
+	var ring_colors := []
+	var steps := 10
+	for k in range(steps + 1):
+		var t := float(k) / steps
+		var y := lerpf(y0, y1, t)
+		var flare := 1.0 + 0.12 * t * t
+		# Rounded lip at the open end.
+		var lip := 1.0 - 0.10 * smoothstep(0.92, 1.0, t)
+		var profile := GearProfiles.rounded_rect(size.x * flare * lip, size.y * flare * lip, [0.03, 0.03, 0.03, 0.03], 5, 6)
+		var ring := PackedVector3Array()
+		var cols := PackedColorArray()
+		var col := band if (t < 0.12 and y0 < -0.15) or t > 0.86 else body
+		for p in profile:
+			ring.append(Vector3(xz.x + p.x, y, xz.y + p.y))
+			cols.append(col)
+		rings.append(ring)
+		ring_colors.append(cols)
+	b.add_loft(rings, ring_colors, true, true)
 
 ## Catcher cuff/cheater panel graphic: kit binding, a kit sweep and an accent
 ## pinstripe on white, matching the blocker and pads.

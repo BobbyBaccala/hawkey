@@ -54,5 +54,39 @@ func run() -> void:
 	# Graphics are cached per colourway, so a second goalie reuses the texture.
 	var again: ArrayMesh = Gear.goalie_pad(-1, kit, accent)
 	check((again.surface_get_material(0) as StandardMaterial3D).albedo_texture == (pieces.pad.surface_get_material(0) as StandardMaterial3D).albedo_texture, "Pad graphic is shared between pads of one colourway")
+	# Glove backs (what the goalie and the rear cameras see): the blocker
+	# board back is off-white synthetic, not a dark slab, and its fist is palm
+	# leather; the catcher cuff is a sleeve joined to the mitt, not a panel
+	# hanging below it.
+	var blk: ArrayMesh = pieces.blocker
+	var arrays := blk.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var cols: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
+	var back_dark := 0
+	var back_light := 0
+	var palm := 0
+	for i in range(verts.size()):
+		var v: Vector3 = verts[i]
+		# The board back above the wrist strap.
+		if v.y > -0.09 and v.y < 0.15 and v.z < -0.02 and v.z > -0.04 and absf(v.x) < 0.09:
+			if cols[i].get_luminance() < 0.2: back_dark += 1
+			elif cols[i].get_luminance() > 0.7: back_light += 1
+		if near(cols[i], Gear.PALM) or near(cols[i], Gear.PALM_DARK): palm += 1
+	check(back_light > 20 and back_dark < back_light / 4, "Blocker board back is light, not a dark slab (light %d, dark %d)" % [back_light, back_dark])
+	check(palm > 50, "Blocker fist is palm leather (%d vertices)" % palm)
+	var cat: ArrayMesh = pieces.catcher
+	var cverts: PackedVector3Array = cat.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var lowest := INF
+	var gap_free := true
+	# Every 2 cm slice from the mitt base down to the cuff end holds geometry.
+	for k in range(9):
+		var y0 := -0.14 - k * 0.02
+		var found := false
+		for v in cverts:
+			lowest = minf(lowest, v.y)
+			if v.y <= y0 and v.y > y0 - 0.02: found = true
+		gap_free = gap_free and found
+	check(gap_free, "Catcher cuff runs on from the mitt without a gap")
+	check(lowest < -0.30, "Catcher cuff covers the wrist (down to %.2f m)" % lowest)
 	print("Gear graphic failures: ", failures)
 	quit(failures)
