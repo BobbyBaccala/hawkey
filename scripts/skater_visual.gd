@@ -600,7 +600,10 @@ func _ready() -> void:
 			rig.add_child(sleeve)
 			cloth_sleeves.append(sleeve)
 		if not referee and not mesh_kit:
-			var pants := add_mesh(rig,Gear.pants_leg(side,kit,accent.darkened(0.08) if goalie else Color("#151c24"),0.0 if goalie else 1.0))
+			# Goalie pants are in the bright team colour with an accent stripe and
+			# white piping down the outside (pro goalie pants); skater breezers
+			# are dark with a kit stripe.
+			var pants := add_mesh(rig,Gear.pants_leg(side,accent,kit,0.0,true) if goalie else Gear.pants_leg(side,kit,Color("#151c24"),1.0))
 			pants.material_override=Kit.breezers()
 			pant_legs.append(pants)
 		if not referee:

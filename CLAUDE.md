@@ -58,6 +58,12 @@ Godot 4.6.2 is the reference version (`godot` on PATH; on Windows see
   `capture_goalie_drop.gd [--clay]` (continuous drop/recovery from the live
   update, prints largest per-frame steps), `capture_gloves.gd` (catcher and
   blocker alone), `capture_head.gd`, `capture_saves.gd`.
+- The game ships with Forward+; gl_compatibility (the default above) has no
+  SSIL/SSAO, so undersides and navy read near-black. Judge final looks in
+  Forward+ on headless Linux with the software Vulkan driver
+  (mesa-vulkan-drivers, installed by the hawkey environment's setup script):
+  `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1728x1080x24" godot --rendering-method forward_plus --resolution 1728x1080 --script tools/capture_goalie.gd -- --only=front`
+  (~80 s per shot).
 - Save the best render as `docs/screenshots/<name>-auto-<YYYYMMDD>.png`, then
   run the import again so its `.import` file exists, and commit both.
 

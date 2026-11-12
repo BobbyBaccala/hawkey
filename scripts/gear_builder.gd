@@ -1025,7 +1025,7 @@ static func _limb(radii: Array, depth_ratio: float, color_at: Callable, sides :=
 ## a flatter inner leg and a hem that flares over the knee with a rolled lip.
 const PANTS_RINGS := 26
 const PANTS_SIDES := 36
-static func pants_leg(side: float, kit: Color, base: Color, flare := 1.0) -> ArrayMesh:
+static func pants_leg(side: float, kit: Color, base: Color, flare := 1.0, piped := false) -> ArrayMesh:
 	var b := MeshBuilder.new()
 	# flare 0: goalie pants taper in above the pads' thigh rises.
 	var base_r := [[0.0, 0.100], [0.06, 0.116], [0.16, 0.132], [0.32, 0.136], [0.55, 0.131], [0.75, lerpf(0.114, 0.122, flare)], [0.86, lerpf(0.105, 0.119, flare)], [0.95, lerpf(0.099, 0.126, flare)], [1.0, lerpf(0.097, 0.128, flare)]]
@@ -1059,7 +1059,10 @@ static func pants_leg(side: float, kit: Color, base: Color, flare := 1.0) -> Arr
 			r -= 0.003 * exp(-pow((front - 0.55) / 0.08, 2)) * smoothstep(0.15, 0.3, t) * smoothstep(0.9, 0.75, t)
 			ring.append(Vector3(cos(a) * r, -t, front * r * 0.94))
 			var col := base
-			if outer > 0.86 and t > 0.08 and t < 0.97: col = kit
+			if piped and outer > 0.86 and t > 0.08 and t < 0.97:
+				# Stripe with white piping either side (goalie pants).
+				col = WHITE if outer < 0.93 else kit
+			elif outer > 0.86 and t > 0.08 and t < 0.97: col = kit
 			elif t > 0.94: col = base.lightened(0.12)
 			elif _band(t, 0.045, 0.03) > 0.5: col = base.lightened(0.05)
 			cols.append(col)

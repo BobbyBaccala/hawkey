@@ -81,5 +81,23 @@ func run() -> void:
 		var knee_l: Vector3 = g.pads[i].transform.affine_inverse() * g.knees[i]
 		check(absf(g.pad_rears[i].position.y - knee_l.y) < 0.005, "straps ride with the knee")
 	check(g.skate_cuffs.size() == 2, "goalie skates have shin-following cuffs")
+	# Goalie pants: bright team colour with an accent stripe and white piping
+	# down the outside (reference photos); skater breezers stay dark.
+	var pc: PackedColorArray = (g.pant_legs[0].mesh as ArrayMesh).surface_get_arrays(0)[Mesh.ARRAY_COLOR]
+	var kit_n := 0
+	var acc_n := 0
+	var white_n := 0
+	for c in pc:
+		if c.is_equal_approx(g.kit): kit_n += 1
+		elif c.is_equal_approx(g.accent): acc_n += 1
+		elif c.get_luminance() > 0.85: white_n += 1
+	check(kit_n > pc.size() * 0.6, "goalie pants are kit colour (%d of %d)" % [kit_n, pc.size()])
+	check(acc_n > 20 and white_n > 20, "goalie pants carry an accent stripe with white piping (%d, %d)" % [acc_n, white_n])
+	var sc_cols: PackedColorArray = (s.pant_legs[0].mesh as ArrayMesh).surface_get_arrays(0)[Mesh.ARRAY_COLOR] if s.pant_legs.size() > 0 and s.pant_legs[0].mesh is ArrayMesh and not s.mesh_kit else PackedColorArray()
+	if sc_cols.size() > 0:
+		var dark := 0
+		for c in sc_cols:
+			if c.get_luminance() < 0.2: dark += 1
+		check(dark > sc_cols.size() * 0.6, "skater breezers stay dark")
 	print("Goalie kit failures: ", failures)
 	quit(1 if failures > 0 else 0)
