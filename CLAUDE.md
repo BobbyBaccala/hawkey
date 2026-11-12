@@ -39,8 +39,11 @@ you finish. The `/update-memory` command does this.
 Godot 4.6.2 is the reference version (`godot` on PATH; on Windows see
 `tools/setup_windows.ps1`).
 
-- Import once after pulling or adding assets: `godot --headless --import`
+- Cloud/Linux session setup (idempotent, ~1 s once cached): `tools/cloud_setup.sh`
+  (Godot 4.6.2, xvfb, and the import only when assets changed).
+- Import after pulling or adding assets: `godot --headless --import`
 - One test: `godot --headless --script tests/test_clipping.gd`
+- Some tests while iterating: `tools/run_tests.sh goalie clipping` (names containing a word).
 - All tests: `tools/run_tests.sh` (Linux/macOS) or
   `powershell -File tools/run_tests.ps1` (Windows). ~20–30 min; logs in
   `build/test-logs/`. Every suite must exit 0 with 0 failures.
