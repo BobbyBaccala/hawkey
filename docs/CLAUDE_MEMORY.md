@@ -72,6 +72,8 @@ Goalies
   pad colliders use butterfly_posed = smoothstep(butterfly) (gentle start
   and landing, quicker middle). Drawn pad cancels the collision pad's
   ice-seal lift along its thickness; ankle strap raised to y -0.25.
+- Goalie pants: kit colour with an accent stripe and white piping
+  (pants_leg(..., piped)); reference photos said bright team colour.
 - Knee cradle, calf wrap and straps (`Gear.pad_rear`, `PadRear` nodes).
 - Skate stays on the ankle; in the butterfly the foot keeps ~105 deg to the
   shin with the toe in the pad's boot channel.
@@ -87,7 +89,7 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 47 suites; last full run 47/47 at d9ef03d (2026-11-12).
+Tests: 47 suites; last full run 47/47 at 4b93b37 (2026-11-12).
 
 ## Open defects / next steps (goalie first)
 0. Owner 2026-11-12: gear believability and save animations are the top
@@ -123,6 +125,9 @@ Tests: 47 suites; last full run 47/47 at d9ef03d (2026-11-12).
   `get_goalie_gear()` at sampled poses before/after).
 
 ## Gotchas
+- The game ships Forward+; gl_compatibility renders (no SSIL/SSAO) make navy
+  and undersides read near-black. Judge looks in Forward+ via lavapipe (see
+  CLAUDE.md, ~80 s/shot); the hawkey env setup script installs the driver.
 - Cloud container: if `godot` is missing, the session is not on the "hawkey"
   environment; `main` is only a README - the project is on
   prototype/skating-puck-lab.
