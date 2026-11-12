@@ -46,6 +46,12 @@ Goalies
   straight out along the ice, pads face-on, stick hand down. Not a
   knees-down save (butterfly stays 0; match.gd unchanged). Pad colliders
   cover ~1.7 m of the goal mouth.
+- Pad stack (STACK_* consts, kinds stack_left/right): choose_save(x, h,
+  slide, current) picks it for a low shot wider than 0.62 m when the goalie
+  already slides toward it > 1.6 m/s, and keeps it once started (match.gd
+  passes visual.lateral + visual.save_kind). Legs-together pose in rig space,
+  then the whole rig rolls 1.48 rad, slides 0.95 m to the post, lifts 0.31 m:
+  ~64 cm pad wall from the ice. stack_roll is removed from `lateral`.
 - Knee cradle, calf wrap and straps (`Gear.pad_rear`, `PadRear` nodes).
 - Skate stays on the ankle; in the butterfly the foot keeps ~105 deg to the
   shin with the toe in the pad's boot channel.
@@ -61,12 +67,15 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 46 suites; last full run 46/46 at 08963f7 (2026-11-12).
+Tests: 46 suites; last full run 46/46 at 6e3c289 (2026-11-12).
 
 ## Open defects / next steps (goalie first)
-1. Goalie saves slice 2b: pad stack, poke check, post-save freeze. Splits
-   polish: the paddle stays upright in front (could lay flat for a stacked
-   look); no transition motion (it blends in at the save rate).
+1. Goalie saves slice 2c: poke check on close carriers, post-save
+   freeze/rebound control.
+   Polish: pad stack shows a dark seam between the stacked pads (rounded
+   edges show the pants); stack/splits have no dive motion (the save weight
+   blends the pose in ~0.15 s); blocker-side stack has no hand over the top;
+   splits paddle stays upright.
 2. Butterfly polish: 6 mm shaded seam between the two rises; knee-stack ends
    of the lower pads are ~14 cm apart under the rises; rise top still moves
    9.0 cm/frame mid-drop (inherent to the 6/s drop; knee 5.9).
@@ -99,6 +108,12 @@ Tests: 46 suites; last full run 46/46 at 08963f7 (2026-11-12).
 - Full suite in the cloud: `JOBS=3 tools/run_tests.sh` took ~20 min (4 cores).
 - capture_saves.gd --row=2 picks the save with choose_save() ("auto"), so the
   same row gives a fair before/after when save selection changes.
+- Whole-body save poses (pad stack): pose upright in rig space and roll the
+  rig - the save colliders follow because get_goalie_gear() includes
+  rig.transform. Anything measured in the rig frame (lateral) must take the
+  roll out again.
+- test_clipping --report lists every offending pair; it caught boots in pads
+  (straight shins) and hands meeting in the stack - fix the pose, not the test.
 - Save poses are gameplay: changing torso/catcher pose changes get_goalie_gear();
   run test_goalie_saves and test_play_now_ai after any save-pose edit.
 - `test_clipping.gd`: inside test = ray parity candidate + winding number
