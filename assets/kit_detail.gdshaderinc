@@ -36,6 +36,14 @@ vec3 kit_tri_weights(vec3 n) {
 	return w / max(w.x + w.y + w.z, 1e-5);
 }
 
+// normalize() of a zero vector is NaN, and a NaN pixel blooms into a white
+// blob in Forward+ (glow). Degenerate vertices (loft caps, rolled hems) have
+// zero-length normals, so normals go through this instead.
+vec3 kit_safe_normalize(vec3 v, vec3 fallback) {
+	float l2 = dot(v, v);
+	return l2 > 1e-12 ? v * inversesqrt(l2) : fallback;
+}
+
 // Triplanar detail in object space (metres): returns the perturbed object
 // normal in xyz and the blended height in w.
 vec4 kit_triplanar(sampler2D tex, vec3 p, vec3 n, float strength) {
@@ -48,7 +56,7 @@ vec4 kit_triplanar(sampler2D tex, vec3 p, vec3 n, float strength) {
 	vec2 nz = (tz.rg * 2.0 - 1.0) * strength;
 	vec3 s = sign(n);
 	vec3 r = n + vec3(0.0, nx.y, nx.x * s.x) * w.x + vec3(ny.x * s.y, 0.0, ny.y) * w.y + vec3(nz.x * s.z, nz.y, 0.0) * w.z;
-	return vec4(normalize(r), tx.a * w.x + ty.a * w.y + tz.a * w.z);
+	return vec4(kit_safe_normalize(r, n), tx.a * w.x + ty.a * w.y + tz.a * w.z);
 }
 
 // --- Gameplay-distance look (5-25 m from the camera) ---------------------

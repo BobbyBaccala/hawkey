@@ -53,7 +53,11 @@ void vertex() {
 	limb_t = -VERTEX.y;
 }
 
+// pow() of a negative base is NaN on some drivers (lavapipe/Vulkan here), and
+// an interpolated vertex colour can dip a hair below zero at hard edges; a
+// NaN pixel then blooms into a white blob in Forward+. Clamp first.
 vec3 srgb_to_linear(vec3 c) {
+	c = clamp(c, vec3(0.0), vec3(1.0));
 	return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(vec3(0.04045), c));
 }
 
@@ -128,9 +132,9 @@ void fragment() {
 		coat *= 1.0 - trim;
 		strength = mix(strength, 0.5, trim);
 	}
-	vec3 on = normalize(obj_n);
+	vec3 on = kit_safe_normalize(obj_n, vec3(0.0, 1.0, 0.0));
 	vec4 t = kit_triplanar(detail_tex, obj_pos * detail_tiles, on, strength * kit_detail_fade(VERTEX));
-	vec3 n = normalize((VIEW_MATRIX * vec4(MODEL_NORMAL_MATRIX * t.xyz, 0.0)).xyz);
+	vec3 n = kit_safe_normalize((VIEW_MATRIX * vec4(MODEL_NORMAL_MATRIX * t.xyz, 0.0)).xyz, VIEW);
 	// Supplied normals point outward; light the side facing the camera.
 	n = dot(n, VIEW) < -0.15 ? -n : n;
 	if (helmet_panels) n = kit_bump(n, VERTEX, -groove * 0.0015);
@@ -140,9 +144,11 @@ void fragment() {
 	float fres = pow(1.0 - ndv, 4.0);
 	col += (col + 0.03) * fres * sheen * 0.3;
 	// Overhead arena key: lit tops, darker undersides (reads at distance).
-	vec3 wn = normalize((INV_VIEW_MATRIX * vec4(n, 0.0)).xyz);
+	vec3 wn = kit_safe_normalize((INV_VIEW_MATRIX * vec4(n, 0.0)).xyz, vec3(0.0, 1.0, 0.0));
 	float over = kit_overhead(wn);
-	ALBEDO = mix(col, col * 1.25, metal) * over;
+	vec3 alb = mix(col, col * 1.25, metal) * over;
+	// Never hand a NaN to the lighting (it would bloom): fall back to the base.
+	ALBEDO = any(isnan(alb)) ? base_color.rgb : alb;
 	AO = min(over, 1.0);
 	METALLIC = metal;
 	ROUGHNESS = kit_spec_aa(n, mix(rough, 0.16, metal));

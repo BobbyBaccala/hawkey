@@ -79,6 +79,11 @@ func run() -> void:
 	check(shader_code.find("coverage = half_width / (half_width + grow)") >= 0, "Stick overlay alpha is coverage")
 	check(ThinAA.MIN_PIXELS >= 1.0 and ThinAA.MIN_PIXELS <= 2.5, "Minimum stick width ~1-2 px")
 	# Kit shaders: overhead shading, distance detail fade, specular AA.
+	# NaN guard (Forward+ blooms a NaN pixel into a white blob): vertex colours
+	# are clamped before the sRGB pow(), and the gear albedo falls back when NaN.
+	var gear_code := FileAccess.get_file_as_string("res://assets/kit_gear.gdshader")
+	check(gear_code.find("c = clamp(c, vec3(0.0), vec3(1.0));") >= 0, "gear shader clamps vertex colour before pow()")
+	check(gear_code.find("isnan(alb)") >= 0, "gear shader never outputs a NaN albedo")
 	var inc := FileAccess.get_file_as_string("res://assets/kit_detail.gdshaderinc")
 	for fn in ["kit_overhead", "kit_detail_fade", "kit_spec_aa"]:
 		check(inc.find("float %s(" % fn) >= 0, "kit_detail has %s" % fn)
