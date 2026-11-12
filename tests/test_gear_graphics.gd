@@ -87,6 +87,12 @@ func run() -> void:
 			if v.y <= y0 and v.y > y0 - 0.02: found = true
 		gap_free = gap_free and found
 	check(gap_free, "Catcher cuff runs on from the mitt without a gap")
+	# Catcher back carries a team-colour backhand panel (not plain white).
+	var ccols: PackedColorArray = cat.surface_get_arrays(0)[Mesh.ARRAY_COLOR]
+	var back_kit := 0
+	for i in range(cverts.size()):
+		if cverts[i].z < -0.06 and near(ccols[i], kit): back_kit += 1
+	check(back_kit > 60, "Catcher back has a team-colour panel (%d vertices)" % back_kit)
 	check(lowest < -0.30, "Catcher cuff covers the wrist (down to %.2f m)" % lowest)
 	print("Gear graphic failures: ", failures)
 	quit(failures)

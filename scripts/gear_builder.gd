@@ -694,7 +694,13 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 				if i == 9 and q.x * side > 0.02:
 					col = kit
 			else:
+				# Back of the hand: a team-colour panel over the finger half with
+				# accent piping along its edge, the rest white (pro catcher backs
+				# carry the graphic too).
 				col = WHITE
+				var fx: float = (p.x * side - 0.02)
+				if fx > 0.012: col = kit
+				elif fx > 0.0: col = accent
 			cols.append(col)
 		rings.append(ring)
 		ring_colors.append(cols)
@@ -717,13 +723,14 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 	for t: float in [0.30, 0.48, 0.66]:
 		var c := finger[int(t * (finger.size() - 1))]
 		b.add_tube(PackedVector3Array([c + Vector3(-0.012 * side, 0, 0.026), c + Vector3(0.028 * side, -0.004, 0.012)]), 0.004, kit.darkened(0.25), 6)
-	# Finger stall breaks: kit lines across the back where the mitt folds.
+	# Finger stall breaks: white lines across the kit backhand panel where the
+	# mitt folds.
 	for yb: float in [-0.02, 0.06, 0.14]:
 		var arc := PackedVector3Array()
 		for k in range(7):
 			var xb := lerpf(0.0, 0.15, k / 6.0)
 			arc.append(Vector3(xb * side, yb + 0.02 * sin(k / 6.0 * PI), -0.108 + 0.02 * pow(k / 6.0, 3)))
-		b.add_tube(arc, 0.006, kit, 6)
+		b.add_tube(arc, 0.006, WHITE, 6)
 	# Thumb: a slimmer roll up the inside, white with a kit tip.
 	var thumb := PackedVector3Array([
 		Vector3(-0.112, -0.09, 0.030), Vector3(-0.122, 0.0, 0.036), Vector3(-0.118, 0.09, 0.040),
