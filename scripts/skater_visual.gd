@@ -1360,6 +1360,17 @@ func goalie_look() -> Basis:
 	var pitch := clampf(atan2(-d.y,Vector2(d.x,d.z).length()),-LOOK_UP,LOOK_DOWN)
 	return Basis(Vector3.UP,yaw*engage)*Basis(Vector3.RIGHT,pitch*engage)
 
+## Splits: the stick lies flat across the ice in front of the five-hole, from
+## the blocker hand across to the glove side of the hips, so the paddle seals
+## the gap between the legs instead of standing up in front of the chest.
+const SPLITS_GRIP_Y := 0.17
+func splits_weight() -> float:
+	return smoothstep(0.0,1.0,minf(float(save_weights.splits_left)+float(save_weights.splits_right),1.0))
+
+func splits_blade() -> Vector3:
+	# Across the five-hole from the blocker hand (which is on the -x side).
+	return Vector3(posed_drop.x+0.24,0.042,0.66)
+
 ## Pad-stack blend (eased) and its side: +1 toward the glove side (rig +x).
 func stack_weight() -> float:
 	return smoothstep(0.0,1.0,minf(float(save_weights.stack_left)+float(save_weights.stack_right),1.0))
@@ -2329,7 +2340,7 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	brake_turn = move_toward(brake_turn,1.0 if braking and not goalie else 0.0,delta*6)
 	shot_follow = maxf(0,shot_follow-delta*3)
 	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
-	blade_position=Vector3(-0.02+butterfly_posed*0.05,0.042,0.60-butterfly_posed*0.04).lerp(Vector3(-stack_dir()*0.23,0.35,0.62),stack_weight()) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
+	blade_position=Vector3(-0.02+butterfly_posed*0.05,0.042,0.60-butterfly_posed*0.04).lerp(Vector3(-stack_dir()*0.23,0.35,0.62),stack_weight()).lerp(splits_blade(),splits_weight()) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
 	# Stop: the stick reaches out in front for balance.
 	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
 	# Faceoff: settle into the stance quickly, break out of it a little slower.
@@ -2443,7 +2454,7 @@ func stick_grip() -> Vector3:
 		# Splits: the stick hand comes down with the hips so the paddle lies
 		# along the ice in front of the pads instead of standing up.
 		var split_w := minf(float(save_weights.splits_left)+float(save_weights.splits_right),1.0)
-		if split_w > 0.0: grip = grip.lerp(Vector3(-0.40+posed_drop.x,0.30,0.50),split_w)
+		if split_w > 0.0: grip = grip.lerp(Vector3(-0.42+posed_drop.x,SPLITS_GRIP_Y,0.52),split_w)
 		var stack_w := stack_weight()
 		if stack_w > 0.0: grip = grip.lerp(reach(shoulder_of(1),stack_hand(-1.0)),stack_w)
 		var block_w: float = save_weights.blocker

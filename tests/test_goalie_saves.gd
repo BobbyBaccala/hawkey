@@ -127,6 +127,11 @@ func run() -> void:
 				hi = maxf(hi, x)
 		check(hi - lo > 1.6, "%s: pad colliders cover the goal mouth (%.2f m of 1.83)" % [kind, hi - lo])
 		check(v.stick_shaft.scale.y < v.GOALIE_STICK_REACH + 0.5, "%s: stick never stretches" % kind)
+		# The stick lies flat across the five-hole (paddle on the ice), not
+		# standing up in front of the chest.
+		var shaft_up: Vector3 = (v.stick_shaft.basis as Basis).y.normalized()
+		check(absf(shaft_up.y) < 0.45, "%s: stick lies low across the ice (%s)" % [kind, shaft_up])
+		check(absf(shaft_up.x) > 0.6, "%s: stick runs across the five-hole (%s)" % [kind, shaft_up])
 	# Pad stack: on the side, both pads stacked into a wall from the ice,
 	# facing the shooter, feet toward the post, colliders following.
 	for kind in ["stack_left", "stack_right"]:
