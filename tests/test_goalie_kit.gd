@@ -77,6 +77,10 @@ func run() -> void:
 	# The stick is the de-branded downloaded model, drawn instead of the proxies.
 	check(g.goalie_stick_mesh != null and g.goalie_stick_mesh.visible, "goalie draws the stick model")
 	check(not g.goalie_paddle.visible and not g.stick_shaft.visible, "box stick proxies hidden")
+	# The paddle carries the team colours (painted over the de-branded bake).
+	var stick_mat := g.goalie_stick_mesh.material_override as ShaderMaterial
+	check(stick_mat != null and (stick_mat.get_shader_parameter("kit") as Color).is_equal_approx(g.kit), "goalie stick paddle carries the kit colour")
+	check(stick_mat != null and stick_mat.get_shader_parameter("albedo_tex") != null, "goalie stick keeps its baked texture")
 	var stick_len: float = g.goalie_stick_mesh.mesh.get_aabb().size.y * SV.GOALIE_STICK_SCALE
 	check(stick_len > 1.4 and stick_len < 1.55, "goalie stick about 1.45 m (%.2f)" % stick_len)
 	# Each pad is held on by a knee cradle, calf wrap and straps that follow the knee.

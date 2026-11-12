@@ -22,6 +22,7 @@ const PadMeshes = preload("res://assets/gear/goalie-pads-v2.glb")
 ## a 66 cm (26 in) paddle.
 const MESH_GOALIE_STICK := true
 const GoalieStickMesh = preload("res://assets/gear/goalie-stick-v1.glb")
+const GoalieStickShader = preload("res://assets/goalie_stick.gdshader")
 const GOALIE_STICK_SCALE := 12.0
 static var pad_parts := {}
 const MESH_GOALIE_MASK := true
@@ -583,6 +584,15 @@ func _ready() -> void:
 			goalie_stick_mesh=MeshInstance3D.new()
 			goalie_stick_mesh.name="GoalieStick"
 			goalie_stick_mesh.mesh=src.mesh
+			# The bake lost the red graphic: team colours are painted on the
+			# paddle by the stick shader over the baked texture.
+			var baked: StandardMaterial3D = src.mesh.surface_get_material(0)
+			var stick_mat := ShaderMaterial.new()
+			stick_mat.shader = GoalieStickShader
+			stick_mat.set_shader_parameter("albedo_tex",baked.albedo_texture)
+			stick_mat.set_shader_parameter("kit",kit)
+			stick_mat.set_shader_parameter("accent",accent)
+			goalie_stick_mesh.material_override = stick_mat
 			src.get_parent().free()
 			sticks.add_child(goalie_stick_mesh)
 			# The box shaft, paddle and blade stay as the save collision/clipping
