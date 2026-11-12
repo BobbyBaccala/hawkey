@@ -68,6 +68,10 @@ Goalies
 - Save motion: set_save() steps each weight as a critically damped spring
   (SAVE_SNAP 24 in, SAVE_RECOVER 10 out): snap + ease, half-way timing as
   the old linear ramps. tools/capture_save_motion.gd measures it.
+- `butterfly` is the match's linear command (read back unchanged); poses and
+  pad colliders use butterfly_posed = smoothstep(butterfly) (gentle start
+  and landing, quicker middle). Drawn pad cancels the collision pad's
+  ice-seal lift along its thickness; ankle strap raised to y -0.25.
 - Knee cradle, calf wrap and straps (`Gear.pad_rear`, `PadRear` nodes).
 - Skate stays on the ankle; in the butterfly the foot keeps ~105 deg to the
   shin with the toe in the pad's boot channel.
@@ -83,12 +87,11 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 47 suites; last full run 47/47 at ed98f08 (2026-11-12).
+Tests: 47 suites; last full run 47/47 at d9ef03d (2026-11-12).
 
 ## Open defects / next steps (goalie first)
 0. Owner 2026-11-12: gear believability and save animations are the top
-   priority. Next: butterfly drop/rise is still linear (match.gd move_toward
-   6/s down, 2/s up) - smooth it in the visual; catcher back still plain; standing pads
+   priority. Next: catcher back still plain; standing pads
    still a little grey (vertical faces get little overhead light).
 1. Goalie saves slice 2c: poke check on close carriers, post-save
    freeze/rebound control.
@@ -104,8 +107,6 @@ Tests: 47 suites; last full run 47/47 at ed98f08 (2026-11-12).
 5. Goalie stick bake lost its red graphic (white/black only).
 6. Skaters: boxy shoulders still, single face mesh (add variants), number font
    is block (backlog "Blender kit, pass 2").
-7. Parked unfinished work in old cloud worktrees (jersey numbers/athletic font,
-   shooting animations) did not reach GitHub — redo from the backlog items.
 
 ## Decisions
 - 2026-11-07: downloaded models/brands allowed with logos, names and signatures
