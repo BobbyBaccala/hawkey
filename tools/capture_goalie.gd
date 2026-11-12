@@ -42,6 +42,8 @@ func run()->void:
 		["rear-close","",Vector2(0,0.8),Vector3(0.0,1.0,-1.5),Vector3(0,0.8,0),46.0],
 		["rear-side","",Vector2(0,0.8),Vector3(-1.2,0.9,-1.1),Vector3(0,0.75,0),46.0],
 		["rear-bfly","butterfly",Vector2(0.1,0.15),Vector3(0.6,1.0,-1.5),Vector3(0,0.5,0),46.0],
+		["splits-front","splits_left",Vector2(1.15,0.1),Vector3(0.0,0.9,2.7),Vector3(0,0.4,0),50.0],
+		["splits-side","splits_left",Vector2(1.15,0.1),Vector3(-1.9,0.8,1.9),Vector3(0,0.35,0),48.0],
 	]
 	var only:=""
 	for arg in OS.get_cmdline_user_args():

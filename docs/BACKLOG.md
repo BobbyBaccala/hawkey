@@ -78,7 +78,8 @@ Rules for every run:
 - [x] Goalie pad and glove models (pass 1): painted anti-aliased graphics textures (pads, blocker, catcher cheater) instead of per-triangle colours; pad outer roll, stitched breaks and face stitching; blocker finger sidewall; catcher with deep pocket under the T, thick finger roll, kit-tipped thumb, laced T-trap web and a flat cheater cuff.
 - [ ] Goalie gear pass 2 (owner offered reference photos of real gear - ask for them): match silhouettes to the photos, add knee-landing blocks and inner-knee wedges, catcher back/wrist strap, blocker palm detail.
 - [x] Goalie butterfly wall + committed save poses (owner 2026-11-12, EA NHL / pro reference): thigh rises stand over the knee stacks face-on and meet at the five-hole as one wall; glove/blocker saves tip the shoulders toward the reach with the catcher pocket square to the shooter; pad extensions drop the chest out over the lead pad.
-- [ ] Goalie saves (slice 2): full splits as a separate desperation pose; pad stack (stacked pads, sliding on the side) for desperation saves, poke check on close carriers, and a post-save freeze/rebound-control beat.
+- [x] Goalie saves (slice 2a): full splits as a separate desperation save (splits_left/right) for low shots past the pad-extension reach.
+- [ ] Goalie saves (slice 2b): pad stack (stacked pads, sliding on the side) for desperation saves, poke check on close carriers, and a post-save freeze/rebound-control beat.
 - [ ] Shooting animations: wrist-shot and slapshot wind-up/follow-through driven by charge; stick flex look.
 - [ ] Crossovers and tight turns: leg crossover cycle when turning at speed; lean into turns.
 - [x] Hockey stops: snow spray particles and a skid pose when braking hard.

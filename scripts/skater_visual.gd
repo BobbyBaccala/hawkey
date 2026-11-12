@@ -106,8 +106,16 @@ var goalie_save_height := 0.0
 ## save can interrupt the recovery from the last one. save_target is the
 ## puck's predicted crossing point in rig space: x across (+x = catching
 ## side), y height above the ice.
-const SAVE_KINDS := ["glove","blocker","pad_left","pad_right"]
-var save_weights := {"glove":0.0,"blocker":0.0,"pad_left":0.0,"pad_right":0.0}
+const SAVE_KINDS := ["glove","blocker","pad_left","pad_right","splits_left","splits_right"]
+var save_weights := {"glove":0.0,"blocker":0.0,"pad_left":0.0,"pad_right":0.0,"splits_left":0.0,"splits_right":0.0}
+## Splits (desperation save for low shots past the pad-extension reach): hips
+## drop to SPLITS_HIP over the ice and slide SPLITS_SHIFT toward the puck, both
+## legs straighten out along the ice (SPLITS_LEG hip-to-ankle), pad faces to
+## the shooter, the lead leg to the post.
+const SPLITS_X := 1.0
+const SPLITS_HIP := 0.32
+const SPLITS_SHIFT := 0.22
+const SPLITS_LEG := 0.86
 var save_kind := ""
 var save_target := Vector2(0,0.8)
 const ARM_REACH := 0.55
@@ -1226,6 +1234,7 @@ func knee_position(hip: Vector3, ankle: Vector3, pole: Vector3, upper: float, lo
 ## blocker for higher shots to either side, and a body block in the middle.
 static func choose_save(x: float, h: float) -> String:
 	if h < 0.45:
+		if absf(x) > SPLITS_X: return "splits_left" if x > 0 else "splits_right"
 		if absf(x) > 0.62: return "pad_left" if x > 0 else "pad_right"
 		return "butterfly"
 	if x > 0.18: return "glove"
@@ -1428,6 +1437,11 @@ func pose(speed: float, turn: float) -> void:
 		# pad, and the torso leans toward a glove or blocker reach.
 		var pad_shift: float = save_weights.pad_left-save_weights.pad_right
 		drop += Vector3(pad_shift*0.16,-absf(pad_shift)*0.04,0)
+		var split_w: float = save_weights.splits_left+save_weights.splits_right
+		if split_w > 0.0:
+			var dir := signf(save_weights.splits_left-save_weights.splits_right)
+			var hip_y: float = (rest["upperleg01.L"] as Transform3D).origin.y
+			drop = drop.lerp(Vector3(dir*SPLITS_SHIFT,SPLITS_HIP-hip_y,-0.02),minf(split_w,1.0))
 	var shoulder_turn := 0.0
 	if not goalie:
 		stride=[stride_foot(0,speed),stride_foot(1,speed)]
@@ -1659,6 +1673,10 @@ func pose(speed: float, turn: float) -> void:
 		if reach_lean != 0.0 or pad_lean != 0.0:
 			var over_pad := absf(pad_lean)
 			bend = Basis(Vector3.UP,reach_lean*0.35+pad_lean*PAD_SAVE_TURN)*Basis(Vector3.BACK,-reach_lean-pad_lean*PAD_SAVE_LEAN)*Basis(Vector3.RIGHT,over_pad*PAD_SAVE_BEND)*bend
+		# Splits: chest tall over the hips, tipped a little toward the lead leg.
+		var split_lean: float = save_weights.splits_left-save_weights.splits_right
+		if split_lean != 0.0:
+			bend = Basis(Vector3.BACK,-split_lean*0.20)*Basis(Vector3.RIGHT,absf(split_lean)*0.10)*bend
 	if not idle.is_empty():
 		var sway:=Quaternion(idle_data.mean.dirs.spine,idle.dirs.spine)
 		bend = Basis(Quaternion.IDENTITY.slerp(sway,0.7*(1.0-butterfly)))*bend
@@ -1729,6 +1747,20 @@ func pose(speed: float, turn: float) -> void:
 			if kick > 0.0:
 				ankle = ankle.lerp(Vector3(side*1.02,0.12,0.06),kick)
 				knee = knee.lerp(Vector3(side*0.57,0.16,0.17),kick)
+				feet[i] = ankle
+			# Splits: each leg straightens out along the ice to its own side from
+			# the dropped hips (lead leg a touch forward, trail leg back), knee
+			# almost locked, so the pads stand on their inner edges face-on.
+			var lead_w: float = save_weights["splits_left" if i==0 else "splits_right"]
+			var trail_w: float = save_weights["splits_right" if i==0 else "splits_left"]
+			var split_w := minf(lead_w+trail_w,1.0)
+			if split_w > 0.0:
+				var low := 0.12-hip.y
+				var out_x := sqrt(maxf(SPLITS_LEG*SPLITS_LEG-low*low,0.04))
+				var split_ankle := hip+Vector3(side*out_x,low,0.08*lead_w-0.06*trail_w)
+				var split_knee := (hip+split_ankle)*0.5+Vector3(0,0.03,0.04)
+				ankle = ankle.lerp(split_ankle,split_w)
+				knee = knee.lerp(split_knee,split_w)
 				feet[i] = ankle
 		knees[i]=knee
 		align_bone("upperleg01"+suffix,"lowerleg01"+suffix,hip,knee)
@@ -2240,6 +2272,10 @@ func set_nameplate(value: String) -> void:
 func stick_grip() -> Vector3:
 	if goalie:
 		var grip := Vector3(lerpf(-0.36,-0.24,butterfly)+posed_drop.x,0.60-butterfly*0.12,0.49)
+		# Splits: the stick hand comes down with the hips so the paddle lies
+		# along the ice in front of the pads instead of standing up.
+		var split_w := minf(float(save_weights.splits_left)+float(save_weights.splits_right),1.0)
+		if split_w > 0.0: grip = grip.lerp(Vector3(-0.40+posed_drop.x,0.30,0.50),split_w)
 		var block_w: float = save_weights.blocker
 		if block_w > 0.0:
 			# Blocker save: the stick hand punches out to the puck's line and the
