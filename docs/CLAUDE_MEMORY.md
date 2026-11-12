@@ -61,6 +61,10 @@ Goalies
   accent lines, team bands at the break and top of the rise). kit_overhead()
   now darkens only real undersides (normal > ~17 deg down) - it was greying
   every standing pad face (shared with the cloth shader).
+- Glove backs: blocker board back off-white, tan palm-leather fist (PALM,
+  PALM_DARK), kit strap, rounded cuff (gear_builder.gd add_cuff()); catcher
+  cuff is a sleeve lofted from inside the mitt base with the cheater panel on
+  its front.
 - Knee cradle, calf wrap and straps (`Gear.pad_rear`, `PadRear` nodes).
 - Skate stays on the ankle; in the butterfly the foot keeps ~105 deg to the
   shin with the toe in the pad's boot channel.
@@ -76,14 +80,13 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 47 suites; last full run 47/47 at 93747c3 (2026-11-12).
+Tests: 47 suites; last full run 47/47 at 79f3564 (2026-11-12).
 
 ## Open defects / next steps (goalie first)
-0. Owner 2026-11-12: gear believability is the top priority. Next gear
-   items: blocker board back is flat dark (gear_builder.gd blocker(): back
-   colour DARK.lerp(WHITE,0.15)) - make it white/kit with a tan palm glove
-   gripping the stick; catcher back plain; standing pads still a little grey
-   (vertical faces get little overhead light).
+0. Owner 2026-11-12: gear believability and save animations are the top
+   priority. Next: save motion (saves blend linearly in ~0.15 s - no
+   anticipation/explosion/settle); catcher back still plain; standing pads
+   still a little grey (vertical faces get little overhead light).
 1. Goalie saves slice 2c: poke check on close carriers, post-save
    freeze/rebound control.
    Polish: pad stack shows a dark seam between the stacked pads (rounded
