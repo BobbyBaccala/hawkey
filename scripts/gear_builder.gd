@@ -621,6 +621,14 @@ static func _paint_blocker(kit: Color, accent: Color) -> Texture2D:
 	g.rect(0.93, 0, 1, 1, kit)
 	return g.texture()
 
+## Panel closing the toe window in the goalie pad's face (pad source space:
+## knee y = 0.035, face toward +z): the downloaded pad model has a hole
+## through the face above the toe bridge.
+static func pad_toe_cover() -> ArrayMesh:
+	var b := MeshBuilder.new()
+	b.add_rounded_box(Vector3(0.005, -0.246, 0.024), Vector3(0.160, 0.136, 0.034), 0.010, WHITE)
+	return b.to_mesh(0.6)
+
 # ---------------------------------------------------------------- pad rear
 ## What holds a goalie pad on: the knee cradle (a padded block behind the
 ## knee landing), a calf wrap with its strap and an ankle strap, each a band
@@ -634,8 +642,10 @@ static func pad_rear(pad_half_width: float, back_z: float, shin_back: float) -> 
 	# Knee cradle: a soft block sitting on the pad back round the knee cap.
 	b.add_rounded_box(Vector3(0, -0.005, back_z - 0.025), Vector3(0.15, 0.11, 0.05), 0.02, wrap)
 	# Calf wrap: a padded panel round the back of the calf.
-	# The ankle strap sits clear of the boot's heel as the foot pivots in the drop.
-	for band: Array in [[-0.17, 0.034, wrap, 0.016], [-0.17, 0.020, strap, 0.019], [-0.25, 0.016, strap, 0.015]]:
+	# [height, unused, colour, tube radius, loop radius]. The ankle strap loops
+	# wider, round the outside of the boot (which sits behind the shin when
+	# the goalie kneels), not through it.
+	for band: Array in [[-0.17, 0.034, wrap, 0.016, 0.075], [-0.17, 0.020, strap, 0.019, 0.075], [-0.25, 0.016, strap, 0.015, 0.115]]:
 		var y: float = band[0]
 		var r: float = band[3]
 		var pts := PackedVector3Array()
@@ -644,7 +654,7 @@ static func pad_rear(pad_half_width: float, back_z: float, shin_back: float) -> 
 			var t := k / 8.0
 			# From one inner pad edge, round behind the shin, to the other.
 			var a := lerpf(-PI * 0.92, -PI * 0.08, t)
-			var radius := 0.075
+			var radius: float = band[4]
 			var p := Vector3(cos(a) * radius * 1.15, y, -shin_back + sin(a) * radius)
 			if k == 0: p = Vector3(-ends, y, back_z - 0.004)
 			if k == 8: p = Vector3(ends, y, back_z - 0.004)

@@ -129,6 +129,10 @@ var save_weights := {"glove":0.0,"blocker":0.0,"pad_left":0.0,"pad_right":0.0,"s
 const STACK_ROLL := 1.48
 const STACK_SHIFT := 0.95
 const STACK_LIFT := 0.31
+## Butterfly knee width: the rigid pads (thigh rise in line with the shin)
+## meet edge to edge at the five-hole without crossing. The ankles move out
+## by the same amount so the shins keep their length and angle.
+const BFLY_KNEE_X := 0.34
 const STACK_SLIDE := 1.6
 const STACK_LEG := 0.83
 ## Rig roll applied for the pad stack this frame (removed again when the
@@ -185,18 +189,8 @@ const PAD_VIS_Z := 0.042
 const GOALIE_HEM_RISE := 0.075
 const PAD_DROP_MAX := 0.19
 const RISE_SIGN := 1.0
-const RISE_ROLL := 0.7
-## Dropped, the rise hinges at the front of the knee stack so it lies on the
-## front of the thigh pads, not inside them.
-const RISE_KNEE_Z := 0.09
 ## Thigh rises are narrower than the pad face (constant).
 const RISE_WIDTH := 0.86
-## Butterfly wall (separate_thigh_rises): rise lean back from vertical, how far
-## each rise's outer edge turns back, and the half-gap left at the five-hole.
-const WALL_TILT := 0.30
-const WALL_YAW := 0.22
-const WALL_GAP := 0.003
-const WALL_SEAT := 0.03
 var stick_blade_length := 0.28
 var torso_pose := Transform3D.IDENTITY
 var number_label: Label3D
@@ -699,6 +693,12 @@ func build_pad(parent: Node3D, side: float) -> void:
 	parent = vis
 	var lower := add_mesh(parent,pad_part("pad_lower_"+hand) if MESH_GOALIE_PAD else Gear.goalie_pad(side,kit,accent,-1.0,Gear.PAD_BREAK))
 	if MESH_GOALIE_PAD: lower.material_override = Kit.goalie_pad(kit,accent)
+	if MESH_GOALIE_PAD:
+		# Close the toe window in the pad face (the source model's toe opening):
+		# real pads are solid there, so the skate never shows through the pad.
+		var cover := add_mesh(parent,Gear.pad_toe_cover())
+		cover.name = "ToeCover"
+		cover.material_override = Kit.goalie_pad(kit,accent)
 	# Thigh rise hinges back along the thigh at the break above the knee.
 	var hinge := Node3D.new()
 	hinge.position = Vector3(0,Gear.PAD_BREAK,-0.04)
@@ -1877,7 +1877,7 @@ func pose(speed: float, turn: float) -> void:
 				ankle = hip+reach.normalized()*LEG_REACH
 				ankle.y = maxf(ankle.y,0.115)
 		# Goalie ready stance: feet a little wider than the shoulders, knees in.
-		if goalie: ankle = Vector3(side*lerpf(0.27,0.58,butterfly_posed),0.115,lerpf(0.0,0.10,butterfly_posed))
+		if goalie: ankle = Vector3(side*lerpf(0.27,0.58+BFLY_KNEE_X-0.17,butterfly_posed),0.115,lerpf(0.0,0.10,butterfly_posed))
 		if goalie and shuffle_weight>0.01:
 			# Lateral shuffle: captured strafe footwork, narrowed to stay in the stance.
 			var data:Dictionary=shuffle_data[0 if lateral>0 else 1]
@@ -1894,7 +1894,7 @@ func pose(speed: float, turn: float) -> void:
 		if goalie: knee.x=side*maxf(side*knee.x,Gear.PAD_WIDTH*0.5+0.036+0.035*shuffle_weight)
 		# Butterfly: knees together on the ice, shins flared out behind them.
 		if goalie:
-			knee=knee.lerp(Vector3(side*0.17,0.13,0.24),butterfly_posed)
+			knee=knee.lerp(Vector3(side*BFLY_KNEE_X,0.13,0.24),butterfly_posed)
 			# Shins flare as the knees drop, so the knees stay apart mid-drop.
 			knee.x+=side*0.045*sin(PI*butterfly_posed)
 			# Pad extension: this leg kicks out along the ice to seal the post,
@@ -1971,7 +1971,12 @@ func pose(speed: float, turn: float) -> void:
 			var shin_up:Vector3=(knee-ankle).normalized()
 			var tipped:=maxf(smoothstep(0.05,0.30,1.0-shin_up.y),stack_weight())
 			var pad_face:Vector3=(Vector3.BACK-shin_up*shin_up.dot(Vector3.BACK)).normalized()
-			var toe_dir:Vector3=(pad_face*cos(ANKLE_PLANTAR)-shin_up*sin(ANKLE_PLANTAR)).normalized()
+			# As the knees go down the foot turns from toe-forward (in the pad's
+			# boot channel) through pointed to toe-back behind the pad, as when
+			# kneeling, so the pad hides the skate from the shooter.
+			var kneel:=smoothstep(0.45,0.9,1.0-shin_up.y)
+			var foot_turn:=lerpf(ANKLE_PLANTAR,PI-ANKLE_PLANTAR,kneel)
+			var toe_dir:Vector3=(pad_face*cos(foot_turn)-shin_up*sin(foot_turn)).normalized()
 			var foot_up:=(shin_up-toe_dir*toe_dir.dot(shin_up)).normalized()
 			var on_leg:=Basis(foot_up.cross(toe_dir),foot_up,toe_dir)
 			skates[i].basis=Basis(skates[i].basis.get_rotation_quaternion().slerp(on_leg.get_rotation_quaternion(),tipped))
@@ -1997,36 +2002,6 @@ func pose(speed: float, turn: float) -> void:
 			# The pad settles onto its knee anchor by 80% of the drop, so the boot
 			# is already in the boot channel for the end of the drop.
 			pads[i].position=(ankle+shin*0.48).lerp(knee-shin*(Gear.PAD_KNEE-0.065),smoothstep(0.0,0.8,butterfly_posed))+face*PAD_STANDOFF
-			# The thigh rise follows the thigh: it leans out toward the hip as it
-			# rises in the stance, and folds back along the thigh in the butterfly.
-			# One solid pad: the thigh rise stays in line with the shin section
-			# (no hinge at the knee break). In the butterfly it only shortens so
-			# the two rises meet in front of the five-hole instead of crossing.
-			# Thigh rise: a hinged section at the knee break. Standing it continues
-			# the pad; in the butterfly it folds back about the break (rotation
-			# only, constant size) to lie against the front of the thigh, and
-			# rolls a little outward so the two rises meet at the five-hole
-			# without crossing.
-			var thigh_local:Vector3=pads[i].basis.inverse()*(hip-knee).normalized()
-			# Shortest rotation of the rise onto the thigh, applied with the drop.
-			var to_thigh:=Quaternion(Vector3.UP,thigh_local.normalized())
-			var w_fold:=smoothstep(0.0,0.85,butterfly_posed)
-			var knee_l:Vector3=pads[i].transform.affine_inverse()*knee
-			var ankle_l:Vector3=pads[i].transform.affine_inverse()*ankle
-			var vis_off:=Vector3(clampf(ankle_l.x,-0.06,0.06),knee_l.y-Gear.PAD_KNEE*PAD_VIS_SCALE.y,PAD_VIS_Z)
-			# Standing the hinge is the knee break; dropping, the rise pivots at the
-			# knee landing (the knee stack), so the two rises start at the two knees
-			# and stand up the thighs instead of reaching across the five-hole.
-			var hinge_stand:=vis_off+PAD_VIS_SCALE*Vector3(RISE_SIGN*side*0.02,Gear.PAD_BREAK,-0.04)
-			var hinge_knee:=vis_off+PAD_VIS_SCALE*Vector3(0,Gear.PAD_KNEE,RISE_KNEE_Z)
-			thigh_rises[i].position=hinge_stand.lerp(hinge_knee,w_fold)
-			# Rolled about its own length so the inner edges turn back and meet.
-			var roll:=Basis(Vector3.UP,side*RISE_ROLL*w_fold)
-			thigh_rises[i].basis=(Basis(Quaternion.IDENTITY.slerp(to_thigh,w_fold))*roll).scaled_local(PAD_VIS_SCALE*Vector3(RISE_WIDTH,1,1))
-			# The upper mesh hangs PAD_BREAK below the hinge; at the knee pivot it
-			# must start at the knee mark instead, so shift it by the difference.
-			(thigh_rises[i].get_child(0) as Node3D).position=Vector3(0,-lerpf(Gear.PAD_BREAK,Gear.PAD_KNEE,w_fold),0.04)
-			thigh_rises[i].set_meta("rest_basis",thigh_rises[i].basis)
 			# Pad lower edges seal against the ice in butterfly.
 			var box:Array=pad_box()
 			var size_:Vector3=box[1]
@@ -2052,6 +2027,12 @@ func pose(speed: float, turn: float) -> void:
 				# collision pad is lifted off the ice mid-drop its lift has a sideways
 				# component in pad space, which the drawn pad does not follow.
 				pad_visuals[i].position=Vector3(clampf(ankle_local.x,-0.06,0.06),knee_local.y-Gear.PAD_KNEE*PAD_VIS_SCALE.y,PAD_VIS_Z+lift_z)
+				# One rigid pad: the thigh rise is part of the drawn pad in every
+				# pose (same frame as the lower section, only narrower) - it never
+				# folds or bends at the knee break (owner 2026-11-12, real pads).
+				thigh_rises[i].basis=Basis.IDENTITY.scaled_local(PAD_VIS_SCALE*Vector3(RISE_WIDTH,1,1))
+				thigh_rises[i].position=pad_visuals[i].position+PAD_VIS_SCALE*Vector3(RISE_SIGN*side*0.02,Gear.PAD_BREAK,-0.04)
+				(thigh_rises[i].get_child(0) as Node3D).position=Vector3(0,-Gear.PAD_BREAK,0.04)
 		# Elbows and wrists stay on a two-hand stick posture, never running arm swings.
 		var shoulder := shoulder_of(i)
 		# Right-handed shot: the blade is on the skater's right (-x), so the right
@@ -2160,58 +2141,9 @@ func pose(speed: float, turn: float) -> void:
 		rig.position += Basis(Vector3.UP,rig.rotation.y)*Vector3(stack_dir()*STACK_SHIFT*stack_w,STACK_LIFT*stack_w,0)
 	update_stick()
 
-## Butterfly wall: on the way down the two thigh rises turn from following the
-## thighs to standing over the knee stacks, face-on to the shooter, and slide in
-## until their inner edges meet at the five-hole, so the pads and rises read as
-## one continuous wall (reference: pro butterfly photos and EA NHL goalies).
-## Rotation and translation only - the rise keeps its constant size. A leg that
-## kicks out for a pad save keeps its rise in line with the extended pad.
+## The thigh rises are rigid parts of the pads (see pose()); kept as a hook.
 func separate_thigh_rises() -> void:
-	for i in range(mini(2,thigh_rises.size())):
-		var side := 1.0 if i==0 else -1.0
-		var kick: float = save_weights["pad_left" if i==0 else "pad_right"]
-		var w := smoothstep(0.0,1.0,butterfly_posed)*(1.0-kick)
-		if w <= 0.0: continue
-		var rise: Node3D = thigh_rises[i]
-		var pad: Node3D = pads[i]
-		var sc: Vector3 = rise.basis.get_scale()
-		var now_rig: Quaternion = (pad.basis*rise.basis.orthonormalized()).get_rotation_quaternion()
-		var wall := Basis(Vector3.UP,side*WALL_YAW)*Basis(Vector3.RIGHT,-WALL_TILT)
-		var turned := Basis(now_rig.slerp(wall.get_rotation_quaternion(),w))
-		rise.basis = (pad.basis.inverse()*turned).scaled_local(sc)
-		# Slide across (rig x) so the inner edge sits at the centre line.
-		var mesh_node := rise.get_child(0) as MeshInstance3D
-		var box: AABB = mesh_node.mesh.get_aabb()
-		var xf: Transform3D = pad.transform*rise.transform*mesh_node.transform
-		var inner := INF
-		for p in rise_edge_points(mesh_node.mesh):
-			inner = minf(inner,side*(xf*p).x)
-		# Seat the rise on the knee end of the lower pad: its bottom edge just
-		# overlaps the top of the pad, its face flush with the pad face there.
-		var lower := pad_visuals[i].get_child(0) as MeshInstance3D
-		var lower_xf: Transform3D = pad.transform*pad_visuals[i].transform*lower.transform
-		var lower_box: AABB = lower.mesh.get_aabb()
-		var top := -INF
-		for c in range(8):
-			top = maxf(top,(lower_xf*lower_box.get_endpoint(c)).y)
-		var knee_face: Vector3 = lower_xf*Vector3(0,lower_box.end.y,lower_box.end.z)
-		var seat: Vector3 = xf*Vector3(0,box.position.y,box.end.z)
-		var shift := Vector3(side*(WALL_GAP-inner),top-WALL_SEAT-seat.y,knee_face.z-seat.z)*w
-		rise.position += pad.basis.inverse()*shift
-
-## Vertices along the two side edges of a thigh-rise mesh (the 40 smallest and
-## 40 largest x), cached: the true inner edge for the butterfly wall, without
-## the rounded corners a bounding box would add.
-static var rise_edges := {}
-static func rise_edge_points(mesh: Mesh) -> PackedVector3Array:
-	if not rise_edges.has(mesh):
-		var verts: Array = []
-		for s in range(mesh.get_surface_count()):
-			verts.append_array(Array(mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]))
-		verts.sort_custom(func(a: Vector3, b: Vector3) -> bool: return a.x < b.x)
-		var n := mini(40,verts.size()/2)
-		rise_edges[mesh] = PackedVector3Array(verts.slice(0,n)+verts.slice(verts.size()-n))
-	return rise_edges[mesh]
+	pass
 
 ## Plays a captured clip over the procedural pose. Mask entries: "spine",
 ## "arms", "stick_up". Returns false when the clip file is not installed.
@@ -2464,7 +2396,10 @@ func set_nameplate(value: String) -> void:
 
 func stick_grip() -> Vector3:
 	if goalie:
-		var grip := Vector3(lerpf(-0.36,-0.24,butterfly_posed)+posed_drop.x,0.60-butterfly_posed*0.12,0.49)
+		# The stick hand stays wide through the drop (clear of the rigid pad's
+		# knee end swinging in) and closes in only as the knees land.
+		var mid_drop:=sin(PI*butterfly_posed)
+		var grip := Vector3(lerpf(-0.36,-0.24,smoothstep(0.6,1.0,butterfly_posed))-0.05*mid_drop+posed_drop.x,0.60-butterfly_posed*0.12,0.49+0.06*mid_drop)
 		# Splits: the stick hand comes down with the hips so the paddle lies
 		# along the ice in front of the pads instead of standing up.
 		var split_w := minf(float(save_weights.splits_left)+float(save_weights.splits_right),1.0)

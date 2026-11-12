@@ -1,11 +1,10 @@
 extends SceneTree
-## Butterfly wall and committed save poses (reference: pro butterfly and save
-## photos, EA NHL goalies). In a full butterfly the two thigh rises stand over
-## the knee stacks face-on to the shooter and meet at the five-hole, seated on
-## the lower pads, at their constant size. Glove and pad saves move the upper
-## body toward the puck: the shoulders tip toward a high glove reach with the
-## arm extended and the pocket square to the shooter, and on a pad extension
-## the chest drops out over the lead pad.
+## Butterfly pads and committed save poses (owner 2026-11-12: real pads do not
+## bend in the butterfly, and the skate never shows through the pad). The
+## thigh rise is a rigid part of the pad in every pose; in a full butterfly the
+## two rigid pads lie along the ice face-on to the shooter and meet at the
+## five-hole without crossing; the skates sit behind the pads (toes back). Glove
+## and pad saves move the upper body toward the puck.
 var failures := 0
 func check(ok: bool, msg: String) -> void:
 	if not ok:
@@ -51,26 +50,51 @@ func run() -> void:
 	g.goalie = true
 	root.add_child(g)
 	await process_frame
-	# Standing: the rises continue the pads up the thighs (no wall yet).
+	var upright: float = 0.0
+	# Rigid pad: the rise keeps one fixed transform relative to the drawn pad
+	# through the whole drop and in every save.
+	var drop_poses := [["", Vector2(0, 0.8), 0.0], ["", Vector2(0, 0.8), 0.5], ["butterfly", Vector2(0.1, 0.15), 1.0],
+		["pad_left", Vector2(0.95, 0.1), 1.0], ["splits_left", Vector2(1.15, 0.1), 0.0], ["stack_right", Vector2(-0.9, 0.1), 0.0]]
+	var ref: Array = []
+	for pose in drop_poses:
+		for f in range(90):
+			g.butterfly = move_toward(g.butterfly, pose[2], 6.0 / 60)
+			g.set_save(pose[0], pose[1], 1.0 / 60)
+			g.animate(0, 1.0 / 60, 0, false)
+		if pose[0] == "" and pose[2] == 0.0: upright = g.torso_pose.basis.y.normalized().x
+		for i in range(2):
+			var rel: Transform3D = (g.pad_visuals[i] as Node3D).transform.affine_inverse() * (g.thigh_rises[i] as Node3D).transform * ((g.thigh_rises[i] as Node3D).get_child(0) as Node3D).transform
+			if ref.size() < 2: ref.append(rel)
+			else:
+				var d: float = (rel.origin - (ref[i] as Transform3D).origin).length() + (rel.basis.x - (ref[i] as Transform3D).basis.x).length() + (rel.basis.y - (ref[i] as Transform3D).basis.y).length() + (rel.basis.z - (ref[i] as Transform3D).basis.z).length()
+				check(d < 0.002, "%s b=%.1f: rise %d rigid with its pad (%.4f)" % [pose[0], pose[2], i, d])
+	# Full butterfly: one straight wall along the ice.
 	settle(g, "", Vector2(0, 0.8), false)
-	var stand_gap: float = rise_bounds(g, 0).inner
-	check(stand_gap > 0.008, "standing, the wall is not applied (inner edge %.3f m from centre)" % stand_gap)
-	var upright: float = g.torso_pose.basis.y.normalized().x
-	# Full butterfly: one wall.
 	settle(g, "butterfly", Vector2(0.1, 0.15), true)
 	for i in range(2):
 		var b := rise_bounds(g, i)
-		check(b.inner > -0.002 and b.inner < 0.008, "butterfly rise %d inner edge at the five-hole (%.4f m)" % [i, b.inner])
-		var top := pad_top(g, i)
-		check(b.low < top and b.low > top - 0.06, "butterfly rise %d seated on its pad (bottom %.3f, pad top %.3f)" % [i, b.low, top])
-		check(b.high > 0.42, "butterfly rise %d stands up the five-hole (top %.3f m)" % [i, b.high])
+		check(b.inner > -0.012 and b.inner < 0.012, "butterfly: pad %d meets the other at the five-hole (%.4f m)" % [i, b.inner])
 		var face: Vector3 = (b.face as Vector3).normalized()
-		check(face.z > 0.85 and absf(face.y) < 0.35, "butterfly rise %d faces the shooter (%s)" % [i, face])
-		var sc: Vector3 = (g.thigh_rises[i].basis as Basis).get_scale()
-		check(absf(sc.y - SV.PAD_VIS_SCALE.y) < 0.002 and absf(sc.z - SV.PAD_VIS_SCALE.z) < 0.002, "butterfly rise %d keeps its size (%s)" % [i, sc])
-	var l := rise_bounds(g, 0)
-	var r := rise_bounds(g, 1)
-	check(absf(l.low - r.low) < 0.005 and absf(l.high - r.high) < 0.005, "the two rises line up (%.3f/%.3f, %.3f/%.3f)" % [l.low, r.low, l.high, r.high])
+		check(face.z > 0.85, "butterfly: pad %d faces the shooter (%s)" % [i, face])
+		check(b.high < 0.40, "butterfly: rise %d lies with the pad, not standing up (top %.3f m)" % [i, b.high])
+		# Skate behind the pad: toe back, inside the pad's length, behind its face.
+		var sk: Node3D = g.skates[i]
+		var toe: Vector3 = (sk.basis as Basis).z.normalized()
+		check(toe.z < -0.5, "butterfly: skate %d toe points back behind the pad (%s)" % [i, toe])
+		var side := 1.0 if i == 0 else -1.0
+		var pad_out := -INF
+		var mi := g.pad_visuals[i].get_child(0) as MeshInstance3D
+		var pxf: Transform3D = g.pads[i].transform * g.pad_visuals[i].transform * mi.transform
+		for vtx in (mi.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] as PackedVector3Array):
+			pad_out = maxf(pad_out, side * (pxf * vtx).x)
+		var sk_out := -INF
+		for n in sk.find_children("*", "MeshInstance3D", true, false):
+			var sxf: Transform3D = sk.transform * (n as MeshInstance3D).transform
+			for vtx in ((n as MeshInstance3D).mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] as PackedVector3Array):
+				sk_out = maxf(sk_out, side * (sxf * vtx).x)
+		check(sk_out < pad_out + 0.01, "butterfly: skate %d stays within the pad's end (%.3f vs %.3f)" % [i, sk_out, pad_out])
+	# The toe window in the pad face is closed.
+	check(g.pad_visuals[0].get_node_or_null("ToeCover") != null, "pad toe window is closed")
 	# High glove save: shoulders tip toward the glove, arm nearly straight,
 	# pocket square to the shooter.
 	settle(g, "glove", Vector2(0.75, 1.35), false)
