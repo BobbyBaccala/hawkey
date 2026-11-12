@@ -83,6 +83,8 @@ Goalies
   blade always across from the blocker hand to the glove side of the hips).
 - Catcher back: team-colour backhand panel over the finger half, accent
   piping edge, white stall-break lines.
+- Goalie stick: assets/goalie_stick.gdshader paints a two-tone paddle (kit
+  upper with accent pinstripe, white lower, kit heel band) over the bake.
 - Knee cradle, calf wrap and straps (`Gear.pad_rear`, `PadRear` nodes).
 - Skate stays on the ankle; in the butterfly the foot keeps ~105 deg to the
   shin with the toe in the pad's boot channel.
@@ -98,7 +100,7 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 47 suites; last full run 47/47 at 5bd7716 (2026-11-12).
+Tests: 47 suites; last full run 47/47 at 5eb4ea6 (2026-11-12).
 
 ## Open defects / next steps (goalie first)
 0. Owner 2026-11-12: gear believability and save animations are the top
@@ -113,8 +115,7 @@ Tests: 47 suites; last full run 47/47 at 5bd7716 (2026-11-12).
 2. Butterfly polish: 6 mm shaded seam between the two rises; knee-stack ends
    of the lower pads are ~14 cm apart under the rises; rise top still moves
    9.0 cm/frame mid-drop (inherent to the 6/s drop; knee 5.9).
-5. Goalie stick bake lost its red graphic (white/black only).
-6. Skaters: boxy shoulders still, single face mesh (add variants), number font
+3. Skaters: boxy shoulders still, single face mesh (add variants), number font
    is block (backlog "Blender kit, pass 2").
 
 ## Decisions
