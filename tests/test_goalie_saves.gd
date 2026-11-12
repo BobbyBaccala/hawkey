@@ -57,6 +57,17 @@ func run() -> void:
 	settle(v, "", Vector2(0, 0.8))
 	var ready_catcher: Vector3 = v.goalie_gloves[0].position
 	var ready_blocker: Vector3 = v.goalie_gloves[1].position
+	# Eyes on the puck: straight ahead when ready, toward the crossing point
+	# in a save (within the neck's range).
+	var ready_look: Vector3 = (v.helmet.basis as Basis).z
+	check(ready_look.distance_to(Vector3.BACK) < 0.01, "Ready: goalie looks straight ahead (%s)" % ready_look)
+	for probe in [["glove", Vector2(0.8, 1.35), 1.0, -1.0], ["pad_right", Vector2(-0.95, 0.1), -1.0, 1.0]]:
+		settle(v, probe[0], probe[1], 60)
+		var fwd: Vector3 = (v.helmet.basis as Basis).z
+		check(signf(fwd.x) == probe[2] and absf(fwd.x) > 0.25, "%s: head turns toward the puck (%s)" % [probe[0], fwd])
+		check(signf(-fwd.y) == probe[3] and absf(fwd.y) > 0.15, "%s: head tips toward the puck's height (%s)" % [probe[0], fwd])
+		check(acos(clampf(fwd.dot(Vector3.BACK), -1, 1)) < v.LOOK_YAW + v.LOOK_DOWN + 0.01, "%s: turn within the neck's range" % probe[0])
+		settle(v, "", Vector2(0, 0.8), 90)
 	# Glove: catcher reaches toward a high glove-side shot.
 	settle(v, "glove", Vector2(0.8, 1.35))
 	var catcher: Vector3 = v.goalie_gloves[0].position

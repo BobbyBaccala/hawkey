@@ -1339,6 +1339,24 @@ static func pair_frame(a: Vector3, b: Vector3) -> Basis:
 	e2 = e2.normalized() if e2.length_squared() > 1e-8 else e1.cross(Vector3.RIGHT).normalized()
 	return Basis(e1,e2,e1.cross(e2))
 
+## Goalie eyes on the puck: as a save engages, the head turns and tips toward
+## where the puck crosses (save_target, ~0.75 m in front), weighted by the
+## save's own spring so it moves with the save; limited to a natural neck
+## range. In the ready stance (no save) the head looks straight ahead.
+const LOOK_YAW := 0.85
+const LOOK_UP := 0.45
+const LOOK_DOWN := 0.55
+func goalie_look() -> Basis:
+	var engage := 0.0
+	for k in SAVE_KINDS:
+		engage = maxf(engage,float(save_weights[k]))
+	if engage <= 0.0: return Basis.IDENTITY
+	var eye := posed_head+Vector3(0,0.05,0.10)
+	var d := Vector3(save_target.x,save_target.y,0.75)-eye
+	var yaw := clampf(atan2(d.x,d.z),-LOOK_YAW,LOOK_YAW)
+	var pitch := clampf(atan2(-d.y,Vector2(d.x,d.z).length()),-LOOK_UP,LOOK_DOWN)
+	return Basis(Vector3.UP,yaw*engage)*Basis(Vector3.RIGHT,pitch*engage)
+
 ## Pad-stack blend (eased) and its side: +1 toward the glove side (rig +x).
 func stack_weight() -> float:
 	return smoothstep(0.0,1.0,minf(float(save_weights.stack_left)+float(save_weights.stack_right),1.0))
@@ -1811,6 +1829,9 @@ func pose(speed: float, turn: float) -> void:
 	if not goalie and (seat > 0.0 or cheer > 0.0 or stand_tall > 0.0):
 		look = Basis(Vector3.UP,seat_yaw*(1.0-0.6*seat_slump))*Basis(Vector3.RIGHT,lerpf(-0.08*seat,0.55,seat_slump)-0.2*cheer)
 		head_pose.basis = look*head.basis
+	if goalie:
+		look = goalie_look()
+		head_pose.basis = look*head.basis
 	override_pose("head",head_pose)
 	helmet.position = posed_head+look*(Vector3(0,0.095,0.015) if goalie else Gear.HELMET_OFFSET)
 	helmet.basis = look
@@ -2065,6 +2086,9 @@ func pose(speed: float, turn: float) -> void:
 			# blocker on the stick at the top of the paddle.
 			# Hands travel with the hips when a save slides the body sideways.
 			wrist=Vector3(0.47+posed_drop.x,0.83-butterfly_posed*0.16+goalie_save_height,0.42) if i==0 else stick_grip()
+			# Glove-side pad extension: the catcher goes out over the lead pad,
+			# clear of the mask as the head turns down to the puck.
+			if i==0: wrist += Vector3(0.12,-0.05,0.04)*float(save_weights.pad_left)
 			var catch_w: float = save_weights.glove
 			if i==0 and catch_w > 0.0:
 				# Glove save: the catcher shoots out to the puck's line, pocket open.
