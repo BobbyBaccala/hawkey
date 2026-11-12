@@ -4,7 +4,8 @@ Read this first each session; update it before finishing (`/update-memory`).
 Keep it short: current state, decisions, gotchas, next steps. History lives in
 the run log at the bottom of `docs/BACKLOG.md`.
 
-_Last updated: 2026-11-12 (cloud session, branch prototype/skating-puck-lab)._
+_Last updated: 2026-11-12 (cloud session, branch claude/goalie-butterfly-pads-i8na2t,
+based on prototype/skating-puck-lab; not yet merged back)._
 
 ## Owner and working style
 - Owner: Ethan. Wants visible progress on the player and goalie models every
@@ -31,8 +32,15 @@ Goalies
   size (PAD_VIS_SCALE 1.016 x 1.25 x 1.35 = 91 cm, 11 in) pinned at the knee and
   centred on the ankle across the pad; collision proxies (`pads`, `pad_box`,
   `get_goalie_gear`) are separate and unchanged.
-- Thigh rise hangs from the unscaled pad node and only rotates (pivots at the
-  knee stack onto the thigh in the butterfly, inner edge rolled back).
+- Thigh rise hangs from the unscaled pad node and only rotates/translates.
+  Butterfly wall (`separate_thigh_rises()`, WALL_* consts): dropping, each rise
+  turns from the thigh to stand face-on over its knee stack, seated 3 cm over
+  the lower pad top, inner edge 3 mm off centre - one wall across the
+  five-hole. A kicking leg keeps its rise on the extended pad.
+- Save body language (SAVE_LEAN_*, PAD_SAVE_*): torso tips/turns toward a
+  glove or blocker reach (catcher pocket square to the shooter); pad
+  extensions lean, bend and turn the chest over the lead pad. Torso/catcher
+  save proxies follow this pose (shared source), so save coverage moved too.
 - Knee cradle, calf wrap and straps (`Gear.pad_rear`, `PadRear` nodes).
 - Skate stays on the ankle; in the butterfly the foot keeps ~105 deg to the
   shin with the toe in the pad's boot channel.
@@ -48,19 +56,20 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 45 suites; last full run 45/45 at 2ad08c2 (2026-11-12).
+Tests: 46 suites; last full run 46/46 at 6a216e9 (2026-11-12).
 
 ## Open defects / next steps (goalie first)
-1. Butterfly: the two thigh rises read as separate flaps beside each other;
-   rise tip moves ~11.6 cm per frame mid-drop (knee 5.9). Shape/rotate the rise
-   so the pads read as one continuous wall; spread the fold.
-2. Save poses are stiff and upright vs the reference photos (full glove-arm
-   reach, torso over the lead pad, splits as a separate desperation pose).
-3. Catcher back plain; blocker board back flat black.
-4. Goalie stick bake lost its red graphic (white/black only).
-5. Skaters: boxy shoulders still, single face mesh (add variants), number font
+1. Splits as a separate desperation save pose (backlog "Goalie saves slice 2").
+2. Butterfly polish: 6 mm shaded seam between the two rises; knee-stack ends
+   of the lower pads are ~14 cm apart under the rises; rise top still moves
+   9.0 cm/frame mid-drop (inherent to the 6/s drop; knee 5.9).
+3. Full glove lean shows a jagged sleeve/yoke seam on the far shoulder.
+4. Merge this branch back into prototype/skating-puck-lab (owner's call).
+5. Catcher back plain; blocker board back flat black.
+6. Goalie stick bake lost its red graphic (white/black only).
+7. Skaters: boxy shoulders still, single face mesh (add variants), number font
    is block (backlog "Blender kit, pass 2").
-6. Parked unfinished work in old cloud worktrees (jersey numbers/athletic font,
+8. Parked unfinished work in old cloud worktrees (jersey numbers/athletic font,
    shooting animations) did not reach GitHub — redo from the backlog items.
 
 ## Decisions
@@ -69,11 +78,20 @@ Tests: 45 suites; last full run 45/45 at 2ad08c2 (2026-11-12).
 - 2026-11-12: EA NHL screenshots/video are allowed as visual reference;
   files ripped from EA games (or any commercial game) are still not used.
 - 2026-11-07: PLAY NOW is the only mode.
+- 2026-11-12: cloud sessions use the personal "hawkey" environment; its setup
+  script installs Godot 4.6.2 to /usr/local/bin/godot and runs the import.
+  Cloud runs push to their designated claude/* branch, not the work branch.
 - Goalie visuals may differ from the save collision proxies; keep the
   proxies' behaviour identical unless gameplay is the task (compare
   `get_goalie_gear()` at sampled poses before/after).
 
 ## Gotchas
+- Cloud container: if `godot` is missing, the session is not on the "hawkey"
+  environment; `main` is only a README - the project is on
+  prototype/skating-puck-lab.
+- Full suite in the cloud: `JOBS=3 tools/run_tests.sh` took ~20 min (4 cores).
+- Save poses are gameplay: changing torso/catcher pose changes get_goalie_gear();
+  run test_goalie_saves and test_play_now_ai after any save-pose edit.
 - `test_clipping.gd`: inside test = ray parity candidate + winding number
   (pads are overlapping closed shells; boolean meshes have slivers). Judge the
   skate against the pad mesh in pad space. Don't add region exceptions.
