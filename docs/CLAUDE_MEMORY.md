@@ -85,6 +85,9 @@ Goalies
   piping edge, white stall-break lines.
 - Goalie stick: assets/goalie_stick.gdshader paints a two-tone paddle (kit
   upper with accent pinstripe, white lower, kit heel band) over the bake.
+- Pad stack "seam" is the ~6 cm V groove between the pads' rounded outer
+  rolls (measured at the face), as on real stacks - closing it needs the
+  pads to overlap; legs are already edge to edge (bounding boxes touch).
 - Pad stack hands: the top hand reaches over the stack on both sides
   (catcher on a glove-side stack, blocker + stick on a blocker-side one).
 - Knee cradle, calf wrap and straps (`Gear.pad_rear`, `PadRear` nodes).
@@ -111,8 +114,7 @@ Tests: 47 suites; last full run 47/47 at d0d8ff6 (2026-11-12).
    still a little grey (vertical faces get little overhead light).
 1. Goalie saves slice 2c: poke check on close carriers, post-save
    freeze/rebound control.
-   Polish: pad stack shows a dark seam between the stacked pads (rounded
-   edges show the pants); stack/splits have no dive motion (the save weight
+   Polish: stack/splits have no dive motion (the save weight
    blends the pose in ~0.15 s - slowing it would weaken save coverage).
 2. Butterfly polish: 6 mm shaded seam between the two rises; knee-stack ends
    of the lower pads are ~14 cm apart under the rises; rise top still moves
