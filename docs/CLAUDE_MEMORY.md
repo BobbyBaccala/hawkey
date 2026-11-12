@@ -4,8 +4,8 @@ Read this first each session; update it before finishing (`/update-memory`).
 Keep it short: current state, decisions, gotchas, next steps. History lives in
 the run log at the bottom of `docs/BACKLOG.md`.
 
-_Last updated: 2026-11-12 (cloud session, branch claude/goalie-butterfly-pads-i8na2t,
-based on prototype/skating-puck-lab; not yet merged back)._
+_Last updated: 2026-11-12 (cloud session, branch prototype/skating-puck-lab;
+the butterfly-wall work was merged here by the owner's go-ahead)._
 
 ## Owner and working style
 - Owner: Ethan. Wants visible progress on the player and goalie models every
@@ -41,6 +41,11 @@ Goalies
   glove or blocker reach (catcher pocket square to the shooter); pad
   extensions lean, bend and turn the chest over the lead pad. Torso/catcher
   save proxies follow this pose (shared source), so save coverage moved too.
+- Splits (desperation save, SPLITS_* consts, kinds splits_left/right): picked
+  by choose_save() for low shots past |x| > 1.0 m; hips at 0.32 m, both legs
+  straight out along the ice, pads face-on, stick hand down. Not a
+  knees-down save (butterfly stays 0; match.gd unchanged). Pad colliders
+  cover ~1.7 m of the goal mouth.
 - Knee cradle, calf wrap and straps (`Gear.pad_rear`, `PadRear` nodes).
 - Skate stays on the ankle; in the butterfly the foot keeps ~105 deg to the
   shin with the toe in the pad's boot channel.
@@ -56,20 +61,21 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 46 suites; last full run 46/46 at 6a216e9 (2026-11-12).
+Tests: 46 suites; last full run 46/46 at 08963f7 (2026-11-12).
 
 ## Open defects / next steps (goalie first)
-1. Splits as a separate desperation save pose (backlog "Goalie saves slice 2").
+1. Goalie saves slice 2b: pad stack, poke check, post-save freeze. Splits
+   polish: the paddle stays upright in front (could lay flat for a stacked
+   look); no transition motion (it blends in at the save rate).
 2. Butterfly polish: 6 mm shaded seam between the two rises; knee-stack ends
    of the lower pads are ~14 cm apart under the rises; rise top still moves
    9.0 cm/frame mid-drop (inherent to the 6/s drop; knee 5.9).
 3. Full glove lean shows a jagged sleeve/yoke seam on the far shoulder.
-4. Merge this branch back into prototype/skating-puck-lab (owner's call).
-5. Catcher back plain; blocker board back flat black.
-6. Goalie stick bake lost its red graphic (white/black only).
-7. Skaters: boxy shoulders still, single face mesh (add variants), number font
+4. Catcher back plain; blocker board back flat black.
+5. Goalie stick bake lost its red graphic (white/black only).
+6. Skaters: boxy shoulders still, single face mesh (add variants), number font
    is block (backlog "Blender kit, pass 2").
-8. Parked unfinished work in old cloud worktrees (jersey numbers/athletic font,
+7. Parked unfinished work in old cloud worktrees (jersey numbers/athletic font,
    shooting animations) did not reach GitHub — redo from the backlog items.
 
 ## Decisions
@@ -80,7 +86,8 @@ Tests: 46 suites; last full run 46/46 at 6a216e9 (2026-11-12).
 - 2026-11-07: PLAY NOW is the only mode.
 - 2026-11-12: cloud sessions use the personal "hawkey" environment; its setup
   script installs Godot 4.6.2 to /usr/local/bin/godot and runs the import.
-  Cloud runs push to their designated claude/* branch, not the work branch.
+  Owner 2026-11-12: Claude may merge finished, fully tested work into
+  prototype/skating-puck-lab and push it.
 - Goalie visuals may differ from the save collision proxies; keep the
   proxies' behaviour identical unless gameplay is the task (compare
   `get_goalie_gear()` at sampled poses before/after).
@@ -90,6 +97,8 @@ Tests: 46 suites; last full run 46/46 at 6a216e9 (2026-11-12).
   environment; `main` is only a README - the project is on
   prototype/skating-puck-lab.
 - Full suite in the cloud: `JOBS=3 tools/run_tests.sh` took ~20 min (4 cores).
+- capture_saves.gd --row=2 picks the save with choose_save() ("auto"), so the
+  same row gives a fair before/after when save selection changes.
 - Save poses are gameplay: changing torso/catcher pose changes get_goalie_gear();
   run test_goalie_saves and test_play_now_ai after any save-pose edit.
 - `test_clipping.gd`: inside test = ray parity candidate + winding number
