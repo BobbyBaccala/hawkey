@@ -26,6 +26,10 @@ func run() -> void:
 	check(is_equal_approx(float(gm.get_shader_parameter("yoke_v")), SV.GOALIE_YOKE), "goalie sweater has the shoulder yoke")
 	check(float(sm.get_shader_parameter("yoke_v")) == 0.0, "skater sweater has no yoke")
 	check(gm != sm, "goalie and skater sweaters use different materials")
+	# The yoke carries over the shoulder onto goalie sleeves only.
+	if g.cloth_sleeves.size() > 0 and s.cloth_sleeves.size() > 0:
+		check(float((g.cloth_sleeves[0].material_override as ShaderMaterial).get_shader_parameter("sleeve_yoke")) > 0.0, "goalie sleeve carries the yoke cap")
+		check(float((s.cloth_sleeves[0].material_override as ShaderMaterial).get_shader_parameter("sleeve_yoke")) == 0.0, "skater sleeve has no yoke cap")
 	var gw: float = absf(g.jersey_point(0.0, 1.40).x)
 	var gwaist: float = absf(g.jersey_point(0.0, 1.10).x)
 	check(gw > 0.31, "goalie shoulders are protector-wide: %.3f" % gw)

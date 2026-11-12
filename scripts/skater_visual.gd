@@ -596,7 +596,8 @@ func _ready() -> void:
 		if not mesh_kit:
 			var sleeve:=MeshInstance3D.new()
 			sleeve.mesh=ArrayMesh.new()
-			sleeve.material_override=Kit.sleeve(kit,accent,referee)
+			# Goalie sleeves carry the shoulder yoke over the cap (see the sweater).
+			sleeve.material_override=Kit.sleeve(kit,accent,referee,GOALIE_SLEEVE_YOKE if goalie else 0.0)
 			rig.add_child(sleeve)
 			cloth_sleeves.append(sleeve)
 		if not referee and not mesh_kit:
@@ -979,6 +980,8 @@ func apply_jersey_material() -> void:
 
 ## Height where the goalie sweater's accent shoulder yoke starts (at the sides).
 const GOALIE_YOKE := 1.415
+## Fraction of the goalie sleeve (from the armhole) the yoke covers.
+const GOALIE_SLEEVE_YOKE := 0.10
 
 ## Rest height of the sweater's hem.
 func jersey_hem_height() -> float:

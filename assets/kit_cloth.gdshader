@@ -31,6 +31,10 @@ uniform float hem_v = 0.865;
 uniform float collar_v = 0.0;
 // > 0: accent shoulder yoke above this rest height (goalie sweaters).
 uniform float yoke_v = 0.0;
+// > 0: the goalie yoke carries on over the shoulder onto the sleeve cap, down
+// to this fraction of the sleeve (0 = armhole), so sleeve and body match
+// across the armhole seam instead of red sleeve meeting navy yoke.
+uniform float sleeve_yoke = 0.0;
 uniform float metres_per_u = 1.65;
 uniform bool show_number = false;
 uniform sampler2D number_tex : filter_linear_mipmap, repeat_disable, hint_default_black;
@@ -177,6 +181,12 @@ void fragment() {
 		col = mix(col, trim_color.rgb, s.x);
 		col = mix(col, stripe_color.rgb, s.y);
 		height += (s.x + s.y) * 0.0005 - s.z * 0.0006;
+		if (sleeve_yoke > 0.0) {
+			float cap = 1.0 - smoothstep(sleeve_yoke - aa_t, sleeve_yoke + aa_t, UV.y);
+			float pipe = band(UV.y, sleeve_yoke, sleeve_yoke + 0.012, aa_t);
+			col = mix(col, stripe_color.rgb, cap);
+			col = mix(col, trim_color.rgb, pipe);
+		}
 		// Ribbed cuff at the wrist.
 		float cuff = smoothstep(0.93, 0.935, UV.y);
 		col = mix(col, col * 0.82, cuff);

@@ -374,10 +374,11 @@ static func jersey(kit: Color, accent: Color, number: String, name_: String, ref
 		return m)
 
 ## Sleeve (UV: u around the arm, v shoulder -> wrist) with elbow stripes and cuff.
-static func sleeve(kit: Color, accent: Color, referee := false) -> ShaderMaterial:
-	return cached("sleeve|%s|%s|%s" % [kit.to_html(), accent.to_html(), referee], func() -> ShaderMaterial:
+static func sleeve(kit: Color, accent: Color, referee := false, yoke := 0.0) -> ShaderMaterial:
+	return cached("sleeve|%s|%s|%s|%s" % [kit.to_html(), accent.to_html(), referee, yoke], func() -> ShaderMaterial:
 		var m := _cloth(kit, accent, 0 if referee else 2)
 		m.set_shader_parameter("uv_metres", Vector2(0.52, 0.58))
+		m.set_shader_parameter("sleeve_yoke", yoke)
 		return m)
 
 ## Plain knit panel without UVs (shoulder yoke caps): object-space mapping.
