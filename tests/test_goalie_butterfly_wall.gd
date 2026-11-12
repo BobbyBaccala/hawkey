@@ -89,5 +89,19 @@ func run() -> void:
 		var hips: Vector3 = g.posed_drop
 		check(side*(chest.x - hips.x) > 0.10, "%s: chest out over the lead pad (%.3f m past the hips)" % [save[0], side*(chest.x - hips.x)])
 		check(g.torso_pose.basis.y.normalized().z > 0.12, "%s: chest bends forward over the pad (%.3f)" % [save[0], g.torso_pose.basis.y.normalized().z])
+	# The drop is eased: the match ramps the commanded value at a constant
+	# rate and reads it back unchanged; the pose leaves the stance and lands
+	# with ~zero speed and is half-way at the same moment.
+	g.butterfly = 0.0
+	g.animate(0, 1)
+	var posed: Array[float] = []
+	for f in range(11):
+		g.butterfly = move_toward(g.butterfly, 1.0, 6.0 / 60)
+		g.animate(0, 1.0 / 60, 0, false)
+		posed.append(g.butterfly_posed)
+	check(is_equal_approx(g.butterfly, 1.0), "commanded drop reads back unchanged (%.3f)" % g.butterfly)
+	check(posed[0] < 0.035, "drop leaves the stance gently (first step %.3f of 0.1)" % posed[0])
+	check(posed[9] - posed[8] < 0.035, "knees land gently (last step %.3f of 0.1)" % (posed[9] - posed[8]))
+	check(absf(posed[4] - 0.5) < 0.01, "half-way at the same moment (%.3f)" % posed[4])
 	print("Butterfly wall failures: ", failures)
 	quit(1 if failures > 0 else 0)

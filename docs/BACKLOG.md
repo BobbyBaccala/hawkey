@@ -82,7 +82,7 @@ Rules for every run:
 - [x] Goalie saves (slice 2b): pad stack (stacked pads, on the side) when sliding toward a low wide shot (stack_left/right).
 - [x] Goalie gear in saves (owner 2026-11-12: gear must look believable): gloves worn on the arms in every save pose (catcher upright until it reaches, then along the forearm; blocker holds the stick through the fist), white-dominant pad graphics, standing pad faces no longer darkened as undersides.
 - [x] Goalie glove backs: blocker board back off-white with a palm-leather fist and a padded cuff (was a flat dark slab); catcher cuff is a padded sleeve joined to the mitt with the cheater panel on its front (was a panel hanging below).
-- [x] Goalie save motion: save weights are critically damped springs (snap in, ease into the pose, ease out of the recovery) instead of constant-speed ramps that stopped dead; half-way timing unchanged. Follow-up: the butterfly drop/rise (match.gd move_toward 6/s, 2/s) is still linear.
+- [x] Goalie save motion: save weights are critically damped springs (snap in, ease into the pose, ease out of the recovery) instead of constant-speed ramps that stopped dead; half-way timing unchanged. Butterfly drop/rise eased in the visual too (butterfly_posed = smoothstep of the match's linear command).
 - [ ] Goalie saves (slice 2c): poke check on close carriers, and a post-save freeze/rebound-control beat.
 - [ ] Shooting animations: wrist-shot and slapshot wind-up/follow-through driven by charge; stick flex look.
 - [ ] Crossovers and tight turns: leg crossover cycle when turning at speed; lean into turns.

@@ -634,7 +634,8 @@ static func pad_rear(pad_half_width: float, back_z: float, shin_back: float) -> 
 	# Knee cradle: a soft block sitting on the pad back round the knee cap.
 	b.add_rounded_box(Vector3(0, -0.005, back_z - 0.025), Vector3(0.15, 0.11, 0.05), 0.02, wrap)
 	# Calf wrap: a padded panel round the back of the calf.
-	for band: Array in [[-0.17, 0.034, wrap, 0.016], [-0.17, 0.020, strap, 0.019], [-0.27, 0.016, strap, 0.017]]:
+	# The ankle strap sits clear of the boot's heel as the foot pivots in the drop.
+	for band: Array in [[-0.17, 0.034, wrap, 0.016], [-0.17, 0.020, strap, 0.019], [-0.25, 0.016, strap, 0.015]]:
 		var y: float = band[0]
 		var r: float = band[3]
 		var pts := PackedVector3Array()

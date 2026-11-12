@@ -49,7 +49,9 @@ func run() -> void:
 		v.set_save(kind if active else "", target if active else v.save_target, 1.0 / 60)
 		v.animate(0, 1.0 / 60, 0, false)
 		var hand: Vector3 = v.goalie_gloves[0].global_position if kind != "blocker" else v.goalie_gloves[1].global_position
-		if kind.begins_with("pad") or kind.begins_with("splits") or kind.begins_with("stack"):
+		if kind == "butterfly":
+			hand = v.pad_visuals[0].global_position
+		elif kind.begins_with("pad") or kind.begins_with("splits") or kind.begins_with("stack"):
 			hand = v.skates[0 if kind.ends_with("left") else 1].global_position
 		var speed := 0.0 if last == Vector3.INF else hand.distance_to(last) * 60.0
 		last = hand
