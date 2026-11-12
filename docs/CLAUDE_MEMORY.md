@@ -32,11 +32,12 @@ Goalies
   size (PAD_VIS_SCALE 1.016 x 1.25 x 1.35 = 91 cm, 11 in) pinned at the knee and
   centred on the ankle across the pad; collision proxies (`pads`, `pad_box`,
   `get_goalie_gear`) are separate and unchanged.
-- Thigh rise hangs from the unscaled pad node and only rotates/translates.
-  Butterfly wall (`separate_thigh_rises()`, WALL_* consts): dropping, each rise
-  turns from the thigh to stand face-on over its knee stack, seated 3 cm over
-  the lower pad top, inner edge 3 mm off centre - one wall across the
-  five-hole. A kicking leg keeps its rise on the extended pad.
+- Pads are rigid (owner 2026-11-12): the thigh rise is part of the drawn pad
+  in every pose (same frame, narrower), never folds. Butterfly knees at
+  +-0.34 (BFLY_KNEE_X) so the rigid pads meet at the five-hole as one wall
+  along the ice; pad save colliders moved with them. Knees down, the foot
+  turns toe-back behind the pad; the downloaded pad's toe window is closed
+  (Gear.pad_toe_cover()); the ankle strap loops round the kneeling boot.
 - Save body language (SAVE_LEAN_*, PAD_SAVE_*): torso tips/turns toward a
   glove or blocker reach (catcher pocket square to the shooter); pad
   extensions lean, bend and turn the chest over the lead pad. Torso/catcher
@@ -105,7 +106,7 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 47 suites; last full run 47/47 at d0d8ff6 (2026-11-12).
+Tests: 47 suites; last full run 47/47 at 8411897 (2026-11-12).
 
 ## Open defects / next steps (goalie first)
 0. Owner 2026-11-12: gear believability and save animations are the top
@@ -116,14 +117,7 @@ Tests: 47 suites; last full run 47/47 at d0d8ff6 (2026-11-12).
    freeze/rebound control.
    Polish: stack/splits have no dive motion (the save weight
    blends the pose in ~0.15 s - slowing it would weaken save coverage).
-2. Butterfly five-hole at ice level: the lower pads' knee ends are 13.6 cm
-   apart under the rises (knees at x +-0.17). Closing it needs the knees
-   together (BFLY knee x ~0.115 gives 1.6 cm) - but that moves the pad save
-   colliders (test_goalie_gear: they overlap) - owner decision (gameplay),
-   or decouple drawn pads from pads[i]. Sliding only the drawn pad does not
-   work: in the butterfly its across axis is vertical. Also: 6 mm seam
-   between the rises.
-3. Skaters: boxy shoulders still, single face mesh (add variants), number font
+2. Skaters: boxy shoulders still, single face mesh (add variants), number font
    is block (backlog "Blender kit, pass 2").
 
 ## Decisions
@@ -132,6 +126,8 @@ Tests: 47 suites; last full run 47/47 at d0d8ff6 (2026-11-12).
 - 2026-11-12: EA NHL screenshots/video are allowed as visual reference;
   files ripped from EA games (or any commercial game) are still not used.
 - 2026-11-07: PLAY NOW is the only mode.
+- 2026-11-12 (owner): goalie pads do not bend in the butterfly, and the skate
+  must never show through the pad. Pad colliders may move with the pads.
 - 2026-11-12: cloud sessions use the personal "hawkey" environment; its setup
   script installs Godot 4.6.2 to /usr/local/bin/godot and runs the import.
   Owner 2026-11-12: Claude may merge finished, fully tested work into
