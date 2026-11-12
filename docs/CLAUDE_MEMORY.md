@@ -77,6 +77,8 @@ Goalies
 - Eyes on the puck: goalie_look() turns/tips the head (and mask collider)
   toward save_target, weighted by the save springs, LOOK_* neck limits; on a
   glove-side pad save the catcher goes out over the lead pad.
+- Goalie sleeves carry the navy yoke over the cap (kit_cloth sleeve_yoke,
+  GOALIE_SLEEVE_YOKE 0.10) - no red spike at the armhole when the arm rises.
 - Knee cradle, calf wrap and straps (`Gear.pad_rear`, `PadRear` nodes).
 - Skate stays on the ankle; in the butterfly the foot keeps ~105 deg to the
   shin with the toe in the pad's boot channel.
@@ -92,7 +94,7 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 47 suites; last full run 47/47 at 6ffbc8c (2026-11-12).
+Tests: 47 suites; last full run 47/47 at 813fec8 (2026-11-12).
 
 ## Open defects / next steps (goalie first)
 0. Owner 2026-11-12: gear believability and save animations are the top
@@ -108,7 +110,6 @@ Tests: 47 suites; last full run 47/47 at 6ffbc8c (2026-11-12).
 2. Butterfly polish: 6 mm shaded seam between the two rises; knee-stack ends
    of the lower pads are ~14 cm apart under the rises; rise top still moves
    9.0 cm/frame mid-drop (inherent to the 6/s drop; knee 5.9).
-3. Full glove lean shows a jagged sleeve/yoke seam on the far shoulder.
 4. Catcher back plain; blocker board back flat black.
 5. Goalie stick bake lost its red graphic (white/black only).
 6. Skaters: boxy shoulders still, single face mesh (add variants), number font
