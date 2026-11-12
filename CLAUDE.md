@@ -17,14 +17,16 @@ you finish. The `/update-memory` command does this.
 - Never merge `codex/game-modes` (or any Codex branch) into this branch.
 - Keep edits to the shared files `scripts/match.gd` and `scripts/lab.gd` small
   and described in the commit.
-- Ask the owner before pushing unless he has already said to push this session.
+- Push finished, fully tested work to `origin prototype/skating-puck-lab` (the owner allows it); never force-push.
 
 ## Rules (mandatory; full text at the top of docs/BACKLOG.md)
 - Downloaded models and real-world gear are allowed, but brand names, club/NHL
   logos, player names and signatures are digitally removed; every third-party
   model keeps its credit and licence note in `assets/CREDITS.md`.
-- Never use EA or other commercial-game code/art/audio, or anything from
-  decompiled games.
+- EA NHL games are the visual target: use their screenshots and gameplay
+  video as reference for proportions, poses, lighting and camera. Do not copy
+  their actual files (models, textures, animations, audio, code) or anything
+  extracted from a game install or decompiled game.
 - Never commit `assets/mixamo/`.
 - PLAY NOW is the only game mode; every position is a seat a CPU holds until a
   human takes it (`scripts/control_slots.gd`).

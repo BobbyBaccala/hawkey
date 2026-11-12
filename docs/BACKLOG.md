@@ -12,7 +12,9 @@ Rules for every run:
   third-party model keeps its author credit in assets/CREDITS.md. Licence
   terms (CC-BY-NC-SA, unknown licences) are no longer a blocker, but record
   them in CREDITS.md so the owner can see the risk before any public release.
-  Still off limits: EA (or other commercial-game) code/art/audio and anything
+  Owner decision 2026-11-12: EA NHL screenshots and gameplay video may be used
+  as visual reference. Still off limits: files taken from EA (or other
+  commercial) games - code/art/audio - and anything
   from recompiled/decompiled games.
 - Never commit files from `assets/mixamo/` (Adobe forbids redistributing them).
 - All test suites in `tests/` must pass before pushing; add a test when a change

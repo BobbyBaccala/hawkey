@@ -65,7 +65,9 @@ Tests: 45 suites; last full run 45/45 at 2ad08c2 (2026-11-12).
 
 ## Decisions
 - 2026-11-07: downloaded models/brands allowed with logos, names and signatures
-  removed; credits in assets/CREDITS.md. EA/commercial-game assets still banned.
+  removed; credits in assets/CREDITS.md.
+- 2026-11-12: EA NHL screenshots/video are allowed as visual reference;
+  files ripped from EA games (or any commercial game) are still not used.
 - 2026-11-07: PLAY NOW is the only mode.
 - Goalie visuals may differ from the save collision proxies; keep the
   proxies' behaviour identical unless gameplay is the task (compare

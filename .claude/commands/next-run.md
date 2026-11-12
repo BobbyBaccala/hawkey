@@ -20,6 +20,6 @@ Do one substantial, finished improvement to Hawkey (or two small ones). $ARGUMEN
    (`/test-all`). Add a test for new behaviour. Never relax tolerances.
 7. Tick/split the backlog item, add one run-log line, update
    `docs/DEVELOPMENT.md` if you added a script/system, and run `/update-memory`.
-8. Commit with a clear message. Ask before pushing unless already told to push.
+8. Commit with a clear message, fetch + rebase, re-run tests if anything came in, then `git push origin HEAD:prototype/skating-puck-lab`.
 9. Finish with 2-4 sentences for the owner: what changed, what to look for in
    game, the screenshot path, and anything still wrong.
