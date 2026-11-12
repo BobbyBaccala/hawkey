@@ -107,6 +107,9 @@ var goalie_save_height := 0.0
 ## puck's predicted crossing point in rig space: x across (+x = catching
 ## side), y height above the ice.
 const SAVE_KINDS := ["glove","blocker","pad_left","pad_right","splits_left","splits_right","stack_left","stack_right"]
+var save_speeds := {"glove":0.0,"blocker":0.0,"pad_left":0.0,"pad_right":0.0,"splits_left":0.0,"splits_right":0.0,"stack_left":0.0,"stack_right":0.0}
+const SAVE_SNAP := 24.0
+const SAVE_RECOVER := 10.0
 var save_weights := {"glove":0.0,"blocker":0.0,"pad_left":0.0,"pad_right":0.0,"splits_left":0.0,"splits_right":0.0,"stack_left":0.0,"stack_right":0.0}
 ## Pad stack (desperation save when already sliding toward a low, wide shot):
 ## the goalie goes down on his side with both legs straight and together, so
@@ -1262,11 +1265,28 @@ static func choose_save(x: float, h: float, slide := 0.0, current := "") -> Stri
 
 ## Drives the save blend: the chosen save ramps in fast (a reaction), the
 ## others recover more slowly, and a new choice interrupts at any point.
+## Each save weight is a critically damped spring (exact step, frame-rate
+## independent): a save fires explosively - accelerating, then easing into
+## the full pose instead of moving at constant speed and stopping dead - and
+## the recovery eases out of the save and back into the stance. SAVE_SNAP
+## puts the half-way point where the old 7/s linear ramp had it (0.07 s), so
+## save timing in play is unchanged; SAVE_RECOVER matches the old 3/s release
+## at its half-way point. No overshoot: no pose is pushed past its target.
 func set_save(kind: String, target: Vector2, delta: float) -> void:
 	save_kind = kind
 	save_target = save_target.lerp(target,1.0-exp(-18.0*delta))
 	for k in SAVE_KINDS:
-		save_weights[k] = move_toward(save_weights[k],1.0 if k==kind else 0.0,delta*(7.0 if k==kind else 3.0))
+		var goal := 1.0 if k==kind else 0.0
+		var omega := SAVE_SNAP if goal > 0.0 else SAVE_RECOVER
+		var x: float = float(save_weights[k])-goal
+		var v: float = save_speeds[k]
+		var e := exp(-omega*delta)
+		var t := (v+omega*x)*delta
+		v = (v-omega*t)*e
+		x = (x+t)*e
+		var w := clampf(goal+x,0.0,1.0)
+		save_speeds[k] = v if w == goal+x else 0.0
+		save_weights[k] = w
 
 ## Goalie gloves are worn on the arm, so every save pose orients them from
 ## the arm instead of a fixed rotation: the catcher pocket and the blocker

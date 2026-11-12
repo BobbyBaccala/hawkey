@@ -41,6 +41,20 @@ func run() -> void:
 	root.add_child(v)
 	await process_frame
 	settle(v, "", Vector2(0, 0.8))
+	# Save motion: the weight fires fast (half-way by ~0.07 s, as the old
+	# linear ramp), then eases into the pose instead of stopping dead, and the
+	# recovery starts from rest; weights stay within 0..1.
+	var trace: Array[float] = []
+	for f in range(40):
+		v.set_save("glove" if f < 25 else "", Vector2(0.8, 1.35), 1.0 / 60)
+		trace.append(float(v.save_weights.glove))
+	var half_frame := trace.find(trace.filter(func(w): return w >= 0.5)[0])
+	check(half_frame >= 3 and half_frame <= 4, "Save reaches half-way on frame %d (timing kept)" % half_frame)
+	var near_full := trace.find(trace.filter(func(w): return w >= 0.95)[0])
+	check(trace[near_full] - trace[near_full - 1] < 0.03, "Save eases into the pose (last step %.3f)" % (trace[near_full] - trace[near_full - 1]))
+	check(trace[24] - trace[25] < 0.02, "Recovery starts from rest (first step %.3f)" % (trace[24] - trace[25]))
+	check(trace.all(func(w): return w >= 0.0 and w <= 1.0), "Save weight stays within 0..1")
+	settle(v, "", Vector2(0, 0.8))
 	var ready_catcher: Vector3 = v.goalie_gloves[0].position
 	var ready_blocker: Vector3 = v.goalie_gloves[1].position
 	# Glove: catcher reaches toward a high glove-side shot.
