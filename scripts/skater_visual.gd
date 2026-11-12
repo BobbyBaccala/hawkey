@@ -111,6 +111,14 @@ var save_weights := {"glove":0.0,"blocker":0.0,"pad_left":0.0,"pad_right":0.0}
 var save_kind := ""
 var save_target := Vector2(0,0.8)
 const ARM_REACH := 0.55
+## Save body language: torso lean toward a glove/blocker reach (rad per metre
+## of reach past 0.2 m, capped), and on a pad extension the sideways lean,
+## forward bend and turn of the chest out over the lead pad.
+const SAVE_LEAN_GAIN := 0.75
+const SAVE_LEAN_MAX := 0.42
+const PAD_SAVE_LEAN := 0.40
+const PAD_SAVE_BEND := 0.30
+const PAD_SAVE_TURN := 0.18
 ## Grip-to-heel length of a goalie stick in the ready stance (metres).
 const GOALIE_STICK_REACH := 0.62
 var blade_position := Vector3(-0.20,0.035,0.95)
@@ -149,6 +157,12 @@ const RISE_ROLL := 0.7
 const RISE_KNEE_Z := 0.09
 ## Thigh rises are narrower than the pad face (constant).
 const RISE_WIDTH := 0.86
+## Butterfly wall (separate_thigh_rises): rise lean back from vertical, how far
+## each rise's outer edge turns back, and the half-gap left at the five-hole.
+const WALL_TILT := 0.30
+const WALL_YAW := 0.22
+const WALL_GAP := 0.003
+const WALL_SEAT := 0.03
 var stick_blade_length := 0.28
 var torso_pose := Transform3D.IDENTITY
 var number_label: Label3D
@@ -1636,10 +1650,15 @@ func pose(speed: float, turn: float) -> void:
 		var lean := lerpf(seat_lean+0.3*seat_slump,upright,tall*(1.0-seat))
 		bend = Basis(Vector3.UP,seat_yaw*0.55*(1.0-0.6*seat_slump))*Basis(Vector3.RIGHT,lerpf(0.5,lean,maxf(seat,tall)))
 	if goalie:
-		var reach_lean: float = save_weights.glove*clampf(save_target.x-0.45,0.0,0.5)-save_weights.blocker*clampf(-save_target.x-0.45,0.0,0.5)
+		# Saves commit the upper body (reference: pro save photos, EA NHL):
+		# reaching high, the shoulders tip toward the hand and the chest turns to
+		# the puck so the arm extends fully from a raised shoulder; on a pad
+		# extension the chest drops out over the lead pad.
+		var reach_lean: float = save_weights.glove*clampf((save_target.x-0.2)*SAVE_LEAN_GAIN,0.0,SAVE_LEAN_MAX)-save_weights.blocker*clampf((-save_target.x-0.2)*SAVE_LEAN_GAIN,0.0,SAVE_LEAN_MAX)
 		var pad_lean: float = save_weights.pad_left-save_weights.pad_right
 		if reach_lean != 0.0 or pad_lean != 0.0:
-			bend = Basis(Vector3.BACK,-reach_lean*0.6-pad_lean*0.18)*bend
+			var over_pad := absf(pad_lean)
+			bend = Basis(Vector3.UP,reach_lean*0.35+pad_lean*PAD_SAVE_TURN)*Basis(Vector3.BACK,-reach_lean-pad_lean*PAD_SAVE_LEAN)*Basis(Vector3.RIGHT,over_pad*PAD_SAVE_BEND)*bend
 	if not idle.is_empty():
 		var sway:=Quaternion(idle_data.mean.dirs.spine,idle.dirs.spine)
 		bend = Basis(Quaternion.IDENTITY.slerp(sway,0.7*(1.0-butterfly)))*bend
@@ -1887,7 +1906,9 @@ func pose(speed: float, turn: float) -> void:
 				wrist = wrist.lerp(reach(shoulder,aim),catch_w)
 			if i==0:
 				goalie_gloves[i].position=wrist+Vector3(0.0,0.03,0.035)
-				goalie_gloves[i].rotation=Vector3(-0.12-0.35*catch_w*clampf(save_target.y-0.9,0.0,0.7),0.32+0.25*catch_w,-0.12-0.3*catch_w)
+				# Reaching, the pocket squares up to the shooter (less inward yaw)
+				# and the fingers tip out along the arm.
+				goalie_gloves[i].rotation=Vector3(-0.12-0.35*catch_w*clampf(save_target.y-0.9,0.0,0.7),0.32-0.30*catch_w,-0.12-0.3*catch_w)
 			else:
 				goalie_gloves[i].position=wrist+Vector3(-0.085,0.06,0.04)
 				goalie_gloves[i].rotation=Vector3(-0.10,-0.28,0.06)
@@ -1919,10 +1940,58 @@ func pose(speed: float, turn: float) -> void:
 	rig.position = rig.basis*(tie[0] as Vector3)
 	update_stick()
 
-## Solid one-piece pads are never bent apart: the thigh rises stay in line with
-## the shin sections and may touch at the five-hole. Kept as a no-op hook.
+## Butterfly wall: on the way down the two thigh rises turn from following the
+## thighs to standing over the knee stacks, face-on to the shooter, and slide in
+## until their inner edges meet at the five-hole, so the pads and rises read as
+## one continuous wall (reference: pro butterfly photos and EA NHL goalies).
+## Rotation and translation only - the rise keeps its constant size. A leg that
+## kicks out for a pad save keeps its rise in line with the extended pad.
 func separate_thigh_rises() -> void:
-	pass
+	for i in range(mini(2,thigh_rises.size())):
+		var side := 1.0 if i==0 else -1.0
+		var kick: float = save_weights["pad_left" if i==0 else "pad_right"]
+		var w := smoothstep(0.0,1.0,butterfly)*(1.0-kick)
+		if w <= 0.0: continue
+		var rise: Node3D = thigh_rises[i]
+		var pad: Node3D = pads[i]
+		var sc: Vector3 = rise.basis.get_scale()
+		var now_rig: Quaternion = (pad.basis*rise.basis.orthonormalized()).get_rotation_quaternion()
+		var wall := Basis(Vector3.UP,side*WALL_YAW)*Basis(Vector3.RIGHT,-WALL_TILT)
+		var turned := Basis(now_rig.slerp(wall.get_rotation_quaternion(),w))
+		rise.basis = (pad.basis.inverse()*turned).scaled_local(sc)
+		# Slide across (rig x) so the inner edge sits at the centre line.
+		var mesh_node := rise.get_child(0) as MeshInstance3D
+		var box: AABB = mesh_node.mesh.get_aabb()
+		var xf: Transform3D = pad.transform*rise.transform*mesh_node.transform
+		var inner := INF
+		for p in rise_edge_points(mesh_node.mesh):
+			inner = minf(inner,side*(xf*p).x)
+		# Seat the rise on the knee end of the lower pad: its bottom edge just
+		# overlaps the top of the pad, its face flush with the pad face there.
+		var lower := pad_visuals[i].get_child(0) as MeshInstance3D
+		var lower_xf: Transform3D = pad.transform*pad_visuals[i].transform*lower.transform
+		var lower_box: AABB = lower.mesh.get_aabb()
+		var top := -INF
+		for c in range(8):
+			top = maxf(top,(lower_xf*lower_box.get_endpoint(c)).y)
+		var knee_face: Vector3 = lower_xf*Vector3(0,lower_box.end.y,lower_box.end.z)
+		var seat: Vector3 = xf*Vector3(0,box.position.y,box.end.z)
+		var shift := Vector3(side*(WALL_GAP-inner),top-WALL_SEAT-seat.y,knee_face.z-seat.z)*w
+		rise.position += pad.basis.inverse()*shift
+
+## Vertices along the two side edges of a thigh-rise mesh (the 40 smallest and
+## 40 largest x), cached: the true inner edge for the butterfly wall, without
+## the rounded corners a bounding box would add.
+static var rise_edges := {}
+static func rise_edge_points(mesh: Mesh) -> PackedVector3Array:
+	if not rise_edges.has(mesh):
+		var verts: Array = []
+		for s in range(mesh.get_surface_count()):
+			verts.append_array(Array(mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]))
+		verts.sort_custom(func(a: Vector3, b: Vector3) -> bool: return a.x < b.x)
+		var n := mini(40,verts.size()/2)
+		rise_edges[mesh] = PackedVector3Array(verts.slice(0,n)+verts.slice(verts.size()-n))
+	return rise_edges[mesh]
 
 ## Plays a captured clip over the procedural pose. Mask entries: "spine",
 ## "arms", "stick_up". Returns false when the clip file is not installed.
