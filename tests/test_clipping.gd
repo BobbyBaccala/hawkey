@@ -294,8 +294,8 @@ func run() -> void:
 		keeper.animate(0, 1)
 		await process_frame
 		check_pose(keeper, "goalie butterfly=%.1f save=%.2f" % pose)
-	# Save poses: glove, blocker, both pad extensions and both splits.
-	for save in [["glove", Vector2(0.8, 1.35)], ["blocker", Vector2(-0.7, 0.95)], ["pad_left", Vector2(0.95, 0.1)], ["pad_right", Vector2(-0.95, 0.1)], ["splits_left", Vector2(1.15, 0.1)], ["splits_right", Vector2(-1.15, 0.1)]]:
+	# Save poses: glove, blocker, both pad extensions, both splits and both pad stacks.
+	for save in [["glove", Vector2(0.8, 1.35)], ["blocker", Vector2(-0.7, 0.95)], ["pad_left", Vector2(0.95, 0.1)], ["pad_right", Vector2(-0.95, 0.1)], ["splits_left", Vector2(1.15, 0.1)], ["splits_right", Vector2(-1.15, 0.1)], ["stack_left", Vector2(0.9, 0.1)], ["stack_right", Vector2(-0.9, 0.1)]]:
 		var down: bool = save[0].begins_with("pad")
 		for f in range(60):
 			keeper.butterfly = move_toward(keeper.butterfly, 1.0 if down else 0.0, 0.1)

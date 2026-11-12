@@ -11,13 +11,14 @@ func run()->void:
 	scene.puck.visible=false
 	scene.selection.visible=false
 	scene.hud.get_parent().get_parent().visible=false
-	var shots:=[["READY","",Vector2(0,0.8)],["BUTTERFLY","butterfly",Vector2(0.1,0.15)],["GLOVE HIGH","glove",Vector2(0.75,1.35)],["BLOCKER","blocker",Vector2(-0.7,0.95)],["PAD LEFT","pad_left",Vector2(0.95,0.1)],["PAD RIGHT","pad_right",Vector2(-0.95,0.1)],["WIDE LOW, GLOVE SIDE","auto",Vector2(1.15,0.1)],["WIDE LOW, BLOCKER SIDE","auto",Vector2(-1.15,0.1)]]
+	var shots:=[["READY","",Vector2(0,0.8)],["BUTTERFLY","butterfly",Vector2(0.1,0.15)],["GLOVE HIGH","glove",Vector2(0.75,1.35)],["BLOCKER","blocker",Vector2(-0.7,0.95)],["PAD LEFT","pad_left",Vector2(0.95,0.1)],["PAD RIGHT","pad_right",Vector2(-0.95,0.1)],["WIDE LOW, GLOVE SIDE","auto",Vector2(1.15,0.1)],["WIDE LOW, BLOCKER SIDE","auto",Vector2(-1.15,0.1)],["PAD STACK LEFT","stack_left",Vector2(0.9,0.1)],["PAD STACK RIGHT","stack_right",Vector2(-0.9,0.1)]]
 	# --row=0 (ready, butterfly, glove), --row=1 (blocker, pad left, pad right)
-	# or --row=2 (low shots past the pad reach; "auto" = the save choose_save picks)
+	# --row=2 (low shots past the pad reach; "auto" = the save choose_save picks)
+	# or --row=3 (pad stacks, both sides)
 	var row:=0
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--row="):row=int(arg.substr(6))
-	shots=shots.slice(row*3,row*3+3)
+	shots=shots.slice(row*3,row*3+3) if row<3 else shots.slice(8,10)
 	for i in range(shots.size()):
 		var v=load("res://scripts/skater_visual.gd").new()
 		v.goalie=true
@@ -26,7 +27,7 @@ func run()->void:
 		v.number="31"
 		scene.add_child(v)
 		# The splits spans ~2 m, so that row is spaced wider.
-		v.position=Vector3((i-0.5)*2.9,0,0) if row==2 else Vector3((i-1)*2.1,0,0)
+		v.position=Vector3((i-0.5)*2.9,0,0) if row>=2 else Vector3((i-1)*2.1,0,0)
 		v.rotation.y=PI
 		var kind:String=shots[i][1]
 		if kind=="auto": kind=v.choose_save(shots[i][2].x,shots[i][2].y)

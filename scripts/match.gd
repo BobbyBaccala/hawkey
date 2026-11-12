@@ -1639,7 +1639,9 @@ func update_goalkeepers(delta: float) -> void:
 			var at:Vector3=puck.position+puck.linear_velocity*intercept_time
 			var local:Vector3=visual.rig.global_transform.affine_inverse()*Vector3(at.x,intercept_height,at.z)
 			crossing=Vector2(local.x,intercept_height)
-			kind=visual.choose_save(local.x,intercept_height)
+			# A goalie already sliding toward a low, wide shot stacks the pads
+			# (kept once started); see SkaterVisual.choose_save().
+			kind=visual.choose_save(local.x,intercept_height,visual.lateral,visual.save_kind)
 		var drop_down:bool=kind in ["butterfly","pad_left","pad_right"]
 		visual.butterfly=move_toward(visual.butterfly,1.0 if drop_down else 0.0,delta*(6 if drop_down else 2))
 		visual.set_save(kind,crossing if threat else visual.save_target,delta)

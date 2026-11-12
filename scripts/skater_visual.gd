@@ -106,8 +106,24 @@ var goalie_save_height := 0.0
 ## save can interrupt the recovery from the last one. save_target is the
 ## puck's predicted crossing point in rig space: x across (+x = catching
 ## side), y height above the ice.
-const SAVE_KINDS := ["glove","blocker","pad_left","pad_right","splits_left","splits_right"]
-var save_weights := {"glove":0.0,"blocker":0.0,"pad_left":0.0,"pad_right":0.0,"splits_left":0.0,"splits_right":0.0}
+const SAVE_KINDS := ["glove","blocker","pad_left","pad_right","splits_left","splits_right","stack_left","stack_right"]
+var save_weights := {"glove":0.0,"blocker":0.0,"pad_left":0.0,"pad_right":0.0,"splits_left":0.0,"splits_right":0.0,"stack_left":0.0,"stack_right":0.0}
+## Pad stack (desperation save when already sliding toward a low, wide shot):
+## the goalie goes down on his side with both legs straight and together, so
+## the two pads stack into a wall facing the shooter, feet to the post, the
+## lead-side hand up over the stack. Posed upright in rig space (legs
+## together, body straight) and then the whole rig rolls STACK_ROLL about its
+## forward axis, slides STACK_SHIFT toward the post and lifts STACK_LIFT so
+## the lower side rests on the ice. Chosen when the goalie's lateral speed
+## toward the shot is above STACK_SLIDE (m/s), and kept once started.
+const STACK_ROLL := 1.48
+const STACK_SHIFT := 0.95
+const STACK_LIFT := 0.31
+const STACK_SLIDE := 1.6
+const STACK_LEG := 0.83
+## Rig roll applied for the pad stack this frame (removed again when the
+## goalie's own lateral speed is measured).
+var stack_roll := 0.0
 ## Splits (desperation save for low shots past the pad-extension reach): hips
 ## drop to SPLITS_HIP over the ice and slide SPLITS_SHIFT toward the puck, both
 ## legs straighten out along the ice (SPLITS_LEG hip-to-ankle), pad faces to
@@ -1232,8 +1248,11 @@ func knee_position(hip: Vector3, ankle: Vector3, pole: Vector3, upper: float, lo
 ## and height h: butterfly for low shots in front of the pads, a pad
 ## extension (one leg kicked out along the ice) for low shots wide, glove or
 ## blocker for higher shots to either side, and a body block in the middle.
-static func choose_save(x: float, h: float) -> String:
+static func choose_save(x: float, h: float, slide := 0.0, current := "") -> String:
 	if h < 0.45:
+		if absf(x) > 0.62:
+			var stack := "stack_left" if x > 0 else "stack_right"
+			if current == stack or slide*signf(x) > STACK_SLIDE: return stack
 		if absf(x) > SPLITS_X: return "splits_left" if x > 0 else "splits_right"
 		if absf(x) > 0.62: return "pad_left" if x > 0 else "pad_right"
 		return "butterfly"
@@ -1248,6 +1267,23 @@ func set_save(kind: String, target: Vector2, delta: float) -> void:
 	save_target = save_target.lerp(target,1.0-exp(-18.0*delta))
 	for k in SAVE_KINDS:
 		save_weights[k] = move_toward(save_weights[k],1.0 if k==kind else 0.0,delta*(7.0 if k==kind else 3.0))
+
+## Pad-stack blend (eased) and its side: +1 toward the glove side (rig +x).
+func stack_weight() -> float:
+	return smoothstep(0.0,1.0,minf(float(save_weights.stack_left)+float(save_weights.stack_right),1.0))
+
+func stack_dir() -> float:
+	return 1.0 if float(save_weights.stack_left) >= float(save_weights.stack_right) else -1.0
+
+## Hand target in a pad stack (rig space, before the roll). On a glove-side
+## stack the catcher ends up on top and reaches out over the stacked pads;
+## otherwise a hand stays in front of the chest, so the blocker keeps the
+## stick down on the ice. hand: +1 catcher, -1 blocker.
+func stack_hand(hand: float) -> Vector3:
+	if hand > 0.0 and stack_dir() > 0.0: return Vector3(0.62,1.30,0.30)
+	# Front hands spread along the body: catcher toward the head, blocker
+	# toward the feet, so they never meet.
+	return Vector3(-stack_dir()*0.28,1.30,0.40) if hand > 0.0 else Vector3(-stack_dir()*0.08,0.95,0.58)
 
 ## Wrist target for a reaching save, kept within the arm's reach of its shoulder.
 func reach(shoulder: Vector3, target: Vector3) -> Vector3:
@@ -1442,6 +1478,9 @@ func pose(speed: float, turn: float) -> void:
 			var dir := signf(save_weights.splits_left-save_weights.splits_right)
 			var hip_y: float = (rest["upperleg01.L"] as Transform3D).origin.y
 			drop = drop.lerp(Vector3(dir*SPLITS_SHIFT,SPLITS_HIP-hip_y,-0.02),minf(split_w,1.0))
+		# Pad stack: the body straightens (it is laid on its side by the rig roll).
+		var stack_w := stack_weight()
+		if stack_w > 0.0: drop = drop.lerp(Vector3(0,-0.04,0),stack_w)
 	var shoulder_turn := 0.0
 	if not goalie:
 		stride=[stride_foot(0,speed),stride_foot(1,speed)]
@@ -1677,6 +1716,10 @@ func pose(speed: float, turn: float) -> void:
 		var split_lean: float = save_weights.splits_left-save_weights.splits_right
 		if split_lean != 0.0:
 			bend = Basis(Vector3.BACK,-split_lean*0.20)*Basis(Vector3.RIGHT,absf(split_lean)*0.10)*bend
+		# Pad stack: straight body with a slight curl toward the shooter.
+		var stack_w := stack_weight()
+		if stack_w > 0.0:
+			bend = Basis(Quaternion(bend.orthonormalized()).slerp(Quaternion(Vector3.RIGHT,0.14),stack_w))
 	if not idle.is_empty():
 		var sway:=Quaternion(idle_data.mean.dirs.spine,idle.dirs.spine)
 		bend = Basis(Quaternion.IDENTITY.slerp(sway,0.7*(1.0-butterfly)))*bend
@@ -1751,6 +1794,19 @@ func pose(speed: float, turn: float) -> void:
 			# Splits: each leg straightens out along the ice to its own side from
 			# the dropped hips (lead leg a touch forward, trail leg back), knee
 			# almost locked, so the pads stand on their inner edges face-on.
+			# Pad stack: legs straight down from the hips and together (pad edge
+			# to pad edge), so after the rig roll the two pads lie one on top of
+			# the other.
+			var stack_w := stack_weight()
+			if stack_w > 0.0:
+				# Knees keep a slight bend; the boot follows the shin into the pad's
+				# boot channel as in the butterfly (see the skate below).
+				var stack_ankle := Vector3(side*0.155,hip.y-STACK_LEG,0.0)
+				var stack_knee := knee_position(hip,stack_ankle,Vector3(0,0,1),0.44,0.45)
+				stack_knee.x = side*0.16
+				ankle = ankle.lerp(stack_ankle,stack_w)
+				knee = knee.lerp(stack_knee,stack_w)
+				feet[i] = ankle
 			var lead_w: float = save_weights["splits_left" if i==0 else "splits_right"]
 			var trail_w: float = save_weights["splits_right" if i==0 else "splits_left"]
 			var split_w := minf(lead_w+trail_w,1.0)
@@ -1793,7 +1849,7 @@ func pose(speed: float, turn: float) -> void:
 			# points - and the runner behind it, as in a real butterfly. The boot
 			# pivots about the ankle; it is never moved off it.
 			var shin_up:Vector3=(knee-ankle).normalized()
-			var tipped:=smoothstep(0.05,0.30,1.0-shin_up.y)
+			var tipped:=maxf(smoothstep(0.05,0.30,1.0-shin_up.y),stack_weight())
 			var pad_face:Vector3=(Vector3.BACK-shin_up*shin_up.dot(Vector3.BACK)).normalized()
 			var toe_dir:Vector3=(pad_face*cos(ANKLE_PLANTAR)-shin_up*sin(ANKLE_PLANTAR)).normalized()
 			var foot_up:=(shin_up-toe_dir*toe_dir.dot(shin_up)).normalized()
@@ -1936,6 +1992,8 @@ func pose(speed: float, turn: float) -> void:
 				# Glove save: the catcher shoots out to the puck's line, pocket open.
 				var aim := Vector3(clampf(save_target.x,0.22,1.0),clampf(save_target.y,0.35,1.65),0.40)
 				wrist = wrist.lerp(reach(shoulder,aim),catch_w)
+			if i==0 and stack_weight() > 0.0:
+				wrist = wrist.lerp(reach(shoulder,stack_hand(1.0)),stack_weight())
 			if i==0:
 				goalie_gloves[i].position=wrist+Vector3(0.0,0.03,0.035)
 				# Reaching, the pocket squares up to the shooter (less inward yaw)
@@ -1970,6 +2028,13 @@ func pose(speed: float, turn: float) -> void:
 	var tie: Array = tie_up_offset()
 	rig.rotation.z += float(tie[1])
 	rig.position = rig.basis*(tie[0] as Vector3)
+	# Pad stack: lay the straightened body on its side (lead-side hand up, feet
+	# to the post) and rest it on the ice.
+	var stack_w := stack_weight() if goalie else 0.0
+	stack_roll = stack_dir()*STACK_ROLL*stack_w
+	if stack_w > 0.0:
+		rig.rotation.z += stack_roll
+		rig.position += Basis(Vector3.UP,rig.rotation.y)*Vector3(stack_dir()*STACK_SHIFT*stack_w,STACK_LIFT*stack_w,0)
 	update_stick()
 
 ## Butterfly wall: on the way down the two thigh rises turn from following the
@@ -2047,7 +2112,8 @@ func update_layers(delta: float) -> void:
 	if is_inside_tree():
 		var world:=global_position
 		if last_world!=Vector3.INF and delta>0:
-			var local_velocity:Vector3=rig.global_basis.orthonormalized().inverse()*((world-last_world)/delta)
+			# Measured in the upright rig frame (the pad-stack roll taken out).
+			var local_velocity:Vector3=(rig.global_basis.orthonormalized()*Basis(Vector3.BACK,-stack_roll)).inverse()*((world-last_world)/delta)
 			lateral=lerpf(lateral,local_velocity.x,1-exp(-10*delta))
 			# Direction of travel for hockey stops (ignores teleports).
 			var moved:=(world-last_world)/delta
@@ -2161,7 +2227,7 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	brake_turn = move_toward(brake_turn,1.0 if braking and not goalie else 0.0,delta*6)
 	shot_follow = maxf(0,shot_follow-delta*3)
 	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
-	blade_position=Vector3(-0.02+butterfly*0.05,0.042,0.60-butterfly*0.04) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
+	blade_position=Vector3(-0.02+butterfly*0.05,0.042,0.60-butterfly*0.04).lerp(Vector3(-stack_dir()*0.23,0.35,0.62),stack_weight()) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
 	# Stop: the stick reaches out in front for balance.
 	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
 	# Faceoff: settle into the stance quickly, break out of it a little slower.
@@ -2276,6 +2342,8 @@ func stick_grip() -> Vector3:
 		# along the ice in front of the pads instead of standing up.
 		var split_w := minf(float(save_weights.splits_left)+float(save_weights.splits_right),1.0)
 		if split_w > 0.0: grip = grip.lerp(Vector3(-0.40+posed_drop.x,0.30,0.50),split_w)
+		var stack_w := stack_weight()
+		if stack_w > 0.0: grip = grip.lerp(reach(shoulder_of(1),stack_hand(-1.0)),stack_w)
 		var block_w: float = save_weights.blocker
 		if block_w > 0.0:
 			# Blocker save: the stick hand punches out to the puck's line and the

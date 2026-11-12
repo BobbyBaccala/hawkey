@@ -30,6 +30,12 @@ func run() -> void:
 	check(Visual.choose_save(0.0, 0.7) == "body", "Chest-height centre -> body block")
 	check(Visual.choose_save(1.15, 0.1) == "splits_left", "Low shot past the pad reach, glove side -> splits")
 	check(Visual.choose_save(-1.15, 0.1) == "splits_right", "Low shot past the pad reach, blocker side -> splits")
+	check(Visual.choose_save(0.9, 0.1, 2.2) == "stack_left", "Sliding toward a low wide shot, glove side -> pad stack")
+	check(Visual.choose_save(-0.9, 0.1, -2.2) == "stack_right", "Sliding toward a low wide shot, blocker side -> pad stack")
+	check(Visual.choose_save(0.9, 0.1, -2.2) == "pad_left", "Sliding away from the shot -> no stack")
+	check(Visual.choose_save(0.9, 0.1, 0.4) == "pad_left", "Not sliding -> pad extension, not a stack")
+	check(Visual.choose_save(0.9, 0.1, 0.0, "stack_left") == "stack_left", "A started pad stack is kept")
+	check(Visual.choose_save(0.9, 1.2, 2.2) == "glove", "High shot while sliding -> glove, not a stack")
 	var v = Visual.new()
 	v.goalie = true
 	root.add_child(v)
@@ -96,6 +102,40 @@ func run() -> void:
 				hi = maxf(hi, x)
 		check(hi - lo > 1.6, "%s: pad colliders cover the goal mouth (%.2f m of 1.83)" % [kind, hi - lo])
 		check(v.stick_shaft.scale.y < v.GOALIE_STICK_REACH + 0.5, "%s: stick never stretches" % kind)
+	# Pad stack: on the side, both pads stacked into a wall from the ice,
+	# facing the shooter, feet toward the post, colliders following.
+	for kind in ["stack_left", "stack_right"]:
+		settle(v, "", Vector2(0, 0.8), 90)
+		var lead := 1.0 if kind == "stack_left" else -1.0
+		settle(v, kind, Vector2(0.9 * lead, 0.1), 90)
+		var upright: Basis = Basis(Vector3.UP, v.rig.rotation.y)
+		var stack_gear: Dictionary = v.get_goalie_gear()
+		var low := INF
+		var high := -INF
+		var far := -INF
+		for pad_name in ["PadLeft", "PadRight"]:
+			var xf: Transform3D = stack_gear[pad_name].transform
+			var size: Vector3 = stack_gear[pad_name].size
+			for c in range(8):
+				var p: Vector3 = xf * ((Vector3(c & 1, (c >> 1) & 1, (c >> 2) & 1) - Vector3.ONE * 0.5) * size)
+				low = minf(low, p.y)
+				high = maxf(high, p.y)
+				# Rig +x (glove side) is actor -x: the rig faces the other way.
+				far = maxf(far, -lead * p.x)
+			var face: Vector3 = upright.inverse() * (v.rig.basis * (v.pads[0 if pad_name == "PadLeft" else 1].basis as Basis).z)
+			check(face.z > 0.85, "%s: %s faces the shooter (%s)" % [kind, pad_name, face])
+		check(low < 0.06, "%s: bottom pad on the ice (%.3f m)" % [kind, low])
+		check(high > 0.55, "%s: stacked pads stand as a wall (%.2f m high)" % [kind, high])
+		check(far > 0.8, "%s: pads reach toward the post (%.2f m)" % [kind, far])
+		var p_low: Vector3 = v.rig.transform * v.pads[1 if lead > 0 else 0].position
+		var p_top: Vector3 = v.rig.transform * v.pads[0 if lead > 0 else 1].position
+		check(p_top.y - p_low.y > 0.22, "%s: lead-side leg on top (%.2f m)" % [kind, p_top.y - p_low.y])
+		var torso_low: float = (v.rig.transform * v.torso_pose.origin).y
+		check(torso_low < 0.45, "%s: body down on the ice (chest %.2f m)" % [kind, torso_low])
+		check(v.stick_shaft.scale.y < v.GOALIE_STICK_REACH + 0.5, "%s: stick never stretches" % kind)
+	# Recovering from a stack stands the goalie back up (no leftover roll).
+	settle(v, "", Vector2(0, 0.8), 120)
+	check(absf(v.stack_roll) < 0.001 and absf(v.rig.rotation.z) < 0.14, "Stack recovers upright (roll %.3f)" % v.rig.rotation.z)
 	v.queue_free()
 	await process_frame
 	print("Goalie save failures: ", failures)
