@@ -89,11 +89,12 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 47 suites; last full run 47/47 at 4b93b37 (2026-11-12).
+Tests: 47 suites; last full run 47/47 at 5992020 (2026-11-12).
 
 ## Open defects / next steps (goalie first)
 0. Owner 2026-11-12: gear believability and save animations are the top
-   priority. Next: catcher back still plain; standing pads
+   priority. Forward+ review (5992020): pads read white, hot-spots fixed.
+   Next: catcher back still plain; standing pads
    still a little grey (vertical faces get little overhead light).
 1. Goalie saves slice 2c: poke check on close carriers, post-save
    freeze/rebound control.
@@ -125,6 +126,9 @@ Tests: 47 suites; last full run 47/47 at 4b93b37 (2026-11-12).
   `get_goalie_gear()` at sampled poses before/after).
 
 ## Gotchas
+- White blobs in Forward+ = NaN pixels bloomed by glow (gl_compatibility hides
+  them). Bisect with glow off; kit_gear clamps vertex colour before pow() and
+  guards albedo/normals - keep any new shader maths NaN-safe.
 - The game ships Forward+; gl_compatibility renders (no SSIL/SSAO) make navy
   and undersides read near-black. Judge looks in Forward+ via lavapipe (see
   CLAUDE.md, ~80 s/shot); the hawkey env setup script installs the driver.
