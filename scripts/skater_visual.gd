@@ -15,7 +15,7 @@ const KitMeshes = preload("res://assets/kit/skater-kit-v9.glb")
 const MESH_KIT := true
 ## Local incoming-pad candidate; false retains the original procedural pad.
 const MESH_GOALIE_PAD := true
-const PadMeshes = preload("res://assets/gear/goalie-pads-v1.glb")
+const PadMeshes = preload("res://assets/gear/goalie-pads-v2.glb")
 ## Goalie stick from the owner's downloaded stick model with every logo
 ## blanked before baking (tools/blender/goalie_stick_v1.py). Origin at the heel,
 ## +Y up the shaft, toe toward +X; GOALIE_STICK_SCALE gives a 1.45 m stick with
@@ -137,7 +137,7 @@ const PAD_THICKEN := 1.35
 const PAD_VIS_SCALE := Vector3(1.016,1.25,1.35)
 ## Drawn pad sits this far in front of the collision pad: the pad back clears
 ## the shin and the boot sits in the channel, not in the padding.
-const PAD_VIS_Z := 0.03
+const PAD_VIS_Z := 0.042
 ## Goalie sweater hem above the skater hem: it ends at the hips, over the top
 ## of the wide pants, instead of hanging through the crouched thighs.
 const GOALIE_HEM_RISE := 0.075
@@ -1781,9 +1781,10 @@ func pose(speed: float, turn: float) -> void:
 			var thigh_local:Vector3=pads[i].basis.inverse()*(hip-knee).normalized()
 			# Shortest rotation of the rise onto the thigh, applied with the drop.
 			var to_thigh:=Quaternion(Vector3.UP,thigh_local.normalized())
-			var w_fold:=smoothstep(0.0,0.7,butterfly)
+			var w_fold:=smoothstep(0.0,0.85,butterfly)
 			var knee_l:Vector3=pads[i].transform.affine_inverse()*knee
-			var vis_off:=Vector3(0,knee_l.y-Gear.PAD_KNEE*PAD_VIS_SCALE.y,PAD_VIS_Z)
+			var ankle_l:Vector3=pads[i].transform.affine_inverse()*ankle
+			var vis_off:=Vector3(clampf(ankle_l.x,-0.06,0.06),knee_l.y-Gear.PAD_KNEE*PAD_VIS_SCALE.y,PAD_VIS_Z)
 			# Standing the hinge is the knee break; dropping, the rise pivots at the
 			# knee landing (the knee stack), so the two rises start at the two knees
 			# and stand up the thighs instead of reaching across the five-hole.
@@ -1811,8 +1812,12 @@ func pose(speed: float, turn: float) -> void:
 				# section reaches down over the skate. Dimensions never change.
 				var knee_local:Vector3=pads[i].transform.affine_inverse()*knee
 				pad_visuals[i].scale=PAD_VIS_SCALE
-				if pad_rears.size()>i: pad_rears[i].position=Vector3(0,knee_local.y,0)
-				pad_visuals[i].position=Vector3(0,knee_local.y-Gear.PAD_KNEE*PAD_VIS_SCALE.y,PAD_VIS_Z)
+				var ankle_local:Vector3=pads[i].transform.affine_inverse()*ankle
+				if pad_rears.size()>i: pad_rears[i].position=Vector3(clampf(ankle_local.x,-0.06,0.06),knee_local.y,0)
+				# Across the pad, the boot channel stays centred on the ankle: when the
+				# collision pad is lifted off the ice mid-drop its lift has a sideways
+				# component in pad space, which the drawn pad does not follow.
+				pad_visuals[i].position=Vector3(clampf(ankle_local.x,-0.06,0.06),knee_local.y-Gear.PAD_KNEE*PAD_VIS_SCALE.y,PAD_VIS_Z)
 		# Elbows and wrists stay on a two-hand stick posture, never running arm swings.
 		var shoulder := shoulder_of(i)
 		# Right-handed shot: the blade is on the skater's right (-x), so the right

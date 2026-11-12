@@ -55,12 +55,21 @@ func run() -> void:
 			check(vis.scale.is_equal_approx(SV.PAD_VIS_SCALE), "pad size constant at butterfly %.2f" % b)
 			var sc: Vector3 = (rise.basis as Basis).get_scale()
 			check(absf(sc.y - SV.PAD_VIS_SCALE.y) < 0.002 and absf(sc.z - SV.PAD_VIS_SCALE.z) < 0.002, "thigh rise size constant at butterfly %.2f (%s)" % [b, sc])
-			var knee_mark: Vector3 = vis.global_transform * Vector3(0, Gear.PAD_KNEE, 0)
-			var knee_w: Vector3 = g.rig.global_transform * (g.skeleton.transform * Vector3(g.knees[i]))
-			check(absf((g.pads[i].global_transform.affine_inverse() * knee_mark).y - (g.pads[i].global_transform.affine_inverse() * knee_w).y) < 0.005, "knee landing on the knee at butterfly %.2f" % b)
-			# The boot pivots about the ankle: its ankle point never leaves it.
+			# Knee in 3D, in the (unscaled) pad node's frame: level with the
+			# knee landing, within the boot channel's width of the pad centre,
+			# and behind the pad's back face with clearance (not welded to the
+			# shin, not floating more than 12 cm off it).
+			var to_pad: Transform3D = g.pads[i].transform.affine_inverse()
+			var knee_p: Vector3 = to_pad * g.knees[i]
+			var mark_p: Vector3 = to_pad * (g.pads[i].transform * (vis.transform * Vector3(0, Gear.PAD_KNEE, 0)))
+			var back_z: float = vis.position.z - 0.04 * SV.PAD_VIS_SCALE.z
+			check(absf(knee_p.y - mark_p.y) < 0.005, "knee landing level with the knee at butterfly %.2f (%.3f)" % [b, knee_p.y - mark_p.y])
+			check(absf(knee_p.x - mark_p.x) < 0.07, "knee within the channel width at butterfly %.2f (%.3f)" % [b, knee_p.x - mark_p.x])
+			var gap: float = back_z - knee_p.z
+			check(gap > 0.0 and gap < 0.12, "knee behind the pad back with clearance at butterfly %.2f (%.3f)" % [b, gap])
+			# The boot pivots about the ankle: its ankle point is the rig ankle.
 			var ankle_from_boot: Vector3 = g.skates[i].transform * Vector3(0, 0.0525, 0)
-			check(ankle_from_boot.is_finite(), "boot pose finite")
+			check(ankle_from_boot.distance_to(g.feet[i]) < 0.005, "boot on the ankle at butterfly %.2f (%.3f m)" % [b, ankle_from_boot.distance_to(g.feet[i])])
 	# The stick is the de-branded downloaded model, drawn instead of the proxies.
 	check(g.goalie_stick_mesh != null and g.goalie_stick_mesh.visible, "goalie draws the stick model")
 	check(not g.goalie_paddle.visible and not g.stick_shaft.visible, "box stick proxies hidden")

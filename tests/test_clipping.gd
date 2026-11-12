@@ -90,23 +90,48 @@ class Solid:
 			out[i] = p
 		return out
 
+	## Inside test. Ray parity (+X and -X) finds candidates cheaply; each
+	## candidate is confirmed by its generalized winding number, which stays
+	## right where a mesh is made of overlapping closed shells (a pad's outer
+	## roll over its face) or has boolean slivers that make a ray miscount.
 	func contains(p: Vector3) -> bool:
 		if not aabb.grow(0.001).has_point(p):
 			return false
+		if not (_parity(p) or _parity(p, -1.0)):
+			return false
+		return absf(winding(p)) > 0.5
+
+	func winding(p: Vector3) -> float:
+		var total := 0.0
+		for t in range(0, tris.size(), 3):
+			var a := tris[t] - p
+			var b := tris[t + 1] - p
+			var c := tris[t + 2] - p
+			var la := a.length()
+			var lb := b.length()
+			var lc := c.length()
+			var det := a.dot(b.cross(c))
+			var div := la * lb * lc + a.dot(b) * lc + b.dot(c) * la + c.dot(a) * lb
+			total += 2.0 * atan2(det, div)
+		return total / (4.0 * PI)
+
+	func _parity(p: Vector3, sign_ := 1.0) -> bool:
 		var key := Vector2i(floori(p.y / CELL), floori(p.z / CELL))
 		if not grid.has(key):
 			return false
 		var hits: Array[float] = []
 		# Buckets cover a fixed Y/Z cell, so the ray must stay parallel to X.
 		# Tilting it can omit the exit face in a neighbouring cell.
-		var dir := Vector3.RIGHT
+		var dir := Vector3.RIGHT * sign_
 		for t in grid[key]:
 			var hit = Geometry3D.ray_intersects_triangle(p, dir, tris[t], tris[t + 1], tris[t + 2])
 			if hit != null:
-				var distance: float = hit.x - p.x
+				var distance: float = (hit.x - p.x) * sign_
 				var duplicate := false
 				for previous in hits:
-					if absf(previous - distance) < 0.000001:
+					# Boolean-cut meshes have sliver triangles: a ray through their
+					# shared edges hits each at almost the same distance.
+					if absf(previous - distance) < 0.0001:
 						duplicate = true
 						break
 				if not duplicate: hits.append(distance)
@@ -165,15 +190,23 @@ func gear_solids(v) -> Dictionary:
 		for i in range(2):
 			var side := "L" if i == 0 else "R"
 			solids["pad" + side] = Solid.new("pad" + side, [v.pad_visuals[i].get_child(0)])
+			if v.pad_rears.size() > i:
+				solids["rear" + side] = Solid.new("rear" + side, [v.pad_rears[i]])
 			solids["thigh" + side] = Solid.new("thigh" + side, meshes(v.thigh_rises[i]))
 		solids["catcher"] = Solid.new("catcher", meshes(v.goalie_gloves[0]))
 		solids["blocker"] = Solid.new("blocker", meshes(v.goalie_gloves[1]))
-		solids["paddle"] = Solid.new("paddle", [v.goalie_paddle])
+		# The drawn stick replaces the box proxies (which only carry the saves).
+		if v.goalie_stick_mesh != null and v.goalie_stick_mesh.visible:
+			solids["stick"] = Solid.new("stick", [v.goalie_stick_mesh])
+		else:
+			solids["paddle"] = Solid.new("paddle", [v.goalie_paddle])
 	else:
 		solids["gloveL"] = Solid.new("gloveL", meshes(v.skater_gloves[0]))
 		solids["gloveR"] = Solid.new("gloveR", meshes(v.skater_gloves[1]))
-	solids["blade"] = Solid.new("blade", [v.stick_blade])
-	solids["shaft"] = Solid.new("shaft", [v.stick_shaft])
+	if v.stick_blade.visible:
+		solids["blade"] = Solid.new("blade", [v.stick_blade])
+	if v.stick_shaft.visible:
+		solids["shaft"] = Solid.new("shaft", [v.stick_shaft])
 	solids["mask"] = Solid.new("mask", meshes(v.helmet))
 	return solids
 
@@ -181,7 +214,7 @@ func gear_solids(v) -> Dictionary:
 ## skates and under pants, each pad's halves share the hinge, the shaft joins the
 ## paddle and blade, and a pad's boot channel sits over its own skate.
 const ALLOWED := [
-	["blocker", "shaft"], ["blocker", "paddle"], ["gloveL", "shaft"], ["gloveR", "shaft"],
+	["blocker", "shaft"], ["blocker", "paddle"], ["blocker", "stick"], ["gloveL", "shaft"], ["gloveR", "shaft"],
 	["sockL", "skateL"], ["sockR", "skateR"], ["sockL", "pantsL"], ["sockR", "pantsR"], ["sockL", "pants"], ["sockR", "pants"],
 	["padL", "thighL"], ["padR", "thighR"], ["shaft", "paddle"], ["shaft", "blade"], ["paddle", "blade"],
 ]
@@ -192,13 +225,16 @@ func allowed(a: String, b: String) -> bool:
 			return true
 	return false
 
-## Boot channel of a goalie pad, in source pad space (pad bottom -0.365 m,
-## knee landing 0.035 m, back -0.04 m, face +0.06 m; drawn 1.25x long).
-const BOOT_CHANNEL_TOP := -0.10
-const BOOT_CHANNEL_FACE := 0.02
-## The toe cap (boot section below the boot break, 11.5 cm source / 14 cm drawn) wraps over the skate toe
-## through the full pad depth, as the toe bridge of a real pad does.
-const TOE_CAP_TOP := -0.25
+var _pad_src := {}
+## Solid of a pad mesh in its own (unscaled) space, cached per mesh.
+func pad_source(mi: MeshInstance3D) -> Solid:
+	if not _pad_src.has(mi.mesh):
+		var probe := MeshInstance3D.new()
+		probe.mesh = mi.mesh
+		root.add_child(probe)
+		_pad_src[mi.mesh] = Solid.new("pad_src", [probe])
+		probe.queue_free()
+	return _pad_src[mi.mesh]
 
 func check_pose(v, label: String) -> void:
 	var solids := gear_solids(v)
@@ -224,19 +260,24 @@ func check_pose(v, label: String) -> void:
 			if pd_name == "pad" + sk_name.substr(5) and v.goalie:
 				var vis: Node3D = v.pad_visuals[0 if sk_name.ends_with("L") else 1]
 				var to_pad: Transform3D = vis.global_transform.affine_inverse()
+				# Judge the skate against the pad in the pad mesh's own space: the
+				# moulded boot channel and toe pocket are empty there, and the
+				# parity rays stay axis-aligned with the channel walls.
+				var src: Solid = pad_source(vis.get_child(0))
 				var outside := 0
 				var worst := 0.0
 				for p in (solids[sk_name] as Solid).points:
-					if (solids[pd_name] as Solid).contains(p):
-						var d: float = (solids[pd_name] as Solid).depth(p)
-						if d <= TOLERANCE: continue
-						var q: Vector3 = to_pad * p
-						if q.y < BOOT_CHANNEL_TOP and q.z < BOOT_CHANNEL_FACE: continue
-						if q.y < TOE_CAP_TOP: continue
-						outside += 1
-						if report: print("    out ", q.snapped(Vector3.ONE*0.005), " d=", snappedf(d,0.001))
-						worst = maxf(worst, d)
-				check(outside == 0, "%s: %s clips into %s outside the boot channel by %.1f cm" % [label, sk_name, pd_name, worst * 100])
+					var q: Vector3 = to_pad * p
+					if not src.contains(q): continue
+					# Pad-space depth, scaled by the largest drawn-pad axis scale so it is
+					# never smaller than the real (world) penetration.
+					var sc: Vector3 = vis.global_transform.basis.get_scale()
+					var d: float = src.depth(q) * maxf(sc.x, maxf(sc.y, sc.z))
+					if d <= TOLERANCE: continue
+					outside += 1
+					worst = maxf(worst, d)
+					if report: print("    out ", q.snapped(Vector3.ONE*0.005), " d=", snappedf(d,0.001))
+				check(outside == 0, "%s: %s clips into %s by %.1f cm (pad space)" % [label, sk_name, pd_name, worst * 100])
 				continue
 			check(count == 0, "%s: %s clips into %s by %.1f cm" % [label, names[i], names[j], deepest * 100])
 
