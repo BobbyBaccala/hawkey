@@ -664,7 +664,7 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 	# [scale toward outline, depth] from pocket centre, over the rim, to the back.
 	var sections := [[0.02, -0.088], [0.14, -0.078], [0.28, -0.046], [0.40, -0.002], [0.52, 0.016],
 		[0.66, 0.026], [0.80, 0.033], [0.92, 0.042], [0.975, 0.049], [1.0, 0.042], [1.014, 0.024],
-		[0.995, -0.022], [0.95, -0.042], [0.82, -0.058], [0.58, -0.067], [0.30, -0.071], [0.02, -0.071]]
+		[0.995, -0.024], [0.95, -0.050], [0.82, -0.075], [0.58, -0.092], [0.30, -0.104], [0.02, -0.106]]
 	var rings := []
 	var ring_colors := []
 	for i in range(sections.size()):
@@ -676,18 +676,18 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 			var q := center + (p - center) * s
 			ring.append(Vector3(q.x * side, q.y, z))
 			var col := WHITE
-			if i <= 2:
-				# Pocket leather, darker with use.
-				col = Color("#262c34")
+			if i <= 3:
+				# Pocket leather: worn tan, darker in the well where the puck lands.
+				col = Color("#8c7458").lerp(Color("#c9b89c"), float(i) / 3.0)
 			elif i <= 7:
 				# Padded white palm face around the pocket.
 				col = WHITE
 			elif i <= 11:
-				col = kit
+				col = WHITE
+				if i == 9 and q.x * side > 0.02:
+					col = kit
 			else:
 				col = WHITE
-				if q.y < -0.06 and q.y > -0.11:
-					col = kit
 			cols.append(col)
 		rings.append(ring)
 		ring_colors.append(cols)
@@ -700,11 +700,23 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 		Vector3(0.055, 0.250, 0.044), Vector3(0.025, 0.244, 0.042)])
 	for k in range(finger.size()):
 		finger[k].x *= side
-	b.add_tube(finger, 0.036, kit.lightened(0.04), 14)
+	b.add_tube(finger, 0.036, WHITE, 14)
+	# Kit binding along the outside of the finger roll.
+	var binding := PackedVector3Array()
+	for k in range(finger.size()):
+		binding.append(finger[k] + Vector3(0.020 * side, 0.004, -0.018))
+	b.add_tube(binding, 0.013, kit, 10)
 	# Finger stitching ridges across the roll.
 	for t: float in [0.30, 0.48, 0.66]:
 		var c := finger[int(t * (finger.size() - 1))]
 		b.add_tube(PackedVector3Array([c + Vector3(-0.012 * side, 0, 0.026), c + Vector3(0.028 * side, -0.004, 0.012)]), 0.004, kit.darkened(0.25), 6)
+	# Finger stall breaks: kit lines across the back where the mitt folds.
+	for yb: float in [-0.02, 0.06, 0.14]:
+		var arc := PackedVector3Array()
+		for k in range(7):
+			var xb := lerpf(0.0, 0.15, k / 6.0)
+			arc.append(Vector3(xb * side, yb + 0.02 * sin(k / 6.0 * PI), -0.108 + 0.02 * pow(k / 6.0, 3)))
+		b.add_tube(arc, 0.006, kit, 6)
 	# Thumb: a slimmer roll up the inside, white with a kit tip.
 	var thumb := PackedVector3Array([
 		Vector3(-0.112, -0.09, 0.030), Vector3(-0.122, 0.0, 0.036), Vector3(-0.118, 0.09, 0.040),
@@ -723,19 +735,19 @@ static func catcher(side: float, kit: Color, accent: Color) -> ArrayMesh:
 		var r := Vector2((x - web_c.x) / 0.085, (y - web_c.y) / 0.105).length()
 		return 0.044 - 0.062 * maxf(0.0, 1.0 - r * r)
 	for k in range(7):
-		var x := lerpf(-0.066, 0.078, k / 6.0)
+		var x := lerpf(-0.072, 0.084, k / 6.0)
 		var pts := PackedVector3Array()
-		for j in range(7):
-			var y := lerpf(0.060, 0.246, j / 6.0)
-			pts.append(Vector3(x * side, y, web_z.call(x, y)))
+		for j in range(5):
+			var y := lerpf(0.118, 0.258, j / 4.0)
+			pts.append(Vector3(x * side, y, web_z.call(x, y) + 0.004))
 		b.add_tube(pts, 0.0042, WHITE, 5)
-	for k in range(8):
-		var y := lerpf(0.066, 0.240, k / 7.0)
-		var half := 0.085 * sqrt(maxf(0.05, 1.0 - pow((y - web_c.y) / 0.115, 2.0)))
+	for k in range(6):
+		var y := lerpf(0.126, 0.250, k / 5.0)
+		var half := 0.088 - 0.14 * maxf(0.0, 0.190 - y)
 		var pts := PackedVector3Array()
 		for j in range(7):
 			var x := web_c.x + lerpf(-half, half, j / 6.0)
-			pts.append(Vector3(x * side, y, web_z.call(x, y) + 0.002))
+			pts.append(Vector3(x * side, y, web_z.call(x, y) + 0.006))
 		b.add_tube(pts, 0.0042, WHITE, 5)
 	var spine := PackedVector3Array()
 	for j in range(6):
