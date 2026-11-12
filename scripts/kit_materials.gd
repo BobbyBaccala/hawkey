@@ -436,9 +436,11 @@ static func gloves() -> ShaderMaterial:
 
 static func goalie_pad(kit: Color, accent := Color(0.08,0.1,0.14)) -> ShaderMaterial:
 	return cached("goalie-pad|%s|%s" % [kit.to_html(), accent.to_html()], func() -> ShaderMaterial:
-		var m := _gear(leather_texture(), 45.0, 0.28, 0.67, 0.28)
+		# Bright white synthetic-leather face (pro pads read white under arena
+		# lights, the team colour is in the graphics), a little glossier.
+		var m := _gear(leather_texture(), 45.0, 0.22, 0.55, 0.36)
 		m.set_shader_parameter("use_vertex_color", false)
-		m.set_shader_parameter("base_color", Color("#e9edf0"))
+		m.set_shader_parameter("base_color", Color("#f7f9fb"))
 		m.set_shader_parameter("albedo_variation", 0.05)
 		m.set_shader_parameter("pad_graphics", true)
 		m.set_shader_parameter("pad_team", kit)

@@ -1268,6 +1268,48 @@ func set_save(kind: String, target: Vector2, delta: float) -> void:
 	for k in SAVE_KINDS:
 		save_weights[k] = move_toward(save_weights[k],1.0 if k==kind else 0.0,delta*(7.0 if k==kind else 3.0))
 
+## Goalie gloves are worn on the arm, so every save pose orients them from
+## the arm instead of a fixed rotation: the catcher pocket and the blocker
+## board face the shooter (their ready-stance facing); the catcher's fingers
+## stay upright (wrist cocked) until the glove reaches for a puck - a glove
+## save or a glove-side pad stack - and then follow the forearm out, tipped
+## up; the blocker turns about its face so the stick shaft stays through the
+## fist. Local axes and offsets are measured
+## from the ready stance, so the stance itself is unchanged.
+const CATCHER_FACE := Vector3(0.312,0.120,0.942)
+const BLOCKER_FACE := Vector3(-0.275,0.100,0.956)
+const CATCHER_WRIST_COCK := 0.5
+const CATCHER_FINGERS_LOCAL := Vector3(-0.1197,0.9928,0.0)
+const BLOCKER_SHAFT_LOCAL := Vector3(-0.2433,0.9699,-0.0127)
+const CATCHER_OFFSET_LOCAL := Vector3(-0.0140,0.0243,0.0366)
+const BLOCKER_OFFSET_LOCAL := Vector3(-0.0673,0.0577,0.0676)
+
+func place_goalie_glove(i: int, elbow: Vector3, wrist: Vector3) -> void:
+	var b: Basis
+	if i==0:
+		var face := CATCHER_FACE.normalized()
+		var follow := maxf(float(save_weights.glove),stack_weight() if stack_dir() > 0.0 else 0.0)
+		var fingers := Vector3.UP.lerp((wrist-elbow).normalized()+Vector3(0,CATCHER_WRIST_COCK,0),follow)
+		b = align_pair(Vector3.BACK,CATCHER_FINGERS_LOCAL,face,fingers)
+		goalie_gloves[i].position = wrist+b*CATCHER_OFFSET_LOCAL
+	else:
+		# The hand never lets go: the shaft through the fist is exact and the
+		# board turns as square to the shooter as that allows.
+		b = align_pair(BLOCKER_SHAFT_LOCAL,Vector3.BACK,(wrist-stick_heel_at(wrist)).normalized(),BLOCKER_FACE.normalized())
+		goalie_gloves[i].position = wrist+b*BLOCKER_OFFSET_LOCAL
+	goalie_gloves[i].basis = b
+
+## Rotation taking local_a onto world_a exactly and local_b as close to
+## world_b as that allows (a turn about world_a).
+static func align_pair(local_a: Vector3, local_b: Vector3, world_a: Vector3, world_b: Vector3) -> Basis:
+	return pair_frame(world_a,world_b)*pair_frame(local_a,local_b).transposed()
+
+static func pair_frame(a: Vector3, b: Vector3) -> Basis:
+	var e1 := a.normalized()
+	var e2 := b-e1*e1.dot(b)
+	e2 = e2.normalized() if e2.length_squared() > 1e-8 else e1.cross(Vector3.RIGHT).normalized()
+	return Basis(e1,e2,e1.cross(e2))
+
 ## Pad-stack blend (eased) and its side: +1 toward the glove side (rig +x).
 func stack_weight() -> float:
 	return smoothstep(0.0,1.0,minf(float(save_weights.stack_left)+float(save_weights.stack_right),1.0))
@@ -1994,14 +2036,6 @@ func pose(speed: float, turn: float) -> void:
 				wrist = wrist.lerp(reach(shoulder,aim),catch_w)
 			if i==0 and stack_weight() > 0.0:
 				wrist = wrist.lerp(reach(shoulder,stack_hand(1.0)),stack_weight())
-			if i==0:
-				goalie_gloves[i].position=wrist+Vector3(0.0,0.03,0.035)
-				# Reaching, the pocket squares up to the shooter (less inward yaw)
-				# and the fingers tip out along the arm.
-				goalie_gloves[i].rotation=Vector3(-0.12-0.35*catch_w*clampf(save_target.y-0.9,0.0,0.7),0.32-0.30*catch_w,-0.12-0.3*catch_w)
-			else:
-				goalie_gloves[i].position=wrist+Vector3(-0.085,0.06,0.04)
-				goalie_gloves[i].rotation=Vector3(-0.10,-0.28,0.06)
 		# Elbows: the top-hand elbow points out and back a little; the bottom
 		# arm hangs nearly straight, elbow tucked in toward the body.
 		var pole := Vector3(side*0.6,-0.8,-0.1) if goalie else (Vector3(side*0.45,-0.25,-1.0) if i==0 else Vector3(side*0.5,-0.2,-0.8))
@@ -2011,6 +2045,7 @@ func pose(speed: float, turn: float) -> void:
 		# Bottom hand and glove stay on the outside of the jersey.
 		if not goalie and not referee and captured_elbow == Vector3.ZERO and i==0: wrist = clear_hand(wrist,0.075)
 		var elbow := clear_elbow(shoulder,wrist,pole)
+		if goalie: place_goalie_glove(i,elbow,wrist)
 		posed_wrists[i]=wrist
 		posed_elbows[i]=elbow
 		if not goalie: fit_glove(i,wrist,elbow,grip_point if not referee and captured_elbow==Vector3.ZERO else Vector3.INF)
@@ -2476,19 +2511,23 @@ func bottom_grip(shoulder: Vector3) -> Vector3:
 		if shoulder.distance_to(p)<=BOTTOM_REACH: best=p
 	return best
 
-func update_stick() -> void:
-	var top:=stick_grip()
-	# The blade lies flat on the ice in the shaft's plane: it runs on from the
-	# heel in the direction the shaft leans (away from the hands), as on a
-	# real stick, instead of folding back under the shaft. blade_position (the
-	# puck pocket, used by gameplay) stays mid-blade.
+## Heel of the stick blade for a stick held at `top` (rig space): the blade
+## lies flat on the ice in the shaft's plane, running on from the heel in the
+## direction the shaft leans (away from the hands), as on a real stick.
+## blade_position (the puck pocket, used by gameplay) stays mid-blade. A
+## goalie stick is rigid: a raised blocker lifts it instead of stretching it.
+func stick_heel_at(top: Vector3) -> Vector3:
 	var toe_dir:=stick_toe_dir(top,blade_position)
 	toe_dir=stick_toe_dir(top,blade_position-toe_dir*stick_blade_length*0.48)
 	var bottom:=blade_position-toe_dir*stick_blade_length*0.48
-	if goalie:
-		# The stick is rigid: a blocker punched up lifts the paddle off the ice
-		# instead of stretching the shaft.
-		bottom = top+(bottom-top).limit_length(GOALIE_STICK_REACH)
+	if goalie: bottom = top+(bottom-top).limit_length(GOALIE_STICK_REACH)
+	return bottom
+
+func update_stick() -> void:
+	var top:=stick_grip()
+	var bottom:=stick_heel_at(top)
+	var toe_dir:=stick_toe_dir(top,blade_position)
+	toe_dir=stick_toe_dir(top,blade_position-toe_dir*stick_blade_length*0.48)
 	if raised_stick>0.01:
 		# Celebration: the stick goes up with the top hand, blade high.
 		var hand:Vector3=posed_wrists[1]

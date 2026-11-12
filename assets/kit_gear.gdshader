@@ -64,17 +64,21 @@ void fragment() {
 		float aa = max(fwidth(pad_rest.x), fwidth(pad_rest.y)) + 0.0005;
 		// Pad face graphics (pad space: knee y = 0.035, ankle y = -0.395, break
 		// above the knee at y = 0.15): outer rolls in team colour with accent
-		// piping, a knee block band, a chevron over the shin, a boot-break band
-		// and a team thigh-rise panel.
+		// piping, thin accent lines at the knee and boot breaks, a chevron over
+		// the shin, and team bands at the break and across the top of the rise.
 		float ax = abs(pad_rest.x);
 		float rail = smoothstep(0.090 - aa, 0.090 + aa, ax);
 		float pipe = smoothstep(0.078 - aa, 0.078 + aa, ax) * (1.0 - rail);
 		float chev_y = pad_rest.y + ax * 0.9;
 		float chev = smoothstep(-0.165 - aa, -0.165 + aa, chev_y) - smoothstep(-0.105 - aa, -0.105 + aa, chev_y);
 		float chev2 = smoothstep(-0.215 - aa, -0.215 + aa, chev_y) - smoothstep(-0.190 - aa, -0.190 + aa, chev_y);
-		float knee = smoothstep(0.005 - aa, 0.005 + aa, pad_rest.y) - smoothstep(0.065 - aa, 0.065 + aa, pad_rest.y);
-		float boot = smoothstep(-0.335 - aa, -0.335 + aa, pad_rest.y) - smoothstep(-0.300 - aa, -0.300 + aa, pad_rest.y);
-		float thigh = smoothstep(0.175 - aa, 0.175 + aa, pad_rest.y) * (1.0 - smoothstep(0.060 - aa, 0.060 + aa, ax));
+		// Accent bands are thin piping lines (white-dominant pad, as on pro
+		// pads), not wide dark blocks.
+		float knee = smoothstep(0.022 - aa, 0.022 + aa, pad_rest.y) - smoothstep(0.040 - aa, 0.040 + aa, pad_rest.y);
+		float boot = smoothstep(-0.326 - aa, -0.326 + aa, pad_rest.y) - smoothstep(-0.312 - aa, -0.312 + aa, pad_rest.y);
+		// Thigh rise: white, with a team-colour band across its top edge and a
+		// thin one at the break, instead of a solid team block.
+		float thigh = (smoothstep(0.300 - aa, 0.300 + aa, pad_rest.y) + smoothstep(0.172 - aa, 0.172 + aa, pad_rest.y) - smoothstep(0.188 - aa, 0.188 + aa, pad_rest.y)) * (1.0 - smoothstep(0.090 - aa, 0.090 + aa, ax));
 		float front = smoothstep(-0.005, 0.018, pad_rest.z);
 		float inner = 1.0 - rail;
 		col = mix(col, pad_team.rgb, max(max(rail * 0.9, chev * inner), thigh) * front);

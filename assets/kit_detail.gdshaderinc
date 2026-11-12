@@ -57,7 +57,9 @@ vec4 kit_triplanar(sampler2D tex, vec3 p, vec3 n, float strength) {
 // the inside of the legs) fall off. `wn` is the world-space normal. Returns a
 // multiplier for albedo/AO: < 1 facing down, a touch > 1 facing up.
 float kit_overhead(vec3 wn) {
-	float down = 1.0 - smoothstep(-0.75, 0.35, wn.y);
+	// Only real undersides darken: a surface leaning forward (a standing pad
+	// face tipped with the shin, a crouched chest) still faces the lights.
+	float down = 1.0 - smoothstep(-0.85, -0.30, wn.y);
 	float up = smoothstep(0.45, 0.95, wn.y);
 	return 1.0 - 0.30 * down + 0.10 * up;
 }

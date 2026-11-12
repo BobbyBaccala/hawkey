@@ -80,6 +80,7 @@ Rules for every run:
 - [x] Goalie butterfly wall + committed save poses (owner 2026-11-12, EA NHL / pro reference): thigh rises stand over the knee stacks face-on and meet at the five-hole as one wall; glove/blocker saves tip the shoulders toward the reach with the catcher pocket square to the shooter; pad extensions drop the chest out over the lead pad.
 - [x] Goalie saves (slice 2a): full splits as a separate desperation save (splits_left/right) for low shots past the pad-extension reach.
 - [x] Goalie saves (slice 2b): pad stack (stacked pads, on the side) when sliding toward a low wide shot (stack_left/right).
+- [x] Goalie gear in saves (owner 2026-11-12: gear must look believable): gloves worn on the arms in every save pose (catcher upright until it reaches, then along the forearm; blocker holds the stick through the fist), white-dominant pad graphics, standing pad faces no longer darkened as undersides.
 - [ ] Goalie saves (slice 2c): poke check on close carriers, and a post-save freeze/rebound-control beat.
 - [ ] Shooting animations: wrist-shot and slapshot wind-up/follow-through driven by charge; stick flex look.
 - [ ] Crossovers and tight turns: leg crossover cycle when turning at speed; lean into turns.
