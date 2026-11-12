@@ -74,6 +74,9 @@ Goalies
   ice-seal lift along its thickness; ankle strap raised to y -0.25.
 - Goalie pants: kit colour with an accent stripe and white piping
   (pants_leg(..., piped)); reference photos said bright team colour.
+- Eyes on the puck: goalie_look() turns/tips the head (and mask collider)
+  toward save_target, weighted by the save springs, LOOK_* neck limits; on a
+  glove-side pad save the catcher goes out over the lead pad.
 - Knee cradle, calf wrap and straps (`Gear.pad_rear`, `PadRear` nodes).
 - Skate stays on the ankle; in the butterfly the foot keeps ~105 deg to the
   shin with the toe in the pad's boot channel.
@@ -89,7 +92,7 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 47 suites; last full run 47/47 at 5992020 (2026-11-12).
+Tests: 47 suites; last full run 47/47 at 6ffbc8c (2026-11-12).
 
 ## Open defects / next steps (goalie first)
 0. Owner 2026-11-12: gear believability and save animations are the top
