@@ -52,6 +52,15 @@ Goalies
   passes visual.lateral + visual.save_kind). Legs-together pose in rig space,
   then the whole rig rolls 1.48 rad, slides 0.95 m to the post, lifts 0.31 m:
   ~64 cm pad wall from the ice. stack_roll is removed from `lateral`.
+- Gloves are worn on the arms (place_goalie_glove(), align_pair(), consts
+  CATCHER_*/BLOCKER_*): pocket/board face the shooter, catcher upright until
+  it reaches (glove save, glove-side stack) then along the forearm, blocker
+  fist exactly on the drawn shaft (stick_heel_at() shared with update_stick).
+  Calibrated from the ready stance (unchanged).
+- Pads: brighter white (#f7f9fb), white-dominant graphics (thin knee/boot
+  accent lines, team bands at the break and top of the rise). kit_overhead()
+  now darkens only real undersides (normal > ~17 deg down) - it was greying
+  every standing pad face (shared with the cloth shader).
 - Knee cradle, calf wrap and straps (`Gear.pad_rear`, `PadRear` nodes).
 - Skate stays on the ankle; in the butterfly the foot keeps ~105 deg to the
   shin with the toe in the pad's boot channel.
@@ -67,9 +76,14 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 46 suites; last full run 46/46 at 6e3c289 (2026-11-12).
+Tests: 47 suites; last full run 47/47 at 93747c3 (2026-11-12).
 
 ## Open defects / next steps (goalie first)
+0. Owner 2026-11-12: gear believability is the top priority. Next gear
+   items: blocker board back is flat dark (gear_builder.gd blocker(): back
+   colour DARK.lerp(WHITE,0.15)) - make it white/kit with a tan palm glove
+   gripping the stick; catcher back plain; standing pads still a little grey
+   (vertical faces get little overhead light).
 1. Goalie saves slice 2c: poke check on close carriers, post-save
    freeze/rebound control.
    Polish: pad stack shows a dark seam between the stacked pads (rounded
@@ -108,6 +122,11 @@ Tests: 46 suites; last full run 46/46 at 6e3c289 (2026-11-12).
 - Full suite in the cloud: `JOBS=3 tools/run_tests.sh` took ~20 min (4 cores).
 - capture_saves.gd --row=2 picks the save with choose_save() ("auto"), so the
   same row gives a fair before/after when save selection changes.
+- Never run a test against `git stash`-ed old code when the test uses new
+  constants: the script error makes headless Godot hang until the timeout,
+  with your changes still stashed. Check old behaviour with a probe instead.
+- Grey-looking gear: compare against a plain StandardMaterial3D on the same
+  mesh and bisect the gear shader (build/ test copy) before changing art.
 - Whole-body save poses (pad stack): pose upright in rig space and roll the
   rig - the save colliders follow because get_goalie_gear() includes
   rig.transform. Anything measured in the rig frame (lateral) must take the
