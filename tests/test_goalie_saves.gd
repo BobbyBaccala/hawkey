@@ -160,6 +160,11 @@ func run() -> void:
 		var p_low: Vector3 = v.rig.transform * v.pads[1 if lead > 0 else 0].position
 		var p_top: Vector3 = v.rig.transform * v.pads[0 if lead > 0 else 1].position
 		check(p_top.y - p_low.y > 0.22, "%s: lead-side leg on top (%.2f m)" % [kind, p_top.y - p_low.y])
+		# The top hand (catcher on a glove-side stack, blocker on a blocker-side
+		# one) reaches up over the stacked pads.
+		var top_glove: Node3D = v.goalie_gloves[0 if lead > 0 else 1]
+		var hand_y: float = (v.rig.transform * top_glove.position).y
+		check(hand_y > high, "%s: top hand reaches over the stack (%.2f m vs pads %.2f m)" % [kind, hand_y, high])
 		var torso_low: float = (v.rig.transform * v.torso_pose.origin).y
 		check(torso_low < 0.45, "%s: body down on the ice (chest %.2f m)" % [kind, torso_low])
 		check(v.stick_shaft.scale.y < v.GOALIE_STICK_REACH + 0.5, "%s: stick never stretches" % kind)

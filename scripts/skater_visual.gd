@@ -1394,6 +1394,10 @@ func stack_dir() -> float:
 ## stick down on the ice. hand: +1 catcher, -1 blocker.
 func stack_hand(hand: float) -> Vector3:
 	if hand > 0.0 and stack_dir() > 0.0: return Vector3(0.62,1.30,0.30)
+	# Blocker-side stack: the blocker (now the top hand) reaches up over the
+	# stacked pads too, the board facing the shooter and the stick held up
+	# along the top of the stack.
+	if hand < 0.0 and stack_dir() < 0.0: return Vector3(-0.60,1.28,0.36)
 	# Front hands spread along the body: catcher toward the head, blocker
 	# toward the feet, so they never meet.
 	return Vector3(-stack_dir()*0.28,1.30,0.40) if hand > 0.0 else Vector3(-stack_dir()*0.08,0.95,0.58)
