@@ -1,0 +1,98 @@
+extends SceneTree
+## Goalie gear graphics are painted textures (crisp edges), not colours stepped
+## across triangles: each piece carries UVs and a texture whose face holds the
+## kit colour and whose reserved strip is white for untextured geometry.
+const Gear = preload("res://scripts/gear_builder.gd")
+var failures := 0
+
+func check(ok: bool, message: String) -> void:
+	if not ok:
+		push_error(message)
+		failures += 1
+
+func _initialize() -> void:
+	call_deferred("run")
+
+func near(a: Color, b: Color) -> bool:
+	return absf(a.r - b.r) < 0.08 and absf(a.g - b.g) < 0.08 and absf(a.b - b.b) < 0.08
+
+func run() -> void:
+	var kit := Color("#b3162c")
+	var accent := Color("#1b2a4a")
+	var pieces := {
+		"pad": Gear.goalie_pad(1, kit, accent),
+		"blocker": Gear.blocker(-1, kit, accent),
+		"catcher": Gear.catcher(1, kit, accent),
+	}
+	for name in pieces:
+		var mesh: ArrayMesh = pieces[name]
+		var arrays := mesh.surface_get_arrays(0)
+		var uv: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
+		check(uv.size() == (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size(), "%s has a UV per vertex" % name)
+		var material := mesh.surface_get_material(0) as StandardMaterial3D
+		check(material != null and material.albedo_texture != null, "%s carries a painted graphic" % name)
+		if material == null or material.albedo_texture == null:
+			continue
+		var image: Image = material.albedo_texture.get_image()
+		check(image.has_mipmaps(), "%s graphic is mipmapped (no shimmer at distance)" % name)
+		var blank := image.get_pixelv(Vector2i(Gear.BLANK_UV * Vector2(image.get_size())))
+		check(near(blank, Color.WHITE), "%s blank strip is white (%s)" % [name, blank])
+		var kit_pixels := 0
+		var white_pixels := 0
+		for y in range(0, int(image.get_height() * Gear.FACE_V), 4):
+			for x in range(0, image.get_width(), 4):
+				var c := image.get_pixel(x, y)
+				if near(c, kit): kit_pixels += 1
+				elif near(c, Gear.WHITE): white_pixels += 1
+		check(kit_pixels > 50 and white_pixels > 50, "%s face mixes kit panels and white (%d kit, %d white samples)" % [name, kit_pixels, white_pixels])
+		# Textured face vertices exist (not every vertex on the blank strip).
+		var face := 0
+		for q in uv:
+			if q != Gear.BLANK_UV: face += 1
+		# The catcher paints only its cuff/cheater panel; the pocket is leather.
+		check(face > (40 if name == "catcher" else 100), "%s maps its face into the graphic (%d vertices)" % [name, face])
+	# Graphics are cached per colourway, so a second goalie reuses the texture.
+	var again: ArrayMesh = Gear.goalie_pad(-1, kit, accent)
+	check((again.surface_get_material(0) as StandardMaterial3D).albedo_texture == (pieces.pad.surface_get_material(0) as StandardMaterial3D).albedo_texture, "Pad graphic is shared between pads of one colourway")
+	# Glove backs (what the goalie and the rear cameras see): the blocker
+	# board back is off-white synthetic, not a dark slab, and its fist is palm
+	# leather; the catcher cuff is a sleeve joined to the mitt, not a panel
+	# hanging below it.
+	var blk: ArrayMesh = pieces.blocker
+	var arrays := blk.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var cols: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
+	var back_dark := 0
+	var back_light := 0
+	var palm := 0
+	for i in range(verts.size()):
+		var v: Vector3 = verts[i]
+		# The board back above the wrist strap.
+		if v.y > -0.09 and v.y < 0.15 and v.z < -0.02 and v.z > -0.04 and absf(v.x) < 0.09:
+			if cols[i].get_luminance() < 0.2: back_dark += 1
+			elif cols[i].get_luminance() > 0.7: back_light += 1
+		if near(cols[i], Gear.PALM) or near(cols[i], Gear.PALM_DARK): palm += 1
+	check(back_light > 20 and back_dark < back_light / 4, "Blocker board back is light, not a dark slab (light %d, dark %d)" % [back_light, back_dark])
+	check(palm > 50, "Blocker fist is palm leather (%d vertices)" % palm)
+	var cat: ArrayMesh = pieces.catcher
+	var cverts: PackedVector3Array = cat.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var lowest := INF
+	var gap_free := true
+	# Every 2 cm slice from the mitt base down to the cuff end holds geometry.
+	for k in range(9):
+		var y0 := -0.14 - k * 0.02
+		var found := false
+		for v in cverts:
+			lowest = minf(lowest, v.y)
+			if v.y <= y0 and v.y > y0 - 0.02: found = true
+		gap_free = gap_free and found
+	check(gap_free, "Catcher cuff runs on from the mitt without a gap")
+	# Catcher back carries a team-colour backhand panel (not plain white).
+	var ccols: PackedColorArray = cat.surface_get_arrays(0)[Mesh.ARRAY_COLOR]
+	var back_kit := 0
+	for i in range(cverts.size()):
+		if cverts[i].z < -0.06 and near(ccols[i], kit): back_kit += 1
+	check(back_kit > 60, "Catcher back has a team-colour panel (%d vertices)" % back_kit)
+	check(lowest < -0.30, "Catcher cuff covers the wrist (down to %.2f m)" % lowest)
+	print("Gear graphic failures: ", failures)
+	quit(failures)

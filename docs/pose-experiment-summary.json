@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "sample_fps": 15,
+  "frames_sampled": 383,
+  "accepted_frames": 0,
+  "coverage": 0.0,
+  "passed_quality_gate": false,
+  "status": "reference only: manual foot-contact, occlusion and retarget review required",
+  "source": "https://commons.wikimedia.org/wiki/File:Brooks_Orpik_skating_on_Wednesday_after_Knee_Injury.webm",
+  "shipped_motion": false
+}

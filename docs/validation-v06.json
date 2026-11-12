@@ -1,0 +1,47 @@
+{
+  "engine": "Godot 4.6 Linux",
+  "suites": {
+    "match": {
+      "passed": true,
+      "output": "Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org\n\nMatch integration failures: 0"
+    },
+    "animation": {
+      "passed": true,
+      "output": "Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org\n\nAnimation integration failures: 0"
+    },
+    "match_loop": {
+      "passed": true,
+      "output": "Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org\n\n20-second match-loop failures: 0 \u2022 score [0, 0] \u2022 clock 18:44"
+    },
+    "puck_flight": {
+      "passed": true,
+      "output": "Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org\n\nPuck flight failures: 0"
+    },
+    "controller": {
+      "passed": true,
+      "output": "Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org\n\nController failures: 0 (synthetic events; hardware untested)"
+    },
+    "match_state": {
+      "passed": true,
+      "output": "Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org\n\nMatch-state failures: 0"
+    },
+    "simulation": {
+      "passed": true,
+      "output": "Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org\n\nPASS: rating acceleration, deceleration, front-mouth goal, back entry, wide and high misses"
+    },
+    "controls": {
+      "passed": true,
+      "output": "Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org\n\nControl integration failures: 0"
+    },
+    "lab": {
+      "passed": true,
+      "output": "Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org\n\nIntegration failures: 0"
+    },
+    "goalie_gear": {
+      "passed": true,
+      "output": "Godot Engine v4.6.stable.official.89cea1439 - https://godotengine.org\n\nGoalie gear failures: 0"
+    }
+  },
+  "physical_controller_tested": false,
+  "physics_calibrated_to_hockey_measurements": false
+}
