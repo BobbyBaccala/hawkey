@@ -65,6 +65,9 @@ Goalies
   PALM_DARK), kit strap, rounded cuff (gear_builder.gd add_cuff()); catcher
   cuff is a sleeve lofted from inside the mitt base with the cheater panel on
   its front.
+- Save motion: set_save() steps each weight as a critically damped spring
+  (SAVE_SNAP 24 in, SAVE_RECOVER 10 out): snap + ease, half-way timing as
+  the old linear ramps. tools/capture_save_motion.gd measures it.
 - Knee cradle, calf wrap and straps (`Gear.pad_rear`, `PadRear` nodes).
 - Skate stays on the ankle; in the butterfly the foot keeps ~105 deg to the
   shin with the toe in the pad's boot channel.
@@ -80,12 +83,12 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 47 suites; last full run 47/47 at 79f3564 (2026-11-12).
+Tests: 47 suites; last full run 47/47 at ed98f08 (2026-11-12).
 
 ## Open defects / next steps (goalie first)
 0. Owner 2026-11-12: gear believability and save animations are the top
-   priority. Next: save motion (saves blend linearly in ~0.15 s - no
-   anticipation/explosion/settle); catcher back still plain; standing pads
+   priority. Next: butterfly drop/rise is still linear (match.gd move_toward
+   6/s down, 2/s up) - smooth it in the visual; catcher back still plain; standing pads
    still a little grey (vertical faces get little overhead light).
 1. Goalie saves slice 2c: poke check on close carriers, post-save
    freeze/rebound control.
