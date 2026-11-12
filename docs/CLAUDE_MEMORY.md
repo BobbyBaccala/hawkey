@@ -116,9 +116,13 @@ Tests: 47 suites; last full run 47/47 at d0d8ff6 (2026-11-12).
    freeze/rebound control.
    Polish: stack/splits have no dive motion (the save weight
    blends the pose in ~0.15 s - slowing it would weaken save coverage).
-2. Butterfly polish: 6 mm shaded seam between the two rises; knee-stack ends
-   of the lower pads are ~14 cm apart under the rises; rise top still moves
-   9.0 cm/frame mid-drop (inherent to the 6/s drop; knee 5.9).
+2. Butterfly five-hole at ice level: the lower pads' knee ends are 13.6 cm
+   apart under the rises (knees at x +-0.17). Closing it needs the knees
+   together (BFLY knee x ~0.115 gives 1.6 cm) - but that moves the pad save
+   colliders (test_goalie_gear: they overlap) - owner decision (gameplay),
+   or decouple drawn pads from pads[i]. Sliding only the drawn pad does not
+   work: in the butterfly its across axis is vertical. Also: 6 mm seam
+   between the rises.
 3. Skaters: boxy shoulders still, single face mesh (add variants), number font
    is block (backlog "Blender kit, pass 2").
 
