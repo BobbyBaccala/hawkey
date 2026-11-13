@@ -90,7 +90,8 @@ Goalies
   rolls (measured at the face), as on real stacks - closing it needs the
   pads to overlap; legs are already edge to edge (bounding boxes touch).
 - Mask carries a throat guard (Gear.goalie_dangler(), cords) under the chin;
-  capture shots mask / mask-side. Mask paint is still plain kit colour.
+  capture shots mask / mask-side. Mask paint (Kit.goalie_mask, kit_gear
+  mask_paint): accent dome stripes + white pins, accent chin, own design.
 - Pad stack hands: the top hand reaches over the stack on both sides
   (catcher on a glove-side stack, blocker + stick on a blocker-side one).
 - Knee cradle, calf wrap and straps (`Gear.pad_rear`, `PadRear` nodes).
@@ -108,7 +109,7 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 47 suites; last full run 47/47 at 7a9252a (2026-11-13).
+Tests: 47 suites; last full run 47/47 at 349f5d4 (2026-11-13).
 
 ## Open defects / next steps (goalie first)
 0. Owner 2026-11-12: gear believability and save animations are the top
