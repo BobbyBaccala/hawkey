@@ -22,6 +22,10 @@ uniform float clearcoat = 0.0;
 uniform bool metal_from_grey = false;
 // Helmet: moulded panel grooves on top and a rubber edge trim at the rim.
 uniform bool helmet_panels = false;
+// Goalie mask paint (own design, no logos): accent racing stripes over the
+// dome edged with white pinstripes, and an accent chin with a white edge.
+uniform bool mask_paint = false;
+uniform vec4 mask_accent : source_color = vec4(0.1, 0.16, 0.29, 1.0);
 uniform bool pad_graphics = false;
 uniform vec4 pad_team : source_color = vec4(0.08, 0.3, 0.4, 1.0);
 uniform vec4 pad_accent : source_color = vec4(0.08, 0.1, 0.14, 1.0);
@@ -117,6 +121,19 @@ void fragment() {
 		strength *= (1.0 - metal) * (1.0 - holder * 0.8);
 		rough = mix(rough, 0.3, holder);
 		coat *= 1.0 - holder;
+	}
+	if (mask_paint) {
+		vec3 q = obj_pos;
+		float aq = max(fwidth(q.x), fwidth(q.y)) + 0.0004;
+		float ax = abs(q.x);
+		float dome = smoothstep(-0.03, 0.0, q.y);
+		float stripe = (smoothstep(0.033 - aq, 0.033 + aq, ax) - smoothstep(0.057 - aq, 0.057 + aq, ax)) * dome;
+		float pin = ((smoothstep(0.028 - aq, 0.028 + aq, ax) - smoothstep(0.033 - aq, 0.033 + aq, ax))
+			+ (smoothstep(0.057 - aq, 0.057 + aq, ax) - smoothstep(0.062 - aq, 0.062 + aq, ax))) * dome;
+		float chin = (1.0 - smoothstep(-0.105 - aq, -0.105 + aq, q.y)) * smoothstep(0.0, 0.03, q.z);
+		float chin_edge = (smoothstep(-0.111 - aq, -0.111 + aq, q.y) - smoothstep(-0.105 - aq, -0.105 + aq, q.y)) * smoothstep(0.0, 0.03, q.z);
+		col = mix(col, mask_accent.rgb, max(stripe, chin));
+		col = mix(col, vec3(0.92), max(pin, chin_edge));
 	}
 	if (helmet_panels) {
 		vec3 p = obj_pos;

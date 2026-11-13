@@ -77,6 +77,15 @@ func run() -> void:
 	# The stick is the de-branded downloaded model, drawn instead of the proxies.
 	check(g.goalie_stick_mesh != null and g.goalie_stick_mesh.visible, "goalie draws the stick model")
 	check(not g.goalie_paddle.visible and not g.stick_shaft.visible, "box stick proxies hidden")
+	# Mask paint: the shell carries the accent stripes/chin scheme.
+	var shell_mat: ShaderMaterial = null
+	for n in g.helmet.get_children():
+		if n is MeshInstance3D and n.material_override is ShaderMaterial and (n.material_override as ShaderMaterial).get_shader_parameter("mask_paint") == true:
+			shell_mat = n.material_override
+	check(shell_mat != null, "goalie mask shell is painted")
+	if shell_mat != null:
+		check((shell_mat.get_shader_parameter("mask_accent") as Color).is_equal_approx(g.accent), "mask paint uses the kit accent")
+		check((shell_mat.get_shader_parameter("base_color") as Color).is_equal_approx(g.kit), "mask base is the kit colour")
 	# Throat guard hangs from the mask chin and covers the throat.
 	var dangler: MeshInstance3D = g.helmet.get_node_or_null("Dangler")
 	check(dangler != null, "goalie mask has a throat guard (dangler)")

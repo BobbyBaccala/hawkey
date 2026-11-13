@@ -468,6 +468,15 @@ static func helmet_shell(color: Color) -> ShaderMaterial:
 		m.set_shader_parameter("albedo_variation", 0.03)
 		return m)
 
+## Goalie mask: the painted helmet shell plus the mask paint scheme
+## (accent dome stripes with white pinstripes, accent chin).
+static func goalie_mask(color: Color, accent: Color) -> ShaderMaterial:
+	return cached("goalie_mask|%s|%s" % [color.to_html(), accent.to_html()], func() -> ShaderMaterial:
+		var m := helmet_shell(color).duplicate() as ShaderMaterial
+		m.set_shader_parameter("mask_paint", true)
+		m.set_shader_parameter("mask_accent", accent)
+		return m)
+
 ## Hard plastic / rubber parts (vents, clips) with a light texture.
 static func plastic(color: Color, roughness := 0.45) -> ShaderMaterial:
 	return cached("plastic|%s|%s" % [color.to_html(), roughness], func() -> ShaderMaterial:
