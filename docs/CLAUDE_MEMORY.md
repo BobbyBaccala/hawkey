@@ -36,7 +36,7 @@ Goalies
   in every pose (same frame, narrower), never folds. Butterfly knees at
   +-0.34 (BFLY_KNEE_X) so the rigid pads meet at the five-hole as one wall
   along the ice; pad save colliders moved with them. Knees down, the foot
-  turns toe-back behind the pad; the downloaded pad's toe window is closed
+  turns toe-back behind the pad (pad stacks count as kneeling); the downloaded pad's toe window is closed
   (Gear.pad_toe_cover()); the ankle strap loops round the kneeling boot.
 - Save body language (SAVE_LEAN_*, PAD_SAVE_*): torso tips/turns toward a
   glove or blocker reach (catcher pocket square to the shooter); pad
@@ -106,7 +106,7 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 47 suites; last full run 47/47 at 8411897 (2026-11-12).
+Tests: 47 suites; last full run 47/47 at eaa5ec3 (2026-11-13).
 
 ## Open defects / next steps (goalie first)
 0. Owner 2026-11-12: gear believability and save animations are the top
