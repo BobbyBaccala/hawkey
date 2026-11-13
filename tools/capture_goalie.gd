@@ -37,6 +37,8 @@ func run()->void:
 		["legs-bfly","butterfly",Vector2(0.1,0.15),Vector3(1.3,0.8,1.6),Vector3(0,0.3,0),44.0],
 		["catch","glove",Vector2(0.75,1.35),Vector3(-1.2,1.3,2.3),Vector3(-0.2,0.95,0),46.0],
 		["mitt","",Vector2(0,0.8),Vector3(0.75,1.05,1.3),Vector3(0.48,1.0,0.25),30.0],
+		["mask","",Vector2(0,0.8),Vector3(0.0,1.15,1.6),Vector3(0,1.08,0),24.0],
+		["mask-side","",Vector2(0,0.8),Vector3(-1.2,1.1,1.0),Vector3(0,1.08,0),24.0],
 		["blocker-front","",Vector2(0,0.8),Vector3(-0.85,0.95,1.35),Vector3(-0.45,0.8,0.25),32.0],
 		["blocker-in","",Vector2(0,0.8),Vector3(-0.15,1.0,-0.9),Vector3(-0.42,0.85,0.2),34.0],
 		["rear-close","",Vector2(0,0.8),Vector3(0.0,1.0,-1.5),Vector3(0,0.8,0),46.0],

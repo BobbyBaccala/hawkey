@@ -77,6 +77,12 @@ func run() -> void:
 	# The stick is the de-branded downloaded model, drawn instead of the proxies.
 	check(g.goalie_stick_mesh != null and g.goalie_stick_mesh.visible, "goalie draws the stick model")
 	check(not g.goalie_paddle.visible and not g.stick_shaft.visible, "box stick proxies hidden")
+	# Throat guard hangs from the mask chin and covers the throat.
+	var dangler: MeshInstance3D = g.helmet.get_node_or_null("Dangler")
+	check(dangler != null, "goalie mask has a throat guard (dangler)")
+	if dangler != null:
+		var box: AABB = dangler.mesh.get_aabb()
+		check(box.position.y < -0.29 and box.end.y > -0.22 and box.size.x > 0.08, "dangler hangs below the chin over the throat (%s)" % box)
 	# The paddle carries the team colours (painted over the de-branded bake).
 	var stick_mat := g.goalie_stick_mesh.material_override as ShaderMaterial
 	check(stick_mat != null and (stick_mat.get_shader_parameter("kit") as Color).is_equal_approx(g.kit), "goalie stick paddle carries the kit colour")

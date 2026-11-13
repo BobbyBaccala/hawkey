@@ -621,6 +621,44 @@ static func _paint_blocker(kit: Color, accent: Color) -> Texture2D:
 	g.rect(0.93, 0, 1, 1, kit)
 	return g.texture()
 
+## Goalie throat guard ("dangler") in helmet space (mask chin at about
+## y -0.21, z 0.16): a gently curved plate hanging just below and behind the
+## chin, tilted a little forward at the bottom, over the throat.
+static func goalie_dangler() -> ArrayMesh:
+	var b := MeshBuilder.new()
+	var rings := []
+	var cols := []
+	var steps := 8
+	for k in range(steps + 1):
+		var t := float(k) / steps
+		var y := lerpf(-0.212, -0.305, t)
+		var z := lerpf(0.138, 0.150, t)
+		var w := lerpf(0.090, 0.104, t) * (1.0 - 0.18 * smoothstep(0.85, 1.0, t))
+		var ring := PackedVector3Array()
+		var cc := PackedColorArray()
+		for j in range(13):
+			var u := lerpf(-1.0, 1.0, j / 12.0)
+			# Curved round the throat: the sides sweep back.
+			var curve := -0.022 * u * u
+			ring.append(Vector3(u * w * 0.5, y, z + curve + 0.006))
+			cc.append(WHITE)
+		for j in range(12, -1, -1):
+			var u := lerpf(-1.0, 1.0, j / 12.0)
+			var curve := -0.022 * u * u
+			ring.append(Vector3(u * w * 0.5, y, z + curve - 0.006))
+			cc.append(WHITE)
+		rings.append(ring)
+		cols.append(cc)
+	b.add_loft(rings, cols, true, true)
+	return b.to_mesh(0.3)
+
+## The two cords the dangler hangs from, up into the mask's chin.
+static func goalie_dangler_cords() -> ArrayMesh:
+	var b := MeshBuilder.new()
+	for x: float in [-0.032, 0.032]:
+		b.add_tube(PackedVector3Array([Vector3(x, -0.188, 0.150), Vector3(x, -0.216, 0.142)]), 0.0025, DARK, 6)
+	return b.to_mesh(0.7)
+
 ## Panel closing the toe window in the goalie pad's face (pad source space:
 ## knee y = 0.035, face toward +z): the downloaded pad model has a hole
 ## through the face above the toe bridge.

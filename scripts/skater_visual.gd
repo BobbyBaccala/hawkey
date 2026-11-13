@@ -783,6 +783,13 @@ func build_helmet() -> void:
 				var instance := add_mesh(helmet, goalie_mask_parts[part])
 				instance.position = Vector3(0, -0.035, 0.01)
 				if part == "mask_shell": instance.material_override = Kit.helmet_shell(kit)
+			# Throat guard ("dangler") hung from the chin on two cords: covers the
+			# throat under the mask, which otherwise shows as a dark gap.
+			var dangler := add_mesh(helmet, Gear.goalie_dangler())
+			dangler.name = "Dangler"
+			dangler.material_override = Kit.helmet_shell(kit)
+			var cords := add_mesh(helmet, Gear.goalie_dangler_cords())
+			cords.name = "DanglerCords"
 			return
 		var mask := add_mesh(helmet,Gear.goalie_mask(kit,accent))
 		mask.position = Vector3(0,-0.035,0.01)
