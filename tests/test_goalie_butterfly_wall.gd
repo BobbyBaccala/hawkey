@@ -93,6 +93,14 @@ func run() -> void:
 			for vtx in ((n as MeshInstance3D).mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX] as PackedVector3Array):
 				sk_out = maxf(sk_out, side * (sxf * vtx).x)
 		check(sk_out < pad_out + 0.01, "butterfly: skate %d stays within the pad's end (%.3f vs %.3f)" % [i, sk_out, pad_out])
+	# Pad stack: the skates are behind the stacked pads too (toes back in the
+	# rig's own frame, which the stack rolls onto its side).
+	for kind in ["stack_left", "stack_right"]:
+		settle(g, "", Vector2(0, 0.8), false)
+		settle(g, kind, Vector2(0.9 if kind == "stack_left" else -0.9, 0.1), false)
+		for i in range(2):
+			var toe: Vector3 = (g.skates[i].basis as Basis).z.normalized()
+			check(toe.z < -0.5, "%s: skate %d toe back behind the pad (%s)" % [kind, i, toe])
 	# The toe window in the pad face is closed.
 	check(g.pad_visuals[0].get_node_or_null("ToeCover") != null, "pad toe window is closed")
 	# High glove save: shoulders tip toward the glove, arm nearly straight,

@@ -1974,7 +1974,9 @@ func pose(speed: float, turn: float) -> void:
 			# As the knees go down the foot turns from toe-forward (in the pad's
 			# boot channel) through pointed to toe-back behind the pad, as when
 			# kneeling, so the pad hides the skate from the shooter.
-			var kneel:=smoothstep(0.45,0.9,1.0-shin_up.y)
+			# (A pad stack lays the whole body down by rolling the rig, so the
+			# shins stay upright in rig space: it counts as kneeling too.)
+			var kneel:=maxf(smoothstep(0.45,0.9,1.0-shin_up.y),stack_weight())
 			var foot_turn:=lerpf(ANKLE_PLANTAR,PI-ANKLE_PLANTAR,kneel)
 			var toe_dir:Vector3=(pad_face*cos(foot_turn)-shin_up*sin(foot_turn)).normalized()
 			var foot_up:=(shin_up-toe_dir*toe_dir.dot(shin_up)).normalized()

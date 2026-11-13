@@ -46,6 +46,7 @@ func run()->void:
 		["splits-side","splits_left",Vector2(1.15,0.1),Vector3(-1.9,0.8,1.9),Vector3(0,0.35,0),48.0],
 		["bfly-pad-end","butterfly",Vector2(0.1,0.15),Vector3(0.55,0.35,1.5),Vector3(0.55,0.15,0),32.0],
 		["bfly-low","butterfly",Vector2(0.1,0.15),Vector3(0.0,0.30,2.2),Vector3(0,0.2,0),40.0],
+		["padsave-low","pad_left",Vector2(0.95,0.1),Vector3(0.3,0.35,2.4),Vector3(0.3,0.2,0),44.0],
 		["stack-front","stack_left",Vector2(0.9,0.1),Vector3(0.0,0.9,2.8),Vector3(0,0.35,0),50.0],
 		["stack-side","stack_left",Vector2(0.9,0.1),Vector3(-2.0,0.9,1.6),Vector3(0,0.35,0),50.0],
 	]
