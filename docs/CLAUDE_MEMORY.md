@@ -106,10 +106,19 @@ Goalies
 - Sweater: accent yoke + chest diamond crest, ends at the hips over wider
   accent-coloured pants.
 
+CPU AI (owner 2026-11-16: realistic positioning and flow; measured with
+tools/ai_flow_probe.gd + ai_flow_report.py, see DEVELOPMENT.md):
+- Carry commitment, pass safety by pressure, speed-aware pass leads,
+  release grace (passer 0.42 s / mates 0.08 / opponents 0.25), around_nets().
+- TeamTactics.side_for(): own-side wingers/D (faceoffs too); OZ wide strong
+  point + weak D in the middle, net front always filled; DZ wingers on the
+  half-wall lane; 1-2-2 forecheck. OZ shot floor, point shots, rebound shots.
+- Result: ~2.5 attempts/min, even teams, ~3.3 s possessions. Open: teammates
+  <2 m apart in ~18% of frames; forwards could work lower in the OZ.
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 47 suites; last full run 47/47 at 9ea47f6 (2026-11-16).
+Tests: 47 suites; last full run 47/47 at 25a77fc (2026-11-16).
 
 ## Open defects / next steps (goalie first)
 0. Owner 2026-11-12: gear believability and save animations are the top
@@ -139,6 +148,9 @@ Tests: 47 suites; last full run 47/47 at 9ea47f6 (2026-11-16).
   `get_goalie_gear()` at sampled poses before/after).
 
 ## Gotchas
+- CPU games are chaotic: judge AI changes on 2+ seeds of 4-min games with the
+  flow recorder, not one game. test_play_now_ai's 90 s game is one fixed
+  sample (deterministic default seed).
 - Every shader pow(): base must be >= 0 (clamp N.V; square with x*x, never
   pow(x, 2.0)) - test_gameplay_photo enforces the visor/cloth cases. Before
   the 4a28b7d fix every skater was a glowing ghost in Forward+.
