@@ -25,17 +25,25 @@ static func is_defence(slot: int) -> bool:
 	return slot >= 3
 
 static func side(slot: int) -> float:
-	# Slots 1 and 3 play the -x side, 2 and 4 the +x side (as at faceoffs).
+	# Slots 1 and 3 are the left side, 2 and 4 the right (in the player's own
+	# frame: -1 left, +1 right). See side_for() for the rink x side.
 	if slot == 1 or slot == 3: return -1.0
 	if slot == 2 or slot == 4: return 1.0
 	return 0.0
 
+## Rink x side of a slot for a team attacking toward `attack` (+1 = +z): a
+## left winger plays on his own left, which is -x facing -z and +x facing +z,
+## so the two teams' left wingers line up on opposite sides (LW faces RW).
+static func side_for(slot: int, attack: float) -> float:
+	return side(slot) * -signf(attack if attack != 0.0 else 1.0)
+
 ## Where a support skater (not the puck carrier, not the chaser) goes.
-static func support_target(slot: int, attack: float, puck: Vector3, possession: bool) -> Vector3:
+## carrier_slot: the slot of the team-mate carrying the puck (-1 unknown/none).
+static func support_target(slot: int, attack: float, puck: Vector3, possession: bool, carrier_slot := -1) -> Vector3:
 	var pa := puck.z * attack                      # puck depth in attack space
 	var px := puck.x
 	# Each player keeps his own side of the ice (same x as his faceoff spot).
-	var s := side(slot)
+	var s := side_for(slot, attack)
 	var a := 0.0
 	var x := 0.0
 	var goal := Arena.GOAL_LINE
@@ -43,9 +51,16 @@ static func support_target(slot: int, attack: float, puck: Vector3, possession: 
 	if possession:
 		if is_defence(slot):
 			if pa > blue:
-				# Offensive zone: hold the point, inside the blue line.
-				a = D_MAX_ATTACK - 0.5
-				x = s * clampf(5.5 + absf(px) * 0.15, 4.5, D_PINCH_X)
+				# Offensive zone: hold the point, inside the blue line, out
+				# toward the boards on the puck side; the weak-side D slides to
+				# the middle of the line for a one-timer.
+				var strong_d := signf(px) == signf(s) or absf(px) < 2.0
+				if strong_d:
+					a = D_MAX_ATTACK - 0.5
+					x = s * clampf(7.0 + absf(px) * 0.1, 6.5, D_PINCH_X + 1.5)
+				else:
+					a = D_MAX_ATTACK - 0.2
+					x = s * 2.5
 			else:
 				# Trail the play, ready to retreat.
 				a = clampf(pa - 8.0, -(goal - 5.0), D_MAX_ATTACK - 0.5)
@@ -57,8 +72,14 @@ static func support_target(slot: int, attack: float, puck: Vector3, possession: 
 					0: a = goal - 10.5; x = clampf(px * 0.3, -3.0, 3.0)
 					_:
 						var strong := signf(px) == signf(s) or absf(px) < 1.0
+						# Someone is always at the net front: normally the
+						# strong-side winger, but when he is the one carrying
+						# it the weak-side winger goes to the net instead.
+						var other_wing := 2 if slot == 1 else 1
 						if strong:
 							a = goal - 3.5; x = s * 1.6          # net front / near post
+						elif carrier_slot == other_wing:
+							a = goal - 3.0; x = s * 1.2          # net front from the weak side
 						else:
 							a = goal - 8.5; x = s * 5.5          # weak-side circle for a one-timer
 			else:
@@ -90,7 +111,26 @@ static func support_target(slot: int, attack: float, puck: Vector3, possession: 
 				if slot == 0:
 					a = maxf(F_MIN_ATTACK, -(goal - 7.0)); x = clampf(px * 0.3, -3.0, 3.0)
 				else:
-					a = -blue - 1.5; x = s * 7.5
+					# Wingers cover the points from just below them: the
+					# strong-side man out on the half-wall lane, the weak-side
+					# man sagging toward the middle to take away the slot.
+					var strong_w := signf(px) == signf(s)
+					if strong_w:
+						a = -blue - 2.8; x = s * 9.0
+					else:
+						a = -blue - 2.3; x = s * 4.5
+			elif pa > blue:
+				# Forecheck in the offensive zone (1-2-2; the chaser is F1 on the
+				# puck): the strong-side forward takes the wall the breakout pass
+				# goes up, the other one sits high in the middle against the
+				# stretch pass. The D hold the blue line (above).
+				var strong_f := signf(px) == signf(s) or (slot == 0 and absf(px) < 1.0)
+				if slot != 0 and strong_f:
+					a = clampf(pa - 4.0, blue + 2.0, goal - 3.0)
+					x = signf(px if absf(px) > 0.5 else s) * (Arena.HALF_WIDTH - 2.5)
+				else:
+					a = blue + 5.0
+					x = clampf(px * 0.2, -2.0, 2.0) if slot == 0 else s * 3.0
 			else:
 				# Backcheck through the neutral zone in their lanes, not too deep.
 				a = clampf(pa - 3.0, F_MIN_ATTACK, goal - 6.0)

@@ -24,6 +24,7 @@ func run() -> void:
 	check_passing()
 	check_decisions()
 	check_defence_reads()
+	check_flow_decisions()
 	await check_cpu_match()
 	await check_human_seat()
 	print("Play Now / AI checks: ", checks, "  failures: ", failures)
@@ -99,6 +100,41 @@ func check_decisions() -> void:
 	var blocked_mate := {"pos": Vector3(0, 0, 12.0), "vel": Vector3.ZERO, "index": 1}
 	d = SkaterAI.carrier_decision(ctx(Vector3(0, 0, 0.0), [Vector3(0.3, 0, 6.0)], [blocked_mate]))
 	check(d.kind != "pass", "No pass through a defender (got %s)" % d.kind)
+
+## Flow (owner 2026-11-16: realistic positioning and game flow).
+func check_flow_decisions() -> void:
+	var blue := Arena.BLUE_LINE
+	# Commitment: just gained it in the neutral zone with open ice and a
+	# so-so pass on - carry it; settled (no carry_time) the pass is fine.
+	var side_mate := {"pos": Vector3(-7.0, 0, 2.0), "vel": Vector3.ZERO, "index": 2}
+	var opp := [Vector3(8, 0, 14), Vector3(-9, 0, 16)]
+	var fresh := ctx(Vector3(2, 0, -3.0), opp, [side_mate])
+	fresh["carry_time"] = 0.0
+	var dec := SkaterAI.carrier_decision(fresh)
+	check(dec.kind == "carry", "Just gained it with open ice: carry it up first (got %s)" % dec.kind)
+	# Pass leads are planned for the speed the pass is actually sent at.
+	var lead := SkaterAI.lead_point(Vector3.ZERO, Vector3(0, 0, 6), Vector3(4, 0, 0))
+	var travel := lead.length() / SkaterAI.pass_speed(lead.length())
+	check(absf(lead.x - 4.0 * travel * 0.85) < 0.15, "Lead uses the real pass speed (%.2f vs %.2f)" % [lead.x, 4.0 * travel * 0.85])
+	# Around the nets, not into them; clear paths are left alone.
+	var behind := Vector3(3.2, 0, -(Arena.GOAL_LINE + 2.7))
+	var way := SkaterAI.around_nets(Vector3(-1.2, 0, -(Arena.GOAL_LINE - 0.2)), behind)
+	check(way != behind and absf(way.x) >= SkaterAI.NET_HALF_X and signf(way.x) == signf(behind.x), "Chasing a puck behind the net goes round the post (%s)" % way)
+	check(SkaterAI.around_nets(Vector3(-6, 0, 0), Vector3(6, 0, 5)) == Vector3(6, 0, 5), "Open-ice paths are untouched")
+	# Point shot: a D with an open lane at the offensive blue line shoots.
+	var point := ctx(Vector3(-6.5, 0, blue + 1.0), [Vector3(5, 0, Arena.GOAL_LINE - 8.0)], [], true)
+	check(SkaterAI.carrier_decision(point).kind == "shoot", "Open lane from the point: shoot")
+	# Checked in the offensive zone with an angle: put it on net, don't turn away.
+	var pressed := ctx(Vector3(-6.0, 0, Arena.GOAL_LINE - 9.0), [Vector3(-5.2, 0, Arena.GOAL_LINE - 8.4)], [])
+	check(SkaterAI.carrier_decision(pressed).kind == "shoot", "Checked in the zone with an angle: shot through traffic (got %s)" % SkaterAI.carrier_decision(pressed).kind)
+	# Forecheck (1-2-2): with the other team breaking out of our offensive
+	# zone, the strong-side forward takes the wall, the other one sits high.
+	var T = load("res://scripts/team_tactics.gd")
+	var puck := Vector3(T.side_for(1, 1.0) * 7.0, 0, Arena.GOAL_LINE - 3.0)
+	var wall: Vector3 = T.support_target(1, 1.0, puck, false)
+	var high: Vector3 = T.support_target(2, 1.0, puck, false)
+	check(absf(wall.x) > Arena.HALF_WIDTH - 3.5 and signf(wall.x) == signf(puck.x) and wall.z > blue, "Strong-side forward takes the wall on the forecheck (%s)" % wall)
+	check(high.z > blue and high.z < blue + 7.0 and absf(high.x) < 4.0, "Other forward sits high in the middle (%s)" % high)
 
 func check_defence_reads() -> void:
 	# Pursuit angle is goal-side (own net at -z when attacking +z).

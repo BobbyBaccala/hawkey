@@ -80,6 +80,16 @@ var last_puck_velocity := Vector3.ZERO
 var referee_nodes: Array[Node3D] = []
 var decision_clock := 0.0
 var action_cooldown := 0.0
+## After a pass/shot only the player who released it is kept off the puck for
+## released_wait; everyone else just waits RELEASE_GRACE for it to leave the
+## blade (a global wait let short passes slide through the receiver).
+const RELEASE_GRACE := 0.08
+## Opponents of the passer wait a little longer: a checker on top of him can't
+## pluck the puck off the blade as it leaves, only cut out the lane further on.
+const RELEASE_OPP_WAIT := 0.25
+var released_by: CharacterBody3D
+var released_wait := 0.0
+var released_opp_wait := 0.0
 var auto_lines := true
 var goalie_targets: Array[Vector3] = [Vector3(0,0,-(Arena.GOAL_LINE-1.0)),Vector3(0,0,Arena.GOAL_LINE-1.0)]
 var goalie_reaction := 0.0
@@ -393,6 +403,9 @@ func setup_faceoff() -> void:
 				set_puck_contacts_enabled(actor,true)
 		actor.position = spots[slot]
 		actor.position.z *= -sign_
+		# Each player lines up on his own side (LW on his left, facing the
+		# other team's RW): mirror x for the team attacking +z.
+		actor.position.x *= -sign_
 		actor.position+=next_faceoff
 		actor.position.x=clampf(actor.position.x,-(Arena.HALF_WIDTH-1.0),Arena.HALF_WIDTH-1.0)
 		actor.position.z=clampf(actor.position.z,-28,28)
@@ -973,7 +986,12 @@ func release_puck(actor: CharacterBody3D, direction: Vector3, speed: float, elev
 	puck.angular_velocity=Vector3(0,lerpf(-8,8,controller.right_stick.x) if actor==player else 6,0)
 	carrier=null
 	pickup_owner=false
-	cooldown=0.42
+	# The passer/shooter can't re-take it for a moment; anyone else only has to
+	# wait for it to leave the blade (a short pass is never too fast to take).
+	cooldown=RELEASE_GRACE
+	released_by=actor
+	released_wait=0.42
+	released_opp_wait=RELEASE_OPP_WAIT
 	actor.get_child(1).shot_follow=1.0
 	actor.get_child(1).shot_charge=0
 	beep(170)
@@ -1088,6 +1106,8 @@ func _physics_process(delta: float) -> void:
 		return
 	elapsed+=delta
 	cooldown=maxf(0,cooldown-delta)
+	released_wait=maxf(0,released_wait-delta)
+	released_opp_wait=maxf(0,released_opp_wait-delta)
 	action_cooldown=maxf(0,action_cooldown-delta)
 	goalie_contact_timer=maxf(0,goalie_contact_timer-delta)
 	var old_phase := match_state.phase
@@ -1392,7 +1412,7 @@ func update_team_ai(delta: float) -> void:
 			# (skater_ai.gd): get open for a pass, gap up on a rush, mark a man
 			# goal-side in the own zone, jump a passing lane.
 			var possession:=carrier!=null and body_team(carrier)==team
-			target=TeamTactics.support_target(slot,attack,puck.position,possession)
+			target=TeamTactics.support_target(slot,attack,puck.position,possession,int(carrier.get_meta("slot")) if possession else -1)
 			var pa:=puck.position.z*attack
 			if possession:
 				target=SkaterAI.open_spot(target,carrier.position,ai_opponents[team])
@@ -1400,12 +1420,14 @@ func update_team_ai(delta: float) -> void:
 				if ai_coverage[team].has(actor):
 					target=SkaterAI.mark_target(ai_coverage[team][actor],attack)
 				elif TeamTactics.is_defence(slot) and pa>-Arena.BLUE_LINE and pa<Arena.BLUE_LINE+2.0:
-					target=SkaterAI.gap_target(carrier.position,attack,TeamTactics.side(slot))
+					target=SkaterAI.gap_target(carrier.position,attack,TeamTactics.side_for(slot,attack))
 			else:
 				var meet:=SkaterAI.intercept_point(puck.position,puck.linear_velocity,actor.position,8.0,0.6)
 				if meet!=Vector3.INF and puck.linear_velocity.length()>6.0: target=meet
 		if rules.enabled and not changing and not is_hopping(actor):
 			target=onside_target(actor,team,attack,target)
+		# Around the nets, not into them (skater_ai.gd around_nets).
+		if not changing and not is_hopping(actor): target=SkaterAI.around_nets(actor.position,target)
 		var to_target:=target-actor.position
 		var intent:=to_target.limit_length(1)
 		if to_target.length()<0.6: intent=Vector3.ZERO
@@ -1477,8 +1499,8 @@ func ai_context(actor: CharacterBody3D, team: int, attack: float, is_d: bool) ->
 	for i in range(skaters.size()):
 		var other:=skaters[i]
 		if other==actor or body_team(other)!=team or not bool(other.get_meta("eligible")) or bool(other.get_meta("changing")) or is_hopping(other): continue
-		mates.append({"pos":other.position,"vel":other.velocity,"index":i})
-	return {"pos":actor.position,"vel":actor.velocity,"attack":attack,"is_d":is_d,"goalie":goalkeeper_at_end(attack).position,"opponents":ai_opponents[team],"teammates":mates,"skill":ai_skill(team),"roll":ai_rng.randf()}
+		mates.append({"pos":other.position,"vel":other.velocity,"index":i,"is_d":TeamTactics.is_defence(int(other.get_meta("slot")))})
+	return {"pos":actor.position,"vel":actor.velocity,"attack":attack,"is_d":is_d,"goalie":goalkeeper_at_end(attack).position,"opponents":ai_opponents[team],"teammates":mates,"skill":ai_skill(team),"roll":ai_rng.randf(),"carry_time":Engine.get_physics_frames()/float(Engine.physics_ticks_per_second)-float(actor.get_meta("gained_at",-100.0))}
 
 ## CPU shot: the corner away from the goalie, accuracy by difficulty; D take
 ## a harder slapper from the point, forwards a quick wrister.
@@ -1498,7 +1520,7 @@ func ai_pass(actor: CharacterBody3D, plan: Dictionary) -> void:
 	var direction:=SkaterAI.flat(plan.target-puck.position)
 	var error:=(ai_rng.randf()*2.0-1.0)*float(ai_skill(body_team(actor)).pass_noise)
 	# Firm but catchable: softer for short feeds.
-	var speed:=clampf(9.0+direction.length()*0.45,10.0,SkaterAI.PASS_SPEED)
+	var speed:=SkaterAI.pass_speed(direction.length())
 	release_puck(actor,direction.rotated(Vector3.UP,error),speed)
 	passes_by_team[body_team(actor)]+=1
 	if int(plan.get("receiver",-1))>=0:
@@ -1575,6 +1597,8 @@ func update_possession(delta: float) -> void:
 		var best:=1.15
 		for actor in skaters:
 			if not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")) or is_hopping(actor): continue
+			if actor==released_by and released_wait>0: continue
+			if released_by!=null and released_opp_wait>0 and body_team(actor)!=body_team(released_by): continue
 			var distance_:=actor.position.distance_to(Vector3(puck.position.x,0,puck.position.z))
 			var soft_hands:=24.0 if actor==pass_receiver else 20.0
 			if distance_<best and (puck.linear_velocity-actor.velocity).length()<soft_hands:
@@ -1590,8 +1614,19 @@ func update_possession(delta: float) -> void:
 						if SkaterAI.one_timer(q_,float(ai_skill(team_).shot_bar)):
 							actor.set_meta("one_timer",true)
 				elif pass_receiver!=null and body_team(actor)!=body_team(pass_receiver): ai_log["intercepted"]=int(ai_log.get("intercepted",0))+1
+				# A rebound or loose puck picked up in a scoring spot is shot first
+				# time too (jam it home), same test as a one-timer.
+				if actor!=pass_receiver and not human_controls(actor):
+					var team_r:=body_team(actor)
+					var attack_r:=attack_direction(team_r)
+					if actor.position.z*attack_r>Arena.BLUE_LINE:
+						var q_r:=SkaterAI.shot_quality(actor.position,attack_r,goalkeeper_at_end(attack_r).position,ai_opponents[team_r])
+						if SkaterAI.one_timer(q_r,float(ai_skill(team_r).shot_bar)):
+							actor.set_meta("one_timer",true)
+							ai_log["rebound_shot"]=int(ai_log.get("rebound_shot",0))+1
 				# A fresh read on gaining it: a short reaction, no stale plan.
 				actor.set_meta("plan",{})
+				actor.set_meta("gained_at",Engine.get_physics_frames()/float(Engine.physics_ticks_per_second))
 				actor.set_meta("decision",0.06 if bool(actor.get_meta("one_timer",false)) else float(ai_skill(body_team(actor)).react)*0.5)
 	if carrier!=null:
 		var visual:=carrier.get_child(1)

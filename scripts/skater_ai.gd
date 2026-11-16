@@ -34,6 +34,23 @@ const DEFAULT_DIFFICULTY := "ALL-STAR"
 const PASS_SPEED := 17.0
 const STICK_REACH := 1.0          # how far a defender's stick takes a puck off a lane
 const SKATE_REACH_SPEED := 2.3    # m/s a defender can close on a lane while the puck travels
+# Puck-carrier commitment: a player who has just gained the puck carries it
+# for a moment (heads up, moves it up ice) before moving it on, unless a man
+# is on him or the look is great. The bonus fades over CARRY_COMMIT seconds.
+const CARRY_COMMIT := 1.2
+const CARRY_COMMIT_BONUS := 0.28
+const CARRY_PRESSURE := 1.6       # m: a checker this close cancels the commitment
+# Lane safety a pass needs: a clean lane when he has time, a riskier one only
+# when a checker is on him.
+const PASS_SAFE_OPEN := 0.62
+const PASS_SAFE_PRESSED := 0.45
+# Offensive zone under a check: put it on net (rebounds, tips) or reset it to
+# the point rather than turn away and shield it.
+const OZ_SHOT_FLOOR_Q := 0.14      # any real angle on goal counts
+const OZ_SHOT_FLOOR := 0.24
+const OZ_RESET_BONUS := 0.14
+const OZ_PATIENCE := 0.85          # was 0.6 everywhere: shots in the zone aren't passed up
+const POINT_SHOT_VALUE := 0.48     # D at the point with an open lane
 
 static func skill(difficulty: String) -> Dictionary:
 	return SKILL.get(difficulty, SKILL[DEFAULT_DIFFICULTY])
@@ -102,8 +119,17 @@ static func pass_safety(a: Vector3, b: Vector3, opponents: Array, read := 1.0, s
 		safety *= 0.7                                       # long stretch passes are risky
 	return safety
 
-## Where to send the puck so it meets a moving receiver.
-static func lead_point(from: Vector3, receiver: Vector3, receiver_velocity: Vector3, speed := PASS_SPEED) -> Vector3:
+## How hard a pass of this length is sent: firm but catchable, softer for short
+## feeds (match.gd ai_pass uses the same speed the lead point was planned for).
+static func pass_speed(length: float) -> float:
+	return clampf(9.0 + length * 0.45, 10.0, PASS_SPEED)
+
+## Where to send the puck so it meets a moving receiver. The travel time uses
+## the speed the pass will actually be sent at (two passes refine it).
+static func lead_point(from: Vector3, receiver: Vector3, receiver_velocity: Vector3, speed := -1.0) -> Vector3:
+	if speed < 0.0:
+		var guess := flat(receiver + receiver_velocity * clampf(flat(receiver - from).length() / pass_speed(flat(receiver - from).length()), 0.0, 1.2) * 0.85)
+		speed = pass_speed(flat(guess - from).length())
 	var travel := flat(receiver - from).length() / speed
 	return flat(receiver + receiver_velocity * clampf(travel, 0.0, 1.2) * 0.85)
 
@@ -121,7 +147,8 @@ static func open_ice(pos: Vector3, attack: float, opponents: Array, ahead := 3.0
 
 ## Decide what the carrier does. ctx keys:
 ##   pos, vel, attack, is_d, goalie (Vector3), opponents (Array[Vector3]),
-##   teammates (Array of {pos, vel, index}), skill (Dictionary), roll (0..1 random)
+##   teammates (Array of {pos, vel, index, is_d}), skill (Dictionary), roll (0..1 random),
+##   carry_time (seconds since he gained the puck; missing = settled, no commitment)
 ## Returns {kind: "shoot"|"pass"|"carry"|"dump"|"protect", target: Vector3,
 ##   receiver: int (teammate index or -1), value: float}.
 static func carrier_decision(ctx: Dictionary) -> Dictionary:
@@ -135,33 +162,53 @@ static func carrier_decision(ctx: Dictionary) -> Dictionary:
 	# Shoot
 	var shoot_q := shot_quality(pos, attack, ctx.goalie, opponents)
 	if ctx.get("is_d", false) and depth > Arena.BLUE_LINE:
-		shoot_q = maxf(shoot_q, 0.30 if absf(pos.x) < 8.0 else 0.0)   # point shot for a tip/rebound
+		# Point shot for a tip/rebound (the strong-side point is out near the
+		# boards, team_tactics.gd, so the whole line counts, not just the middle).
+		shoot_q = maxf(shoot_q, 0.30 if absf(pos.x) < 9.8 else 0.0)
 	var best := {"kind": "carry", "target": carry_target(pos, attack, opponents), "receiver": -1, "value": 0.0}
 	var shoot_value := shoot_q
+	var in_oz := depth > Arena.BLUE_LINE
 	if shoot_q < sk.shot_bar and pressure > 1.6:
-		shoot_value *= 0.6                                   # no rush: look for better
+		# No rush: look for better - less so once set up in the zone, where
+		# getting pucks to the net is the game.
+		shoot_value *= OZ_PATIENCE if in_oz else 0.6
+	if ctx.get("is_d", false) and in_oz and absf(pos.x) < 9.8:
+		# Point shot with the lane open: a real option for a defenceman.
+		var lane := shot_quality(pos, attack, ctx.goalie, opponents) / maxf(shot_quality(pos, attack, ctx.goalie, []), 0.01)
+		if lane > 0.6:
+			shoot_value = maxf(shoot_value, POINT_SHOT_VALUE)
 	best = _better(best, {"kind": "shoot", "target": net(attack), "receiver": -1, "value": shoot_value})
 	# Pass
 	for mate in ctx.get("teammates", []):
 		var mate_pos: Vector3 = mate.pos
 		var lead := lead_point(pos, mate_pos, mate.get("vel", Vector3.ZERO))
 		var safety := pass_safety(pos, lead, opponents, read)
-		if safety < 0.45:
+		if safety < (PASS_SAFE_PRESSED if pressure < CARRY_PRESSURE + 0.6 else PASS_SAFE_OPEN):
 			continue
 		var their_q := shot_quality(lead, attack, ctx.goalie, opponents)
 		var advance := clampf((lead.z - pos.z) * attack / 25.0, -0.4, 0.5)
 		var open := clampf(nearest_distance(lead, opponents) / 5.0, 0.0, 1.0)
-		var value := (their_q * 0.85 + advance * 0.35 + open * 0.2) * safety
+		# In the offensive zone a pass is worth it for a better look, not to
+		# move the puck deeper or just keep it moving round the perimeter.
+		var value := ((their_q * 0.85 + open * 0.12) if in_oz else (their_q * 0.85 + advance * 0.35 + open * 0.2)) * safety
 		# Under pressure, moving it to an open man is the play.
 		value += clampf((2.6 - pressure) / 2.6, 0.0, 1.0) * 0.22 * safety
 		# A pass across the slot to a shooter beats a contested shot.
 		if their_q > shoot_q + 0.12:
 			value += 0.08
+		# In the offensive zone a safe pass back to the point keeps the cycle going.
+		if depth > Arena.BLUE_LINE and not ctx.get("is_d", false) and bool(mate.get("is_d", false)) and mate_pos.z * attack < Arena.BLUE_LINE + 4.0:
+			value += OZ_RESET_BONUS * safety
 		best = _better(best, {"kind": "pass", "target": lead, "receiver": int(mate.index), "value": value})
 	# Carry: worth more with space ahead and outside shooting range.
 	var space := open_ice(pos, attack, opponents)
 	var carry_value := clampf(space / 7.0, 0.0, 1.0) * (0.42 if shoot_q < 0.35 else 0.22)
 	carry_value *= clampf(pressure / 2.0, 0.35, 1.0)        # hard to carry with a man on you
+	# Just gained it with nobody on him: carry it a moment before moving it on.
+	var carry_time: float = ctx.get("carry_time", CARRY_COMMIT)
+	# (Not in the offensive zone: there a good look is taken right away.)
+	if pressure > CARRY_PRESSURE and space > 2.5 and depth < Arena.BLUE_LINE:
+		carry_value += CARRY_COMMIT_BONUS * (1.0 - smoothstep(0.0, CARRY_COMMIT, carry_time))
 	if best.kind == "carry":
 		best.value = carry_value
 	else:
@@ -170,6 +217,9 @@ static func carrier_decision(ctx: Dictionary) -> Dictionary:
 	if depth > -Arena.BLUE_LINE and depth < Arena.BLUE_LINE + 1.0 and pressure < 2.2 and space < 3.0:
 		var corner := Vector3(-signf(pos.x if absf(pos.x) > 0.5 else 1.0) * (Arena.HALF_WIDTH - 2.5), 0.0, attack * (Arena.GOAL_LINE + 1.5))
 		best = _better(best, {"kind": "dump", "target": corner, "receiver": -1, "value": 0.26})
+	# Offensive zone with a man on him: a shot through traffic beats turning away.
+	if depth > Arena.BLUE_LINE and shoot_q >= OZ_SHOT_FLOOR_Q and pressure < 2.0:
+		best = _better(best, {"kind": "shoot", "target": net(attack), "receiver": -1, "value": OZ_SHOT_FLOOR})
 	# Protect: a checker on top of him and nothing better than a weak option.
 	if pressure < 1.0 and best.value < 0.2:
 		var away := flat(pos - _nearest(pos, opponents)).normalized()
@@ -256,6 +306,34 @@ static func open_spot(spot: Vector3, carrier: Vector3, opponents: Array) -> Vect
 			best_safety = s
 			best = candidate
 	return best
+
+## Skate around the nets instead of into them: if the straight path from
+## `pos` to `target` crosses a goal frame (with a skater's clearance), return a
+## waypoint just outside the post on the target's side; otherwise the target.
+## A puck that died behind the net used to freeze the game: the chasers
+## pressed into the back of the frame trying to reach it.
+const NET_HALF_X := 1.35      # post (0.92 m) plus a skater's clearance
+const NET_FRONT := 0.35       # in front of the goal line
+const NET_BACK := 1.45        # behind the goal line (frame depth plus clearance)
+const NET_WAY_X := 1.95
+static func around_nets(pos: Vector3, target: Vector3) -> Vector3:
+	for s: float in [-1.0, 1.0]:
+		var goal := Arena.GOAL_LINE
+		var crosses := false
+		for k in range(1, 13):
+			var p := pos.lerp(target, k / 12.0)
+			var zs := p.z * s
+			if absf(p.x) < NET_HALF_X and zs > goal - NET_FRONT and zs < goal + NET_BACK:
+				crosses = true
+				break
+		if not crosses:
+			continue
+		var side := signf(target.x) if absf(target.x) > 0.4 else (signf(pos.x) if absf(pos.x) > 0.1 else 1.0)
+		if side * pos.x >= NET_WAY_X - 0.15:
+			continue      # already round the post on that side: the path is clear
+		var wz := clampf(pos.z * s, goal - NET_FRONT - 0.1, goal + NET_BACK + 0.2)
+		return Vector3(side * NET_WAY_X, 0.0, s * wz)
+	return target
 
 ## Where a skater at `skater` (top speed `speed`) can first reach a moving
 ## puck, or Vector3.INF if he can't within `horizon` seconds.
