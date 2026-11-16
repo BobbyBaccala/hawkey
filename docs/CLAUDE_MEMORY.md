@@ -109,13 +109,12 @@ Goalies
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 47 suites; last full run 47/47 at 349f5d4 (2026-11-13).
+Tests: 47 suites; last full run 47/47 at 9ea47f6 (2026-11-16).
 
 ## Open defects / next steps (goalie first)
 0. Owner 2026-11-12: gear believability and save animations are the top
-   priority. Forward+ review (5992020): pads read white, hot-spots fixed.
-   Next: standing pads
-   still a little grey (vertical faces get little overhead light).
+   priority. Forward+: NaN blooms fixed in all kit shaders (9ea47f6);
+   IceBounce fill light makes standing pads read white.
 1. Goalie saves slice 2c: poke check on close carriers, post-save
    freeze/rebound control.
    Polish: stack/splits have no dive motion (the save weight
@@ -140,6 +139,9 @@ Tests: 47 suites; last full run 47/47 at 349f5d4 (2026-11-13).
   `get_goalie_gear()` at sampled poses before/after).
 
 ## Gotchas
+- Every shader pow(): base must be >= 0 (clamp N.V; square with x*x, never
+  pow(x, 2.0)) - test_gameplay_photo enforces the visor/cloth cases. Before
+  the 4a28b7d fix every skater was a glowing ghost in Forward+.
 - White blobs in Forward+ = NaN pixels bloomed by glow (gl_compatibility hides
   them). Bisect with glow off; kit_gear clamps vertex colour before pow() and
   guards albedo/normals - keep any new shader maths NaN-safe.

@@ -103,3 +103,4 @@ Open project.godot in Godot 4.6 and play the laboratory. Report skating/aim/puck
 ## Version 0.5 controller / flight revision
 
 See SPORTS_GAME_RESEARCH.md for primary references and production requirements. The match now has native controller input and a free 3D puck with a convex disk collider. It ignores movement capsules and hits separate equipment/body colliders. Prior flat-puck limitations are superseded; production models/mocap and measured physics calibration are still outstanding. The two new suites test synthetic controller input and isolated airborne/ground puck behavior.
+- scripts/arena_lighting.gd IceBounce: soft fill light shining up from the ice onto players only (rim-light cull mask) - the sheet as a reflector. Test: tests/test_lighting.gd.
