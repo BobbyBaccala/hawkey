@@ -22,6 +22,11 @@ const ENVIRONMENT_LAYER := 2
 ## ENVIRONMENT_LAYER: rim lights skip it too, and the full-rink camera hides it so the whole sheet is visible from above.
 const RIGGING_LAYER := 4
 const RIM_COLOR := Color("#cfe2ff")
+## Light bounced up off the white ice onto the players (broadcast arenas: the
+## sheet acts as a huge reflector, so pads, pant fronts and chins tilted
+## toward the ice still read bright). Shadowless, no specular, players only.
+const BOUNCE_ENERGY := 0.32
+const BOUNCE_COLOR := Color("#eef3f8")
 ## Lowest point of the overhead rigging (jumbotron underside is ~11.25 m),
 ## less a margin. A camera above this height and over the sheet would look
 ## down through the jumbotron and trusses, so it hides the rigging layer.
@@ -29,6 +34,7 @@ const RIGGING_CLEARANCE := 10.5
 
 var pools: Array[SpotLight3D] = []
 var rims: Array[DirectionalLight3D] = []
+var bounce: DirectionalLight3D
 
 func _ready() -> void:
 	name = "ArenaLighting"
@@ -49,6 +55,16 @@ func _ready() -> void:
 		rim.rotation_degrees = Vector3(-14, 90.0 if side < 0 else -90.0, 0)
 		add_child(rim)
 		rims.append(rim)
+	bounce = DirectionalLight3D.new()
+	bounce.name = "IceBounce"
+	bounce.light_color = BOUNCE_COLOR
+	bounce.light_energy = BOUNCE_ENERGY
+	bounce.light_specular = 0.0
+	bounce.shadow_enabled = false
+	bounce.light_cull_mask = 0xFFFFF & ~(ENVIRONMENT_LAYER | RIGGING_LAYER)
+	# Shining up from the ice, slightly toward the boards (not straight up).
+	bounce.rotation_degrees = Vector3(80, 0, 0)
+	add_child(bounce)
 
 func make_pool(at: Vector3) -> SpotLight3D:
 	var spot := SpotLight3D.new()

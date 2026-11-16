@@ -61,6 +61,14 @@ func run() -> void:
 	check(rigging > 40, "Trusses, lamps and jumbotron are tagged as rigging (%d)" % rigging)
 	for rim in rims:
 		check(rim.light_cull_mask & lighting.RIGGING_LAYER == 0, "%s skips the rigging" % rim.name)
+	# Ice bounce: light from the white sheet up onto the players only.
+	var bounce: DirectionalLight3D = lighting.bounce
+	check(bounce != null, "Ice bounce light exists")
+	if bounce != null:
+		check(not bounce.shadow_enabled and bounce.light_specular == 0.0, "Ice bounce is soft (no shadows, no specular)")
+		check(bounce.light_cull_mask & (lighting.ENVIRONMENT_LAYER | lighting.RIGGING_LAYER) == 0, "Ice bounce lights players, not the ice or rigging")
+		check((-bounce.global_basis.z).y > 0.8, "Ice bounce shines up from the ice (%.2f)" % (-bounce.global_basis.z).y)
+		check(bounce.light_energy < 0.5, "Ice bounce stays a fill light")
 	# Every camera, at every zoom and puck position: if it renders the rigging,
 	# no rigging mesh may sit between it and the ice it frames (camera 1 used
 	# to look down through the jumbotron). Overhead and Full rink hide it;
