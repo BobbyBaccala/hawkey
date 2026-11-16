@@ -6,6 +6,7 @@ const Arena = preload("res://scripts/arena.gd")
 const StickModel = preload("res://scripts/stick_model.gd")
 const Gear = preload("res://scripts/gear_builder.gd")
 const Mocap = preload("res://scripts/mocap.gd")
+const StrokeAnim = preload("res://scripts/stroke_anim.gd")
 const Kit = preload("res://scripts/kit_materials.gd")
 ## Sculpted sweater and breezers modelled in Blender (tools/blender/kit_v2.py),
 ## skinned to the same base skeleton. Goalies and officials keep the
@@ -106,6 +107,21 @@ var butterfly := 0.0
 var butterfly_posed := 0.0
 var shot_follow := 0.0
 var shot_charge := 0.0
+## Stick strokes (stroke_anim.gd): shots, passes, dekes, tips, poke checks.
+## stroke_kind "" = none. stroke_hold >= 0 parks the stroke at that time (a
+## held shot charge, a loaded one-timer). A new stroke (or the end of one)
+## cross-fades from the pose it interrupts over STROKE_FADE.
+const STROKE_FADE := 0.09
+var stroke_kind := ""
+var stroke_t := 0.0
+var stroke_hold := -1.0
+var stroke_charging := false
+## Shot the user is winding up while the shoot button is held (set by the match).
+var charge_kind := ""
+var stroke_from := {}
+var stroke_fade := 1.0
+var stroke_spot := Vector3.ZERO
+var stroke_out := {}
 var desired_stick := Vector2.ZERO
 var stick_intent := Vector2.ZERO
 var goalie_save_height := 0.0
@@ -113,11 +129,27 @@ var goalie_save_height := 0.0
 ## save can interrupt the recovery from the last one. save_target is the
 ## puck's predicted crossing point in rig space: x across (+x = catching
 ## side), y height above the ice.
-const SAVE_KINDS := ["glove","blocker","pad_left","pad_right","splits_left","splits_right","stack_left","stack_right"]
-var save_speeds := {"glove":0.0,"blocker":0.0,"pad_left":0.0,"pad_right":0.0,"splits_left":0.0,"splits_right":0.0,"stack_left":0.0,"stack_right":0.0}
+## Besides the saves: "body" (a shot into the chest: both arms clamp in to
+## trap it), "rvh_left"/"rvh_right" (reverse VH post seal on the glove /
+## blocker post: that pad flat on the ice along the goal line, the other
+## skate planted, knee up, to push across), "poke" (poke check: the stick
+## shoots out along the ice at the carrier, chest over it) and "cover" (the
+## puck frozen under the catcher in front of the pads for a whistle).
+const SAVE_KINDS := ["glove","blocker","pad_left","pad_right","splits_left","splits_right","stack_left","stack_right","body","rvh_left","rvh_right","poke","cover"]
+var save_speeds := {"glove":0.0,"blocker":0.0,"pad_left":0.0,"pad_right":0.0,"splits_left":0.0,"splits_right":0.0,"stack_left":0.0,"stack_right":0.0,"body":0.0,"rvh_left":0.0,"rvh_right":0.0,"poke":0.0,"cover":0.0}
 const SAVE_SNAP := 24.0
 const SAVE_RECOVER := 10.0
-var save_weights := {"glove":0.0,"blocker":0.0,"pad_left":0.0,"pad_right":0.0,"splits_left":0.0,"splits_right":0.0,"stack_left":0.0,"stack_right":0.0}
+var save_weights := {"glove":0.0,"blocker":0.0,"pad_left":0.0,"pad_right":0.0,"splits_left":0.0,"splits_right":0.0,"stack_left":0.0,"stack_right":0.0,"body":0.0,"rvh_left":0.0,"rvh_right":0.0,"poke":0.0,"cover":0.0}
+## Poke check: how far out the stick goes along the ice (rig z of the blade)
+## and where the stick hand drives to; cover: where the catcher pins the puck.
+const POKE_BLADE := Vector3(-0.12,0.042,1.62)
+const POKE_GRIP := Vector3(-0.22,0.42,0.92)
+const COVER_GLOVE := Vector3(0.10,0.30,0.66)
+const COVER_BEND := 0.42
+## Reverse VH: the off-post skate planted out to its side and a little
+## forward, knee up; hips shift toward the post.
+const RVH_ANKLE := Vector3(0.52,0.115,0.20)
+const RVH_HIP_SHIFT := 0.10
 ## Pad stack (desperation save when already sliding toward a low, wide shot):
 ## the goalie goes down on his side with both legs straight and together, so
 ## the two pads stack into a wall facing the shooter, feet to the post, the
@@ -1605,6 +1637,9 @@ func pose(speed: float, turn: float) -> void:
 		# Pad stack: the body straightens (it is laid on its side by the rig roll).
 		var stack_w := stack_weight()
 		if stack_w > 0.0: drop = drop.lerp(Vector3(0,-0.04,0),stack_w)
+		# Post seal: hips toward the post; poke and cover: hips forward.
+		drop += Vector3((float(save_weights.rvh_left)-float(save_weights.rvh_right))*RVH_HIP_SHIFT,0,0)
+		drop += Vector3(0,-0.03,0.10)*float(save_weights.poke)+Vector3(0,0,0.06)*float(save_weights.cover)
 	var shoulder_turn := 0.0
 	if not goalie:
 		stride=[stride_foot(0,speed),stride_foot(1,speed)]
@@ -1615,6 +1650,10 @@ func pose(speed: float, turn: float) -> void:
 		# Shoulders open toward wherever the blade is being carried, so the
 		# bottom arm reaches out in front instead of across the chest.
 		shoulder_turn = push_side*0.07-stick_intent.x*0.30
+	var sb := stroke_body() if not goalie and not referee else {}
+	if not sb.is_empty():
+		drop += sb.hip
+		shoulder_turn += float(sb.turn)
 	# Hockey stop: blend the stride toward the skid stance (see STOP_ANGLE).
 	var stop_w := stop_blend()
 	if stop_w > 0.0:
@@ -1819,6 +1858,9 @@ func pose(speed: float, turn: float) -> void:
 	# Stop: the upper body leans back against the skid.
 	if stop_w > 0.0: bend = Basis(Vector3.BACK,-stop_side*0.24*stop_w)*bend
 	if not hop_state.is_empty(): bend = Basis(Vector3.RIGHT,0.38*float(hop_state.lean))*bend
+	# Stick strokes: the chest drops over a shot or poke and leans with a deke.
+	if not sb.is_empty() and (float(sb.lean) != 0.0 or float(sb.bend) != 0.0):
+		bend = Basis(Vector3.BACK,float(sb.lean))*Basis(Vector3.RIGHT,float(sb.bend))*bend
 	# Body check: the upper body is thrown the way the hit pushed him.
 	if hit_stagger > 0.0: bend = hit_bend()*bend
 	if not goalie and (seat > 0.0 or cheer > 0.0 or stand_tall > 0.0):
@@ -1836,6 +1878,12 @@ func pose(speed: float, turn: float) -> void:
 		if reach_lean != 0.0 or pad_lean != 0.0:
 			var over_pad := absf(pad_lean)
 			bend = Basis(Vector3.UP,reach_lean*0.35+pad_lean*PAD_SAVE_TURN)*Basis(Vector3.BACK,-reach_lean-pad_lean*PAD_SAVE_LEAN)*Basis(Vector3.RIGHT,over_pad*PAD_SAVE_BEND)*bend
+		# Poke check / cover: chest drops forward over the stick or the puck;
+		# post seal: shoulders lean onto the post.
+		var reach_down := float(save_weights.poke)*0.30+float(save_weights.cover)*COVER_BEND
+		var post_lean := float(save_weights.rvh_left)-float(save_weights.rvh_right)
+		if reach_down != 0.0 or post_lean != 0.0:
+			bend = Basis(Vector3.BACK,-post_lean*0.12)*Basis(Vector3.RIGHT,reach_down)*bend
 		# Splits: chest tall over the hips, tipped a little toward the lead leg.
 		var split_lean: float = save_weights.splits_left-save_weights.splits_right
 		if split_lean != 0.0:
@@ -1871,6 +1919,7 @@ func pose(speed: float, turn: float) -> void:
 	helmet.position = posed_head+look*(Vector3(0,0.095,0.015) if goalie else Gear.HELMET_OFFSET)
 	helmet.basis = look
 	if neck_guard: update_neck_guard()
+	if not goalie and not referee: pose_stroke_blade(sb)
 	for i in range(2):
 		var side := 1.0 if i==0 else -1.0
 		var suffix := ".L" if i==0 else ".R"
@@ -1933,6 +1982,16 @@ func pose(speed: float, turn: float) -> void:
 				stack_knee.x = side*0.16
 				ankle = ankle.lerp(stack_ankle,stack_w)
 				knee = knee.lerp(stack_knee,stack_w)
+				feet[i] = ankle
+			# Reverse VH: the off-post leg comes up out of the butterfly, skate
+			# planted wide and a little forward, knee up over it, ready to push.
+			var rvh_up: float = save_weights["rvh_right" if i==0 else "rvh_left"]
+			if rvh_up > 0.0:
+				var lunge := Vector3(side*RVH_ANKLE.x,RVH_ANKLE.y,RVH_ANKLE.z)
+				var lunge_knee := knee_position(hip,lunge,Vector3(side*0.35,0.5,1.0),0.44,0.45)
+				var up_w := smoothstep(0.0,1.0,rvh_up)
+				ankle = ankle.lerp(lunge,up_w)
+				knee = knee.lerp(lunge_knee,up_w)
 				feet[i] = ankle
 			var lead_w: float = save_weights["splits_left" if i==0 else "splits_right"]
 			var trail_w: float = save_weights["splits_right" if i==0 else "splits_left"]
@@ -2114,6 +2173,12 @@ func pose(speed: float, turn: float) -> void:
 				wrist = wrist.lerp(reach(shoulder,aim),catch_w)
 			if i==0 and stack_weight() > 0.0:
 				wrist = wrist.lerp(reach(shoulder,stack_hand(1.0)),stack_weight())
+			# Shot into the chest: the catcher clamps in over the puck.
+			if i==0 and float(save_weights.body) > 0.0:
+				wrist = wrist.lerp(Vector3(0.24+posed_drop.x,0.92+goalie_save_height,0.46),float(save_weights.body))
+			# Cover: the catcher comes down over the puck in front of the pads.
+			if i==0 and float(save_weights.cover) > 0.0:
+				wrist = wrist.lerp(reach(shoulder,COVER_GLOVE+Vector3(posed_drop.x,0,0)),float(save_weights.cover))
 		# Elbows: the top-hand elbow points out and back a little; the bottom
 		# arm hangs nearly straight, elbow tucked in toward the body.
 		var pole := Vector3(side*0.6,-0.8,-0.1) if goalie else (Vector3(side*0.45,-0.25,-1.0) if i==0 else Vector3(side*0.5,-0.2,-0.8))
@@ -2282,6 +2347,123 @@ func hit_bend() -> Basis:
 	var a := hit_amount()
 	return Basis(Vector3.BACK,hit_dir.x*0.42*a)*Basis(Vector3.RIGHT,-hit_dir.z*0.34*a)
 
+## Starts a stick stroke (StrokeAnim.library()) at time `from_t`, cross-fading
+## from whatever the stick and body are doing now.
+func play_stroke(kind: String, from_t := 0.0) -> void:
+	if goalie or referee or not StrokeAnim.has(kind): return
+	# From the skating pose a stroke starts on its own first key (the same
+	# pose): no cross-fade needed. Interrupting one, blend from where it is.
+	stroke_from = stroke_current()
+	stroke_fade = 0.0 if stroke_active() or from_t > 0.0 else 1.0
+	stroke_kind = kind
+	stroke_t = from_t
+	stroke_hold = -1.0
+	stroke_charging = false
+	# Slap shot / one-timer: the puck is pushed out to where the swing will
+	# meet it and waits there on the ice while the stick goes up.
+	if StrokeAnim.holds_puck(kind): stroke_spot = contact_point(kind)
+
+## Mid-blade at the moment of release of a stroke, for the current stance.
+func contact_point(kind: String) -> Vector3:
+	var at := StrokeAnim.release_at(kind)
+	var top := stick_grip_base()
+	var base_dir := (stick_heel_at(top)-top).normalized()
+	var p := StrokeAnim.blade(kind,at,top+StrokeAnim.body(kind,at).grip,base_dir)
+	p.y = StrokeAnim.BLADE_Y
+	return p
+
+## Ends any stroke (cross-fading back to skating).
+func stop_stroke() -> void:
+	if stroke_kind == "": return
+	stroke_from = stroke_current()
+	stroke_fade = 0.0
+	stroke_kind = ""
+	stroke_hold = -1.0
+	stroke_charging = false
+
+## Loaded for a one-timer while the pass is on its way: stick back and up,
+## waiting (up to `seconds`) for the puck.
+func load_one_timer(seconds := 1.4) -> void:
+	if stroke_kind == "one_timer" and stroke_hold >= 0.0: return
+	play_stroke("one_timer")
+	stroke_hold = StrokeAnim.windup_at("one_timer")
+	set_meta("one_timer_wait",seconds)
+
+## The puck leaves the stick now: a stroke of this kind already wound up (a
+## CPU shot, the user's held charge, a loaded one-timer) swings through from
+## its contact point; otherwise the stroke starts just before contact.
+func release_stroke(kind: String) -> void:
+	if goalie or referee: return
+	if not StrokeAnim.has(kind): kind = "pass"
+	var at := StrokeAnim.release_at(kind)
+	if stroke_kind == kind and stroke_t <= at+0.02:
+		stroke_t = maxf(stroke_t,at-0.03)
+		stroke_hold = -1.0
+		stroke_charging = false
+	else:
+		play_stroke(kind,maxf(at-0.05,0.0))
+
+func stroke_active() -> bool:
+	return stroke_kind != "" or stroke_fade < 1.0
+
+func deking() -> bool:
+	return StrokeAnim.is_deke(stroke_kind)
+
+## The stroke's own pose this instant (no cross-fade): body channels plus
+## the blade target (rig space) for the top hand at top_base (the stroke's
+## grip offset already applied), or an empty pose when no stroke runs.
+func stroke_raw(top_base: Vector3, base_blade: Vector3) -> Dictionary:
+	if stroke_kind == "":
+		return {"grip":Vector3.ZERO,"turn":0.0,"lean":0.0,"bend":0.0,"hip":Vector3.ZERO,"blade":base_blade}
+	var b := StrokeAnim.body(stroke_kind,stroke_t)
+	var base_dir := (stick_heel_at(top_base)-top_base).normalized()
+	b.blade = StrokeAnim.blade(stroke_kind,stroke_t,top_base,base_dir)
+	return b
+
+## Body channels with the cross-fade applied (blade from stroke_out).
+func stroke_current() -> Dictionary:
+	if stroke_out.is_empty():
+		return {"grip":Vector3.ZERO,"turn":0.0,"lean":0.0,"bend":0.0,"hip":Vector3.ZERO,"blade":blade_position}
+	return stroke_out.duplicate()
+
+func stroke_body() -> Dictionary:
+	var raw := {"grip":Vector3.ZERO,"turn":0.0,"lean":0.0,"bend":0.0,"hip":Vector3.ZERO}
+	if stroke_kind != "": raw = StrokeAnim.body(stroke_kind,stroke_t)
+	if stroke_fade < 1.0 and not stroke_from.is_empty():
+		var w := smoothstep(0.0,1.0,stroke_fade)
+		for k in ["grip","turn","lean","bend","hip"]: raw[k] = lerp(stroke_from[k],raw[k],w)
+	return raw
+
+func update_stroke(delta: float) -> void:
+	if goalie or referee: return
+	# The user's held shot: wind up and wait at the top until the release.
+	if shot_charge > 0.01 and charge_kind != "":
+		if not stroke_charging or stroke_kind != charge_kind:
+			play_stroke(charge_kind)
+			stroke_charging = true
+		stroke_hold = StrokeAnim.windup_at(charge_kind)*clampf(shot_charge*1.6,0.3,1.0)
+	elif stroke_charging:
+		# Charge let go without a shot (lost the puck): unwind.
+		stop_stroke()
+	if has_meta("one_timer_wait") and stroke_kind == "one_timer" and stroke_hold >= 0.0:
+		var left := float(get_meta("one_timer_wait"))-delta
+		set_meta("one_timer_wait",left)
+		if left <= 0.0: stop_stroke()
+	stroke_fade = minf(1.0,stroke_fade+delta/STROKE_FADE)
+	if stroke_kind == "": return
+	stroke_t += delta
+	if stroke_hold >= 0.0: stroke_t = minf(stroke_t,maxf(stroke_hold,0.0))
+	if stroke_t >= StrokeAnim.duration(stroke_kind):
+		stroke_kind = ""
+		stroke_hold = -1.0
+
+## Where the carried puck is held (world): on the blade, except while a slap
+## or one-timer winds up, when it waits on the ice where the swing will meet it.
+func get_puck_world() -> Vector3:
+	if stroke_kind != "" and StrokeAnim.holds_puck(stroke_kind) and stroke_t < StrokeAnim.release_at(stroke_kind):
+		return rig.to_global(stroke_spot)
+	return get_blade_world()
+
 func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, braking: bool = false) -> void:
 	hit_stagger = maxf(0.0,hit_stagger-delta/hit_seconds)
 	update_hop(delta)
@@ -2294,8 +2476,9 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 	update_stop(speed,delta,braking)
 	brake_turn = move_toward(brake_turn,1.0 if braking and not goalie else 0.0,delta*6)
 	shot_follow = maxf(0,shot_follow-delta*3)
+	update_stroke(delta)
 	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
-	blade_position=Vector3(-0.02+butterfly_posed*0.05,0.042,0.60-butterfly_posed*0.04).lerp(Vector3(-stack_dir()*0.23,0.35,0.62),stack_weight()).lerp(splits_blade(),splits_weight()) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
+	blade_position=Vector3(-0.02+butterfly_posed*0.05,0.042,0.60-butterfly_posed*0.04).lerp(Vector3(-stack_dir()*0.23,0.35,0.62),stack_weight()).lerp(splits_blade(),splits_weight()).lerp(POKE_BLADE,float(save_weights.poke)) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
 	# Stop: the stick reaches out in front for balance.
 	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
 	# Faceoff: settle into the stance quickly, break out of it a little slower.
@@ -2415,6 +2598,12 @@ func stick_grip() -> Vector3:
 		if split_w > 0.0: grip = grip.lerp(Vector3(-0.42+posed_drop.x,SPLITS_GRIP_Y,0.52),split_w)
 		var stack_w := stack_weight()
 		if stack_w > 0.0: grip = grip.lerp(reach(shoulder_of(1),stack_hand(-1.0)),stack_w)
+		# Poke check: the stick hand drives the paddle out along the ice.
+		var poke_w: float = save_weights.poke
+		if poke_w > 0.0: grip = grip.lerp(reach(shoulder_of(1),POKE_GRIP+Vector3(posed_drop.x,0,0)),poke_w)
+		# Shot into the chest: the blocker tucks in beside the catcher.
+		var body_w: float = save_weights.body
+		if body_w > 0.0: grip = grip.lerp(Vector3(-0.30+posed_drop.x,0.70,0.50),body_w*0.6)
 		var block_w: float = save_weights.blocker
 		if block_w > 0.0:
 			# Blocker save: the stick hand punches out to the puck's line and the
@@ -2426,7 +2615,7 @@ func stick_grip() -> Vector3:
 	# back beside the body, forearm roughly level so the shaft crosses the palm
 	# (not held end-on like a torch). Rides with the shoulders as the skater
 	# crouches, and moves with stickhandling and shots.
-	var grip := shoulder_of(0)+Vector3(-0.11-stick_intent.x*0.20-shot_follow*0.12,-0.235+shot_charge*0.06,0.15-stick_intent.y*0.05-shot_charge*0.12+shot_follow*0.22)
+	var grip := stick_grip_base()+stroke_grip
 	# Stop: hands come down with the hips and push the stick out front.
 	grip += Vector3(0,-0.10,0.06)*stop_blend()
 	# Faceoff: the top hand comes down and forward so the shaft lies low.
@@ -2439,6 +2628,30 @@ func stick_grip() -> Vector3:
 	grip.z = maxf(grip.z,shoulder_of(0).z+0.15)
 	# The top hand holds the stick in front of the jersey, never inside it.
 	return clear_hand(grip,0.075)
+
+## Top hand on the skating stick, before any stroke moves it.
+func stick_grip_base() -> Vector3:
+	return shoulder_of(0)+Vector3(-0.11-stick_intent.x*0.20,-0.235,0.15-stick_intent.y*0.05)
+
+## Stroke offset of the top hand this frame (set in pose_stroke_blade()).
+var stroke_grip := Vector3.ZERO
+## Puts the stick where the stroke wants it: the top hand moves by the
+## stroke's grip offset and the blade goes to the stroke's target at the
+## stick's full length (StrokeAnim.blade()), cross-faded from the pose the
+## stroke interrupted. Runs after the torso is posed (the hands ride it).
+func pose_stroke_blade(sb: Dictionary) -> void:
+	stroke_grip = sb.get("grip",Vector3.ZERO)
+	var top := stick_grip()
+	var raw := stroke_raw(top,blade_position)
+	var out := raw.duplicate()
+	if stroke_fade < 1.0 and not stroke_from.is_empty():
+		var w := smoothstep(0.0,1.0,stroke_fade)
+		out.blade = (stroke_from.blade as Vector3).lerp(raw.blade,w)
+	for k in ["grip","turn","lean","bend","hip"]: out[k] = sb.get(k,raw[k])
+	stroke_grip = out.grip
+	blade_position = out.blade
+	blade_position.y = maxf(blade_position.y,StrokeAnim.BLADE_Y)
+	stroke_out = out
 
 func seat_knob() -> Vector3:
 	return shoulder_of(0)+SEAT_KNOB
@@ -2577,7 +2790,10 @@ func update_stick() -> void:
 		# runs from the top of the hosel to the knob, so blade and shaft join
 		# in one tapered piece instead of meeting at a corner.
 		var lift_dir:=(top-bottom).normalized()
-		var blade_basis:=flat.slerp(Basis(Quaternion(Vector3.UP,lift_dir)).orthonormalized(),maxf(raised_stick,stick_carry))
+		# A blade lifted off the ice by a stroke (follow-through, slap windup)
+		# turns with the shaft instead of staying flat.
+		var stroke_lift := smoothstep(0.06,0.6,blade_position.y)*0.7
+		var blade_basis:=flat.slerp(Basis(Quaternion(Vector3.UP,lift_dir)).orthonormalized(),maxf(maxf(raised_stick,stick_carry),stroke_lift))
 		blade_xf=Transform3D(blade_basis,bottom+blade_basis*Vector3(stick_blade_length*0.48,0,0))
 		bottom=blade_xf*StickModel.hosel_top(stick_blade_length)
 	var axis:=top-bottom

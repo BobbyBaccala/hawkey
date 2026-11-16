@@ -51,6 +51,11 @@ func run()->void:
 		["padsave-low","pad_left",Vector2(0.95,0.1),Vector3(0.3,0.35,2.4),Vector3(0.3,0.2,0),44.0],
 		["stack-front","stack_left",Vector2(0.9,0.1),Vector3(0.0,0.9,2.8),Vector3(0,0.35,0),50.0],
 		["stack-side","stack_left",Vector2(0.9,0.1),Vector3(-2.0,0.9,1.6),Vector3(0,0.35,0),50.0],
+		["body","body",Vector2(0.0,0.75),Vector3(-0.8,1.1,2.4),Vector3(0,0.8,0),46.0],
+		["rvh-front","rvh_left",Vector2(1.2,0.1),Vector3(0.0,1.0,2.7),Vector3(0,0.45,0),48.0],
+		["rvh-side","rvh_left",Vector2(1.2,0.1),Vector3(2.2,1.0,1.4),Vector3(0,0.45,0),48.0],
+		["poke","poke",Vector2(-0.2,0.1),Vector3(-1.9,1.1,2.4),Vector3(0,0.6,0.6),48.0],
+		["cover","cover",Vector2(0.1,0.05),Vector3(-1.6,1.1,2.2),Vector3(0,0.4,0.3),48.0],
 	]
 	var only:=""
 	for arg in OS.get_cmdline_user_args():
@@ -59,7 +64,7 @@ func run()->void:
 		if only!="" and not String(s[0]).begins_with(only):continue
 		var kind:String=s[1]
 		for k in range(90):
-			v.butterfly=move_toward(v.butterfly,1.0 if kind in ["butterfly","pad_left","pad_right"] else 0.0,6.0/60)
+			v.butterfly=move_toward(v.butterfly,1.0 if kind in ["butterfly","pad_left","pad_right","rvh_left","rvh_right","cover"] else 0.0,6.0/60)
 			v.set_save(kind,s[2],1.0/60)
 			v.animate(0,1.0/60,0,false)
 		scene.camera.position=s[3]

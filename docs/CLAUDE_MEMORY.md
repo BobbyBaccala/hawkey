@@ -4,8 +4,7 @@ Read this first each session; update it before finishing (`/update-memory`).
 Keep it short: current state, decisions, gotchas, next steps. History lives in
 the run log at the bottom of `docs/BACKLOG.md`.
 
-_Last updated: 2026-11-12 (cloud session, branch prototype/skating-puck-lab;
-the butterfly-wall work was merged here by the owner's go-ahead)._
+_Last updated: 2026-11-16 (cloud session, branch prototype/skating-puck-lab)._
 
 ## Owner and working style
 - Owner: Ethan. Wants visible progress on the player and goalie models every
@@ -15,7 +14,7 @@ the butterfly-wall work was merged here by the owner's go-ahead)._
   Batch renders/tests, keep logs on disk.
 - Show before/after images from fixed cameras; say plainly what is still wrong.
 
-## Current state (2026-11-12)
+## Current state (2026-11-16)
 Skaters
 - Kit v9 (`assets/kit/skater-kit-v9.glb`, `tools/blender/kit_v9.py`): rounder
   shoulders, sweater side panels, breezer side stripe (kit_gear.gdshader
@@ -26,85 +25,36 @@ Skaters
   neck guard.
 - Blender skate, helmet, glove meshes; CPU body checks with stagger and glass rattle.
 
-Goalies
-- Pads: `assets/gear/goalie-pads-v2.glb` (v1 kept) — moulded boot channel up the
-  back, toe pocket under a thin toe bridge, toe opening. Drawn pad is a constant
-  size (PAD_VIS_SCALE 1.016 x 1.25 x 1.35 = 91 cm, 11 in) pinned at the knee and
-  centred on the ankle across the pad; collision proxies (`pads`, `pad_box`,
-  `get_goalie_gear`) are separate and unchanged.
-- Pads are rigid (owner 2026-11-12): the thigh rise is part of the drawn pad
-  in every pose (same frame, narrower), never folds. Butterfly knees at
-  +-0.34 (BFLY_KNEE_X) so the rigid pads meet at the five-hole as one wall
-  along the ice; pad save colliders moved with them. Knees down, the foot
-  turns toe-back behind the pad (pad stacks count as kneeling); the downloaded pad's toe window is closed
-  (Gear.pad_toe_cover()); the ankle strap loops round the kneeling boot.
-- Save body language (SAVE_LEAN_*, PAD_SAVE_*): torso tips/turns toward a
-  glove or blocker reach (catcher pocket square to the shooter); pad
-  extensions lean, bend and turn the chest over the lead pad. Torso/catcher
-  save proxies follow this pose (shared source), so save coverage moved too.
-- Splits (desperation save, SPLITS_* consts, kinds splits_left/right): picked
-  by choose_save() for low shots past |x| > 1.0 m; hips at 0.32 m, both legs
-  straight out along the ice, pads face-on, stick hand down. Not a
-  knees-down save (butterfly stays 0; match.gd unchanged). Pad colliders
-  cover ~1.7 m of the goal mouth.
-- Pad stack (STACK_* consts, kinds stack_left/right): choose_save(x, h,
-  slide, current) picks it for a low shot wider than 0.62 m when the goalie
-  already slides toward it > 1.6 m/s, and keeps it once started (match.gd
-  passes visual.lateral + visual.save_kind). Legs-together pose in rig space,
-  then the whole rig rolls 1.48 rad, slides 0.95 m to the post, lifts 0.31 m:
-  ~64 cm pad wall from the ice. stack_roll is removed from `lateral`.
-- Gloves are worn on the arms (place_goalie_glove(), align_pair(), consts
-  CATCHER_*/BLOCKER_*): pocket/board face the shooter, catcher upright until
-  it reaches (glove save, glove-side stack) then along the forearm, blocker
-  fist exactly on the drawn shaft (stick_heel_at() shared with update_stick).
-  Calibrated from the ready stance (unchanged).
-- Pads: brighter white (#f7f9fb), white-dominant graphics (thin knee/boot
-  accent lines, team bands at the break and top of the rise). kit_overhead()
-  now darkens only real undersides (normal > ~17 deg down) - it was greying
-  every standing pad face (shared with the cloth shader).
-- Glove backs: blocker board back off-white, tan palm-leather fist (PALM,
-  PALM_DARK), kit strap, rounded cuff (gear_builder.gd add_cuff()); catcher
-  cuff is a sleeve lofted from inside the mitt base with the cheater panel on
-  its front.
-- Save motion: set_save() steps each weight as a critically damped spring
-  (SAVE_SNAP 24 in, SAVE_RECOVER 10 out): snap + ease, half-way timing as
-  the old linear ramps. tools/capture_save_motion.gd measures it.
-- `butterfly` is the match's linear command (read back unchanged); poses and
-  pad colliders use butterfly_posed = smoothstep(butterfly) (gentle start
-  and landing, quicker middle). Drawn pad cancels the collision pad's
-  ice-seal lift along its thickness; ankle strap raised to y -0.25.
-- Goalie pants: kit colour with an accent stripe and white piping
-  (pants_leg(..., piped)); reference photos said bright team colour.
-- Eyes on the puck: goalie_look() turns/tips the head (and mask collider)
-  toward save_target, weighted by the save springs, LOOK_* neck limits; on a
-  glove-side pad save the catcher goes out over the lead pad.
-- Goalie sleeves carry the navy yoke over the cap (kit_cloth sleeve_yoke,
-  GOALIE_SLEEVE_YOKE 0.10) - no red spike at the armhole when the arm rises.
-- Splits stick lies flat across the five-hole (SPLITS_GRIP_Y, splits_blade():
-  blade always across from the blocker hand to the glove side of the hips).
-- Catcher back: team-colour backhand panel over the finger half, accent
-  piping edge, white stall-break lines.
-- Goalie stick: assets/goalie_stick.gdshader paints a two-tone paddle (kit
-  upper with accent pinstripe, white lower, kit heel band) over the bake.
-- Pad stack "seam" is the ~6 cm V groove between the pads' rounded outer
-  rolls (measured at the face), as on real stacks - closing it needs the
-  pads to overlap; legs are already edge to edge (bounding boxes touch).
-- Mask carries a throat guard (Gear.goalie_dangler(), cords) under the chin;
-  capture shots mask / mask-side. Mask paint (Kit.goalie_mask, kit_gear
-  mask_paint): accent dome stripes + white pins, accent chin, own design.
-- Pad stack hands: the top hand reaches over the stack on both sides
-  (catcher on a glove-side stack, blocker + stick on a blocker-side one).
-- Knee cradle, calf wrap and straps (`Gear.pad_rear`, `PadRear` nodes).
-- Skate stays on the ankle; in the butterfly the foot keeps ~105 deg to the
-  shin with the toe in the pad's boot channel.
-- Catcher: two lobes with a T notch, tan leather pocket, laced web, finger
-  binding and stall breaks. Blocker: fingers/thumb round the stick, palm,
-  wrist strap.
-- Stick: owner's downloaded CCM Premier model, logos blanked before baking
-  (`tools/blender/goalie_stick_v1.py` -> `assets/gear/goalie-stick-v1.glb`),
-  1.45 m; the box shaft/paddle/blade stay hidden as save proxies.
-- Sweater: accent yoke + chest diamond crest, ends at the hips over wider
-  accent-coloured pants.
+Goalies (details in the run log; consts named in skater_visual.gd)
+- Pads v2 GLB (boot channel, toe pocket), constant-size drawn pad pinned at the
+  knee, rigid in every pose (owner 2026-11-12), toe window closed
+  (Gear.pad_toe_cover()); butterfly knees +-0.34 (BFLY_KNEE_X) so the pads
+  meet as one wall; kneeling feet turn toe-back behind the pad. Collision
+  proxies (pads, pad_box, get_goalie_gear) are separate and include rig.transform.
+- Save kinds (SAVE_KINDS, spring weights SAVE_SNAP 24 / SAVE_RECOVER 10):
+  glove, blocker, pad_left/right, splits_left/right, stack_left/right
+  (choose_save), plus body (arms clamp in), rvh_left/right (reverse VH post
+  seal, PlayMoves.choose_post), poke (POKE_*), cover (COVER_*). Torso leans and
+  turns into saves; goalie_look() turns the head to save_target.
+- match.gd goalie_read(): poke check (PlayMoves.goalie_pokes, 40% knocks the
+  puck off) and post seal when no shot is coming; pose_goalies_stopped() keeps
+  goalies animating through whistles (cover over the puck, catch held up with
+  the puck in the glove, others back to stance) - they used to freeze mid-save.
+- Gear: gloves oriented from the arm (place_goalie_glove/align_pair), blocker
+  fist on the drawn shaft; white pads with thin accent graphics; glove backs,
+  catcher pocket/web, pad rear straps; kit pants with accent stripe; sleeve
+  yoke; mask paint + dangler; two-tone stick shader over the de-branded bake.
+
+Skaters: stick strokes (owner 2026-11-16: "animations for all that can
+happen") - scripts/stroke_anim.gd keyframed splines at constant stick length:
+wrist, snap, slap, one_timer, backhand, pass, saucer, tip, poke, deke_fhbh,
+deke_toe_drag, deke_fake. SkaterVisual play_stroke/release_stroke/
+load_one_timer/get_puck_world (slap & one-timer leave the puck on the ice
+during the backswing); the user's held charge parks at the windup
+(charge_kind via match human_shot_kind). CPU shots wind up and release at
+the stroke's release time (ai_shoot -> shot_pending -> ai_fire_shot); CPU
+dekes (ai_deke), deflections/tips (check_deflection); logic in
+scripts/play_moves.gd. Sheets: tools/capture_strokes.gd + stroke_sheet.py.
 
 CPU AI (owner 2026-11-16: realistic positioning and flow; measured with
 tools/ai_flow_probe.gd + ai_flow_report.py, see DEVELOPMENT.md):
@@ -118,18 +68,18 @@ tools/ai_flow_probe.gd + ai_flow_report.py, see DEVELOPMENT.md):
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 47 suites; last full run 47/47 at 25a77fc (2026-11-16).
+Tests: 48 suites (new test_strokes); last full run 48/48 (2026-11-16, strokes run).
 
-## Open defects / next steps (goalie first)
-0. Owner 2026-11-12: gear believability and save animations are the top
-   priority. Forward+: NaN blooms fixed in all kit shaders (9ea47f6);
-   IceBounce fill light makes standing pads read white.
-1. Goalie saves slice 2c: poke check on close carriers, post-save
-   freeze/rebound control.
-   Polish: stack/splits have no dive motion (the save weight
-   blends the pose in ~0.15 s - slowing it would weaken save coverage).
-2. Skaters: boxy shoulders still, single face mesh (add variants), number font
-   is block (backlog "Blender kit, pass 2").
+## Open defects / next steps
+1. Scoring rate too high (pre-existing, measured on the old commit too):
+   ~8 goals on ~27 attempts per 3 x 4-min CPU games, mostly one-timers from
+   12 m beating a set goalie. Investigate save coverage/reaction vs shot aim
+   (a "goalie reads the pass" tweak didn't help; reverted).
+2. Strokes: CPU rarely picks wrist/backhand (shot_kind pressure split), no
+   human skill-stick deke input yet (CPU only), no shot-block slide, no
+   dive motion into stack/splits, blade face doesn't roll open/closed.
+3. AI: teammates <2 m apart in ~18% of frames; OZ forwards could go lower.
+4. Skaters: boxy shoulders, single face mesh, block number font.
 
 ## Decisions
 - 2026-11-07: downloaded models/brands allowed with logos, names and signatures
@@ -149,8 +99,10 @@ Tests: 47 suites; last full run 47/47 at 25a77fc (2026-11-16).
 
 ## Gotchas
 - CPU games are chaotic: judge AI changes on 2+ seeds of 4-min games with the
-  flow recorder, not one game. test_play_now_ai's 90 s game is one fixed
-  sample (deterministic default seed).
+  flow recorder, not one game. test_play_now_ai's CPU game now counts 90 s of
+  live play (goal celebrations/replays excluded) - still one fixed seed.
+- Strokes: blade targets must keep STICK_L from the FINAL top hand
+  (stick_grip() after clear_hand), or the drawn shaft stretches.
 - Every shader pow(): base must be >= 0 (clamp N.V; square with x*x, never
   pow(x, 2.0)) - test_gameplay_photo enforces the visor/cloth cases. Before
   the 4a28b7d fix every skater was a glowing ghost in Forward+.

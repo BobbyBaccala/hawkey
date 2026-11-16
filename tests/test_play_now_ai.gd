@@ -150,7 +150,7 @@ func check_defence_reads() -> void:
 	check(SkaterAI.intercept_point(Vector3(0, 0, 0), Vector3(0, 0, 15), Vector3(1, 0, 6)) != Vector3.INF, "Can step into a nearby passing lane")
 	check(SkaterAI.intercept_point(Vector3(0, 0, 0), Vector3(0, 0, 25), Vector3(14, 0, -10), 8.5, 0.6) == Vector3.INF, "Doesn't chase what he can't reach")
 
-## CPU vs CPU (spectate): a minute and a half of real match play.
+## CPU vs CPU (spectate): a minute and a half of live match play.
 func check_cpu_match() -> void:
 	var Match = load("res://scripts/match.gd")
 	Match.play_spectate = true
@@ -165,8 +165,14 @@ func check_cpu_match() -> void:
 	var last_carrier = null
 	var zone_entries := [0, 0]
 	var last_zone := [false, false]
-	for frame in range(60 * 90):
+	# 90 s of live play (phase PLAY): a goal's celebration, replay and faceoff
+	# (~17 s) or an icing stoppage is not play, and counting it let one early
+	# goal decide whether the CPUs "passed enough". Capped at 4 minutes.
+	var play_frames := 0
+	for frame in range(60 * 240):
+		if play_frames >= 60 * 90: break
 		await physics_frame
+		if int(scene.match_state.phase) == 1: play_frames += 1
 		var c = scene.carrier
 		if c != null:
 			var team: int = scene.body_team(c)
