@@ -193,7 +193,8 @@ void fragment() {
 		ao *= mix(0.78, 1.0, smoothstep(0.0, 0.12, UV.y));
 		ao *= mix(1.0, 0.8, smoothstep(0.95, 1.0, UV.y));
 		// Wrinkles gather at the elbow.
-		fold_amt *= 1.0 + 1.6 * exp(-pow((UV.y - 0.5) / 0.12, 2.0));
+		float fy = (UV.y - 0.5) / 0.12;
+		fold_amt *= 1.0 + 1.6 * exp(-fy * fy);
 	} else if (garment == 3) {
 		float x = sin(UV.x * 62.83);
 		float w = fwidth(x) + 0.001;

@@ -97,7 +97,7 @@ void light() {
 	vec3 h = normalize(VIEW + LIGHT);
 	float r = skin > 0.5 ? 0.5 : 0.8;
 	float shin = 2.0 / max(r * r * r * r, 0.002) - 2.0;
-	float fres = 0.04 + 0.96 * pow(1.0 - max(dot(h, VIEW), 0.0), 5.0);
+	float fres = 0.04 + 0.96 * pow(1.0 - clamp(dot(h, VIEW), 0.0, 1.0), 5.0);
 	float spec = pow(max(dot(NORMAL, h), 0.0), shin) * (shin + 8.0) / (8.0 * PI) * fres * max(ndl, 0.0);
 	SPECULAR_LIGHT += spec * ATTENUATION * LIGHT_COLOR * (skin > 0.5 ? 0.6 : 0.3);
 }

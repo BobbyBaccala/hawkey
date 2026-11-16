@@ -84,6 +84,14 @@ func run() -> void:
 	var gear_code := FileAccess.get_file_as_string("res://assets/kit_gear.gdshader")
 	check(gear_code.find("c = clamp(c, vec3(0.0), vec3(1.0));") >= 0, "gear shader clamps vertex colour before pow()")
 	check(gear_code.find("isnan(alb)") >= 0, "gear shader never outputs a NaN albedo")
+	var visor_code := FileAccess.get_file_as_string("res://assets/kit_visor.gdshader")
+	check(visor_code.find("clamp(abs(dot(NORMAL, VIEW)), 0.0, 1.0)") >= 0, "visor clamps N.V before pow() (NaN bloomed over every helmet)")
+	check(visor_code.find("isnan(e)") >= 0, "visor never emits NaN")
+	# pow(x, 2.0) of a signed value is undefined (NaN on Vulkan): square with x * x.
+	for path in ["res://assets/kit_cloth.gdshader", "res://assets/kit_gear.gdshader", "res://assets/kit_visor.gdshader", "res://assets/uniform.gdshader", "res://assets/goalie_stick.gdshader"]:
+		var code := FileAccess.get_file_as_string(path)
+		var sq := RegEx.create_from_string("pow\\([^;\\n]*,\\s*2\\.0\\s*\\)")
+		check(sq.search(code) == null, "%s has no pow(x, 2.0) squares" % path)
 	var inc := FileAccess.get_file_as_string("res://assets/kit_detail.gdshaderinc")
 	for fn in ["kit_overhead", "kit_detail_fade", "kit_spec_aa"]:
 		check(inc.find("float %s(" % fn) >= 0, "kit_detail has %s" % fn)
