@@ -119,6 +119,17 @@ static func pass_safety(a: Vector3, b: Vector3, opponents: Array, read := 1.0, s
 		safety *= 0.7                                       # long stretch passes are risky
 	return safety
 
+## A pass lane that runs through the own goal mouth: within OWN_CREASE_CLEAR
+## of the net centre, in front of the goal line. A D-to-D pass behind the net
+## is fine (the net is between it and the goal).
+const OWN_CREASE_CLEAR := 1.6
+static func crosses_own_crease(a: Vector3, b: Vector3, attack: float) -> bool:
+	var goal := Vector3(0, 0, -attack * Arena.GOAL_LINE)
+	var hit := segment_distance(goal, a, b)
+	if hit.x >= OWN_CREASE_CLEAR: return false
+	var closest := a + flat(b - a) * hit.y
+	return closest.z * attack > -Arena.GOAL_LINE - 0.1
+
 ## How hard a pass of this length is sent: firm but catchable, softer for short
 ## feeds (match.gd ai_pass uses the same speed the lead point was planned for).
 static func pass_speed(length: float) -> float:
@@ -184,6 +195,9 @@ static func carrier_decision(ctx: Dictionary) -> Dictionary:
 		var lead := lead_point(pos, mate_pos, mate.get("vel", Vector3.ZERO))
 		var safety := pass_safety(pos, lead, opponents, read)
 		if safety < (PASS_SAFE_PRESSED if pressure < CARRY_PRESSURE + 0.6 else PASS_SAFE_OPEN):
+			continue
+		# Never across the front of his own net: a missed one is in the goal.
+		if crosses_own_crease(pos, lead, attack):
 			continue
 		var their_q := shot_quality(lead, attack, ctx.goalie, opponents)
 		var advance := clampf((lead.z - pos.z) * attack / 25.0, -0.4, 0.5)

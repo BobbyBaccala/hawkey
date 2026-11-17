@@ -4,6 +4,7 @@ extends SceneTree
 const StrokeAnim = preload("res://scripts/stroke_anim.gd")
 const PlayMoves = preload("res://scripts/play_moves.gd")
 const Visual = preload("res://scripts/skater_visual.gd")
+const SkaterAI = preload("res://scripts/skater_ai.gd")
 var failures := 0
 func check(ok: bool, message: String) -> void:
 	if not ok:
@@ -18,6 +19,7 @@ func settle(v, frames := 30) -> void:
 func run() -> void:
 	check_library()
 	check_moves()
+	check_more_moves()
 	var v = Visual.new()
 	root.add_child(v)
 	await process_frame
@@ -35,7 +37,7 @@ func run() -> void:
 
 func check_library() -> void:
 	var lib := StrokeAnim.library()
-	for k in ["wrist","snap","slap","one_timer","backhand","pass","saucer","tip","poke","deke_fhbh","deke_toe_drag","deke_fake"]:
+	for k in ["wrist","snap","slap","one_timer","backhand","pass","saucer","tip","poke","block","deke_fhbh","deke_toe_drag","deke_fake"]:
 		check(lib.has(k), "Stroke library has %s" % k)
 	var top := Vector3(0.094,0.92,0.384)
 	var base := Vector3(-0.339,-0.798,0.497)
@@ -44,7 +46,7 @@ func check_library() -> void:
 		check(float(keys[0].t) == 0.0 and keys[0].dir == Vector3.ZERO and keys[keys.size()-1].dir == Vector3.ZERO, "%s starts and ends on the skating pose" % kind)
 		for i in range(1,keys.size()): check(float(keys[i].t) > float(keys[i-1].t), "%s keys in time order" % kind)
 		var r := StrokeAnim.release_at(kind)
-		if StrokeAnim.is_deke(kind): check(r < 0.0, "%s never releases the puck" % kind)
+		if StrokeAnim.is_deke(kind) or kind == "block": check(r < 0.0, "%s never releases the puck" % kind)
 		else: check(r > 0.0 and r < StrokeAnim.duration(kind), "%s releases inside the stroke" % kind)
 		if StrokeAnim.is_shot(kind) or kind in ["pass","saucer","poke"]:
 			# Contact: the blade is on the ice, out in front of the skates.
@@ -66,7 +68,8 @@ func check_library() -> void:
 	check(bh.x > 0.3, "Backhand windup on the backhand side (%.2f)" % bh.x)
 	# Shot selection and speeds.
 	check(StrokeAnim.shot_kind(true,18.0,6.0,0.0,false) == "slap", "Point shot with time -> slap")
-	check(StrokeAnim.shot_kind(true,18.0,1.5,0.0,false) == "snap", "Point shot under pressure -> snap")
+	check(StrokeAnim.shot_kind(true,18.0,1.2,0.0,false) == "snap", "Point shot under pressure -> snap")
+	check(StrokeAnim.shot_kind(false,6.0,3.0,0.0,false) == "snap", "In tight -> snap")
 	check(StrokeAnim.shot_kind(false,6.0,5.0,0.7,false) == "backhand", "Net to the backhand side close in -> backhand")
 	check(StrokeAnim.shot_kind(false,10.0,5.0,0.0,false) == "wrist", "Open forward -> wrister")
 	check(StrokeAnim.shot_kind(false,10.0,5.0,0.0,true) == "one_timer", "One-timer stays a one-timer")
@@ -190,3 +193,34 @@ func check_goalie(g) -> void:
 	check(g.feet[1].y < 0.2, "RVH: off-post skate on the ice (%.2f)" % g.feet[1].y)
 	pose_goalie(g,"",Vector2(0,0.8),false)
 	check(g.knees[1].y > 0.35 and absf(g.blade_position.z-stance_blade.z) < 0.02, "Back to the stance afterwards")
+
+## Skill-stick gestures, shot lanes, rebound control, own-crease passes.
+func check_more_moves() -> void:
+	var h := [[0.0, Vector2(-0.9, 0.0)], [0.12, Vector2(0.0, 0.1)], [0.22, Vector2(0.9, 0.0)]]
+	check(PlayMoves.skill_stick_deke(h) == "deke_fhbh", "Right stick side to side -> forehand-backhand deke")
+	check(PlayMoves.skill_stick_deke([[0.0, Vector2(0.0, -0.9)], [0.2, Vector2(0.1, 0.9)]]) == "deke_toe_drag", "Forward then back -> toe drag")
+	check(PlayMoves.skill_stick_deke([[0.0, Vector2(0.0, 0.9)], [0.2, Vector2(0.9, 0.1)]]) == "deke_fake", "Back then to the side -> fake shot")
+	check(PlayMoves.skill_stick_deke([[0.0, Vector2(-0.9, 0.0)], [0.6, Vector2(0.9, 0.0)]]) == "", "Too slow is stickhandling, not a deke")
+	check(PlayMoves.skill_stick_deke([[0.0, Vector2(-0.4, 0.0)], [0.1, Vector2(0.4, 0.0)]]) == "", "Small moves are stickhandling")
+	var net := Vector3(0, 0, 26.65)
+	check(PlayMoves.in_shot_lane(Vector3(0, 0, 12), net, Vector3(0.3, 0, 15.0)), "Defender in the lane blocks")
+	check(not PlayMoves.in_shot_lane(Vector3(0, 0, 12), net, Vector3(2.5, 0, 15.5)), "Defender beside the lane doesn't")
+	check(not PlayMoves.in_shot_lane(Vector3(0, 0, 12), net, Vector3(0.2, 0, 10.0)), "Defender behind the shooter doesn't")
+	check(not PlayMoves.in_shot_lane(Vector3(0, 0, 12), net, Vector3(0.2, 0, 12.5)), "Defender on top of the puck isn't blocking a lane")
+	# Rebounds come back out, slowed, never on into the net.
+	for zone in ["pad", "body", "blocker", "stick", "catcher", "mask"]:
+		var out := PlayMoves.rebound(Vector3(1.0, 0.2, 28.0), zone, 1.0, 0.3, 0.6)
+		check(out.z < 0.0 and out.length() < 28.0 * 0.5, "%s rebound comes back out, slowed (%s)" % [zone, str(out)])
+	var blk := PlayMoves.rebound(Vector3(1.0, 0.2, 28.0), "blocker", 1.0, 0.3, 0.6)
+	var pad := PlayMoves.rebound(Vector3(1.0, 0.2, 28.0), "pad", 1.0, 0.3, 0.6)
+	check(absf(blk.x) / absf(blk.z) > absf(pad.x) / absf(pad.z), "Blocker steers it wider than a pad")
+	check(absf(pad.x) > absf(pad.z), "A pad rebound goes wide toward the corner, not into the slot")
+	check(PlayMoves.rebound(Vector3(1.0, 0.2, 28.0), "body", 1.0, 0.3, 0.6).length() < 2.0, "Off the chest it drops dead for a cover")
+	check(PlayMoves.rebound(Vector3(0, 0, -20), "pad", 1.0, 0.5, 0.5) == Vector3(0, 0, -20), "A puck going away from the net is left alone")
+	check(SkaterAI.crosses_own_crease(Vector3(-5, 0, -25.5), Vector3(5, 0, -25.0), 1.0), "Pass across the own crease is flagged")
+	check(not SkaterAI.crosses_own_crease(Vector3(-5, 0, -18), Vector3(5, 0, -18), 1.0), "Pass across the high slot is fine")
+	check(not SkaterAI.crosses_own_crease(Vector3(-3, 0, -28.2), Vector3(3, 0, -28.2), 1.0), "D-to-D pass behind the own net is fine")
+	check(StrokeAnim.has("block") and StrokeAnim.release_at("block") < 0.0, "Shot block stroke")
+	var top := Vector3(0.094, 0.92, 0.384)
+	var b := StrokeAnim.body("block", 0.4)
+	check((b.hip as Vector3).y < -0.25, "Block drops the hips")

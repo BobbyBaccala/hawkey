@@ -4,7 +4,7 @@ Read this first each session; update it before finishing (`/update-memory`).
 Keep it short: current state, decisions, gotchas, next steps. History lives in
 the run log at the bottom of `docs/BACKLOG.md`.
 
-_Last updated: 2026-11-16 (cloud session, branch prototype/skating-puck-lab)._
+_Last updated: 2026-11-17 (cloud session, branch prototype/skating-puck-lab)._
 
 ## Owner and working style
 - Owner: Ethan. Wants visible progress on the player and goalie models every
@@ -14,7 +14,7 @@ _Last updated: 2026-11-16 (cloud session, branch prototype/skating-puck-lab)._
   Batch renders/tests, keep logs on disk.
 - Show before/after images from fixed cameras; say plainly what is still wrong.
 
-## Current state (2026-11-16)
+## Current state (2026-11-17)
 Skaters
 - Kit v9 (`assets/kit/skater-kit-v9.glb`, `tools/blender/kit_v9.py`): rounder
   shoulders, sweater side panels, breezer side stripe (kit_gear.gdshader
@@ -36,6 +36,15 @@ Goalies (details in the run log; consts named in skater_visual.gd)
   (choose_save), plus body (arms clamp in), rvh_left/right (reverse VH post
   seal, PlayMoves.choose_post), poke (POKE_*), cover (COVER_*). Torso leans and
   turns into saves; goalie_look() turns the head to save_target.
+- Pad save boxes are full length in every pose (pad_box(), PAD_BOX_TOP_BFLY
+  0.38): in the butterfly they used to stop at the knee break, leaving a
+  0.6 m five-hole between them (7/8 low centre shots scored in the gallery).
+- Rebound control (PlayMoves.rebound, called in match.gd _on_puck_contact):
+  chest/catcher saves drop dead for a cover, pads to the corner, blocker and
+  stick kicked wide. Slot rebounds kept attackers in the zone for minutes.
+- tools/goalie_gallery.gd: isolated save % by shot type (corners, five-hole,
+  one-timers off a pass, dribbles). After the fixes 100% there; CPU games
+  ~10% of attempts score (was ~28%).
 - match.gd goalie_read(): poke check (PlayMoves.goalie_pokes, 40% knocks the
   puck off) and post seal when no shot is coming; pose_goalies_stopped() keeps
   goalies animating through whistles (cover over the puck, catch held up with
@@ -53,8 +62,12 @@ load_one_timer/get_puck_world (slap & one-timer leave the puck on the ice
 during the backswing); the user's held charge parks at the windup
 (charge_kind via match human_shot_kind). CPU shots wind up and release at
 the stroke's release time (ai_shoot -> shot_pending -> ai_fire_shot); CPU
-dekes (ai_deke), deflections/tips (check_deflection); logic in
-scripts/play_moves.gd. Sheets: tools/capture_strokes.gd + stroke_sheet.py.
+dekes (ai_deke), deflections/tips (check_deflection), shot blocks
+(ai_shot_blocks: lane within 4.5 m, not the man on the carrier, up again
+once the shot is gone); the user's dekes from right-stick gestures
+(PlayMoves.skill_stick_deke) or Z/X/V (human_deke). CPU never passes
+across the front of its own crease (SkaterAI.crosses_own_crease; behind
+the net is fine). Logic in scripts/play_moves.gd. Sheets: tools/capture_strokes.gd + stroke_sheet.py.
 
 CPU AI (owner 2026-11-16: realistic positioning and flow; measured with
 tools/ai_flow_probe.gd + ai_flow_report.py, see DEVELOPMENT.md):
@@ -68,16 +81,13 @@ tools/ai_flow_probe.gd + ai_flow_report.py, see DEVELOPMENT.md):
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 48 suites (new test_strokes); last full run 48/48 (2026-11-16, strokes run).
+Tests: 48 suites; last full run 48/48 (2026-11-17, five-hole/rebounds/blocks run).
 
 ## Open defects / next steps
-1. Scoring rate too high (pre-existing, measured on the old commit too):
-   ~8 goals on ~27 attempts per 3 x 4-min CPU games, mostly one-timers from
-   12 m beating a set goalie. Investigate save coverage/reaction vs shot aim
-   (a "goalie reads the pass" tweak didn't help; reverted).
-2. Strokes: CPU rarely picks wrist/backhand (shot_kind pressure split), no
-   human skill-stick deke input yet (CPU only), no shot-block slide, no
-   dive motion into stack/splits, blade face doesn't roll open/closed.
+1. Territory still swings in some 4-min CPU games (one of three seeds 62%
+   in one zone); shot attempts can run 11:1 in such a game.
+2. Strokes polish: no dive motion into stack/splits; blade face doesn't
+   roll open/closed; skill-stick gestures untested on a real pad (owner).
 3. AI: teammates <2 m apart in ~18% of frames; OZ forwards could go lower.
 4. Skaters: boxy shoulders, single face mesh, block number font.
 
@@ -101,6 +111,12 @@ Tests: 48 suites (new test_strokes); last full run 48/48 (2026-11-16, strokes ru
 - CPU games are chaotic: judge AI changes on 2+ seeds of 4-min games with the
   flow recorder, not one game. test_play_now_ai's CPU game now counts 90 s of
   live play (goal celebrations/replays excluded) - still one fixed seed.
+- Goalie save % has to be measured both ways: tools/goalie_gallery.gd for
+  the goalie alone (aim at the five-hole too - the CPU aim only goes to the
+  corners) and the flow recorder for real games (rebounds, scrambles).
+- `godot --headless --quit` does NOT parse match.gd; a parse error there
+  makes every match probe hang silently. Load the scripts (build/parse_check
+  pattern: load() + can_instantiate()) after editing match.gd.
 - Strokes: blade targets must keep STICK_L from the FINAL top hand
   (stick_grip() after clear_hand), or the drawn shaft stretches.
 - Every shader pow(): base must be >= 0 (clamp N.V; square with x*x, never

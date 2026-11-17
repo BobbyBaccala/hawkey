@@ -447,9 +447,9 @@ func build_controls() -> void:
 
 func set_controls_text(controller: bool) -> void:
 	if controller:
-		controls_label.text = "CONTROLLER\n\nLeft stick      Skate and aim\nRight stick     Stickhandle\nRT / R2         Hold to charge, release to shoot\nLT / L2         Lift the shot\nRB / R1         Pass          Y / △   Saucer pass\nA / ×           Switch player\nB / ○  Check     X / □  Poke\nL3  Burst        R3  Stop\nD-pad           Lines and defence pairs\nStart           Pause"
+		controls_label.text = "CONTROLLER\n\nLeft stick      Skate and aim\nRight stick     Stickhandle; flick side to side,\n                forward-back or back-side to deke\nRT / R2         Hold to charge, release to shoot\nLT / L2         Lift the shot\nRB / R1         Pass          Y / △   Saucer pass\nA / ×           Switch player\nB / ○  Check     X / □  Poke\nL3  Burst        R3  Stop\nD-pad           Lines and defence pairs\nStart           Pause"
 	else:
-		controls_label.text = "KEYBOARD AND MOUSE\n\nW A S D         Skate (screen relative)\nMouse           Aim\nLeft button     Hold to charge, release to shoot\nAlt             Lift the shot\nRight button    Pass       Shift + right  Saucer\nSpace           Switch player\nE  Poke          F  Check\nShift  Burst     Ctrl  Stop\n1–4  Lines       Q  Defence pair\nC  Camera        Wheel  Zoom        Esc  Pause"
+		controls_label.text = "KEYBOARD AND MOUSE\n\nW A S D         Skate (screen relative)\nMouse           Aim\nLeft button     Hold to charge, release to shoot\nAlt             Lift the shot\nRight button    Pass       Shift + right  Saucer\nSpace           Switch player\nE  Poke          F  Check\nZ X V  Dekes (forehand-backhand, toe drag, fake)\nShift  Burst     Ctrl  Stop\n1–4  Lines       Q  Defence pair\nC  Camera        Wheel  Zoom        Esc  Pause"
 
 # ------------------------------------------------------------ menus
 func menu_button(text: String, handler: Callable) -> Button:

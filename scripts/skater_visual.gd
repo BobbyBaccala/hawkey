@@ -763,10 +763,17 @@ func fit_limb(shell: MeshInstance3D, top: Vector3, bottom: Vector3, girth: float
 	var forward:=(Vector3.BACK-up*up.dot(Vector3.BACK)).normalized()
 	shell.transform=Transform3D(Basis(up.cross(forward)*girth,up*axis.length(),forward*girth),top)
 
+## Save collider of one pad (pad space). The pads are rigid (owner
+## 2026-11-12): the thigh rise is part of the pad in every pose, so the box
+## keeps its full length in the butterfly too - it used to stop at the knee
+## break there, leaving the rises (which meet at the five-hole) hollow and a
+## 0.6 m gap between the pad boxes that low shots went straight through.
+## In the butterfly it reaches up the rise as the drawn pad does (0.38 m).
+const PAD_BOX_TOP_BFLY := 0.38
 func pad_box() -> Array:
-	var length:float=lerpf(Gear.PAD_LENGTH,Gear.PAD_BREAK+Gear.PAD_LENGTH*0.5,butterfly_posed)
-	var center:float=lerpf(0.0,Gear.PAD_BREAK-length*0.5,butterfly_posed)
-	return [Transform3D(Basis(),Vector3(0,center,0)),Vector3(pad_size.x,length,pad_size.z)]
+	var top:float=lerpf(Gear.PAD_LENGTH*0.5,PAD_BOX_TOP_BFLY,butterfly_posed)
+	var length:float=Gear.PAD_LENGTH
+	return [Transform3D(Basis(),Vector3(0,top-length*0.5,0)),Vector3(pad_size.x,length,pad_size.z)]
 
 func build_blade() -> MeshInstance3D:
 	var mesh:=ImmediateMesh.new()

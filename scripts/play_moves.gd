@@ -93,3 +93,67 @@ const POST_DEPTH := 1.4
 static func choose_post(local_x: float, depth: float, distance: float) -> String:
 	if distance > POST_RANGE or depth > POST_DEPTH or absf(local_x) < 0.5: return ""
 	return "rvh_left" if local_x > 0.0 else "rvh_right"
+
+## --- Goalie rebound control ---------------------------------------------------
+## A shot the goalie gets a piece of is absorbed and steered, not left to a
+## rigid-box bounce: a puck that met a pad edge used to carry on into the
+## net. Like a good goalie, he kills it or sends it to the corner, away from
+## the slot: off the chest or the catcher it drops dead at his feet (he then
+## covers it for a whistle, match.gd), off a pad it goes wide toward the
+## corner, off the blocker or stick it is kicked harder and wider. Rebounds
+## into the slot kept the attackers in the zone for minutes on end (flow
+## recorder, seeds 2 and 3). Only shots heading at the net (end_sign: the
+## goal he defends, +1 at +z).
+const REBOUND_KEEP := {"body":0.05,"catcher":0.05,"pad":0.20,"mask":0.15,"blocker":0.30,"stick":0.26}
+const REBOUND_WIDE := {"body":0.15,"catcher":0.15,"pad":1.1,"mask":0.8,"blocker":1.4,"stick":1.3}
+static func rebound(in_v: Vector3, zone: String, end_sign: float, roll_a: float, roll_b: float) -> Vector3:
+	var speed := in_v.length()
+	if speed < 10.0 or in_v.z*end_sign <= 0.0: return in_v
+	var keep: float = REBOUND_KEEP.get(zone,0.2)
+	var wide: float = REBOUND_WIDE.get(zone,1.0)
+	var side := signf(in_v.x) if absf(in_v.x) > 0.5 else (1.0 if roll_a > 0.5 else -1.0)
+	var dir := Vector3(side*(wide+roll_a*0.3),0,-end_sign).normalized()
+	var out := dir*speed*keep*lerpf(0.8,1.2,roll_b)
+	out.y = clampf(in_v.y*0.15,0.0,1.5)*keep*4.0 + (0.8 if zone in ["mask","blocker"] else 0.0)*roll_b
+	return out
+
+## --- Skill-stick dekes (the user's right stick) -------------------------------
+## Gestures read from the last SKILL_WINDOW seconds of right-stick samples
+## ([time, Vector2], newest last; x + = backhand side as the stick shows it,
+## y + = pulled toward the player):
+##   side to side across the stick (one side hard, then the other)  -> deke_fhbh
+##   pushed forward, then pulled straight back                        -> deke_toe_drag
+##   pulled back (shot windup), then flicked to the side              -> deke_fake
+## Returns "" when no gesture completed in the window.
+const SKILL_WINDOW := 0.35
+const SKILL_HARD := 0.75
+static func skill_stick_deke(history: Array) -> String:
+	if history.size() < 2: return ""
+	var now: float = history[history.size()-1][0]
+	var last: Vector2 = history[history.size()-1][1]
+	for i in range(history.size()-2,-1,-1):
+		var t: float = history[i][0]
+		if now-t > SKILL_WINDOW: break
+		var v: Vector2 = history[i][1]
+		if absf(v.x) > SKILL_HARD and absf(last.x) > SKILL_HARD and signf(v.x) != signf(last.x) and absf(v.y) < 0.6 and absf(last.y) < 0.6:
+			return "deke_fhbh"
+		if v.y < -SKILL_HARD and last.y > SKILL_HARD and absf(last.x) < 0.5: return "deke_toe_drag"
+		if v.y > SKILL_HARD and absf(last.x) > SKILL_HARD and last.y < 0.5: return "deke_fake"
+	return ""
+
+## --- Shot blocks ---------------------------------------------------------------
+## A defender gets into a shot's lane and drops to block it when he is between
+## the puck and the net he defends, BLOCK_NEAR..BLOCK_FAR from the puck along
+## the lane, and within BLOCK_LANE of it sideways.
+const BLOCK_NEAR := 1.2
+const BLOCK_FAR := 4.5
+const BLOCK_LANE := 0.9
+static func in_shot_lane(puck: Vector3, net: Vector3, defender: Vector3) -> bool:
+	var lane := Vector3(net.x-puck.x,0,net.z-puck.z)
+	var length := lane.length()
+	if length < 0.1: return false
+	var dir := lane/length
+	var d := Vector3(defender.x-puck.x,0,defender.z-puck.z)
+	var along := d.dot(dir)
+	if along < BLOCK_NEAR or along > minf(BLOCK_FAR,length-1.0): return false
+	return (d-dir*along).length() < BLOCK_LANE

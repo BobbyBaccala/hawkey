@@ -97,6 +97,8 @@ var released_opp_wait := 0.0
 var last_puck_pos := Vector3.ZERO
 var deflected := false
 var released_kind := ""
+## The user's recent right-stick samples ([time, Vector2]) for skill-stick dekes.
+var skill_history: Array = []
 var auto_lines := true
 var goalie_targets: Array[Vector3] = [Vector3(0,0,-(Arena.GOAL_LINE-1.0)),Vector3(0,0,Arena.GOAL_LINE-1.0)]
 var goalie_reaction := 0.0
@@ -950,6 +952,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_Q: request_line(user_team(),defense_pairs[user_team()]+1,true)
 			KEY_L: auto_lines=not auto_lines
 			KEY_E: defensive_action(false)
+			# Dekes on keys: Z forehand-backhand, X toe drag, V fake shot.
+			KEY_Z: human_deke("deke_fhbh")
+			KEY_X: human_deke("deke_toe_drag")
+			KEY_V: human_deke("deke_fake")
 			KEY_F: defensive_action(true)
 	if event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_LEFT,MOUSE_BUTTON_RIGHT] and not paused and not in_menu:
 		register_draw_press()
@@ -987,6 +993,20 @@ func human_shot(elevation: float) -> void:
 	elif kind=="backhand": speed*=0.75
 	strike(shot_direction(),speed,false,elevation,kind)
 	charge=0
+
+## The user's deke (skill stick or Z/X/V): only with the puck and not mid-move;
+## the puck rides the blade through it and he cuts toward the side the move
+## ends on (the backhand for forehand-backhand and the fake).
+func human_deke(kind: String) -> bool:
+	if carrier!=player or match_state.phase!=MatchState.Phase.PLAY: return false
+	var visual=player.get_child(1)
+	if visual.deking() or charge>0.05: return false
+	visual.play_stroke(kind)
+	if kind!="deke_toe_drag":
+		var right:Vector3=visual.rig.global_transform.basis.x
+		right.y=0
+		player.velocity+=right.normalized()*1.4
+	return true
 
 func human_shot_kind(actor: CharacterBody3D, held: float) -> String:
 	var attack:=attack_direction(body_team(actor))
@@ -1097,6 +1117,9 @@ func _on_puck_contact(body: Node) -> void:
 		var pocket:Vector3=body.to_local(puck.global_position)
 		var front_entry:bool=last_puck_velocity.dot(body.global_basis.z)<-1
 		var zone:=str(body.get_meta("zone",""))
+		# Rebound control (PlayMoves.rebound): the shot is absorbed and steered
+		# back out, never carried on into the net off a pad edge.
+		puck.linear_velocity=PlayMoves.rebound(last_puck_velocity,zone,signf(actor.position.z),ai_rng.randf(),ai_rng.randf())
 		if zone in ["body","pad"] and last_puck_velocity.length()>10:
 			# Captured body-block reaction through the torso.
 			actor.get_child(1).play_mocap("Goalkeeper_Body_Block",false,["spine"],1.5,0.9,0.45)
@@ -1186,6 +1209,7 @@ func _physics_process(delta: float) -> void:
 		if slots.humans.has(LOCAL_HUMAN): control_player(delta)
 		update_team_ai(delta)
 		update_possession(delta)
+		ai_shot_blocks()
 		check_deflection()
 		update_goalkeepers(delta)
 		update_officials(delta)
@@ -1277,6 +1301,11 @@ func control_player(delta: float) -> void:
 		braking=controller.stop
 		shot_lift=controller.lift*0.32
 		player_visual.desired_stick=controller.right_stick
+		# Skill-stick dekes: right-stick gestures (PlayMoves.skill_stick_deke).
+		skill_history.append([elapsed,controller.right_stick])
+		while skill_history.size()>0 and elapsed-float(skill_history[0][0])>PlayMoves.SKILL_WINDOW: skill_history.pop_front()
+		var gesture:=PlayMoves.skill_stick_deke(skill_history)
+		if gesture!="" and human_deke(gesture): skill_history.clear()
 		if controller.trigger_down:
 			charge=minf(1,charge+delta*lerpf(0.6,1.3,controller.shoot_trigger))
 	else:
@@ -1477,6 +1506,8 @@ func update_team_ai(delta: float) -> void:
 		var to_target:=target-actor.position
 		var intent:=to_target.limit_length(1)
 		if to_target.length()<0.6: intent=Vector3.ZERO
+		# Down blocking a shot: he holds his spot until he gets back up.
+		if actor.get_child(1).stroke_kind=="block": intent=Vector3.ZERO
 		var stun:=maxf(0,float(actor.get_meta("stun"))-delta)
 		actor.set_meta("stun",stun)
 		if stun<=0:
@@ -1708,6 +1739,31 @@ func check_deflection() -> void:
 		ai_log["tip" if tip else "deflection"]=int(ai_log.get("tip" if tip else "deflection",0))+1
 		beep(320)
 		return
+
+## CPU shot blocks: while a shot is being wound up (a CPU's shot_pending or
+## the user's charge), a CPU defender standing in its lane, close to the
+## shooter (PlayMoves.in_shot_lane), drops into the block (stroke "block") and
+## stops skating; his lowered body is what stops the puck (the torso contact
+## follows the pose). The man already on the carrier keeps checking him
+## instead, and blockers get straight back up once the shot is gone or the
+## windup is called off (BLOCK_GET_UP), rather than lying there out of play.
+const BLOCK_CHECKER := 1.6
+const BLOCK_GET_UP := 0.70
+func ai_shot_blocks() -> void:
+	var winding:bool=carrier!=null and (not carrier.get_meta("shot_pending",{}).is_empty() or (carrier==player and charge>0.3))
+	var team:=body_team(carrier) if carrier!=null else -1
+	var net_:=SkaterAI.net(attack_direction(team)) if carrier!=null else Vector3.ZERO
+	for actor in skaters:
+		var visual=actor.get_child(1)
+		if visual.stroke_kind=="block":
+			if not winding and visual.stroke_t<BLOCK_GET_UP: visual.stroke_t=BLOCK_GET_UP
+			continue
+		if not winding or body_team(actor)==team or human_controls(actor) or not bool(actor.get_meta("eligible")) or bool(actor.get_meta("changing")) or is_hopping(actor): continue
+		if actor.position.distance_to(carrier.position)<BLOCK_CHECKER: continue
+		if not PlayMoves.in_shot_lane(puck.position,net_,actor.position): continue
+		visual.play_stroke("block")
+		actor.velocity*=0.3
+		ai_log["block"]=int(ai_log.get("block",0))+1
 
 func closest_opponent_distance(actor: CharacterBody3D) -> float:
 	var result:=INF

@@ -120,6 +120,14 @@ static func library() -> Dictionary:
 			key(0.16,Vector3(0.0,-0.12,0.30),ice(-0.22,1.0),0.04,0.0,0.20,Vector3(0,-0.05,0.06)),
 			key(0.26,Vector3(0.0,-0.10,0.26),ice(-0.24,1.0),0.04,0.0,0.18,Vector3(0,-0.05,0.05),true),
 			rest_key(0.50)]},
+		# Shot block: he drops low into the lane - hips down over bent knees,
+		# chest up and square, stick laid flat across the ice in front - holds
+		# it through the shot and gets back up.
+		"block": {"release":-1.0,"hold_puck":false,"keys":[
+			rest_key(0.0),
+			key(0.20,Vector3(0.02,-0.22,0.02),ice(-0.95,0.30),0.0,0.0,-0.22,Vector3(0,-0.30,-0.06),true),
+			key(0.70,Vector3(0.02,-0.22,0.02),ice(-0.95,0.30),0.0,0.0,-0.22,Vector3(0,-0.30,-0.06),true),
+			rest_key(1.05)]},
 		# Forehand-backhand deke: the puck goes wide on the forehand, then is
 		# pulled across in front of the skates to the backhand, the body
 		# leaning with it.
@@ -256,13 +264,15 @@ static func blade(kind: String, t: float, top: Vector3, base_dir: Vector3) -> Ve
 ## CPU shot selection (and the user's, from the same reads): a defenceman far
 ## out with time winds up a slap shot; a puck taken on the backhand side
 ## (net to the skater's backhand, rig +x) goes off the backhand; a shooter
-## under pressure or banging home a loose puck snaps it; otherwise a wrister.
+## with a checker on him (< 1.5 m) or in tight (< 7 m) snaps it; otherwise a
+## wrister.
 ## A one-timer is always a one-timer.
 static func shot_kind(is_d: bool, distance: float, pressure: float, net_side: float, one_timer: bool) -> String:
 	if one_timer: return "one_timer"
 	if is_d and distance > 14.0 and pressure > 3.0: return "slap"
-	if net_side > 0.45 and distance < 9.0: return "backhand"
-	if pressure < 2.2: return "snap"
+	if net_side > 0.3 and distance < 9.0: return "backhand"
+	# Snap shot: a checker on him or in tight, where the quick release counts.
+	if pressure < 1.5 or distance < 7.0: return "snap"
 	return "wrist"
 
 ## Puck speed (m/s) for each shot type: slap and one-timer hardest, the
