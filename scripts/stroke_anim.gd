@@ -120,6 +120,13 @@ static func library() -> Dictionary:
 			key(0.16,Vector3(0.0,-0.12,0.30),ice(-0.22,1.0),0.04,0.0,0.20,Vector3(0,-0.05,0.06)),
 			key(0.26,Vector3(0.0,-0.10,0.26),ice(-0.24,1.0),0.04,0.0,0.18,Vector3(0,-0.05,0.05),true),
 			rest_key(0.50)]},
+		# Receiving a pass: the blade gives back toward the body as the puck
+		# arrives (cushioning it), then settles.
+		"receive": {"release":-1.0,"hold_puck":false,"keys":[
+			rest_key(0.0),
+			key(0.06,Vector3(0.0,0.0,0.04),ice(-0.48,0.98),0.0,0.0,0.03,Vector3(0,-0.02,0.01)),
+			key(0.22,Vector3(0.0,0.02,-0.05),ice(-0.62,0.62),-0.10,-0.02,0.0,Vector3(0,-0.03,0),true),
+			rest_key(0.42)]},
 		# Shot block: he drops low into the lane - hips down over bent knees,
 		# chest up and square, stick laid flat across the ice in front - holds
 		# it through the shot and gets back up.

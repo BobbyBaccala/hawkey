@@ -1925,6 +1925,9 @@ func update_possession(delta: float) -> void:
 				note_touch(actor)
 				if actor==pass_receiver:
 					ai_log["pass_done"]=int(ai_log.get("pass_done",0))+1
+					# Cushion the pass (unless he is loaded for a one-timer).
+					var rv_=actor.get_child(1)
+					if rv_.stroke_kind!="one_timer": rv_.play_stroke("receive")
 					# A CPU taking a pass in a scoring spot can shoot it first time.
 					if not human_controls(actor):
 						var team_:=body_team(actor)
@@ -1962,6 +1965,13 @@ func update_possession(delta: float) -> void:
 		relative.y=0
 		puck.linear_velocity+=(error*160-relative*25).limit_length(100)*delta
 	pickup_owner=carrier==player
+	# Carriers stickhandle (skater_visual.gd carrying / DRIBBLE_*); a pass
+	# receiver reaches his blade out to the puck in its last few metres.
+	for actor in skaters:
+		var vis_=actor.get_child(1)
+		vis_.carrying=actor==carrier
+		var incoming:=actor==pass_receiver and carrier==null and actor.position.distance_to(puck.position)<4.0
+		vis_.reach_for(puck.global_position if incoming else Vector3.INF)
 
 func update_goalkeepers(delta: float) -> void:
 	goalie_reaction-=delta

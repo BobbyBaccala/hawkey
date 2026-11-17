@@ -123,6 +123,18 @@ var stroke_fade := 1.0
 var stroke_spot := Vector3.ZERO
 var stroke_out := {}
 var desired_stick := Vector2.ZERO
+## Puck carrier (set by the match each tick). A carrier who isn't steering
+## the stick himself (CPU, or the user with the right stick centred)
+## stickhandles: the blade dribbles the puck side to side (DRIBBLE_*),
+## narrower and slower at full speed with the puck pushed out in front.
+var carrying := false
+## Pass on its way to him (set by the match): the blade reaches out toward
+## the puck's line (reach_point, rig space) before it arrives.
+var reach_point := Vector3.INF
+var reach_w := 0.0
+var dribble_t := 0.0
+const DRIBBLE_HZ := 1.5
+const DRIBBLE_X := 0.42
 var stick_intent := Vector2.ZERO
 var goalie_save_height := 0.0
 ## Goalie save selection. Each save type has its own blend weight so a new
@@ -1656,6 +1668,21 @@ func pose(speed: float, turn: float) -> void:
 	var shoulder_turn := 0.0
 	if not goalie:
 		stride=[stride_foot(0,speed),stride_foot(1,speed)]
+		# Hard turn at speed: crossovers.
+		if cross_w > 0.0:
+			var cw := smoothstep(0.0,1.0,cross_w)
+			for i in range(2):
+				var c := crossover_foot(i)
+				var f: Dictionary = stride[i]
+				f.ankle = (f.ankle as Vector3).lerp(c.ankle,cw)
+				for key in ["ext","lift","yaw","pitch","edge"]: f[key] = lerpf(float(f[key]),float(c[key]),cw)
+		# Leaning into a turn the skates run out wide of the body (the body
+		# leans in over them), both on their edges.
+		if turn_lean != 0.0:
+			for i in range(2):
+				var f: Dictionary = stride[i]
+				f.ankle = (f.ankle as Vector3)+Vector3(-turn_lean*TURN_FEET_OUT,0,0)
+				f.edge = maxf(float(f.edge),smoothstep(0.05,0.3,absf(turn_lean)))
 		# Weight rides over the gliding leg (away from the pushing one); the
 		# hips sink as a leg drives out, and the shoulders counter-turn a touch.
 		var push_side: float = stride[0].ext-stride[1].ext
@@ -1663,6 +1690,9 @@ func pose(speed: float, turn: float) -> void:
 		# Shoulders open toward wherever the blade is being carried, so the
 		# bottom arm reaches out in front instead of across the chest.
 		shoulder_turn = push_side*0.07-stick_intent.x*0.30
+	# Lean into the turn: hips toward the centre over the planted skates.
+	if not goalie and not referee and turn_lean != 0.0:
+		drop += Vector3(signf(turn_lean)*minf(absf(turn_lean),LEAN_MAX)*0.42,-absf(turn_lean)*0.10,0)
 	var sb := stroke_body() if not goalie and not referee else {}
 	if not sb.is_empty():
 		drop += sb.hip
@@ -1871,6 +1901,9 @@ func pose(speed: float, turn: float) -> void:
 	# Stop: the upper body leans back against the skid.
 	if stop_w > 0.0: bend = Basis(Vector3.BACK,-stop_side*0.24*stop_w)*bend
 	if not hop_state.is_empty(): bend = Basis(Vector3.RIGHT,0.38*float(hop_state.lean))*bend
+	# Turning: the upper body leans into the turn with the legs.
+	if not goalie and not referee and turn_lean != 0.0:
+		bend = Basis(Vector3.BACK,-turn_lean*0.6)*bend
 	# Stick strokes: the chest drops over a shot or poke and leans with a deke.
 	if not sb.is_empty() and (float(sb.lean) != 0.0 or float(sb.bend) != 0.0):
 		bend = Basis(Vector3.BACK,float(sb.lean))*Basis(Vector3.RIGHT,float(sb.bend))*bend
@@ -2367,6 +2400,106 @@ func hit_bend() -> Basis:
 	var a := hit_amount()
 	return Basis(Vector3.BACK,hit_dir.x*0.42*a)*Basis(Vector3.RIGHT,-hit_dir.z*0.34*a)
 
+## Turning, read from the skater's own motion (no caller passes it): the
+## centripetal acceleration of his path sets a lean into the turn - hips
+## toward the centre over planted skates, legs angled in, boots on their
+## edges, chest tipped with them - and in a hard turn at speed the stride
+## blends into crossovers (crossover_foot()). lat_acc is the sideways
+## acceleration in rig space (+ = turn centre on the rig's +x side).
+const LEAN_MAX := 0.42              # rad (24 deg): a hard NHL turn
+const TURN_FEET_OUT := 0.25         # m of skate offset (away from the centre) per rad of lean
+const CROSS_ACC_START := 3.0        # m/s^2 sideways: crossovers start
+const CROSS_ACC_FULL := 6.5         # ... and are full
+var lat_acc := 0.0
+var turn_lean := 0.0
+var cross_w := 0.0
+var cross_side := 1.0
+var _turn_last_pos := Vector3.INF
+var _turn_vel := Vector3.ZERO
+func update_turning(delta: float) -> void:
+	if goalie or referee or delta <= 0.0 or not is_inside_tree(): return
+	var p := global_position
+	var lat := 0.0
+	var speed := 0.0
+	var forward_ok := false
+	if _turn_last_pos != Vector3.INF and p.distance_to(_turn_last_pos) < 1.0:
+		var v := (p-_turn_last_pos)/delta
+		v.y = 0.0
+		var prev := _turn_vel
+		_turn_vel = _turn_vel.lerp(v,1.0-exp(-18.0*delta))
+		speed = _turn_vel.length()
+		if speed > 1.0:
+			var dir := _turn_vel/speed
+			var acc := (_turn_vel-prev)/delta
+			var perp := acc-dir*dir.dot(acc)
+			var right := rig.global_basis.x
+			right.y = 0.0
+			lat = clampf(perp.dot(right.normalized()),-15.0,15.0)
+			var fwd := rig.global_basis.z
+			fwd.y = 0.0
+			forward_ok = dir.dot(fwd.normalized()) > 0.5
+	else:
+		_turn_vel = Vector3.ZERO
+	_turn_last_pos = p
+	var calm := 1.0-maxf(maxf(seat,cheer),maxf(stand_tall,faceoff_blend()))
+	if not hop_state.is_empty(): calm = 0.0
+	lat_acc = lerpf(lat_acc,lat*calm,1.0-exp(-6.0*delta))
+	turn_lean = lerpf(turn_lean,clampf(atan2(lat_acc,9.81),-LEAN_MAX,LEAN_MAX),1.0-exp(-8.0*delta))
+	var want := smoothstep(CROSS_ACC_START,CROSS_ACC_FULL,absf(lat_acc))*(1.0 if forward_ok and speed > 2.5 else 0.0)*push_blend*calm
+	# The crossing side only flips once the old crossovers have faded out.
+	if cross_w < 0.05 and absf(lat_acc) > 0.5: cross_side = signf(lat_acc)
+	if signf(lat_acc) != cross_side: want = 0.0
+	cross_w = move_toward(cross_w,want,delta*(3.0 if want > cross_w else 4.0))
+
+## One skate on the crossover cycle (rig space, same phase as the stride):
+## the outside skate pushes out, then is lifted, carried forward past the
+## inside skate's toe and set down across it; the inside skate plants under
+## the inside hip and pushes under the body toward the outside (the
+## crossunder), then swings back.
+const CROSS_LAND := Vector3(0.05, 0.115, 0.27)    # outside skate set down across (x toward the centre)
+const CROSS_PUSH := Vector3(0.40, 0.115, -0.16)   # outside skate's push, out and back
+const UNDER_PLANT := Vector3(0.24, 0.115, 0.0)    # inside skate's plant under the inside hip
+const UNDER_PUSH := Vector3(0.14, 0.115, -0.14)   # inside skate's push under the body (to the outside)
+func crossover_foot(i: int) -> Dictionary:
+	var side := 1.0 if i==0 else -1.0
+	var outside := side == -cross_side
+	var cycle := fposmod(phase/TAU+float(i)*0.5,1.0)
+	var foot: Vector3
+	var lift := 0.0
+	var ext := 0.0
+	var pitch := 0.0
+	if outside:
+		var land := Vector3(-side*CROSS_LAND.x,CROSS_LAND.y,CROSS_LAND.z)
+		var push := Vector3(side*CROSS_PUSH.x,CROSS_PUSH.y,CROSS_PUSH.z)
+		if cycle < STANCE:
+			var u := cycle/STANCE
+			ext = smoothstep(0.1,1.0,u)
+			foot = land.lerp(push,ext)
+			pitch = 0.35*smoothstep(0.75,1.0,u)
+		else:
+			# Forward first, then across in front of the other skate's toe.
+			var u := (cycle-STANCE)/(1.0-STANCE)
+			foot = Vector3(lerpf(push.x,land.x,smoothstep(0.35,1.0,u)),push.y,lerpf(push.z,land.z,smoothstep(0.0,0.55,u)))
+			lift = sin(PI*u)*0.09
+			ext = 1.0-smoothstep(0.0,1.0,u)
+			pitch = lerpf(0.35,-0.05,smoothstep(0.0,0.8,u))
+	else:
+		var plant := Vector3(side*UNDER_PLANT.x,UNDER_PLANT.y,UNDER_PLANT.z)
+		var under := Vector3(-side*UNDER_PUSH.x,UNDER_PUSH.y,UNDER_PUSH.z)
+		if cycle < STANCE:
+			var u := cycle/STANCE
+			ext = smoothstep(0.1,1.0,u)
+			foot = plant.lerp(under,ext)
+		else:
+			# Back under the inside hip first (behind the outside skate's
+			# heel), then forward to the plant - never through the other boot.
+			var u := (cycle-STANCE)/(1.0-STANCE)
+			foot = Vector3(lerpf(under.x,plant.x,smoothstep(0.0,0.45,u)),under.y,lerpf(under.z,plant.z,smoothstep(0.4,1.0,u)))
+			lift = sin(PI*u)*0.05
+			ext = 1.0-smoothstep(0.0,1.0,u)
+	foot.y += lift
+	return {"ankle":foot,"ext":ext,"lift":lift,"yaw":side*0.10*(1.0 if outside else -0.5),"pitch":pitch,"edge":1.0}
+
 ## Starts a stick stroke (StrokeAnim.library()) at time `from_t`, cross-fading
 ## from whatever the stick and body are doing now.
 func play_stroke(kind: String, from_t := 0.0) -> void:
@@ -2479,6 +2612,10 @@ func update_stroke(delta: float) -> void:
 
 ## Where the carried puck is held (world): on the blade, except while a slap
 ## or one-timer winds up, when it waits on the ice where the swing will meet it.
+## The pass coming to him (world position of the puck), or INF when none.
+func reach_for(world: Vector3) -> void:
+	reach_point = Vector3.INF if world == Vector3.INF or not is_inside_tree() else rig.to_local(world)
+
 func get_puck_world() -> Vector3:
 	if stroke_kind != "" and StrokeAnim.holds_puck(stroke_kind) and stroke_t < StrokeAnim.release_at(stroke_kind):
 		return rig.to_global(stroke_spot)
@@ -2493,12 +2630,24 @@ func animate(speed: float, delta: float, turn: float = 0, pushing: bool = true, 
 		braking = false
 	update_layers(delta)
 	update_butterfly(delta)
+	update_turning(delta)
 	update_stop(speed,delta,braking)
 	brake_turn = move_toward(brake_turn,1.0 if braking and not goalie else 0.0,delta*6)
 	shot_follow = maxf(0,shot_follow-delta*3)
 	update_stroke(delta)
-	stick_intent=stick_intent.lerp(desired_stick,1-exp(-14*delta))
+	var want_stick := desired_stick
+	if carrying and not goalie and desired_stick.length() < 0.1 and stroke_kind == "":
+		var fast := clampf(speed/8.0,0.0,1.0)
+		dribble_t += delta*DRIBBLE_HZ*lerpf(1.0,0.7,fast)
+		var amp := DRIBBLE_X*lerpf(1.0,0.55,fast)
+		want_stick = Vector2(sin(dribble_t*TAU)*amp,-0.25*fast+0.08*sin(dribble_t*TAU*2.0))
+	stick_intent=stick_intent.lerp(want_stick,1-exp(-14*delta))
 	blade_position=Vector3(-0.02+butterfly_posed*0.05,0.042,0.60-butterfly_posed*0.04).lerp(Vector3(-stack_dir()*0.23,0.35,0.62),stack_weight()).lerp(splits_blade(),splits_weight()).lerp(POKE_BLADE,float(save_weights.poke)) if goalie else Vector3(-(0.36+stick_intent.x*0.45),0.029,1.05-stick_intent.y*0.26)
+	# A pass coming: the blade goes out to meet it (within the stick's reach).
+	reach_w = move_toward(reach_w,1.0 if reach_point != Vector3.INF and not goalie else 0.0,delta*6.0)
+	if reach_w > 0.0 and reach_point != Vector3.INF:
+		var meet := Vector3(clampf(reach_point.x,-0.95,0.25),blade_position.y,clampf(reach_point.z,0.65,1.45))
+		blade_position = blade_position.lerp(meet,smoothstep(0.0,1.0,reach_w)*0.85)
 	# Stop: the stick reaches out in front for balance.
 	if not goalie: blade_position += Vector3(-0.04,0,0.16)*stop_blend()
 	# Faceoff: settle into the stance quickly, break out of it a little slower.

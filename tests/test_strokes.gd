@@ -24,9 +24,12 @@ func run() -> void:
 	root.add_child(v)
 	await process_frame
 	settle(v)
+	check_dribble(v)
 	check_live_strokes(v)
 	check_hold_and_release(v)
 	v.queue_free()
+	await check_turning()
+	await check_receive()
 	var g = Visual.new()
 	g.goalie = true
 	root.add_child(g)
@@ -37,7 +40,7 @@ func run() -> void:
 
 func check_library() -> void:
 	var lib := StrokeAnim.library()
-	for k in ["wrist","snap","slap","one_timer","backhand","pass","saucer","tip","poke","block","deke_fhbh","deke_toe_drag","deke_fake"]:
+	for k in ["wrist","snap","slap","one_timer","backhand","pass","saucer","tip","poke","block","receive","deke_fhbh","deke_toe_drag","deke_fake"]:
 		check(lib.has(k), "Stroke library has %s" % k)
 	var top := Vector3(0.094,0.92,0.384)
 	var base := Vector3(-0.339,-0.798,0.497)
@@ -46,7 +49,7 @@ func check_library() -> void:
 		check(float(keys[0].t) == 0.0 and keys[0].dir == Vector3.ZERO and keys[keys.size()-1].dir == Vector3.ZERO, "%s starts and ends on the skating pose" % kind)
 		for i in range(1,keys.size()): check(float(keys[i].t) > float(keys[i-1].t), "%s keys in time order" % kind)
 		var r := StrokeAnim.release_at(kind)
-		if StrokeAnim.is_deke(kind) or kind == "block": check(r < 0.0, "%s never releases the puck" % kind)
+		if StrokeAnim.is_deke(kind) or kind in ["block", "receive"]: check(r < 0.0, "%s never releases the puck" % kind)
 		else: check(r > 0.0 and r < StrokeAnim.duration(kind), "%s releases inside the stroke" % kind)
 		if StrokeAnim.is_shot(kind) or kind in ["pass","saucer","poke"]:
 			# Contact: the blade is on the ice, out in front of the skates.
@@ -262,3 +265,123 @@ func check_more_moves() -> void:
 	var top := Vector3(0.094, 0.92, 0.384)
 	var b := StrokeAnim.body("block", 0.4)
 	check((b.hip as Vector3).y < -0.25, "Block drops the hips")
+
+
+## Points of skate i's boot box (corners, edge midpoints, centre) that lie
+## inside skate j's own oriented boot box, shrunk by `margin` (the boxes are
+## the meshes' local AABBs, so turned skates are not inflated by world axes).
+func skate_points(v, i: int) -> Array:
+	var pts := []
+	for mi in (v.skates[i] as Node3D).find_children("*", "MeshInstance3D", true, false):
+		var b: AABB = (mi as MeshInstance3D).get_aabb()
+		var xf: Transform3D = (mi as MeshInstance3D).global_transform
+		for cx in [0.0, 0.5, 1.0]:
+			for cy in [0.0, 0.5, 1.0]:
+				for cz in [0.0, 0.5, 1.0]:
+					pts.append(xf * (b.position + b.size * Vector3(cx, cy, cz)))
+	return pts
+
+func skates_overlap(v, margin := 0.01) -> int:
+	var hits := 0
+	for pair in [[0, 1], [1, 0]]:
+		var pts := skate_points(v, pair[0])
+		for mi in (v.skates[pair[1]] as Node3D).find_children("*", "MeshInstance3D", true, false):
+			var b: AABB = (mi as MeshInstance3D).get_aabb().grow(-margin)
+			var inv: Transform3D = (mi as MeshInstance3D).global_transform.affine_inverse()
+			for p in pts:
+				if b.has_point(inv * p): hits += 1
+	return hits
+
+## Turning: a skater driven round a circle leans into it and crosses over;
+## the skates never run through each other; straight again, it all fades.
+func check_turning() -> void:
+	var body := Node3D.new()
+	root.add_child(body)
+	var v = Visual.new()
+	body.add_child(v)
+	await process_frame
+	var radius := 6.0
+	var speed := 7.0
+	var dt := 1.0 / 120.0
+	var ang := 0.0
+	var worst_overlap := 0.0
+	var min_foot := 9.0
+	var angles := []
+	for k in range(720):
+		ang += speed / radius * dt
+		body.position = Vector3(cos(ang) * radius, 0, sin(ang) * radius)
+		var dir := Vector3(-sin(ang), 0, cos(ang))
+		v.rotation.y = atan2(-dir.x, -dir.z)
+		v.animate(speed, dt, 0, true)
+		if k < 360: continue
+		worst_overlap = maxf(worst_overlap, skates_overlap(v))
+		min_foot = minf(min_foot, minf(v.feet[0].y, v.feet[1].y))
+		# Head over the skates, toward the centre of the circle (world).
+		var mid: Vector3 = v.rig.to_global((v.feet[0] + v.feet[1]) * 0.5)
+		var head: Vector3 = v.rig.to_global(v.posed_head)
+		var to_centre := -Vector3(body.position.x, 0, body.position.z).normalized()
+		angles.append(rad_to_deg(atan2((head - mid).dot(to_centre), head.y - mid.y)))
+	var mean_angle: float = angles.reduce(func(x, y): return x + y, 0.0) / angles.size()
+	check(mean_angle > 15.0 and mean_angle < 32.0, "Leans into the turn, toward the centre (%.1f deg)" % mean_angle)
+	check(v.cross_w > 0.9, "Crossovers in a hard turn at speed (%.2f)" % v.cross_w)
+	# The check itself: two skates on one spot do overlap.
+	var keep: Transform3D = v.skates[1].global_transform
+	v.skates[1].global_transform = v.skates[0].global_transform
+	check(skates_overlap(v) > 0, "Skate overlap check detects two skates on one spot")
+	v.skates[1].global_transform = keep
+	check(worst_overlap == 0, "Skates never run through each other on the crossovers (%d box points inside the other boot)" % worst_overlap)
+	check(min_foot >= 0.10, "Skates stay on the ice (ankle %.3f m)" % min_foot)
+	# Straight again: lean and crossovers fade out.
+	var dir2 := Vector3(-sin(ang), 0, cos(ang))
+	for k in range(240):
+		body.position += dir2 * speed * dt
+		v.animate(speed, dt, 0, true)
+	check(absf(v.turn_lean) < 0.03 and v.cross_w < 0.05, "Straight ahead: no lean, normal stride (lean %.2f, cross %.2f)" % [v.turn_lean, v.cross_w])
+	body.queue_free()
+
+
+## Stickhandling: a carrier with no stick input dribbles the puck side to side;
+## without the puck, or steering the stick himself, the blade holds.
+func check_dribble(v) -> void:
+	v.carrying = true
+	var xs := []
+	for k in range(120):
+		v.animate(3.0, 1.0 / 60.0)
+		xs.append(v.blade_position.x)
+	var span: float = xs.max() - xs.min()
+	check(span > 0.25 and span < 0.6, "Carrier stickhandles side to side (blade sweeps %.2f m)" % span)
+	v.desired_stick = Vector2(0.8, 0)
+	for k in range(30): v.animate(3.0, 1.0 / 60.0)
+	var held: float = v.blade_position.x
+	for k in range(30): v.animate(3.0, 1.0 / 60.0)
+	check(absf(v.blade_position.x - held) < 0.01, "The user's right stick overrides the dribble")
+	v.desired_stick = Vector2.ZERO
+	v.carrying = false
+	for k in range(60): v.animate(0.0, 1.0 / 60.0)
+	var a: float = v.blade_position.x
+	for k in range(30): v.animate(0.0, 1.0 / 60.0)
+	check(absf(v.blade_position.x - a) < 0.005, "No puck: the blade holds still")
+
+
+## Pass reception: the blade reaches out toward an incoming puck, and the
+## receive stroke gives back toward the body.
+func check_receive() -> void:
+	var body := Node3D.new()
+	root.add_child(body)
+	var v = Visual.new()
+	body.add_child(v)
+	await process_frame
+	for k in range(30): v.animate(0.0, 1.0 / 60.0)
+	var rest: Vector3 = v.blade_position
+	v.reach_for(v.rig.to_global(Vector3(-0.9, 0.03, 1.3)))
+	for k in range(30): v.animate(0.0, 1.0 / 60.0)
+	check(v.blade_position.x < rest.x - 0.25, "Blade reaches out toward the incoming pass (%.2f vs %.2f)" % [v.blade_position.x, rest.x])
+	v.reach_for(Vector3.INF)
+	v.play_stroke("receive")
+	var max_back := 0.0
+	var z0: float = v.blade_position.z
+	for k in range(30):
+		v.animate(0.0, 1.0 / 60.0)
+		max_back = maxf(max_back, z0 - v.blade_position.z)
+	check(max_back > 0.15, "Receiving: the blade gives back toward the body (%.2f m)" % max_back)
+	body.queue_free()

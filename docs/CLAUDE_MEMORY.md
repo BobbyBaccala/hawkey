@@ -103,6 +103,17 @@ Game stats (owner 2026-11-17: 5-min periods should give NHL box scores -
   a team, 5 players >= 1 P/GP. Tune on FULL games: single 5-min periods
   swing by several goals (a 4-period batch once read .78 by chance).
 
+Skating animation (2026-11-18): skaters read turning from their own motion
+(update_turning: centripetal accel in rig space, no caller passes `turn`) -
+lean into the turn up to LEAN_MAX 0.42 rad (hips toward the centre, skates
+out wide TURN_FEET_OUT, chest tipped), and crossovers above ~3-6.5 m/s^2
+sideways when skating forwards (crossover_foot: outside skate steps over in
+front, inside skate pushes under, recovers low and behind). Carriers
+stickhandle when not steering the stick (carrying, DRIBBLE_*); pass
+receivers reach the blade out (reach_for) and cushion ("receive" stroke).
+tools/capture_turn.gd [--view=low]. test_strokes checks lean angle,
+crossovers, oriented skate overlap, dribble, reception.
+
 Breakouts (owner 2026-11-17 run 2: lopsided games 47-17): failed breakout
 passes pinned teams in (build probe: 13 of 15 own-zone losses were passes).
 TeamTactics own-zone possession = NHL breakout (strong-side winger on the
