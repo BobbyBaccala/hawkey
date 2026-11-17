@@ -193,6 +193,25 @@ func check_goalie(g) -> void:
 	check(g.feet[1].y < 0.2, "RVH: off-post skate on the ice (%.2f)" % g.feet[1].y)
 	pose_goalie(g,"",Vector2(0,0.8),false)
 	check(g.knees[1].y > 0.35 and absf(g.blade_position.z-stance_blade.z) < 0.02, "Back to the stance afterwards")
+	# Pad-stack dive: mid-dive the hips have travelled further than the body
+	# has rolled, and he is off the ice; the full stack is the same pose.
+	pose_goalie(g,"",Vector2(0,0.8),false)
+	var mid_seen := false
+	for k in range(30):
+		g.set_save("stack_left",Vector2(0.9,0.1),1.0/60.0)
+		g.animate(0.0,1.0/60.0,0,false)
+		var w: float = g.stack_weight()
+		if w > 0.35 and w < 0.65 and not mid_seen:
+			mid_seen = true
+			var shift_frac: float = absf(g.rig.position.x)/g.STACK_SHIFT
+			var roll_frac: float = absf(g.stack_roll)/g.STACK_ROLL
+			check(shift_frac > roll_frac+0.15, "Dive: hips lead, body rolls after (shift %.2f vs roll %.2f)" % [shift_frac,roll_frac])
+			check(g.rig.position.y > g.STACK_LIFT*roll_frac+0.05, "Dive: off the ice mid-dive (%.2f m)" % g.rig.position.y)
+	check(mid_seen, "Dive passes through mid-weight")
+	for k in range(90):
+		g.set_save("stack_left",Vector2(0.9,0.1),1.0/60.0)
+		g.animate(0.0,1.0/60.0,0,false)
+	check(absf(absf(g.stack_roll)-g.STACK_ROLL) < 0.01 and absf(g.rig.position.y-g.STACK_LIFT) < 0.01, "Full stack: same roll and height as before the dive shape")
 
 ## Skill-stick gestures, shot lanes, rebound control, own-crease passes.
 func check_more_moves() -> void:

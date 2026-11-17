@@ -25,16 +25,18 @@ const ThinAA = preload("res://scripts/thin_aa.gd")
 const RESOLUTION_SCALE := 0.4
 ## Reflection strength on clean ice (multiplied by Fresnel and ice wear).
 const STRENGTH := 0.42
-const FORWARD_PLUS_STRENGTH := 0.26
+const FORWARD_PLUS_STRENGTH := 0.12
 ## Vertical blur (fraction of screen height per tap) - reflections in real
 ## ice smear along the view direction.
 const BLUR := 0.0028
 const RETAG_INTERVAL := 0.5
 ## Ambient boost in the mirror pass standing in for light bounced off the ice.
-const UNDERSIDE_BOUNCE := 6.0
+## (Kept low: at 6 with exposure 2.2 every white jersey left a glowing ghost
+## brighter than the ice under it in Forward+ - 2026-11-17 renders.)
+const UNDERSIDE_BOUNCE := 2.5
 ## Mirror pass exposure: undersides seen in the ice keep their kit colour (a
 ## blue sweater leaves a blue smear) rather than a neutral grey ghost.
-const MIRROR_EXPOSURE := 2.2
+const MIRROR_EXPOSURE := 1.2
 
 var viewport: SubViewport
 var mirror: Camera3D

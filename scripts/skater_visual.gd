@@ -161,6 +161,11 @@ const RVH_HIP_SHIFT := 0.10
 const STACK_ROLL := 1.48
 const STACK_SHIFT := 0.95
 const STACK_LIFT := 0.31
+## Pad-stack dive shape (see the rig placement at the end of pose()).
+const DIVE_ARC := 0.16        # m off the ice at mid-dive (going in only)
+const DIVE_ROLL_LAG := 1.6    # roll = weight^lag: the body turns after the hips move
+## 1 while diving into a stack, easing to 0 otherwise (no jump in the arc).
+var dive_air := 0.0
 ## Butterfly knee width: the rigid pads (thigh rise in line with the shin)
 ## meet edge to edge at the five-hole without crossing. The ankles move out
 ## by the same amount so the shins keep their length and angle.
@@ -1342,6 +1347,7 @@ static func choose_save(x: float, h: float, slide := 0.0, current := "") -> Stri
 ## at its half-way point. No overshoot: no pose is pushed past its target.
 func set_save(kind: String, target: Vector2, delta: float) -> void:
 	save_kind = kind
+	dive_air = move_toward(dive_air,1.0 if kind.begins_with("stack") else 0.0,delta*8.0)
 	save_target = save_target.lerp(target,1.0-exp(-18.0*delta))
 	for k in SAVE_KINDS:
 		var goal := 1.0 if k==kind else 0.0
@@ -2215,11 +2221,18 @@ func pose(speed: float, turn: float) -> void:
 	rig.position = rig.basis*(tie[0] as Vector3)
 	# Pad stack: lay the straightened body on its side (lead-side hand up, feet
 	# to the post) and rest it on the ice.
+	# The dive: he pushes off and the hips travel across first (shift eases
+	# out), the body rolls onto its side behind them (roll lags), and on
+	# the way in he is briefly off the ice (DIVE_ARC). Getting up, the roll
+	# comes off first and he slides back after. Full stack = same pose.
 	var stack_w := stack_weight() if goalie else 0.0
-	stack_roll = stack_dir()*STACK_ROLL*stack_w
+	var shift_w := 1.0-(1.0-stack_w)*(1.0-stack_w)
+	var roll_w := pow(stack_w,DIVE_ROLL_LAG)
+	stack_roll = stack_dir()*STACK_ROLL*roll_w
 	if stack_w > 0.0:
 		rig.rotation.z += stack_roll
-		rig.position += Basis(Vector3.UP,rig.rotation.y)*Vector3(stack_dir()*STACK_SHIFT*stack_w,STACK_LIFT*stack_w,0)
+		var arc := DIVE_ARC*4.0*stack_w*(1.0-stack_w)*dive_air
+		rig.position += Basis(Vector3.UP,rig.rotation.y)*Vector3(stack_dir()*STACK_SHIFT*shift_w,STACK_LIFT*roll_w+arc,0)
 	update_stick()
 
 ## The thigh rises are rigid parts of the pads (see pose()); kept as a hook.

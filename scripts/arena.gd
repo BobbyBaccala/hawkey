@@ -103,8 +103,8 @@ void fragment(){
 	vec4 refl=ice_reflection(SCREEN_UV,NORMAL,VIEW,cut,fresh);
 	ALBEDO=a*(1.0-0.06*fresh)*(1.0-refl.a);
 	EMISSION=refl.rgb;
-	ROUGHNESS=clamp(mix(0.22,0.6,cut)-0.17*fresh,0.05,1.0);
-	SPECULAR=mix(0.5,0.3,haze)+0.25*fresh;
+	ROUGHNESS=clamp(mix(0.30,0.6,cut)-0.14*fresh,0.10,1.0);
+	SPECULAR=mix(0.38,0.24,haze)+0.18*fresh;
 }"""
 	var m := ShaderMaterial.new()
 	m.shader = _paint_shader
@@ -125,8 +125,8 @@ void fragment(){
 	float cover=1.0-(1.0-scratch)*(1.0-haze);
 	ALBEDO=mix(FROST,FROST*0.78,scratch/(scratch+haze+0.0001))*(1.0-0.06*fresh);
 	ALPHA=clamp(cover,0.0,0.85);
-	ROUGHNESS=clamp(mix(0.22,0.6,cover)-0.17*fresh,0.05,1.0);
-	SPECULAR=0.4+0.25*fresh;
+	ROUGHNESS=clamp(mix(0.30,0.6,cover)-0.14*fresh,0.10,1.0);
+	SPECULAR=0.30+0.18*fresh;
 }"""
 	var m := ShaderMaterial.new()
 	m.shader = _wear_shader
@@ -472,8 +472,8 @@ void fragment(){
 	vec4 refl=ice_reflection(SCREEN_UV,NORMAL,VIEW,cut,fresh);
 	ALBEDO*=1.0-refl.a;
 	EMISSION=refl.rgb;
-	ROUGHNESS=clamp(mix(0.22,0.6,cut)-0.17*fresh,0.05,1.0);
-	SPECULAR=mix(0.5,0.3,haze)+0.25*fresh;
+	ROUGHNESS=clamp(mix(0.30,0.6,cut)-0.14*fresh,0.10,1.0);
+	SPECULAR=mix(0.38,0.24,haze)+0.18*fresh;
 }"""
 	var ice_shader_material := ShaderMaterial.new()
 	ice_shader_material.shader = ice_shader

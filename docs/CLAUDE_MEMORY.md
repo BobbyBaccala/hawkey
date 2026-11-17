@@ -46,6 +46,9 @@ Goalies (details in the run log; consts named in skater_visual.gd)
   bounce in off the back of his gear) and a puck touched at the line is
   squeezed for a whistle (PlayMoves.squeezes, 80%). The gallery counts a
   touch as a save only if the puck stays out for 1 s ("THROUGH" goals).
+- Pad-stack dive (DIVE_ARC 0.16 m, DIVE_ROLL_LAG 1.6, dive_air): hips
+  travel first (shift eases out), the roll lags, airborne on the way in;
+  full stack pose unchanged (save boxes too).
 - match.gd goalie_read(): poke check (PlayMoves.goalie_pokes, 40% knocks the
   puck off) and post seal when no shot is coming; pose_goalies_stopped() keeps
   goalies animating through whistles (cover over the puck, catch held up with
@@ -154,6 +157,10 @@ batch still swings ~4 SOG and ~0.5 goals a team between runs.
 - Every shader pow(): base must be >= 0 (clamp N.V; square with x*x, never
   pow(x, 2.0)) - test_gameplay_photo enforces the visor/cloth cases. Before
   the 4a28b7d fix every skater was a glowing ghost in Forward+.
+- Ice reflections (2026-11-17): Forward+ stacks SSR on the planar mirror;
+  with mirror exposure 2.2 / underside bounce 6 / ice roughness 0.22 every
+  white jersey left a glowing ghost brighter than the ice. Now exposure 1.2,
+  bounce 2.5, Forward+ planar 0.12, ice roughness 0.30, specular ~25% lower.
 - White blobs in Forward+ = NaN pixels bloomed by glow (gl_compatibility hides
   them). Bisect with glow off; kit_gear clamps vertex colour before pow() and
   guards albedo/normals - keep any new shader maths NaN-safe.
