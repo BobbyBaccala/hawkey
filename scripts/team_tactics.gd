@@ -61,6 +61,10 @@ static func support_target(slot: int, attack: float, puck: Vector3, possession: 
 				else:
 					a = D_MAX_ATTACK - 0.2
 					x = s * 2.5
+			elif pa < -blue:
+				# Breakout: the partner gives a D-to-D option low on his side.
+				a = -(goal - 2.0)
+				x = s * 4.5
 			else:
 				# Trail the play, ready to retreat.
 				a = clampf(pa - 8.0, -(goal - 5.0), D_MAX_ATTACK - 0.5)
@@ -82,6 +86,18 @@ static func support_target(slot: int, attack: float, puck: Vector3, possession: 
 							a = goal - 3.0; x = s * 1.2          # net front from the weak side
 						else:
 							a = goal - 8.5; x = s * 5.5          # weak-side circle for a one-timer
+			elif pa < -blue:
+				# Breakout (NHL structure): the strong-side winger on the half
+				# wall, back to the boards, out of the forechecker's lane; the
+				# centre swings low through the middle as the safe outlet; the
+				# weak-side winger stretches up toward the blue line.
+				var strong_w := signf(px) == signf(s) or absf(px) < 1.0
+				if slot == 0:
+					a = clampf(pa + 4.0, F_MIN_ATTACK, -blue - 3.0); x = clampf(-px * 0.25, -3.0, 3.0)
+				elif strong_w:
+					a = clampf(pa + 7.0, F_MIN_ATTACK + 1.0, -blue - 1.5); x = s * (Arena.HALF_WIDTH - 1.3)
+				else:
+					a = -blue + 1.0; x = s * 6.5
 			else:
 				# Transition: wingers wide in their lanes ahead of the puck, centre supports.
 				if slot == 0:

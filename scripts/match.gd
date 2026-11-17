@@ -432,8 +432,22 @@ func setup_faceoff() -> void:
 		# other team's RW): mirror x for the team attacking +z.
 		actor.position.x *= -sign_
 		actor.position+=next_faceoff
+		# End-zone draws (NHL alignment): the attacking D stand at the blue
+		# line, one each side of the middle; the defending D take the hash
+		# marks on the boards side of the dot and the net front. (Offsetting
+		# them 8 m back from the dot put the defending D behind their goal line.)
+		if slot>=3 and absf(next_faceoff.z)>Arena.BLUE_LINE+6.0:
+			var end_:=signf(next_faceoff.z)
+			var own_side:=TeamTactics.side_for(slot,sign_)
+			var boards_side:=signf(next_faceoff.x) if absf(next_faceoff.x)>0.5 else 1.0
+			if sign_==end_:
+				actor.position=Vector3(own_side*4.5+next_faceoff.x*0.25,0,end_*(Arena.BLUE_LINE+1.2))
+			elif own_side==boards_side:
+				actor.position=Vector3(next_faceoff.x+boards_side*4.2,0,next_faceoff.z+end_*1.2)
+			else:
+				actor.position=Vector3(boards_side*0.9,0,end_*(Arena.GOAL_LINE-2.0))
 		actor.position.x=clampf(actor.position.x,-(Arena.HALF_WIDTH-1.0),Arena.HALF_WIDTH-1.0)
-		actor.position.z=clampf(actor.position.z,-28,28)
+		actor.position.z=clampf(actor.position.z,-(Arena.GOAL_LINE-0.8),Arena.GOAL_LINE-0.8)
 		actor.velocity = Vector3.ZERO
 		actor.get_child(1).rotation.y = 0 if sign_<0 else PI
 		# Players arrive set in their faceoff stance (the camera cuts to them).
@@ -1564,8 +1578,11 @@ func update_team_ai(delta: float) -> void:
 						# Under pressure he still fires it away now and then (ICE_IT_ANYWAY).
 						if rules.enabled and puck.position.z*attack<0.4 and ai_rng.randf()>ICE_IT_ANYWAY: plan.kind="carry"
 						else: release_puck(actor,SkaterAI.flat(plan.target-puck.position),19,0.08,"saucer")
+					"clear":
+						# Chipped off the glass / up the boards out of his zone.
+						release_puck(actor,SkaterAI.flat(plan.target-puck.position),11,0.12,"saucer")
 			else: actor.set_meta("decision",timer)
-			if plan.is_empty() or str(plan.kind) in ["shoot","pass","dump"]:
+			if plan.is_empty() or str(plan.kind) in ["shoot","pass","dump","clear"]:
 				target=SkaterAI.carry_target(actor.position,attack,ai_opponents[team])
 			else:
 				target=plan.target

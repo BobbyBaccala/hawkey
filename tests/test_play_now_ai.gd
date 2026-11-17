@@ -103,6 +103,16 @@ func check_decisions() -> void:
 
 ## Flow (owner 2026-11-16: realistic positioning and game flow).
 func check_flow_decisions() -> void:
+	# Own corner, a forechecker on him, his only mate covered: chip it out.
+	var pinned_mate := {"pos": Vector3(-9, 0, -18), "vel": Vector3.ZERO, "index": 2}
+	var pinned := ctx(Vector3(8, 0, -(Arena.GOAL_LINE - 1.0)), [Vector3(7.3, 0, -(Arena.GOAL_LINE - 1.9)), Vector3(-8.6, 0, -17.2), Vector3(0, 0, -20)], [pinned_mate], true)
+	pinned.roll = 0.1
+	var dz := SkaterAI.carrier_decision(pinned)
+	check(dz.kind == "clear" and dz.target.z > -Arena.BLUE_LINE - 4.0 and absf(dz.target.x) > 10.0, "Pinned in his own corner with nothing on: chip it up the boards (got %s)" % dz.kind)
+	# Same spot with an open man on the half wall: pass it instead.
+	var open_mate := {"pos": Vector3(11.5, 0, -17), "vel": Vector3.ZERO, "index": 1}
+	dz = SkaterAI.carrier_decision(ctx(Vector3(8, 0, -(Arena.GOAL_LINE - 1.0)), [Vector3(5.5, 0, -(Arena.GOAL_LINE - 1.5)), Vector3(-8.6, 0, -17.2)], [open_mate], true))
+	check(dz.kind == "pass", "Open winger on the wall: breakout pass (got %s)" % dz.kind)
 	var blue := Arena.BLUE_LINE
 	# Commitment: just gained it in the neutral zone with open ice and a
 	# so-so pass on - carry it; settled (no carry_time) the pass is fine.

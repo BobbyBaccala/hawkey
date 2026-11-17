@@ -41,6 +41,16 @@ func run() -> void:
 	check(absf(weak_d.x) < 2.5 and weak_d.z < -(goal - 6.0), "Weak-side D covers the net front")
 	var wing: Vector3 = T.support_target(2, 1.0, own, false)
 	check(wing.z > -(blue + 3.0) and wing.z < -blue + 0.1, "Winger covers the point in his own zone")
+	# Breakout (own zone, our puck on +x): strong-side winger (slot 1) on the
+	# half wall by the boards, centre low in the middle, weak-side winger
+	# stretched up toward the blue line.
+	var bo := Vector3(6, 0, -(goal - 2.0))
+	var bw: Vector3 = T.support_target(1, 1.0, bo, true)
+	check(absf(bw.x) > Arena.HALF_WIDTH - 2.0 and bw.z < -blue, "Breakout: strong-side winger on the half wall (%s)" % str(bw))
+	var bc: Vector3 = T.support_target(0, 1.0, bo, true)
+	check(absf(bc.x) <= 3.0 and bc.z < -blue - 2.0, "Breakout: centre low in the middle (%s)" % str(bc))
+	var bww: Vector3 = T.support_target(2, 1.0, bo, true)
+	check(bww.z > -blue - 0.5 and signf(bww.x) != signf(bw.x), "Breakout: weak-side winger stretched up (%s)" % str(bww))
 	# Offensive zone: D at the points, a forward at the net front.
 	var oz := Vector3(5, 0, goal - 6.0)
 	var d1: Vector3 = T.support_target(4, 1.0, oz, true)
@@ -78,6 +88,9 @@ func run() -> void:
 	for f in range(120 * 25):
 		await physics_frame
 		if f % 6 != 0: continue
+		# Live play only: faceoff lineups (setup_faceoff, not the AI) put the
+		# D a few metres inside the blue line at an offensive-zone draw.
+		if int(scene.match_state.phase) != 1: continue
 		for actor in scene.skaters:
 			if actor == scene.player or actor == scene.carrier or not bool(actor.get_meta("eligible")): continue
 			if not T.is_defence(int(actor.get_meta("slot"))): continue

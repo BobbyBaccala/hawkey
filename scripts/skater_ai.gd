@@ -51,6 +51,9 @@ const OZ_SHOT_FLOOR := 0.24
 const OZ_RESET_BONUS := 0.14
 const OZ_PATIENCE := 0.85          # was 0.6 everywhere: shots in the zone aren't passed up
 const POINT_SHOT_VALUE := 0.48     # D at the point with an open lane
+const CLEAR_PRESSURE := 1.2        # m: a checker on him in his own zone
+const CLEAR_CHANCE := 0.35         # share of those moments he clears it
+const CLEAR_VALUE := 0.24          # beats only a weak option or protecting it
 
 static func skill(difficulty: String) -> Dictionary:
 	return SKILL.get(difficulty, SKILL[DEFAULT_DIFFICULTY])
@@ -231,6 +234,14 @@ static func carrier_decision(ctx: Dictionary) -> Dictionary:
 	if depth > -Arena.BLUE_LINE and depth < Arena.BLUE_LINE + 1.0 and pressure < 2.2 and space < 3.0:
 		var corner := Vector3(-signf(pos.x if absf(pos.x) > 0.5 else 1.0) * (Arena.HALF_WIDTH - 2.5), 0.0, attack * (Arena.GOAL_LINE + 1.5))
 		best = _better(best, {"kind": "dump", "target": corner, "receiver": -1, "value": 0.26})
+	# Own zone, a checker on him, nothing safe on: now and then he chips it
+	# up the boards and out (off the glass / rimmed up the wall) instead of
+	# forcing a pass through the forecheck. Kept rare (CLEAR_CHANCE): clearing
+	# every time cost shots and doubled icings (build probe, 2 seeds).
+	if depth < -Arena.BLUE_LINE and pressure < CLEAR_PRESSURE and best.value < CLEAR_VALUE and float(ctx.get("roll", 0.5)) < CLEAR_CHANCE:
+		var wall := signf(pos.x) if absf(pos.x) > 0.5 else 1.0
+		var out := Vector3(wall * (Arena.HALF_WIDTH - 0.6), 0.0, -attack * (Arena.BLUE_LINE - 3.0))
+		best = _better(best, {"kind": "clear", "target": out, "receiver": -1, "value": CLEAR_VALUE})
 	# Offensive zone with a man on him: a shot through traffic beats turning away.
 	if depth > Arena.BLUE_LINE and shoot_q >= OZ_SHOT_FLOOR_Q and pressure < 2.0:
 		best = _better(best, {"kind": "shoot", "target": net(attack), "receiver": -1, "value": OZ_SHOT_FLOOR})
@@ -402,7 +413,7 @@ const REBOUND_BAR := 0.22
 ## Quality over the shooting bar a pass needs to be one-timed. 0.08 made
 ## half of all CPU shots one-timers from the slot (NHL: a small share) and
 ## the save percentage .80 (tools/sim_game.gd).
-const ONE_TIMER_BAR := 0.16
+const ONE_TIMER_BAR := 0.12
 static func one_timer(quality: float, shot_bar: float) -> bool:
 	return quality >= shot_bar + ONE_TIMER_BAR
 

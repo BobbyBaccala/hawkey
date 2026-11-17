@@ -160,7 +160,8 @@ static func in_shot_lane(puck: Vector3, net: Vector3, defender: Vector3) -> bool
 
 ## Whether a shot the goalie stops is frozen for a whistle: most shots into
 ## the chest are trapped against it and most off the catcher held, as NHL
-## goalies do; the rest drop for a rebound (rebound()). Leaving them all
+## goalies do; the rest drop for a rebound (rebound()) - tuned on full
+## simulated games (tools/sim_game.gd) toward NHL scoring. Leaving them all
 ## loose at his feet gave attackers 13-23 point-blank jam shots a period.
 const FREEZE_CHANCE := {"body":0.75,"catcher":0.70}
 static func freezes(zone: String, in_v: Vector3, end_sign: float, roll: float) -> bool:

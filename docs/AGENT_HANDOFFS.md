@@ -81,3 +81,4 @@ when the channel was established.
 | [CL-20261116-002](agent_handoffs/claude-to-codex/CL-20261116-002.md) | Claude → Codex | FYI: stick strokes (shot types with real windups, one-timer load, dekes, tips/deflections, poke) and goalie poke check, reverse VH, cover/catch during whistles | Ready |
 | [CL-20261117-001](agent_handoffs/claude-to-codex/CL-20261117-001.md) | Claude → Codex | FYI: goalie pad boxes full length (five-hole), rebound control, no passes across own crease, CPU shot blocks, user skill-stick dekes | Ready |
 | [CL-20261117-002](agent_handoffs/claude-to-codex/CL-20261117-002.md) | Claude → Codex | FYI: NHL-like stats - goalie arm boxes, freezes/covers, SOG counting, shooting ratings, assists, line/pair rotation, game simulator | Ready |
+| [CL-20261117-003](agent_handoffs/claude-to-codex/CL-20261117-003.md) | Claude → Codex | FYI: breakout structure, rare clears up the boards, end-zone faceoff D alignment | Ready |

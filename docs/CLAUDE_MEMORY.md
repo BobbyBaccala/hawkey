@@ -94,15 +94,28 @@ Game stats (owner 2026-11-17: 5-min periods should give NHL box scores -
   shot power; assists tracked (touch_chain/credit_goal, tipper counts);
   scoring line on the stats card; lines AND D pairs rotate by freshness with
   top units favoured (next_unit, LINE_/PAIR_PRIORITY).
-- One-timer bar +0.16 and loose-puck jam bar +0.22 over the shooting bar
+- One-timer bar +0.12 (run 2; +0.16 run 1) and loose-puck jam bar +0.22 over the shooting bar
   (SkaterAI.ONE_TIMER_BAR / REBOUND_BAR); SOG count only real shots.
 - Result (4 full games, seeds 11-14): 30.9 SOG/team, .927 sv%, 2.25 goals
   a team, 5 players >= 1 P/GP. Tune on FULL games: single 5-min periods
   swing by several goals (a 4-period batch once read .78 by chance).
 
+Breakouts (owner 2026-11-17 run 2: lopsided games 47-17): failed breakout
+passes pinned teams in (build probe: 13 of 15 own-zone losses were passes).
+TeamTactics own-zone possession = NHL breakout (strong-side winger on the
+half wall, centre low through the middle, weak-side winger stretched to the
+blue line, partner D low for D-to-D); SkaterAI "clear" (chip up the boards)
+kept rare (CLEAR_PRESSURE 1.2 m, CLEAR_CHANCE 0.35) - clearing often cost
+shots and doubled icings. End-zone faceoffs: attacking D at the blue line,
+defending D on the hash marks / net front (they were clamped behind the
+goal line). Result (4 full games, seeds 11-14): 26.5 SOG/team, every game
+22-29 a side, .920 sv%, 2.12 goals/team, 3 players at 1 P/GP. A 4-game
+batch still swings ~4 SOG and ~0.5 goals a team between runs.
+
 ## Open defects / next steps
-1. Goals a little low (2.25/team vs NHL ~3.0) and shots can run 47-17 in
-   one game; territory still swings in some games.
+1. Goals a little low (2.1/team vs NHL ~3.0). Faceoff lineups for wingers
+   and the centre-ice D are still offsets from the dot (only end-zone D
+   fixed).
 2. Strokes polish: no dive motion into stack/splits; blade face doesn't
    roll open/closed; skill-stick gestures untested on a real pad (owner).
 3. AI: teammates <2 m apart in ~18% of frames; OZ forwards could go lower.
