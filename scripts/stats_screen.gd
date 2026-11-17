@@ -23,6 +23,10 @@ var period_stripes: Array[ColorRect] = []
 var section_label: Label
 var stat_rows: Array = []  # [{name, left, right, bar_left, bar_right}]
 var footer_label: Label
+## Scoring leaders line ("E. VALE 1G 1A  ·  ..."), set by match.gd before the
+## card shows (scoring_summary()); hidden when empty.
+var scorers_label: Label
+var scorers := ""
 var tween: Tween
 ## What the card currently shows ("" hidden, "intermission" or "final").
 var mode := ""
@@ -205,9 +209,16 @@ func _stats_block() -> Control:
 func _footer() -> Control:
 	var foot := PanelContainer.new()
 	foot.add_theme_stylebox_override("panel", hud.panel_style(Color(0, 0, 0, 0), 0, Vector4(24, 9, 24, 11)))
+	var lines := VBoxContainer.new()
+	lines.add_theme_constant_override("separation", 6)
+	foot.add_child(lines)
+	scorers_label = hud.label("", 15, hud.INK, 600)
+	scorers_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	scorers_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	lines.add_child(scorers_label)
 	footer_label = hud.label("", 14, hud.MUTED, 600)
 	footer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	foot.add_child(footer_label)
+	lines.add_child(footer_label)
 	return foot
 
 static func ordinal(period: int) -> String:
@@ -252,6 +263,8 @@ func fill(stats, score: Array, period: int, final: bool) -> void:
 		w.bar_right.size_flags_stretch_ratio = maxf(b, 0.001)
 		w.bar_left.color = hud.team_colors[0] if float(r[3]) + float(r[4]) > 0.0 else Color(hud.MUTED, 0.35)
 		w.bar_right.color = hud.team_colors[1] if float(r[3]) + float(r[4]) > 0.0 else Color(hud.MUTED, 0.35)
+	scorers_label.text = ("SCORING   " + scorers) if scorers != "" else ""
+	scorers_label.visible = scorers != ""
 	if final:
 		footer_label.text = "ESC / START   PAUSE MENU   ·   NEW GAME"
 	else:

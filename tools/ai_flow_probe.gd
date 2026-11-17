@@ -28,7 +28,9 @@ func run() -> void:
 		scene.setup_faceoff()
 	scene.match_state.phase_timer = 0
 	var frames: Array = []
-	var total := int(seconds * 60)
+	# Physics runs at physics_ticks_per_second (120 in this project), not 60.
+	var hz := Engine.physics_ticks_per_second
+	var total := int(seconds * hz)
 	for f in range(total):
 		await physics_frame
 		if f % SAMPLE != 0: continue
@@ -39,7 +41,7 @@ func run() -> void:
 			sk.append([team, int(a.get_meta("slot")), snappedf(a.position.x, 0.01), snappedf(a.position.z, 0.01),
 				snappedf(a.velocity.x, 0.01), snappedf(a.velocity.z, 0.01), int(bool(a.get_meta("changing")) or scene.is_hopping(a))])
 		var c = scene.carrier
-		frames.append({"t": snappedf(f / 60.0, 0.01), "phase": int(scene.match_state.phase),
+		frames.append({"t": snappedf(f / float(hz), 0.01), "phase": int(scene.match_state.phase),
 			"puck": [snappedf(scene.puck.position.x, 0.01), snappedf(scene.puck.position.z, 0.01), snappedf(scene.puck.linear_velocity.length(), 0.01)],
 			"carrier": [-1, -1] if c == null else [scene.body_team(c), int(c.get_meta("slot"))],
 			"attack": [scene.attack_direction(0), scene.attack_direction(1)], "sk": sk})

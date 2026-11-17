@@ -36,15 +36,16 @@ Goalies (details in the run log; consts named in skater_visual.gd)
   (choose_save), plus body (arms clamp in), rvh_left/right (reverse VH post
   seal, PlayMoves.choose_post), poke (POKE_*), cover (COVER_*). Torso leans and
   turns into saves; goalie_look() turns the head to save_target.
-- Pad save boxes are full length in every pose (pad_box(), PAD_BOX_TOP_BFLY
-  0.38): in the butterfly they used to stop at the knee break, leaving a
-  0.6 m five-hole between them (7/8 low centre shots scored in the gallery).
-- Rebound control (PlayMoves.rebound, called in match.gd _on_puck_contact):
-  chest/catcher saves drop dead for a cover, pads to the corner, blocker and
-  stick kicked wide. Slot rebounds kept attackers in the zone for minutes.
-- tools/goalie_gallery.gd: isolated save % by shot type (corners, five-hole,
-  one-timers off a pass, dribbles). After the fixes 100% there; CPU games
-  ~10% of attempts score (was ~28%).
+- Save physics (goalie_gallery.gd: 100% on its cases): pad boxes full length
+  in every pose (PAD_BOX_TOP_BFLY; a 0.6 m five-hole gap before), arm boxes
+  (UpperArm*/Forearm*, zone "arm") close torso-glove gaps; rebound control
+  (PlayMoves.rebound: chest/catcher dead, pads to the corner, blocker wide),
+  most chest/glove saves frozen (freezes), slow loose pucks within reach
+  covered (goalie_covers, wider in the butterfly). EVERY goalie touch is
+  rebound-controlled (a second touch inside goalie_contact_timer used to
+  bounce in off the back of his gear) and a puck touched at the line is
+  squeezed for a whistle (PlayMoves.squeezes, 80%). The gallery counts a
+  touch as a save only if the puck stays out for 1 s ("THROUGH" goals).
 - match.gd goalie_read(): poke check (PlayMoves.goalie_pokes, 40% knocks the
   puck off) and post seal when no shot is coming; pose_goalies_stopped() keeps
   goalies animating through whistles (cover over the puck, catch held up with
@@ -83,9 +84,25 @@ CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
 Tests: 48 suites; last full run 48/48 (2026-11-17, five-hole/rebounds/blocks run).
 
+Game stats (owner 2026-11-17: 5-min periods should give NHL box scores -
+25-30 SOG/team, goalies .870-.930, a few point-per-game players):
+- Clock: period_seconds 1200 at clock_rate 4 = 5 real minutes of live play
+  per period. tools/sim_game.gd simulates full games (~35 min compute each,
+  run 4 in parallel), tools/sim_report.py summarises.
+- Roster "shooting" ratings by line/pair (match.gd shooting_rating:
+  L1 92 .. L4 69, D 82/74/66) feed player_skill() (shot_bar, shot_noise) and
+  shot power; assists tracked (touch_chain/credit_goal, tipper counts);
+  scoring line on the stats card; lines AND D pairs rotate by freshness with
+  top units favoured (next_unit, LINE_/PAIR_PRIORITY).
+- One-timer bar +0.16 and loose-puck jam bar +0.22 over the shooting bar
+  (SkaterAI.ONE_TIMER_BAR / REBOUND_BAR); SOG count only real shots.
+- Result (4 full games, seeds 11-14): 30.9 SOG/team, .927 sv%, 2.25 goals
+  a team, 5 players >= 1 P/GP. Tune on FULL games: single 5-min periods
+  swing by several goals (a 4-period batch once read .78 by chance).
+
 ## Open defects / next steps
-1. Territory still swings in some 4-min CPU games (one of three seeds 62%
-   in one zone); shot attempts can run 11:1 in such a game.
+1. Goals a little low (2.25/team vs NHL ~3.0) and shots can run 47-17 in
+   one game; territory still swings in some games.
 2. Strokes polish: no dive motion into stack/splits; blade face doesn't
    roll open/closed; skill-stick gestures untested on a real pad (owner).
 3. AI: teammates <2 m apart in ~18% of frames; OZ forwards could go lower.
@@ -114,6 +131,8 @@ Tests: 48 suites; last full run 48/48 (2026-11-17, five-hole/rebounds/blocks run
 - Goalie save % has to be measured both ways: tools/goalie_gallery.gd for
   the goalie alone (aim at the five-hole too - the CPU aim only goes to the
   corners) and the flow recorder for real games (rebounds, scrambles).
+- Physics is 120 Hz (project physics_ticks_per_second): probes that count
+  frames as 1/60 s halve every rate. The 90 s CPU test game is 45 s of play.
 - `godot --headless --quit` does NOT parse match.gd; a parse error there
   makes every match probe hang silently. Load the scripts (build/parse_check
   pattern: load() + can_instantiate()) after editing match.gd.

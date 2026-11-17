@@ -15,7 +15,9 @@ func run() -> void:
 	var noise := 0.38
 	var speed := 29.0
 	var reps := 3
+	var only := ""
 	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--only="): only = arg.substr(7)
 		if arg.begins_with("--noise="): noise = float(arg.substr(8))
 		if arg.begins_with("--speed="): speed = float(arg.substr(8))
 		if arg.begins_with("--reps="): reps = int(arg.substr(7))
@@ -41,10 +43,14 @@ func run() -> void:
 		["5-hole 12m", Vector2(0.5, 12), null, Vector2(0.0, 0.08)], ["5-hole 8m", Vector2(-0.5, 8), null, Vector2(0.05, 0.12)],
 		["low middle 1T", Vector2(-6, 9), Vector2(1.5, 11), Vector2(0.1, 0.10)],
 		["dribble 4m/s", Vector2(0.2, 5), null, Vector2(0.0, 0.0), 4.0], ["dribble 7m/s", Vector2(-0.3, 7), null, Vector2(0.1, 0.0), 7.0],
+		["high right 8m", Vector2(-1, 8), null, Vector2(0.75, 0.62)], ["high left 8m", Vector2(1, 8), null, Vector2(-0.75, 0.62)],
+		["high right 1T", Vector2(-6, 8), Vector2(1.5, 8), Vector2(0.75, 0.6)], ["high left 1T", Vector2(6, 8), Vector2(-1.5, 8), Vector2(-0.75, 0.6)],
+		["low post 6m", Vector2(2, 6), null, Vector2(-0.8, 0.05)],
 	]
 	var totals := {"save":0,"goal":0,"miss":0}
 	var goal_spots := []
 	for c in cases:
+		if only != "" and not String(c[0]).begins_with(only): continue
 		var res := {"save":0,"goal":0,"miss":0}
 		for r in range(reps):
 			var fixed: Vector2 = c[3] if c.size() > 3 else Vector2(INF, 0)
@@ -109,5 +115,14 @@ func trial(scene, keeper, end_: float, gl: float, a: Vector2, b, noise: float, s
 		if scene.match_state.score[0] + scene.match_state.score[1] > score_before:
 			goal_spots.append("x %.2f y %.2f  (aim x %.2f y %.2f, goalie x %.2f, from %s)" % [scene.puck.position.x, scene.puck.position.y, aim.x, aim.y, keeper.position.x, str(a if b == null else b)])
 			return "goal"
-		if scene.saves > saves_before: return "save"
+		if scene.saves > saves_before:
+			# A touch is only a save if the puck stays out: watch it for 1 s.
+			for g in range(120):
+				hold_skaters(scene, end_)
+				await physics_frame
+				if scene.match_state.score[0] + scene.match_state.score[1] > score_before:
+					goal_spots.append("THROUGH x %.2f y %.2f after a touch (aim x %.2f y %.2f, from %s)" % [scene.puck.position.x, scene.puck.position.y, aim.x, aim.y, str(a if b == null else b)])
+					return "goal"
+				if int(scene.match_state.phase) != 1: break
+			return "save"
 	return "miss"

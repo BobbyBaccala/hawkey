@@ -397,8 +397,14 @@ static func shot_aim(shooter: Vector3, attack: float, goalie: Vector3, noise: fl
 ## One-timer: a pass received where the shot is clearly on (a bit better than
 ## the player's usual shooting bar) is fired first time, before the goalie
 ## can get across.
+## Extra quality a loose puck or rebound needs before it is shot first time.
+const REBOUND_BAR := 0.22
+## Quality over the shooting bar a pass needs to be one-timed. 0.08 made
+## half of all CPU shots one-timers from the slot (NHL: a small share) and
+## the save percentage .80 (tools/sim_game.gd).
+const ONE_TIMER_BAR := 0.16
 static func one_timer(quality: float, shot_bar: float) -> bool:
-	return quality >= shot_bar + 0.08
+	return quality >= shot_bar + ONE_TIMER_BAR
 
 ## --- Body checks -----------------------------------------------------------
 ## A CPU finishes his check on the puck carrier when he is on top of him,

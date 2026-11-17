@@ -220,6 +220,25 @@ func check_more_moves() -> void:
 	check(SkaterAI.crosses_own_crease(Vector3(-5, 0, -25.5), Vector3(5, 0, -25.0), 1.0), "Pass across the own crease is flagged")
 	check(not SkaterAI.crosses_own_crease(Vector3(-5, 0, -18), Vector3(5, 0, -18), 1.0), "Pass across the high slot is fine")
 	check(not SkaterAI.crosses_own_crease(Vector3(-3, 0, -28.2), Vector3(3, 0, -28.2), 1.0), "D-to-D pass behind the own net is fine")
+	var g := Vector3(0, 0, 25.9)
+	check(PlayMoves.goalie_covers(g, 1.0, Vector3(0.9, 0.02, 25.6), 1.0, 1.0), "Butterfly goalie covers a loose puck at his pad")
+	check(not PlayMoves.goalie_covers(g, 1.0, Vector3(0.9, 0.02, 25.6), 1.0, 0.0), "Standing he can't reach that far")
+	check(not PlayMoves.goalie_covers(g, 1.0, Vector3(0.3, 0.02, 25.6), 6.0, 1.0), "A moving puck isn't covered")
+	check(not PlayMoves.goalie_covers(g, 1.0, Vector3(0.3, 0.02, 26.6), 1.0, 1.0), "Not behind him at the goal line")
+	# Freezes: most chest and glove saves are held, never a pad or a puck going away.
+	var frozen := 0
+	for k in range(20): if PlayMoves.freezes("body", Vector3(0, 0.3, 25), 1.0, k / 20.0): frozen += 1
+	check(frozen >= 12 and frozen <= 17, "About three in four chest saves are smothered (%d/20)" % frozen)
+	check(not PlayMoves.freezes("pad", Vector3(0, 0.3, 25), 1.0, 0.0), "Pad saves are never frozen")
+	check(not PlayMoves.freezes("body", Vector3(0, 0.3, -25), 1.0, 0.0), "A puck going away isn't a save")
+	check(PlayMoves.rebound(Vector3(1, 0.2, 28), "arm", 1.0, 0.3, 0.6).z < 0.0, "Off the arm it comes back out")
+	check(PlayMoves.rebound(Vector3(0.2, 0.0, 5.0), "pad", 1.0, 0.3, 0.6).z < 0.0, "A slow dribble off the pad comes back out too")
+	check(PlayMoves.squeezes(0.2, 0.1) and not PlayMoves.squeezes(1.5, 0.1) and not PlayMoves.squeezes(0.2, 0.95), "Squeezed at the line (mostly), not out in front")
+	# Shooting ratings: the first line and first pair are the best shooters.
+	var M = load("res://scripts/match.gd")
+	for team in range(2):
+		check(M.shooting_rating(0, team) > M.shooting_rating(9, team) and M.shooting_rating(1, team) > M.shooting_rating(4, team), "First line out-shoots the fourth")
+		check(M.shooting_rating(12, team) > M.shooting_rating(16, team), "First pair out-shoots the third")
 	check(StrokeAnim.has("block") and StrokeAnim.release_at("block") < 0.0, "Shot block stroke")
 	var top := Vector3(0.094, 0.92, 0.384)
 	var b := StrokeAnim.body("block", 0.4)

@@ -2879,8 +2879,25 @@ func get_goalie_gear() -> Dictionary:
 		"Catcher":{"transform":frame*goalie_gloves[0].transform,"size":Vector3(0.26,0.40,0.10),"zone":"catcher","bounce":0.02},
 		"Blocker":{"transform":frame*goalie_gloves[1].transform,"size":Vector3(0.205,0.385,0.05),"zone":"blocker","bounce":0.48},
 		"GoalieBlade":{"transform":frame*stick_blade.transform,"size":Vector3(0.39,0.08,0.036),"zone":"stick","bounce":0.40},
-		"Paddle":{"transform":frame*Transform3D(goalie_paddle.basis.orthonormalized(),goalie_paddle.position),"size":Vector3(0.088,goalie_paddle.scale.y,0.026),"zone":"stick","bounce":0.35}
+		"Paddle":{"transform":frame*Transform3D(goalie_paddle.basis.orthonormalized(),goalie_paddle.position),"size":Vector3(0.088,goalie_paddle.scale.y,0.026),"zone":"stick","bounce":0.35},
+		# The padded arms between the chest and the gloves: without them a
+		# shot just inside the blocker or catcher passed between glove and
+		# body (0.36 m gap at the blocker, goalie_gallery "high" cases).
+		"UpperArmLeft":arm_box(frame,shoulder_of(0),posed_elbows[0],GOALIE_UPPER_ARM),
+		"ForearmLeft":arm_box(frame,posed_elbows[0],posed_wrists[0],GOALIE_FOREARM),
+		"UpperArmRight":arm_box(frame,shoulder_of(1),posed_elbows[1],GOALIE_UPPER_ARM),
+		"ForearmRight":arm_box(frame,posed_elbows[1],posed_wrists[1],GOALIE_FOREARM),
 	}
+
+## Goalie arm save boxes (thickness across the arm, m): chest-protector arms
+## are chunky padded tubes.
+const GOALIE_UPPER_ARM := 0.15
+const GOALIE_FOREARM := 0.13
+func arm_box(frame: Transform3D, a: Vector3, b: Vector3, thick: float) -> Dictionary:
+	var d := b-a
+	var up := d.normalized() if d.length() > 0.01 else Vector3.UP
+	var basis_ := Basis(Quaternion(Vector3.UP,up)) if absf(up.dot(Vector3.UP)) < 0.9999 else Basis()
+	return {"transform":frame*Transform3D(basis_,(a+b)*0.5),"size":Vector3(thick,maxf(d.length(),0.05),thick),"zone":"arm","bounce":0.10}
 
 func build_player_glove(parent: Node3D) -> void:
 	# Thumbs on opposite sides so each hand is a mirror of the other.

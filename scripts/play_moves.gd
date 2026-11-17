@@ -104,11 +104,11 @@ static func choose_post(local_x: float, depth: float, distance: float) -> String
 ## into the slot kept the attackers in the zone for minutes on end (flow
 ## recorder, seeds 2 and 3). Only shots heading at the net (end_sign: the
 ## goal he defends, +1 at +z).
-const REBOUND_KEEP := {"body":0.05,"catcher":0.05,"pad":0.20,"mask":0.15,"blocker":0.30,"stick":0.26}
-const REBOUND_WIDE := {"body":0.15,"catcher":0.15,"pad":1.1,"mask":0.8,"blocker":1.4,"stick":1.3}
+const REBOUND_KEEP := {"arm":0.10,"body":0.05,"catcher":0.05,"pad":0.20,"mask":0.15,"blocker":0.30,"stick":0.26}
+const REBOUND_WIDE := {"arm":0.7,"body":0.15,"catcher":0.15,"pad":1.1,"mask":0.8,"blocker":1.4,"stick":1.3}
 static func rebound(in_v: Vector3, zone: String, end_sign: float, roll_a: float, roll_b: float) -> Vector3:
 	var speed := in_v.length()
-	if speed < 10.0 or in_v.z*end_sign <= 0.0: return in_v
+	if speed < 2.5 or in_v.z*end_sign <= 0.0: return in_v
 	var keep: float = REBOUND_KEEP.get(zone,0.2)
 	var wide: float = REBOUND_WIDE.get(zone,1.0)
 	var side := signf(in_v.x) if absf(in_v.x) > 0.5 else (1.0 if roll_a > 0.5 else -1.0)
@@ -157,3 +157,35 @@ static func in_shot_lane(puck: Vector3, net: Vector3, defender: Vector3) -> bool
 	var along := d.dot(dir)
 	if along < BLOCK_NEAR or along > minf(BLOCK_FAR,length-1.0): return false
 	return (d-dir*along).length() < BLOCK_LANE
+
+## Whether a shot the goalie stops is frozen for a whistle: most shots into
+## the chest are trapped against it and most off the catcher held, as NHL
+## goalies do; the rest drop for a rebound (rebound()). Leaving them all
+## loose at his feet gave attackers 13-23 point-blank jam shots a period.
+const FREEZE_CHANCE := {"body":0.75,"catcher":0.70}
+static func freezes(zone: String, in_v: Vector3, end_sign: float, roll: float) -> bool:
+	if in_v.length() < 10.0 or in_v.z*end_sign <= 0.0: return false
+	return roll < float(FREEZE_CHANCE.get(zone,0.0))
+
+## Whether the goalie smothers a loose puck for a whistle: slow, on the ice,
+## in front of his goal line, and within his reach - wider down in the
+## butterfly, where the pads lie out to either side (COVER_REACH). Covering
+## only a dead puck right at his skates left scrambles at the pads that
+## attackers jammed in after 2-4 saves.
+const COVER_SPEED := 3.0
+const COVER_REACH := Vector2(0.70, 1.10)   # standing, butterfly (m)
+static func goalie_covers(goalie: Vector3, end_sign: float, puck: Vector3, puck_speed: float, butterfly: float) -> bool:
+	if puck.y > 0.13 or puck_speed > COVER_SPEED: return false
+	if puck.z*end_sign > goalie.z*end_sign+0.35: return false   # behind him, at the line
+	var d := Vector2(puck.x-goalie.x,puck.z-goalie.z).length()
+	return d < lerpf(COVER_REACH.x,COVER_REACH.y,clampf(butterfly,0.0,1.0))
+
+## A puck the goalie touches when it is already at his goal line, behind the
+## front of his body (between him and the line): he squeezes it against the
+## post or his pads for a whistle most of the time instead of it squirting
+## in off the back of his gear (SQUEEZE_CHANCE). depth = how far the puck is
+## out from the goal line (m).
+const SQUEEZE_DEPTH := 0.45
+const SQUEEZE_CHANCE := 0.8
+static func squeezes(depth: float, roll: float) -> bool:
+	return depth >= -0.05 and depth < SQUEEZE_DEPTH and roll < SQUEEZE_CHANCE

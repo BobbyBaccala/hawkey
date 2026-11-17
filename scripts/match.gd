@@ -97,6 +97,10 @@ var released_opp_wait := 0.0
 var last_puck_pos := Vector3.ZERO
 var deflected := false
 var released_kind := ""
+## Scoring credit: the attacking team's recent puck carriers (and a tipper),
+## newest last; cleared when the other team gets it. Goal = the newest,
+## assists = up to two before him (NHL rule of thumb).
+var touch_chain: Array = []
 ## The user's recent right-stick samples ([time, Vector2]) for skill-stick dekes.
 var skill_history: Array = []
 var auto_lines := true
@@ -232,7 +236,7 @@ func _ready() -> void:
 	var names := ["E. Vale","N. March","A. Renaud","M. Holt","L. Voss","J. Belisle","D. Mercer","O. Lind","T. Keene","I. Caron","S. Adler","P. Kent","R. Cole","V. Baird","G. Laurent","K. Stone","F. Noel","B. Arvid"]
 	for team in range(2):
 		for i in range(18):
-			rosters[team].append({"name":names[(i+team*7)%18],"number":numbers[i],"stamina":1.0,"speed":88-i%5*3,"faceoff":44+(i*29+team*17)%45,"goals":0,"shots":0})
+			rosters[team].append({"name":names[(i+team*7)%18],"number":numbers[i],"stamina":1.0,"speed":88-i%5*3,"faceoff":44+(i*29+team*17)%45,"shooting":shooting_rating(i,team),"goals":0,"assists":0,"shots":0})
 		for slot in range(5):
 			var roster_id := slot if slot<3 else 12+slot-3
 			var actor := make_skater(Vector3.ZERO,team_color(team),str(rosters[team][roster_id].number),false,team_accent(team))
@@ -339,6 +343,18 @@ func attack_direction(team: int) -> float:
 
 func body_team(body: CharacterBody3D) -> int:
 	return int(body.get_meta("team",0))
+
+## Shooting/finishing rating (60-95) by roster spot: first-line forwards are
+## the snipers, the fourth line and third pair the least skilled, with a
+## little spread inside each line. It sets CPU shot accuracy, power and how
+## readily a player shoots (ai_context), so scoring concentrates on the top
+## players as in the NHL instead of being spread evenly by ice time.
+const LINE_SHOOTING := [92.0,84.0,76.0,69.0]
+const PAIR_SHOOTING := [82.0,74.0,66.0]
+static func shooting_rating(roster_id: int, team: int) -> float:
+	var spread := float((roster_id*37+team*11)%7-3)
+	if roster_id<12: return LINE_SHOOTING[roster_id/3]+spread
+	return PAIR_SHOOTING[(roster_id-12)/2]+spread
 
 func roster(body: CharacterBody3D) -> Dictionary:
 	return rosters[body_team(body)][int(body.get_meta("roster_id",0))]
@@ -651,6 +667,15 @@ func seat_actor() -> CharacterBody3D:
 func ai_skill(_team: int) -> Dictionary:
 	return SkaterAI.skill(play_difficulty)
 
+## The difficulty's skill with this player's shooting rating folded in:
+## a sniper shoots more readily and more accurately (shot_bar, shot_noise).
+func player_skill(actor: CharacterBody3D, team: int) -> Dictionary:
+	var sk:=ai_skill(team).duplicate()
+	var r:=(float(roster(actor).get("shooting",80.0))-80.0)/15.0
+	sk.shot_bar=float(sk.shot_bar)-r*0.05
+	sk.shot_noise=float(sk.shot_noise)*clampf(1.0-r*0.30,0.6,1.4)
+	return sk
+
 ## How well-timed a draw press was: -1 jumped (before the drop), 0 no press,
 ## else 0.5 (the instant the puck left the hand) rising to 1 at the landing.
 static func draw_timing_quality(press: float, land_time: float) -> float:
@@ -877,6 +902,24 @@ func change_identity(actor: CharacterBody3D, id_: int) -> void:
 	actor.set_meta("changing",false)
 	actor.set_meta("pending_id",-1)
 
+## The coach's next line (or D pair): the freshest one, with the top units
+## favoured (UNIT_PRIORITY), as NHL top lines play the most minutes.
+const LINE_PRIORITY := [0.16,0.08,0.0,-0.10]
+const PAIR_PRIORITY := [0.12,0.04,-0.06]
+func next_unit(team: int, defense: bool) -> int:
+	var units := 3 if defense else 4
+	var current:int=defense_pairs[team] if defense else active_lines[team]
+	var best:=-1
+	var best_score:=-INF
+	for u in range(units):
+		if u==current: continue
+		var rest_:=0.0
+		var ids:Array=[12+u*2,13+u*2] if defense else [u*3,u*3+1,u*3+2]
+		for id_ in ids: rest_+=float(rosters[team][id_].stamina)
+		var score_:float=rest_/ids.size()+float(PAIR_PRIORITY[u] if defense else LINE_PRIORITY[u])
+		if score_>best_score: best_score=score_;best=u
+	return best
+
 func request_line(team: int, line_: int, defense: bool = false) -> bool:
 	for actor in skaters:
 		if body_team(actor)==team and bool(actor.get_meta("changing",false)): return false
@@ -997,6 +1040,37 @@ func human_shot(elevation: float) -> void:
 ## The user's deke (skill stick or Z/X/V): only with the puck and not mid-move;
 ## the puck rides the blade through it and he cuts toward the side the move
 ## ends on (the backhand for forehand-backhand and the fake).
+func note_touch(actor: CharacterBody3D) -> void:
+	if not touch_chain.is_empty() and body_team(touch_chain.back())!=body_team(actor): touch_chain.clear()
+	if touch_chain.is_empty() or touch_chain.back()!=actor: touch_chain.append(actor)
+	if touch_chain.size()>3: touch_chain.pop_front()
+
+## Goal and assists to the scoring team's touch chain; returns the scorer's
+## name for the banner ("" when nobody on that team touched it - an own goal).
+func credit_goal(team: int) -> String:
+	var chain:=touch_chain.filter(func(a): return body_team(a)==team)
+	touch_chain.clear()
+	if chain.is_empty(): return ""
+	var scorer:CharacterBody3D=chain.back()
+	roster(scorer).goals+=1
+	for k in range(chain.size()-2,maxi(chain.size()-4,-1),-1):
+		roster(chain[k]).assists+=1
+	return str(roster(scorer).name).to_upper()
+
+## Top point-getters so far for the stats card: "TOR E. VALE 1G 1A · ...".
+func scoring_summary(count_ := 3) -> String:
+	var all_:=[]
+	for team in range(2):
+		for r in rosters[team]:
+			var p:=int(r.goals)+int(r.get("assists",0))
+			if p>0: all_.append([p,int(r.goals),team,r])
+	all_.sort_custom(func(a,b): return a[0]>b[0] or (a[0]==b[0] and a[1]>b[1]))
+	var parts:=[]
+	for e in all_.slice(0,count_):
+		var r:Dictionary=e[3]
+		parts.append("%s %s %dG %dA" % [hud_node.team_codes[e[2]],str(r.name).to_upper(),int(r.goals),int(r.get("assists",0))])
+	return "   ·   ".join(parts)
+
 func human_deke(kind: String) -> bool:
 	if carrier!=player or match_state.phase!=MatchState.Phase.PLAY: return false
 	var visual=player.get_child(1)
@@ -1100,11 +1174,22 @@ static func save_reaction(puck_velocity: Vector3, goalie_z: float) -> float:
 
 func _on_puck_contact(body: Node) -> void:
 	var actor:=hit_actor(body)
+	if actor is CharacterBody3D and actor in goalkeepers and goalie_contact_timer>0 and match_state.phase==MatchState.Phase.PLAY:
+		# A second touch on the same shot (bounced off one piece of gear into
+		# another): still controlled, never left to bounce on into the net.
+		var end2:=signf(actor.position.z)
+		if PlayMoves.squeezes(Arena.GOAL_LINE-puck.position.z*end2,ai_rng.randf()):
+			goalie_squeeze(actor)
+		else:
+			puck.linear_velocity=PlayMoves.rebound(last_puck_velocity,str(body.get_meta("zone","")),end2,ai_rng.randf(),ai_rng.randf())
+		return
 	if actor is CharacterBody3D and actor in goalkeepers and goalie_contact_timer<=0:
 		goalie_contact_timer=0.25
 		rules.goalie_touch()
 		saves+=1
-		if absf(last_puck_velocity.z)>6: team_shots[0 if attack_direction(0)==signf(actor.position.z) else 1]+=1
+		# Shots on goal, as NHL scorers count them: a shot (or a tipped shot) on
+		# the goalie - not a dump-in or a pass that runs into him.
+		if absf(last_puck_velocity.z)>6 and (StrokeAnim.is_shot(released_kind) or deflected): team_shots[0 if attack_direction(0)==signf(actor.position.z) else 1]+=1
 		# A hard shot stopped: the crowd comes up off its seats (arena_dressing.gd).
 		var save_dressing:=arena.get_node_or_null("Dressing")
 		var save_roar:=save_reaction(last_puck_velocity,actor.position.z)
@@ -1120,10 +1205,24 @@ func _on_puck_contact(body: Node) -> void:
 		# Rebound control (PlayMoves.rebound): the shot is absorbed and steered
 		# back out, never carried on into the net off a pad edge.
 		puck.linear_velocity=PlayMoves.rebound(last_puck_velocity,zone,signf(actor.position.z),ai_rng.randf(),ai_rng.randf())
+		# Already at the line behind his front: squeezed for a whistle.
+		if PlayMoves.squeezes(Arena.GOAL_LINE-puck.position.z*signf(actor.position.z),ai_rng.randf()):
+			goalie_squeeze(actor)
+			beep(115)
+			return
 		if zone in ["body","pad"] and last_puck_velocity.length()>10:
 			# Captured body-block reaction through the torso.
 			actor.get_child(1).play_mocap("Goalkeeper_Body_Block",false,["spine"],1.5,0.9,0.45)
-		if zone=="catcher" and last_puck_velocity.length()<32 and front_entry and absf(pocket.x)<0.085 and absf(pocket.y)<0.10:
+		var trapped:=PlayMoves.freezes(zone,last_puck_velocity,signf(actor.position.z),ai_rng.randf())
+		if trapped and zone=="body":
+			# Smothered against the chest: whistle, faceoff in his zone.
+			match_state.phase=MatchState.Phase.STOPPAGE
+			match_state.phase_timer=2
+			match_state.event="Goalkeeper cover"
+			next_faceoff=Vector3(-Arena.DOT_X if puck.position.x<0 else Arena.DOT_X,0,signf(actor.position.z)*Arena.END_DOT_Z)
+			puck.linear_velocity=Vector3.ZERO
+			puck.freeze=true
+		elif zone=="catcher" and last_puck_velocity.length()<32 and (trapped or (front_entry and absf(pocket.x)<0.085 and absf(pocket.y)<0.10)):
 			match_state.phase=MatchState.Phase.STOPPAGE
 			match_state.phase_timer=2
 			match_state.event="Goalkeeper catch"
@@ -1219,8 +1318,7 @@ func _physics_process(delta: float) -> void:
 				var scoring_team:=0 if attack_direction(0)==end_ else 1
 				match_state.goal(scoring_team)
 				team_shots[scoring_team]+=1
-				var scorer_name:=""
-				if carrier!=null and body_team(carrier)==scoring_team: scorer_name=str(roster(carrier).name).to_upper()
+				var scorer_name:=credit_goal(scoring_team)
 				# Red goal light behind this net, arena light pulse, jumbotron GOAL.
 				celebration.celebrate(end_, hud_node.team_colors[scoring_team], hud_node.team_names[scoring_team])
 				# REPLAY wipe and a reverse-angle replay a couple of seconds later.
@@ -1354,7 +1452,15 @@ func update_roster_stamina(delta: float) -> void:
 					total+=float(roster(actor).stamina)
 					count_+=1
 			if total/maxi(count_,1)<0.70 and puck.position.z*attack_direction(team)>-8:
-				request_line(team,active_lines[team]+1)
+				request_line(team,next_unit(team,false))
+			var d_total:=0.0
+			var d_count:=0
+			for actor in skaters:
+				if body_team(actor)==team and int(actor.get_meta("slot"))>=3:
+					d_total+=float(roster(actor).stamina)
+					d_count+=1
+			if d_count>0 and d_total/d_count<0.66 and puck.position.z*attack_direction(team)>-8:
+				request_line(team,next_unit(team,true),true)
 
 var ai_opponents: Array = [[],[]]
 var ai_coverage: Array = [{},{}]
@@ -1577,7 +1683,7 @@ func ai_context(actor: CharacterBody3D, team: int, attack: float, is_d: bool) ->
 		var other:=skaters[i]
 		if other==actor or body_team(other)!=team or not bool(other.get_meta("eligible")) or bool(other.get_meta("changing")) or is_hopping(other): continue
 		mates.append({"pos":other.position,"vel":other.velocity,"index":i,"is_d":TeamTactics.is_defence(int(other.get_meta("slot")))})
-	return {"pos":actor.position,"vel":actor.velocity,"attack":attack,"is_d":is_d,"goalie":goalkeeper_at_end(attack).position,"opponents":ai_opponents[team],"teammates":mates,"skill":ai_skill(team),"roll":ai_rng.randf(),"carry_time":Engine.get_physics_frames()/float(Engine.physics_ticks_per_second)-float(actor.get_meta("gained_at",-100.0))}
+	return {"pos":actor.position,"vel":actor.velocity,"attack":attack,"is_d":is_d,"goalie":goalkeeper_at_end(attack).position,"opponents":ai_opponents[team],"teammates":mates,"skill":player_skill(actor,team),"roll":ai_rng.randf(),"carry_time":Engine.get_physics_frames()/float(Engine.physics_ticks_per_second)-float(actor.get_meta("gained_at",-100.0))}
 
 ## CPU shot: picks the shot (StrokeAnim.shot_kind: slapper from the point
 ## with time, backhand with the net on that side, snap shot under pressure,
@@ -1603,13 +1709,13 @@ func ai_shoot(actor: CharacterBody3D, attack: float, is_d: bool, one_timer := fa
 ## accuracy by difficulty, speed by shot type.
 func ai_fire_shot(actor: CharacterBody3D, attack: float, pend: Dictionary) -> void:
 	if actor!=carrier or cooldown>0: return
-	var sk:=ai_skill(body_team(actor))
+	var sk:=player_skill(actor,body_team(actor))
 	var goalie:=goalkeeper_at_end(attack)
 	var aim:=SkaterAI.shot_aim(puck.position,attack,goalie.position,float(sk.shot_noise),ai_rng.randf(),ai_rng.randf())
 	var direction:Vector3=aim-puck.position
 	var distance_:=Vector2(direction.x,direction.z).length()
 	var kind:=str(pend.kind)
-	var speed:=StrokeAnim.shot_speed(kind,ai_rng.randf())
+	var speed:=StrokeAnim.shot_speed(kind,ai_rng.randf())+(float(roster(actor).get("shooting",80.0))-80.0)*0.08
 	var elevation_:float=PuckPhysics.solve_elevation(distance_,speed,aim.y,puck.position.y)
 	release_puck(actor,direction,speed,elevation_,kind)
 	roster(actor).shots+=1
@@ -1736,6 +1842,7 @@ func check_deflection() -> void:
 		deflected=true
 		puck.linear_velocity=PlayMoves.deflect(puck.linear_velocity,puck.position,Vector3(0,0,attack*Arena.GOAL_LINE),tip,ai_rng.randf(),ai_rng.randf())
 		visual.play_stroke("tip")
+		if tip: note_touch(actor)
 		ai_log["tip" if tip else "deflection"]=int(ai_log.get("tip" if tip else "deflection",0))+1
 		beep(320)
 		return
@@ -1765,6 +1872,17 @@ func ai_shot_blocks() -> void:
 		actor.velocity*=0.3
 		ai_log["block"]=int(ai_log.get("block",0))+1
 
+## The goalie traps the puck (squeezed at the line): whistle, faceoff in his zone.
+func goalie_squeeze(actor: CharacterBody3D) -> void:
+	match_state.phase=MatchState.Phase.STOPPAGE
+	match_state.phase_timer=2
+	match_state.event="Goalkeeper cover"
+	next_faceoff=Vector3(-Arena.DOT_X if puck.position.x<0 else Arena.DOT_X,0,signf(actor.position.z)*Arena.END_DOT_Z)
+	puck.linear_velocity=Vector3.ZERO
+	puck.freeze=true
+	carrier=null
+	ai_log["squeeze"]=int(ai_log.get("squeeze",0))+1
+
 func closest_opponent_distance(actor: CharacterBody3D) -> float:
 	var result:=INF
 	for other in skaters:
@@ -1787,6 +1905,7 @@ func update_possession(delta: float) -> void:
 			if distance_<best and (puck.linear_velocity-actor.velocity).length()<soft_hands:
 				best=distance_
 				carrier=actor
+				note_touch(actor)
 				if actor==pass_receiver:
 					ai_log["pass_done"]=int(ai_log.get("pass_done",0))+1
 					# A CPU taking a pass in a scoring spot can shoot it first time.
@@ -1804,7 +1923,9 @@ func update_possession(delta: float) -> void:
 					var attack_r:=attack_direction(team_r)
 					if actor.position.z*attack_r>Arena.BLUE_LINE:
 						var q_r:=SkaterAI.shot_quality(actor.position,attack_r,goalkeeper_at_end(attack_r).position,ai_opponents[team_r])
-						if SkaterAI.one_timer(q_r,float(ai_skill(team_r).shot_bar)):
+						# A loose puck needs a better look than a pass to be fired
+						# off at once (REBOUND_BAR): a jam, not every scramble.
+						if SkaterAI.one_timer(q_r,float(ai_skill(team_r).shot_bar)+SkaterAI.REBOUND_BAR):
 							actor.set_meta("one_timer",true)
 							ai_log["rebound_shot"]=int(ai_log.get("rebound_shot",0))+1
 				# A fresh read on gaining it: a short reaction, no stale plan.
@@ -1891,7 +2012,7 @@ func update_goalkeepers(delta: float) -> void:
 		visual.rotation.y=rotate_toward(visual.rotation.y,atan2(-facing.x,-facing.z)-keeper.rotation.y,delta*9)
 		visual.animate(keeper.velocity.length(),delta,0,false)
 		sync_goalie_contacts(keeper)
-		if puck.position.y<0.13 and puck.linear_velocity.length()<2 and keeper.position.distance_to(puck.position)<0.65 and cooldown<=0:
+		if carrier==null and cooldown<=0 and PlayMoves.goalie_covers(keeper.position,end_,puck.position,puck.linear_velocity.length(),visual.butterfly):
 			match_state.phase=MatchState.Phase.STOPPAGE
 			match_state.phase_timer=2
 			match_state.event="Goalkeeper cover"
@@ -2044,11 +2165,13 @@ func update_match_hud() -> void:
 		var e:=match_state.event
 		# Intermission / final: the stats card (stats_screen.gd) replaces the old banner.
 		if e.begins_with("END OF PERIOD"):
+			hud_node.stats_screen.scorers=scoring_summary()
 			hud_node.show_stats(game_stats,match_state.score,match_state.period,false)
 		elif e.begins_with("Period "):
 			hud_node.hide_stats()
 			hud_node.show_banner(["1ST","2ND","3RD"][clampi(match_state.period-1,0,2)]+" PERIOD", "Ends switched", Color("#93a3b3"), 1.6)
 		elif e.begins_with("FINAL"):
+			hud_node.stats_screen.scorers=scoring_summary()
 			hud_node.show_stats(game_stats,match_state.score,match_state.period,true)
 		elif " — " in e and (e.begins_with("TOR") or e.begins_with("MTL")):
 			var team:=0 if e.begins_with("TOR") else 1
@@ -2169,6 +2292,10 @@ func capture_stats_screen(which: String, demo: bool) -> void:
 		match_state.score.assign(d.score)
 		team_shots.assign(d.shots)
 		faceoff_wins=d.faceoffs.duplicate()
+		# Demo scoring line for the card (goals/assists as in the demo score).
+		for e in [[0,0,1,1],[0,1,1,0],[1,3,0,2],[1,12,1,0],[0,2,0,1]]:
+			rosters[e[0]][e[1]].goals+=e[2]
+			rosters[e[0]][e[1]].assists+=e[3]
 	match_state.phase=MatchState.Phase.PLAY
 	match_state.clock=0.01
 	for f in range(120):
