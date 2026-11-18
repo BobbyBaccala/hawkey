@@ -12,7 +12,7 @@ const Kit = preload("res://scripts/kit_materials.gd")
 ## skinned to the same base skeleton. Goalies and officials keep the
 ## procedural kit.
 # Kit v6 (tools/blender/kit_v6.py): v5 plus a strong breezer leg taper. v2/v5 GLBs stay in assets/kit for rollback.
-const KitMeshes = preload("res://assets/kit/skater-kit-v10.glb")
+const KitMeshes = preload("res://assets/kit/skater-kit-v11.glb")
 const MESH_KIT := true
 ## Local incoming-pad candidate; false retains the original procedural pad.
 const MESH_GOALIE_PAD := true

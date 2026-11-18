@@ -4,7 +4,7 @@ Read this first each session; update it before finishing (`/update-memory`).
 Keep it short: current state, decisions, gotchas, next steps. History lives in
 the run log at the bottom of `docs/BACKLOG.md`.
 
-_Last updated: 2026-11-17 (cloud session, branch prototype/skating-puck-lab)._
+_Last updated: 2026-11-18 (cloud session, branch prototype/skating-puck-lab)._
 
 ## Owner and working style
 - Owner: Ethan. Wants visible progress on the player and goalie models every
@@ -16,9 +16,13 @@ _Last updated: 2026-11-17 (cloud session, branch prototype/skating-puck-lab)._
 
 ## Current state (2026-11-17)
 Skaters
-- Kit v10 (`assets/kit/skater-kit-v10.glb`, `tools/blender/kit_v10.py`): v9
-  (side panels, breezer stripe) with a rounded, sloped shoulder/yoke line
-  (SHOULDER_Z/NECK_Z/NECK_A + pad caps) - v9's sweater ended in a flat lid.
+- Kit v11 (`assets/kit/skater-kit-v11.glb`, `tools/blender/kit_v11.py`):
+  v10 (rounded shoulder/yoke, side panels, breezer stripe) with padded
+  breezers - BREEZER_GIRTH 1.10 all the way down, taper to the knee eased
+  32/28% -> 26/22% (BREEZER_TAPER). A flared A-line version failed
+  test_kit_geometry's taper check (the "drum" look the owner's reference
+  review rejected), so keep the opening < 0.88 x thigh width. Pant points
+  inside the base body 1549 -> 1259.
 - Face shapes (2026-11-18): six reshapes of the scanned head
   (FACE_SHAPES x FACE_SHAPE_GAIN, face_shape_offset: jaw, chin, nose, brow,
   cheekbones, lower-face length; skull above the brow untouched), picked per
@@ -93,7 +97,7 @@ tools/ai_flow_probe.gd + ai_flow_report.py, see DEVELOPMENT.md):
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 48 suites; last full run 48/48 (2026-11-17, five-hole/rebounds/blocks run).
+Tests: 49 suites; last full run see the run log (2026-11-18).
 
 Game stats (owner 2026-11-17: 5-min periods should give NHL box scores -
 25-30 SOG/team, goalies .870-.930, a few point-per-game players):
@@ -134,13 +138,22 @@ goal line). Result (4 full games, seeds 11-14): 26.5 SOG/team, every game
 22-29 a side, .920 sv%, 2.12 goals/team, 3 players at 1 P/GP. A 4-game
 batch still swings ~4 SOG and ~0.5 goals a team between runs.
 
+End-zone faceoffs (owner 2026-11-18: the defending team does not line two
+players up side by side on the boards): match.gd setup_faceoff - defending
+wingers stacked one behind the other goal-side of the MIDDLE hash marks
+(FACEOFF_HASH_X/Z, FACEOFF_STACK), one D below them toward the net, the
+other D low behind the centre on the boards side; attacking wingers on the
+blue-line side of the hashes, attacking D at the blue line.
+tests/test_faceoff_alignment.gd checks both end dots.
+
 ## Open defects / next steps
-1. Goals a little low (2.1/team vs NHL ~3.0). Faceoff lineups for wingers
-   (wingers now on the hash marks at the circle edge, end-zone D fixed).
+1. Goals a little low (2.1/team vs NHL ~3.0). Neutral-zone faceoff lineups
+   not reviewed against the owner's eye yet.
 2. Strokes polish: no dive motion into stack/splits; blade face doesn't
    roll open/closed; skill-stick gestures untested on a real pad (owner).
 3. AI: teammates <2 m apart in ~18% of frames; OZ forwards could go lower.
-4. Skaters: boxy shoulders, single face mesh, block number font.
+4. Skaters: breezers now padded (v11); next: socks/shin-pad shape at the
+   knee, glove cuffs, jersey hem folds.
 
 ## Decisions
 - 2026-11-07: downloaded models/brands allowed with logos, names and signatures

@@ -399,6 +399,11 @@ func start_from_title() -> void:
 	camera_side = 0.0
 	hud_node.show_banner("TORONTO  vs  MONTREAL", "1ST PERIOD", hud_node.team_colors[0], 1.6)
 
+## Faceoff circle hash marks relative to the dot: across (x) and the
+## half-gap between the upper and lower marks (z).
+const FACEOFF_HASH_X := 4.6
+const FACEOFF_HASH_Z := 0.6
+const FACEOFF_STACK := 1.1
 func setup_faceoff() -> void:
 	for actor in skaters: actor.get_child(1).stop_mocap()
 	carrier = null
@@ -434,20 +439,29 @@ func setup_faceoff() -> void:
 		# other team's RW): mirror x for the team attacking +z.
 		actor.position.x *= -sign_
 		actor.position+=next_faceoff
-		# End-zone draws (NHL alignment): the attacking D stand at the blue
-		# line, one each side of the middle; the defending D take the hash
-		# marks on the boards side of the dot and the net front. (Offsetting
-		# them 8 m back from the dot put the defending D behind their goal line.)
-		if slot>=3 and absf(next_faceoff.z)>Arena.BLUE_LINE+6.0:
+		# End-zone draws (NHL alignment). Attacking team: a winger on each
+		# hash mark, the D at the blue line one each side of the middle.
+		# Defending team (owner 2026-11-18): both wingers stacked on the
+		# middle (slot-side) hash marks on their own side of them, one behind
+		# the other (the attacking winger faces them from the blue-line side),
+		# one D below them toward the net,
+		# the other D low behind the centre on the boards side; nobody lines
+		# up along the boards beside another player.
+		if slot>=1 and absf(next_faceoff.z)>Arena.BLUE_LINE+6.0:
 			var end_:=signf(next_faceoff.z)
 			var own_side:=TeamTactics.side_for(slot,sign_)
 			var boards_side:=signf(next_faceoff.x) if absf(next_faceoff.x)>0.5 else 1.0
+			var dot:=next_faceoff
 			if sign_==end_:
-				actor.position=Vector3(own_side*4.5+next_faceoff.x*0.25,0,end_*(Arena.BLUE_LINE+1.2))
+				if slot>=3: actor.position=Vector3(own_side*4.5+dot.x*0.25,0,end_*(Arena.BLUE_LINE+1.2))
+			elif slot<3:
+				# Their own (goal) side of the hash marks, one behind the other.
+				var front:=own_side!=boards_side
+				actor.position=Vector3(dot.x-boards_side*FACEOFF_HASH_X,0,dot.z+end_*(FACEOFF_HASH_Z if front else FACEOFF_HASH_Z+FACEOFF_STACK))
 			elif own_side==boards_side:
-				actor.position=Vector3(next_faceoff.x+boards_side*4.2,0,next_faceoff.z+end_*1.2)
+				actor.position=Vector3(dot.x+boards_side*1.2,0,dot.z+end_*3.2)
 			else:
-				actor.position=Vector3(boards_side*0.9,0,end_*(Arena.GOAL_LINE-2.0))
+				actor.position=Vector3(dot.x-boards_side*3.8,0,dot.z+end_*3.4)
 		actor.position.x=clampf(actor.position.x,-(Arena.HALF_WIDTH-1.0),Arena.HALF_WIDTH-1.0)
 		actor.position.z=clampf(actor.position.z,-(Arena.GOAL_LINE-0.8),Arena.GOAL_LINE-0.8)
 		actor.velocity = Vector3.ZERO
