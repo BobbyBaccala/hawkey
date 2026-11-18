@@ -158,7 +158,79 @@ const SDF_SPREAD := 8.0
 ## (Open Sans, OFL, embedded in Godot), from its vector outline.
 ## Returns {"image": PackedByteArray (w*64, 255 = deep inside), "w": int, "advance": float}.
 static func glyph(ch: String) -> Dictionary:
+	if BLOCK_DIGITS and ch >= "0" and ch <= "9":
+		return cached("block|" + ch, func() -> Dictionary: return _make_block_digit(ch))
 	return cached("glyph|" + ch, func() -> Dictionary: return _make_glyph(ch))
+
+## Jersey numbers in an original athletic block style (as hockey sweaters
+## use): square strokes BLOCK_STROKE thick, squared counters and chamfered
+## outer corners, instead of the engine's plain text font. Each digit is a
+## union of stroke rectangles in a BLOCK_W x GLYPH_CAP box (y down from the
+## cap line), supersampled to coverage and turned into the same SDF the
+## twill shader reads. Letters (nameplates) keep the text font.
+const BLOCK_DIGITS := true
+const BLOCK_W := 26.0
+const BLOCK_STROKE := 7.5
+const BLOCK_CHAMFER := 4.0
+const BLOCK_GAP := 7.0
+const BLOCK_ONE_W := 15.0
+static func block_strokes(ch: String) -> Array:
+	var W := BLOCK_W
+	var H := GLYPH_CAP
+	var t := BLOCK_STROKE
+	var m := H * 0.5
+	var top := Rect2(0, 0, W, t)
+	var bottom := Rect2(0, H - t, W, t)
+	var mid := Rect2(0, m - t * 0.5, W, t)
+	var left := Rect2(0, 0, t, H)
+	var right := Rect2(W - t, 0, t, H)
+	var left_up := Rect2(0, 0, t, m + t * 0.5)
+	var left_low := Rect2(0, m - t * 0.5, t, H - m + t * 0.5)
+	var right_up := Rect2(W - t, 0, t, m + t * 0.5)
+	var right_low := Rect2(W - t, m - t * 0.5, t, H - m + t * 0.5)
+	match ch:
+		"0": return [top, bottom, left, right]
+		"1":
+			var cx := BLOCK_ONE_W - t * 0.5
+			return [Rect2(cx - t * 0.5, 0, t, H), Rect2(cx - t * 0.5 - 6.0, 0, 6.0, t * 0.85)]
+		"2": return [top, right_up, mid, left_low, bottom]
+		"3": return [top, right, Rect2(t * 0.6, m - t * 0.5, W - t * 0.6, t), bottom]
+		"4": return [left_up, right, mid]
+		"5": return [top, left_up, mid, right_low, bottom]
+		"6": return [top, left, mid, right_low, bottom]
+		"7": return [top, right]
+		"8": return [top, bottom, left, right, mid]
+		"9": return [top, left_up, right, mid, bottom]
+	return []
+
+static func block_inside(rects: Array, x: float, y: float) -> bool:
+	var W := BLOCK_W
+	var H := GLYPH_CAP
+	var c := BLOCK_CHAMFER
+	# Chamfered outer corners of the digit's box.
+	if x + y < c or (W - x) + y < c or x + (H - y) < c or (W - x) + (H - y) < c: return false
+	for r: Rect2 in rects:
+		if r.has_point(Vector2(x, y)): return true
+	return false
+
+static func _make_block_digit(ch: String) -> Dictionary:
+	var rects := block_strokes(ch)
+	var w_ := BLOCK_W if ch != "1" else BLOCK_ONE_W
+	var advance := w_ + BLOCK_GAP
+	var w := int(ceil(advance + SDF_SPREAD * 2))
+	var top := GLYPH_BASELINE - GLYPH_CAP
+	var cov := PackedFloat32Array()
+	cov.resize(w * GLYPH_H)
+	for py in range(GLYPH_H):
+		for px in range(w):
+			var hits := 0
+			for sy in range(4):
+				for sx in range(4):
+					var x := px + (sx + 0.5) / 4.0 - SDF_SPREAD
+					var y := py + (sy + 0.5) / 4.0 - top
+					if block_inside(rects, x, y): hits += 1
+			cov[py * w + px] = hits / 16.0
+	return {"image": _sdf(cov, w, GLYPH_H), "w": w, "advance": advance}
 
 static func _make_glyph(ch: String) -> Dictionary:
 	var font: Font = ThemeDB.fallback_font

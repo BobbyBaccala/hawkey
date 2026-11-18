@@ -12,7 +12,7 @@ const Kit = preload("res://scripts/kit_materials.gd")
 ## skinned to the same base skeleton. Goalies and officials keep the
 ## procedural kit.
 # Kit v6 (tools/blender/kit_v6.py): v5 plus a strong breezer leg taper. v2/v5 GLBs stay in assets/kit for rollback.
-const KitMeshes = preload("res://assets/kit/skater-kit-v9.glb")
+const KitMeshes = preload("res://assets/kit/skater-kit-v10.glb")
 const MESH_KIT := true
 ## Local incoming-pad candidate; false retains the original procedural pad.
 const MESH_GOALIE_PAD := true
@@ -1658,7 +1658,12 @@ func pose(speed: float, turn: float) -> void:
 		if split_w > 0.0:
 			var dir := signf(save_weights.splits_left-save_weights.splits_right)
 			var hip_y: float = (rest["upperleg01.L"] as Transform3D).origin.y
-			drop = drop.lerp(Vector3(dir*SPLITS_SHIFT,SPLITS_HIP-hip_y,-0.02),minf(split_w,1.0))
+			# The push: the hips travel across first (ease out) and drop a
+			# beat later (lag), as a goalie pushes into the splits; the
+			# finished pose is the same.
+			var sw := minf(split_w,1.0)
+			var split_to := Vector3(dir*SPLITS_SHIFT,SPLITS_HIP-hip_y,-0.02)
+			drop = Vector3(lerpf(drop.x,split_to.x,1.0-(1.0-sw)*(1.0-sw)),lerpf(drop.y,split_to.y,pow(sw,1.4)),lerpf(drop.z,split_to.z,sw))
 		# Pad stack: the body straightens (it is laid on its side by the rig roll).
 		var stack_w := stack_weight()
 		if stack_w > 0.0: drop = drop.lerp(Vector3(0,-0.04,0),stack_w)

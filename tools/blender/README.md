@@ -78,3 +78,14 @@ on the owner's PC: double-click `Start Blender bridge.bat`; it runs any
   (Novichkov helmet, CC-BY 4.0): drops every texture/UV (all logos, numbers, signature), vertex-colour
   team shell, decimate, Taubin smooth, split shell/fittings, sharp normals above 35 deg. They read the
   owner's `Hawkey/art` folder by absolute path, so run them through the bridge.
+
+
+## Cloud (Linux) sessions
+Blender 4.0 from apt works headless here:
+
+    apt-get install -y blender python3-numpy libegl1 libgl1-mesa-dri
+    xvfb-run -a blender -b --factory-startup --python-exit-code 1 --python tools/blender/kit_v10.py -- <bridge>
+
+with `<bridge>/input/player-base-v1.glb` copied from `assets/`. Scripts
+written for 5.x may need small API fallbacks (kit_v10: the glTF vertex
+colour attribute name).

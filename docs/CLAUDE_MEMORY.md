@@ -16,9 +16,12 @@ _Last updated: 2026-11-17 (cloud session, branch prototype/skating-puck-lab)._
 
 ## Current state (2026-11-17)
 Skaters
-- Kit v9 (`assets/kit/skater-kit-v9.glb`, `tools/blender/kit_v9.py`): rounder
-  shoulders, sweater side panels, breezer side stripe (kit_gear.gdshader
-  pants_stripe via UV2.x).
+- Kit v10 (`assets/kit/skater-kit-v10.glb`, `tools/blender/kit_v10.py`): v9
+  (side panels, breezer stripe) with a rounded, sloped shoulder/yoke line
+  (SHOULDER_Z/NECK_Z/NECK_A + pad caps) - v9's sweater ended in a flat lid.
+- Jersey numbers: original athletic block numerals (kit_materials.gd
+  BLOCK_DIGITS / block_strokes) instead of the engine text font; nameplate
+  letters still use the font.
 - Scanned head (`assets/gear/head-v1.glb`) on skaters, goalies and referees;
   6 skin tones + hair colours from the jersey number (`assets/skater_face.gdshader`,
   FACE_TONES/HAIR_COLORS); hair/liner/ear masks baked into vertex colour; smooth
@@ -152,6 +155,15 @@ batch still swings ~4 SOG and ~0.5 goals a team between runs.
   `get_goalie_gear()` at sampled poses before/after).
 
 ## Gotchas
+- Blender in the cloud (2026-11-18): `apt-get install -y blender python3-numpy
+  libegl1 libgl1-mesa-dri` gives Blender 4.0; run scripts as
+  `xvfb-run -a blender -b --factory-startup --python-exit-code 1 --python
+  tools/blender/<script>.py -- <bridge>` with <bridge>/input/ holding the
+  source (player-base-v1.glb is in assets/). 4.0 names glTF vertex colours
+  differently (kit_v10 falls back to the first colour attribute).
+- Forward+ capture tools that cut the camera between shots show green/
+  purple/orange glows for a frame or two (SSIL/SSR history on lavapipe);
+  not in the game - judge on a first frame or after settling.
 - CPU games are chaotic: judge AI changes on 2+ seeds of 4-min games with the
   flow recorder, not one game. test_play_now_ai's CPU game now counts 90 s of
   live play (goal celebrations/replays excluded) - still one fixed seed.
