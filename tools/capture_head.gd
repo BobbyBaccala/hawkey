@@ -2,6 +2,7 @@ extends SceneTree
 ## Head / helmet / neck close-ups of one figure, four angles in one sheet.
 ## xvfb-run -a -s "-screen 0 1728x1080x24" godot --rendering-method gl_compatibility --rendering-driver opengl3 --resolution 1728x1080 --script tools/capture_head.gd -- [--no-helmet] [--goalie|--referee] [--number=17] [--out=/tmp/hawkey-head]
 ## Writes <out>-0.png .. -3.png (three-quarter, side, back, front).
+## --shape=N forces a face shape (SkaterVisual.FACE_SHAPES), --tone=N a skin tone.
 func _initialize() -> void: call_deferred("run")
 
 func shot(cam: Camera3D, pos: Vector3, at: Vector3, fov: float, path: String) -> void:
@@ -33,6 +34,9 @@ func run() -> void:
 	visual.number = number
 	visual.goalie = "--goalie" in args
 	visual.referee = "--referee" in args
+	for arg in args:
+		if arg.begins_with("--shape="): visual.face_shape = int(arg.substr(8))
+		if arg.begins_with("--tone="): visual.face_variant = int(arg.substr(7))
 	scene.add_child(visual)
 	visual.rotation.y = -PI / 2      # facing +x
 	for k in range(120): visual.animate(4.0, 1.0 / 120, 0, true)

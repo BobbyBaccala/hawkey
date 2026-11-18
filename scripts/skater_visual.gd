@@ -1142,10 +1142,80 @@ static func head_with_hair_mask(src: Mesh, skin: Skin = null) -> ArrayMesh:
 	out.surface_set_material(0,src.surface_get_material(0))
 	return out
 
+## Face shapes: one scanned head, reshaped per player so the faces on the
+## ice differ in build, not just skin tone and hair. Smooth, small offsets
+## to the lower and mid face only (rest-pose metres: chin ~1.58-1.61,
+## mouth ~1.62, nose tip ~1.65, eyes ~1.67-1.70, brow ~1.715): the skull
+## above the brow is untouched, so helmets, visors and masks fit as before.
+## Each row: [jaw width, chin drop, chin forward, nose forward, brow forward,
+## cheekbone width, lower-face length] (fractions or metres as named below).
+const FACE_SHAPES := [
+	[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+	[0.08, 0.004, 0.004, -0.002, 0.003, 0.03, 0.02],
+	[-0.06, 0.006, 0.002, 0.005, 0.0, -0.03, 0.035],
+	[0.05, -0.003, -0.002, 0.003, 0.004, 0.05, -0.02],
+	[-0.04, 0.0, 0.005, -0.003, 0.002, 0.0, 0.015],
+	[0.10, 0.002, -0.003, 0.004, 0.005, 0.04, -0.01],
+]
+static var _shape_cache := {}
+## Strength of the shape table (tuned on capture_head.gd sheets: at 1.0
+## the faces read as the same man).
+const FACE_SHAPE_GAIN := 1.5
+static func face_shape_offset(p: Vector3, k0: Array) -> Vector3:
+	var k := k0.map(func(v): return float(v)*FACE_SHAPE_GAIN)
+	var q := p
+	var front := smoothstep(0.02,0.09,p.z)
+	var not_ear := 1.0-smoothstep(0.070,0.078,absf(p.x))*smoothstep(1.60,1.62,p.y)*smoothstep(1.73,1.71,p.y)
+	# Lower-face length about the eye line.
+	if p.y < 1.69: q.y = 1.69-(1.69-p.y)*(1.0+float(k[6])*smoothstep(0.0,0.06,p.z+0.02))
+	# Jaw width (below the nose, front and sides).
+	q.x *= 1.0+float(k[0])*smoothstep(1.66,1.60,p.y)*front*not_ear
+	# Chin: drop and forward.
+	var chin := smoothstep(1.625,1.585,p.y)*smoothstep(0.09,0.135,p.z)
+	q.y -= float(k[1])*chin
+	q.z += float(k[2])*chin
+	# Nose: the bridge and tip come forward.
+	q.z += float(k[3])*smoothstep(0.025,0.0,absf(p.x))*smoothstep(1.625,1.645,p.y)*smoothstep(1.70,1.68,p.y)*smoothstep(0.145,0.168,p.z)
+	# Brow ridge.
+	q.z += float(k[4])*smoothstep(1.695,1.71,p.y)*smoothstep(1.735,1.72,p.y)*smoothstep(0.11,0.14,p.z)
+	# Cheekbones.
+	q.x *= 1.0+float(k[5])*smoothstep(1.635,1.655,p.y)*smoothstep(1.69,1.675,p.y)*smoothstep(0.035,0.055,absf(p.x))*front*not_ear
+	return q
+
+## Head and eyes meshes reshaped to FACE_SHAPES[shape] (cached per shape).
+static func head_shape_parts(shape: int) -> Dictionary:
+	shape = posmod(shape,FACE_SHAPES.size())
+	if shape == 0: return head_parts()
+	if not _shape_cache.has(shape):
+		var parts := head_parts()
+		var out := {}
+		for n in ["Head","Eyes"]:
+			var src: ArrayMesh = parts[n][0]
+			var mesh := ArrayMesh.new()
+			for sfc in range(src.get_surface_count()):
+				var arrays := src.surface_get_arrays(sfc)
+				var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+				for i in range(verts.size()): verts[i] = face_shape_offset(verts[i],FACE_SHAPES[shape])
+				arrays[Mesh.ARRAY_VERTEX] = verts
+				var flags := 0
+				if arrays[Mesh.ARRAY_BONES] != null and (arrays[Mesh.ARRAY_BONES] as PackedInt32Array).size() == verts.size()*8: flags = Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS
+				mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays,[],{},flags)
+				mesh.surface_set_material(sfc,src.surface_get_material(sfc))
+			out[n] = [mesh,parts[n][1]]
+		_shape_cache[shape] = out
+	return _shape_cache[shape]
+
+## Face shape for this player: from the number, independent of skin tone.
+var face_shape := -1
+func face_shape_index() -> int:
+	if face_shape >= 0: return face_shape
+	return posmod(number.hash()*13+int(number)*5+3,FACE_SHAPES.size())
+
 func build_mesh_head() -> void:
 	var parts := head_parts()
+	var shaped := head_shape_parts(face_shape_index())
 	for n in ["Head","Eyes"]:
-		var inst := skinned_garment("Mesh"+n,parts[n])
+		var inst := skinned_garment("Mesh"+n,shaped[n])
 		if n == "Eyes":
 			var m := StandardMaterial3D.new()
 			m.vertex_color_use_as_albedo = true

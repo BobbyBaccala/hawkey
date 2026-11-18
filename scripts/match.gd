@@ -412,7 +412,9 @@ func setup_faceoff() -> void:
 	previous_puck = puck.position
 	# Centres square up just off the dot (blades meet over it), wingers on
 	# the wings, D back at the points.
-	var spots := [Vector3(0,0,0.95),Vector3(-6,0,1),Vector3(6,0,1),Vector3(-4,0,8),Vector3(4,0,8)]
+	# Wingers on the hash marks at the edge of the faceoff circle (radius
+	# 4.57 m), just behind the dot line - they stood 6 m out, off the circle.
+	var spots := [Vector3(0,0,0.95),Vector3(-4.8,0,0.6),Vector3(4.8,0,0.6),Vector3(-4,0,8),Vector3(4,0,8)]
 	for actor in skaters:
 		var team := body_team(actor)
 		var sign_ := attack_direction(team)

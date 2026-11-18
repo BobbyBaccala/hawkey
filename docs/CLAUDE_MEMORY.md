@@ -19,6 +19,11 @@ Skaters
 - Kit v10 (`assets/kit/skater-kit-v10.glb`, `tools/blender/kit_v10.py`): v9
   (side panels, breezer stripe) with a rounded, sloped shoulder/yoke line
   (SHOULDER_Z/NECK_Z/NECK_A + pad caps) - v9's sweater ended in a flat lid.
+- Face shapes (2026-11-18): six reshapes of the scanned head
+  (FACE_SHAPES x FACE_SHAPE_GAIN, face_shape_offset: jaw, chin, nose, brow,
+  cheekbones, lower-face length; skull above the brow untouched), picked per
+  number (face_shape_index, independent of skin tone); capture_head.gd
+  --shape=N --tone=N.
 - Jersey numbers: original athletic block numerals (kit_materials.gd
   BLOCK_DIGITS / block_strokes) instead of the engine text font; nameplate
   letters still use the font.
@@ -131,8 +136,7 @@ batch still swings ~4 SOG and ~0.5 goals a team between runs.
 
 ## Open defects / next steps
 1. Goals a little low (2.1/team vs NHL ~3.0). Faceoff lineups for wingers
-   and the centre-ice D are still offsets from the dot (only end-zone D
-   fixed).
+   (wingers now on the hash marks at the circle edge, end-zone D fixed).
 2. Strokes polish: no dive motion into stack/splits; blade face doesn't
    roll open/closed; skill-stick gestures untested on a real pad (owner).
 3. AI: teammates <2 m apart in ~18% of frames; OZ forwards could go lower.
@@ -155,7 +159,8 @@ batch still swings ~4 SOG and ~0.5 goals a team between runs.
   `get_goalie_gear()` at sampled poses before/after).
 
 ## Gotchas
-- Blender in the cloud (2026-11-18): `apt-get install -y blender python3-numpy
+- Blender in the cloud (2026-11-18; now in the hawkey env setup script, so
+  new sessions have it): `apt-get install -y blender python3-numpy
   libegl1 libgl1-mesa-dri` gives Blender 4.0; run scripts as
   `xvfb-run -a blender -b --factory-startup --python-exit-code 1 --python
   tools/blender/<script>.py -- <bridge>` with <bridge>/input/ holding the
