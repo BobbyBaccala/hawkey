@@ -4,7 +4,7 @@ Read this first each session; update it before finishing (`/update-memory`).
 Keep it short: current state, decisions, gotchas, next steps. History lives in
 the run log at the bottom of `docs/BACKLOG.md`.
 
-_Last updated: 2026-11-18 (cloud session, branch prototype/skating-puck-lab)._
+_Last updated: 2026-11-19 (cloud session, branch prototype/skating-puck-lab)._
 
 ## Owner and working style
 - Owner: Ethan. Wants visible progress on the player and goalie models every
@@ -97,7 +97,7 @@ tools/ai_flow_probe.gd + ai_flow_report.py, see DEVELOPMENT.md):
 Gameplay (for context): offside and icing (`scripts/rules_offside_icing.gd`),
 CPU body checks, PLAY NOW seats, smarter CPU (Codex/earlier sessions).
 
-Tests: 49 suites; last full run see the run log (2026-11-18).
+Tests: 50 suites; last full run see the run log (2026-11-19).
 
 Game stats (owner 2026-11-17: 5-min periods should give NHL box scores -
 25-30 SOG/team, goalies .870-.930, a few point-per-game players):
@@ -144,16 +144,37 @@ wingers stacked one behind the other goal-side of the MIDDLE hash marks
 (FACEOFF_HASH_X/Z, FACEOFF_STACK), one D below them toward the net, the
 other D low behind the centre on the boards side; attacking wingers on the
 blue-line side of the hashes, attacking D at the blue line.
-tests/test_faceoff_alignment.gd checks both end dots.
+Neutral-zone dots (2026-11-19): strong-side D just behind the outside
+winger (FACEOFF_NZ_D_STRONG), the other D the safety, deeper in the middle
+(FACEOFF_NZ_D_SAFETY); they were 8 m straight back and level, one team 6 m
+inside its own zone. Centre ice unchanged. --faceoff-neutral capture.
+tests/test_faceoff_alignment.gd checks end dots, neutral dots and centre ice.
+
+Goalie read time (2026-11-19): the goalie committed to the exact save on
+the frame the puck left the stick. Now a shot must be in flight GOALIE_READ
+0.16 s first (he holds his pose), except pucks crossing within
+GOALIE_READ_BODY 0.30 m of his centre (stance/stick cover them; without this
+every 8 m five-hole shot went in). 4 games seeds 11-14: goals 1.75 -> 2.38 a
+team, sv% .934 -> .908, SOG 26.4 -> 25.9, 0 -> 3 players at 1 P/GP; gallery
+100% -> 94%.
+
+Knee/socks (2026-11-19, gear_builder.gd Gear.sock / sock_thigh, SOCK_DOME,
+SOCK_KNEECAP, SOCK_CALF, SOCK_THIGH_LEN; skater_visual.gd sock_thighs,
+breezer_side_out()): sock starts at the knee with a domed shin-guard cap,
+a thigh sock runs up under the breezer hem; breezer stripe placed by how
+squarely the rest position faces out (was torn by pad bumps). Test:
+tests/test_knee_sock.gd. Close-up shots knee/knee-side/cuff in
+capture_skater_close.gd.
 
 ## Open defects / next steps
-1. Goals a little low (2.1/team vs NHL ~3.0). Neutral-zone faceoff lineups
-   not reviewed against the owner's eye yet.
+1. Goals 2.38/team (NHL ~3.0); a 4-game batch swings +-0.5 - run a second
+   batch before tuning further (try GOALIE_READ ~0.18). SOG 25.9, low end.
 2. Strokes polish: no dive motion into stack/splits; blade face doesn't
    roll open/closed; skill-stick gestures untested on a real pad (owner).
 3. AI: teammates <2 m apart in ~18% of frames; OZ forwards could go lower.
-4. Skaters: breezers now padded (v11); next: socks/shin-pad shape at the
-   knee, glove cuffs, jersey hem folds.
+4. Skaters: knee cap knobby in a deep bend; teal thigh sock visible inside
+   the far breezer opening; stripe edge wobbles; glove fingers blobby
+   (glove-v1.glb); cuff camera shots hide the top hand; jersey hem folds.
 
 ## Decisions
 - 2026-11-07: downloaded models/brands allowed with logos, names and signatures
@@ -208,6 +229,10 @@ tests/test_faceoff_alignment.gd checks both end dots.
 - The game ships Forward+; gl_compatibility renders (no SSIL/SSAO) make navy
   and undersides read near-black. Judge looks in Forward+ via lavapipe (see
   CLAUDE.md, ~80 s/shot); the hawkey env setup script installs the driver.
+- Parallel agents ("ultracode" - not installed; owner's word for parallel
+  sub-agents): worktrees may start on `main` (README only) - branch from the
+  prototype head first. Match renders write a shared
+  /tmp/hawkey-match-preview.png that parallel agents can overwrite.
 - Cloud container: if `godot` is missing, the session is not on the "hawkey"
   environment; `main` is only a README - the project is on
   prototype/skating-puck-lab.
