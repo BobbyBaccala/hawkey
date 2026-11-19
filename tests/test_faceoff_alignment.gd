@@ -4,6 +4,9 @@ extends SceneTree
 ## hash marks with a D below them toward the net and the other D low behind
 ## the centre; nobody lines up along the boards beside another player. The
 ## attacking team has a winger on each hash and its D at the blue line.
+## Neutral-zone dots and centre ice (2026-11-19): wingers face each other at
+## the circle edge, centres on the dot, neutral-zone D staggered (strong-side
+## D behind the outside winger, the safety deeper in the middle).
 const Arena = preload("res://scripts/arena.gd")
 const T = preload("res://scripts/team_tactics.gd")
 var failures := 0
@@ -54,5 +57,45 @@ func run() -> void:
 		for a in attacking:
 			if int(a.get_meta("slot")) >= 3:
 				check(absf(absf(a.position.z) - (Arena.BLUE_LINE + 1.2)) < 0.5, "Attacking D at the blue line")
+	# Neutral-zone dots and centre ice: centres on the dot, each team's
+	# wingers on either side at the circle edge facing an opponent winger,
+	# everyone on his own side of the dot. At a neutral-zone dot the D
+	# stagger: strong-side D behind the outside winger, the other deeper in
+	# the middle of the ice; nobody parked deep in his own zone.
+	var dots := [Vector3.ZERO]
+	for z in [-Arena.NEUTRAL_DOT_Z, Arena.NEUTRAL_DOT_Z]:
+		for x in [-Arena.DOT_X, Arena.DOT_X]: dots.append(Vector3(x, 0, z))
+	for dot in dots:
+		scene.next_faceoff = dot
+		scene.setup_faceoff()
+		var tag := "dot (%.1f, %.1f)" % [dot.x, dot.z]
+		for team in [0, 1]:
+			var back: float = -scene.attack_direction(team)
+			var players: Array = scene.skaters.filter(func(a): return bool(a.get_meta("eligible")) and scene.body_team(a) == team)
+			var others: Array = scene.skaters.filter(func(a): return bool(a.get_meta("eligible")) and scene.body_team(a) != team)
+			var ds := []
+			for a in players:
+				var slot := int(a.get_meta("slot"))
+				var off: Vector3 = a.position - dot
+				check(off.z * back > 0.2, "%s: player %d on his own side of the dot" % [tag, slot])
+				if slot == 0:
+					check(Vector2(off.x, off.z).length() < 1.3, "%s: centre at the dot" % tag)
+				elif slot < 3:
+					check(absf(absf(off.x) - 4.6) < 0.6 or absf(a.position.x) > Arena.HALF_WIDTH - 1.3, "%s: winger at the circle edge (x off %.2f)" % [tag, off.x])
+					check(off.z * back < 1.5, "%s: winger level with the dot" % tag)
+					var faced := false
+					for o in others:
+						if int(o.get_meta("slot")) in [1, 2] and o.position.distance_to(a.position) < 1.6: faced = true
+					check(faced, "%s: winger lined up against an opposing winger" % tag)
+				else:
+					ds.append(a)
+					check(off.z * back > 2.5, "%s: D back of the wingers" % tag)
+					check(absf(a.position.z) < Arena.BLUE_LINE + 6.0, "%s: D not parked deep in his own zone (z %.1f)" % [tag, a.position.z])
+			if dot.x != 0.0 and ds.size() == 2:
+				var b: float = signf(dot.x)
+				var strong = ds[0] if (ds[0].position.x - ds[1].position.x) * b > 0.0 else ds[1]
+				var safety = ds[1] if strong == ds[0] else ds[0]
+				check((safety.position.z - strong.position.z) * back > 1.5, "%s: D staggered (safety deeper than the strong-side D)" % tag)
+				check(absf(safety.position.x) < 2.5, "%s: safety D in the middle of the ice (x %.1f)" % [tag, safety.position.x])
 	print("Faceoff alignment failures: ", failures)
 	quit(1 if failures > 0 else 0)

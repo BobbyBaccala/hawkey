@@ -283,13 +283,17 @@ func _ready() -> void:
 	if "--capture" in OS.get_cmdline_user_args():
 		# Normal live match, no staged image substitution.
 		match_state.phase_timer = 0.3
-		# --faceoff holds the lineup (--faceoff-end: at an end-zone dot).
+		# --faceoff holds the lineup (--faceoff-end / --faceoff-neutral: at an
+		# end-zone / neutral-zone dot).
 		# --faceoff-drop / --faceoff-draw: drop it and capture the puck falling
 		# from the linesman's hand / the winner's sweep.
 		if Array(OS.get_cmdline_user_args()).any(func(a): return str(a).begins_with("--faceoff")):
 			match_state.phase_timer = 999.0
 			if "--faceoff-end" in OS.get_cmdline_user_args():
 				next_faceoff = Vector3(Arena.DOT_X,0,-Arena.END_DOT_Z)
+				setup_faceoff()
+			if "--faceoff-neutral" in OS.get_cmdline_user_args():
+				next_faceoff = Vector3(Arena.DOT_X,0,-Arena.NEUTRAL_DOT_Z)
 				setup_faceoff()
 	# The title screen shows in a real window only: headless tests and captures
 	# go straight to the game (--title forces it for screenshots).
@@ -404,6 +408,11 @@ func start_from_title() -> void:
 const FACEOFF_HASH_X := 4.6
 const FACEOFF_HASH_Z := 0.6
 const FACEOFF_STACK := 1.1
+## Neutral-zone dot D (across toward the boards, back toward own goal; m):
+## strong-side D behind the outside winger, weak-side D the safety in the
+## middle of the ice.
+const FACEOFF_NZ_D_STRONG := Vector2(2.6, 4.0)
+const FACEOFF_NZ_D_SAFETY := Vector2(-6.2, 6.5)
 func setup_faceoff() -> void:
 	for actor in skaters: actor.get_child(1).stop_mocap()
 	carrier = null
@@ -462,6 +471,14 @@ func setup_faceoff() -> void:
 				actor.position=Vector3(dot.x+boards_side*1.2,0,dot.z+end_*3.2)
 			else:
 				actor.position=Vector3(dot.x-boards_side*3.8,0,dot.z+end_*3.4)
+		# Neutral-zone dots: the D stagger - the strong-side D just behind the
+		# outside winger, the other back in the middle of the ice as the safety
+		# (both stood 8 m straight back, the deep team 6 m inside its own zone).
+		elif slot>=3 and absf(next_faceoff.x)>0.5:
+			var boards_nz:=signf(next_faceoff.x)
+			var strong:=TeamTactics.side_for(slot,sign_)==boards_nz
+			var back:=FACEOFF_NZ_D_STRONG if strong else FACEOFF_NZ_D_SAFETY
+			actor.position=Vector3(next_faceoff.x+boards_nz*back.x,0,next_faceoff.z-sign_*back.y)
 		actor.position.x=clampf(actor.position.x,-(Arena.HALF_WIDTH-1.0),Arena.HALF_WIDTH-1.0)
 		actor.position.z=clampf(actor.position.z,-(Arena.GOAL_LINE-0.8),Arena.GOAL_LINE-0.8)
 		actor.velocity = Vector3.ZERO
