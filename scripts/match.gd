@@ -104,6 +104,14 @@ var touch_chain: Array = []
 ## The user's recent right-stick samples ([time, Vector2]) for skill-stick dekes.
 var skill_history: Array = []
 var auto_lines := true
+## Goalie read time (s): a shot has to be in flight this long before the
+## goalie commits to a save; until then he holds what he was doing. He used
+## to pick the exact save on the frame of release, so only one-timers ever
+## beat him clean (sim goal logs 2026-11-19: 1.75 goals/team, .934). Shots
+## from distance still leave plenty of time; quick shots in tight do not.
+const GOALIE_READ := 0.16
+const GOALIE_READ_BODY := 0.30   # m either side of his centre: read at once
+var goalie_threat_time: Array[float] = [0.0, 0.0]
 var goalie_targets: Array[Vector3] = [Vector3(0,0,-(Arena.GOAL_LINE-1.0)),Vector3(0,0,Arena.GOAL_LINE-1.0)]
 var goalie_reaction := 0.0
 var goalie_contact_timer := 0.0
@@ -2038,6 +2046,7 @@ func update_goalkeepers(delta: float) -> void:
 		# read interrupts the old one.
 		var kind:=""
 		var crossing:=Vector2.ZERO
+		goalie_threat_time[i]=goalie_threat_time[i]+delta if threat else 0.0
 		if threat:
 			var at:Vector3=puck.position+puck.linear_velocity*intercept_time
 			var local:Vector3=visual.rig.global_transform.affine_inverse()*Vector3(at.x,intercept_height,at.z)
@@ -2045,6 +2054,11 @@ func update_goalkeepers(delta: float) -> void:
 			# A goalie already sliding toward a low, wide shot stacks the pads
 			# (kept once started); see SkaterVisual.choose_save().
 			kind=visual.choose_save(local.x,intercept_height,visual.lateral,visual.save_kind)
+			# Still reading a shot that needs a move: hold what he was doing.
+			# A puck at his body (GOALIE_READ_BODY) needs no read.
+			if goalie_threat_time[i]<GOALIE_READ and absf(local.x)>GOALIE_READ_BODY:
+				kind=visual.save_kind
+				crossing=visual.save_target
 		else:
 			# No shot coming: poke check a carrier in alone, or seal the post
 			# against a puck down low at the goal line (PlayMoves).

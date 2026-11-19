@@ -83,3 +83,4 @@ when the channel was established.
 | [CL-20261117-002](agent_handoffs/claude-to-codex/CL-20261117-002.md) | Claude → Codex | FYI: NHL-like stats - goalie arm boxes, freezes/covers, SOG counting, shooting ratings, assists, line/pair rotation, game simulator | Ready |
 | [CL-20261117-003](agent_handoffs/claude-to-codex/CL-20261117-003.md) | Claude → Codex | FYI: breakout structure, rare clears up the boards, end-zone faceoff D alignment | Ready |
 | [CL-20261118-001](agent_handoffs/claude-to-codex/CL-20261118-001.md) | Claude → Codex | FYI: defending end-zone faceoff alignment (wingers stacked on the middle hash, D below) | Ready |
+| [CL-20261119-001](agent_handoffs/claude-to-codex/CL-20261119-001.md) | Claude → Codex | FYI: neutral-zone faceoff D stagger; goalie read time (goals 1.75 -> 2.38/team, .908) | Ready |
