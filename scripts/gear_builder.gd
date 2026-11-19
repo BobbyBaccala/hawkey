@@ -1292,8 +1292,72 @@ static func visor() -> ArrayMesh:
 	return b.to_mesh(0.15)
 
 ## Hockey sock pulled over the shin guard, with team stripes.
-static func sock(kit: Color, stripe: Color) -> ArrayMesh:
-	var radii := [0.074, 0.078, 0.076, 0.072, 0.068, 0.064, 0.060, 0.057, 0.056]
-	return _limb(radii, 1.0, func(t: float, _a: float) -> Color:
-		if (t > 0.30 and t < 0.40) or (t > 0.46 and t < 0.51): return stripe
-		return kit)
+## Sock over the shin guard, knee to skate cuff: unit length along -Y like
+## _limb (0 at the knee joint, 1 in the cuff), +Z forward, radii in metres.
+## The top is a rounded dome over the joint (SOCK_DOME of the shin length;
+## a flat-topped tube showed a lid in front of a bent knee), the shin guard's
+## knee cap bulges forward (SOCK_KNEECAP m at t ~0.04), the front of the shin
+## plate is flatter and the calf fills out behind. Stripes come from the
+## shader (limb_t = -y), so the dome (y > 0) stays plain.
+const SOCK_DOME := 0.17
+const SOCK_KNEECAP := 0.018
+const SOCK_CALF := 0.012
+const SOCK_RINGS := 30
+const SOCK_SIDES := 24
+const SOCK_RADII := [[0.0, 0.079], [0.15, 0.077], [0.35, 0.071], [0.6, 0.064], [0.85, 0.058], [1.0, 0.056]]
+static func sock_radius(t: float, a: float) -> float:
+	var r := GearProfiles.curve(SOCK_RADII, clampf(t, 0.0, 1.0))
+	var front := maxf(sin(a), 0.0)
+	var back := maxf(-sin(a), 0.0)
+	var cap := exp(-pow((t - 0.04) / 0.11, 2.0)) * front * front
+	var calf := exp(-pow((t - 0.32) / 0.16, 2.0)) * back * back
+	var plate := smoothstep(0.12, 0.3, t) * (1.0 - smoothstep(0.75, 0.95, t)) * front * front * 0.006
+	return r + SOCK_KNEECAP * cap + SOCK_CALF * calf - plate
+static func sock(kit: Color, _stripe: Color) -> ArrayMesh:
+	var b := MeshBuilder.new()
+	var rings := []
+	var ring_colors := []
+	for k in range(SOCK_RINGS):
+		var u := float(k) / (SOCK_RINGS - 1)
+		# First 8 rings: the dome (t from -SOCK_DOME to 0), then the shin.
+		var t := -SOCK_DOME * cos(u / 0.27 * PI * 0.5) if u < 0.27 else (u - 0.27) / 0.73
+		var shrink := sin(u / 0.27 * PI * 0.5) if u < 0.27 else 1.0
+		var ring := PackedVector3Array()
+		var cols := PackedColorArray()
+		for s in range(SOCK_SIDES):
+			var a := TAU * s / SOCK_SIDES
+			var r := sock_radius(maxf(t, 0.0), a) * maxf(shrink, 0.12)
+			ring.append(Vector3(cos(a) * r, -t, sin(a) * r))
+			cols.append(kit)
+		rings.append(ring)
+		ring_colors.append(cols)
+	b.add_loft(rings, ring_colors)
+	return b.to_mesh(0.8)
+
+## The sock above the knee, up under the breezer hem (sock_thigh_pose in
+## skater_visual.gd places it): metres along +Y from the knee joint (0) to
+## SOCK_THIGH_LEN, rounded below the joint so it meets the shin sock's dome
+## in any knee bend. Built in metres (not unit length) so the shader's
+## limb_t stays below the stripes.
+const SOCK_THIGH_LEN := 0.17
+static func sock_thigh(kit: Color) -> ArrayMesh:
+	var b := MeshBuilder.new()
+	var rings := []
+	var ring_colors := []
+	var n := 16
+	for k in range(n):
+		var u := float(k) / (n - 1)
+		var r0 := lerpf(0.077, 0.086, u)
+		var y := lerpf(-0.06, SOCK_THIGH_LEN, u)
+		var shrink := 1.0
+		if y < 0.0: shrink = maxf(sqrt(maxf(1.0 - pow(y / 0.07, 2.0), 0.0)), 0.25)
+		var ring := PackedVector3Array()
+		var cols := PackedColorArray()
+		for s in range(SOCK_SIDES):
+			var a := TAU * s / SOCK_SIDES
+			ring.append(Vector3(cos(a) * r0 * shrink, y, sin(a) * r0 * shrink))
+			cols.append(kit)
+		rings.append(ring)
+		ring_colors.append(cols)
+	b.add_loft(rings, ring_colors)
+	return b.to_mesh(0.8)

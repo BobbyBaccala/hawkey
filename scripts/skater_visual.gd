@@ -262,6 +262,8 @@ var pads: Array[Node3D] = []
 var thigh_rises: Array[Node3D] = []
 var pant_legs: Array[MeshInstance3D] = []
 var socks: Array[MeshInstance3D] = []
+## Sock above the knee (Gear.sock_thigh), up the thigh under the breezer hem.
+var sock_thighs: Array[MeshInstance3D] = []
 var push_blend := 0.0
 var push_rate := 0.0
 var posed_head := Vector3.ZERO
@@ -665,6 +667,9 @@ func _ready() -> void:
 				var sock := add_mesh(rig,Gear.sock(kit,Color("#e4e8ea")))
 				sock.material_override=Kit.socks(kit,Color("#e4e8ea"))
 				socks.append(sock)
+				var sock_top := add_mesh(rig,Gear.sock_thigh(kit))
+				sock_top.material_override=sock.material_override
+				sock_thighs.append(sock_top)
 		var skate := Node3D.new()
 		rig.add_child(skate)
 		build_skate(skate)
@@ -1332,9 +1337,33 @@ func kit_garments() -> Dictionary:
 	var pants_arrays: Array = pants_src.mesh.surface_get_arrays(0)
 	var pants_index: PackedInt32Array = pants_arrays[Mesh.ARRAY_INDEX]
 	var pants_per: int = (pants_arrays[Mesh.ARRAY_BONES] as PackedInt32Array).size()/maxi(1,(pants_arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size())
-	_kit_cache["pants"] = [garment_surface(pants_arrays,pants_index,pants_per,func(p: Vector3,n: Vector3) -> Array: return [Vector2(p.x,p.y),Vector2(clampf(n.x*signf(p.x),0.0,1.0),p.y)],BREEZER_SHELL),pants_src.skin]
+	_kit_cache["pants"] = [garment_surface(pants_arrays,pants_index,pants_per,func(p: Vector3,_n: Vector3) -> Array: return [Vector2(p.x,p.y),Vector2(breezer_side_out(p),p.y)],BREEZER_SHELL),pants_src.skin]
 	scene.free()
 	return _kit_cache
+
+## Breezer side-stripe coordinate (UV2.x; the kit shader draws the stripe
+## where it passes 0.975): how squarely a rest point faces outward round its
+## leg's axis (straight up from the hip joint, then hip -> knee). From the
+## position, not the vertex normal: the quilted pad bumps tipped the normals
+## and tore the stripe into a jagged band.
+func breezer_side_out(p: Vector3) -> float:
+	var sfx := ".L" if p.x > 0.0 else ".R"
+	var hip: Vector3 = (rest["upperleg01"+sfx] as Transform3D).origin
+	var knee: Vector3 = (rest["lowerleg01"+sfx] as Transform3D).origin
+	var outward := Vector3.RIGHT*signf(p.x)
+	# Leg axis below the hip, vertical above it, blended over the hip so the
+	# stripe has no step where they meet.
+	var w := smoothstep(hip.y-0.05,hip.y+0.07,p.y)
+	var facing := 0.0
+	for k in range(2):
+		var axis := (hip-knee).normalized() if k == 0 else Vector3.UP
+		var c := Geometry3D.get_closest_point_to_segment_uncapped(p,hip,hip+axis)
+		var radial := p-c
+		radial -= axis*radial.dot(axis)
+		var out := (outward-axis*axis.dot(outward)).normalized()
+		var f := radial.normalized().dot(out) if radial.length() > 0.001 else 0.0
+		facing += f*(1.0-w if k == 0 else w)
+	return clampf(facing,0.0,1.0)
 
 ## One welded, smooth-shaded surface holding the given triangles of an
 ## imported skinned mesh, with UVs from uv_of(rest point) and tangents.
@@ -2171,9 +2200,14 @@ func pose(speed: float, turn: float) -> void:
 			skates[i].basis=Basis(skates[i].basis.get_rotation_quaternion().slerp(on_leg.get_rotation_quaternion(),tipped))
 			skates[i].position=ankle-skates[i].basis*Vector3(0,0.0525,0)
 		if socks.size()>i:
-			# Sock and shin-guard knee cap overlap the bottom of the pants.
-			# The sock runs down the shin into the skate cuff (cuff top ~0.15 m).
-			fit_limb(socks[i],knee.lerp(hip,0.12),ankle+cuff_axis(i,knee,ankle)*0.09,1.0)
+			# Sock over the shin guard from the knee joint (domed knee cap) down
+			# into the skate cuff (cuff top ~0.15 m); the thigh part runs from the
+			# knee up under the breezer hem, so a bent knee shows no lid or gap.
+			fit_limb(socks[i],knee,ankle+cuff_axis(i,knee,ankle)*0.09,1.0)
+		if sock_thighs.size()>i:
+			var up_t:=(hip-knee).normalized()
+			var fwd_t:=(Vector3.BACK-up_t*up_t.dot(Vector3.BACK)).normalized()
+			sock_thighs[i].transform=Transform3D(Basis(up_t.cross(fwd_t),up_t,fwd_t),knee)
 		if skate_cuffs.size()>i:
 			# Cuff: +Y up the shin, +Z toward the toe, pivoting at the ankle.
 			var up_:=cuff_axis(i,knee,ankle)

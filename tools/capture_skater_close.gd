@@ -2,7 +2,8 @@ extends SceneTree
 ## Close-up of one skater's boot/leg join and stick, for equipment review.
 ## xvfb-run -a -s "-screen 0 1728x1080x24" godot --rendering-method gl_compatibility --rendering-driver opengl3 --resolution 1728x1080 --script tools/capture_skater_close.gd
 ## Writes /tmp/hawkey-skate-side.png, -skate-front.png, -stick.png, -full.png,
-## -torso.png, -torso-back.png, -helmet.png, -glove.png, -front.png
+## -torso.png, -torso-back.png, -helmet.png, -glove.png, -front.png, -knee.png,
+## -knee-side.png, -cuff0.png, -cuff1.png
 ## (--out=<prefix> replaces /tmp/hawkey).
 func _initialize() -> void: call_deferred("run")
 
@@ -56,6 +57,13 @@ func run() -> void:
 	var glove: Vector3 = visual.skater_gloves[0].global_position
 	await shot(cam, glove + Vector3(0.35, 0.18, 0.35), glove, 35, out + "-glove.png")
 	await shot(cam, Vector3(2.6, 1.1, 0.2), Vector3(0, 0.8, 0), 40, out + "-front.png")
+	# Knee / sock / breezer hem join: front three-quarter and side, low.
+	await shot(cam, Vector3(1.05, 0.62, 0.55), Vector3(0, 0.48, 0), 34, out + "-knee.png")
+	await shot(cam, Vector3(0.15, 0.6, 1.25), Vector3(0, 0.48, 0), 34, out + "-knee-side.png")
+	# Glove cuff and forearm join (both gloves).
+	for gi in range(visual.skater_gloves.size()):
+		var g: Vector3 = visual.skater_gloves[gi].global_position
+		await shot(cam, g + Vector3(0.30, 0.10, -0.32 if gi == 1 else 0.32), g + Vector3(0, 0.02, 0), 36, out + "-cuff%d.png" % gi)
 	# Blade and hosel: forehand side, low, and from above the toe.
 	var heel_w: Vector3 = visual.stick_blade.global_transform * Vector3(-visual.stick_blade_length * 0.48, 0, 0)
 	var fore: Vector3 = -visual.stick_blade.global_basis.z

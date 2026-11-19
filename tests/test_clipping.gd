@@ -182,7 +182,10 @@ func gear_solids(v) -> Dictionary:
 		if v.pant_legs.size() > i and not v.mesh_kit:
 			solids["pants" + side] = Solid.new("pants" + side, [v.pant_legs[i]])
 		if v.socks.size() > i:
-			solids["sock" + side] = Solid.new("sock" + side, [v.socks[i]])
+			var sock_parts: Array = [v.socks[i]]
+			if v.sock_thighs.size() > i:
+				sock_parts.append(v.sock_thighs[i])   # sock above the knee, under the breezer hem
+			solids["sock" + side] = Solid.new("sock" + side, sock_parts)
 	if v.mesh_kit:
 		# Sculpted breezers: one skinned mesh over both legs.
 		solids["pants"] = Solid.new("pants", [v.kit_pants])
