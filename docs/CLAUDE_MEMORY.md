@@ -172,8 +172,12 @@ tests/test_knee_sock.gd. Close-up shots knee/knee-side/cuff in
 capture_skater_close.gd.
 
 ## Open defects / next steps
-1. Goals 2.38/team (NHL ~3.0); a 4-game batch swings +-0.5 - run a second
-   batch before tuning further (try GOALIE_READ ~0.18). SOG 25.9, low end.
+1. Goals: second batch (seeds 21-24, 2026-11-20) 2.62/team, .902 sv%,
+   26.9 SOG (games 2-1, 4-3, 5-3 on 15-31 shots, 3-0); with seeds 11-14
+   (2.38) about 2.5/team over 8 games. Still under NHL ~3.0 but in range on
+   SOG and sv%; next lever GOALIE_READ ~0.18 only if a third batch agrees.
+   TOR (home) had 6 of the 7 point-per-game players in batch 2 - check for
+   a home/away bias.
 2. Strokes polish: no dive motion into stack/splits; blade face doesn't
    roll open/closed; skill-stick gestures untested on a real pad (owner).
 3. AI: teammates <2 m apart in ~18% of frames; OZ forwards could go lower.
