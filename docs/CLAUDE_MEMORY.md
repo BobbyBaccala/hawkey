@@ -4,7 +4,7 @@ Read this first each session; update it before finishing (`/update-memory`).
 Keep it short: current state, decisions, gotchas, next steps. History lives in
 the run log at the bottom of `docs/BACKLOG.md`.
 
-_Last updated: 2026-11-19 (cloud session, branch prototype/skating-puck-lab)._
+_Last updated: 2026-11-20 (cloud session, branch prototype/skating-puck-lab)._
 
 ## Owner and working style
 - Owner: Ethan. Wants visible progress on the player and goalie models every
@@ -158,6 +158,11 @@ every 8 m five-hole shot went in). 4 games seeds 11-14: goals 1.75 -> 2.38 a
 team, sv% .934 -> .908, SOG 26.4 -> 25.9, 0 -> 3 players at 1 P/GP; gallery
 100% -> 94%.
 
+Gloves v2 (2026-11-20, assets/gear/glove-v2.glb, tools/blender/glove_v2.py
+finger_roll / SEAM): each finger one continuous padded roll round the shaft
+(v1: three egg pillows per finger, 21 mesh pieces); Kit.gloves() fine nylon
+grain (0.28 at 70 tiles, sheen 0.4). test_kit_geometry counts pieces <= 14.
+
 Knee/socks (2026-11-19, gear_builder.gd Gear.sock / sock_thigh, SOCK_DOME,
 SOCK_KNEECAP, SOCK_CALF, SOCK_THIGH_LEN; skater_visual.gd sock_thighs,
 breezer_side_out()): sock starts at the knee with a domed shin-guard cap,
@@ -174,7 +179,11 @@ capture_skater_close.gd.
 3. AI: teammates <2 m apart in ~18% of frames; OZ forwards could go lower.
 4. Skaters: knee cap knobby in a deep bend; teal thigh sock visible inside
    the far breezer opening; stripe edge wobbles; glove fingers blobby
-   (glove-v1.glb); cuff camera shots hide the top hand; jersey hem folds.
+   fixed in glove v2 (2026-11-20); glove cuff reads pale at grazing light
+   (normals checked: outward); thumb tip pokes out beside the shaft; cuff
+   camera shots hide the top hand; jersey hem folds.
+5. skating.gd:22 slerp logs "axis must be normalized" in sim games when a
+   velocity has a small y (harmless; Codex's file - tell them).
 
 ## Decisions
 - 2026-11-07: downloaded models/brands allowed with logos, names and signatures
