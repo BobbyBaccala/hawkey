@@ -81,6 +81,8 @@ func run() -> void:
 	check(param(a.socks[0], "detail_tex") == Kit.rib_texture() and param(a.socks[0], "sock_stripes") == true, "Socks have a ribbed knit normal and crisp stripes")
 	var glove: MeshInstance3D = a.skater_gloves[0].get_child(0)
 	check(param(glove, "detail_tex") == Kit.leather_texture(), "Gloves have a leather grain normal")
+	# Nylon shell: a fine, shallow grain (0.7 at 40 tiles read as pebbled terrycloth).
+	check(float(param(glove, "detail_strength")) <= 0.35 and float(param(glove, "detail_tiles")) >= 60.0, "Glove grain is coarse")
 	var skate: MeshInstance3D = a.skates[0].get_child(0)
 	check(param(skate, "detail_tex") is Texture2D and param(skate, "metal_from_grey") == true, "Skates have boot grain and steel runner")
 	var shell: MeshInstance3D = a.helmet.get_node("Shell")

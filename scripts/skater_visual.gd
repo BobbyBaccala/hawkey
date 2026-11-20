@@ -60,7 +60,7 @@ static var helmet_parts := {}
 ## finger, backhand rolls, thumb lock and a banded cuff. Vertex colours are
 ## masks recoloured per team (glove_part). false = procedural Gear.skater_glove().
 const MESH_GLOVE := true
-const GloveMeshes = preload("res://assets/gear/glove-v1.glb")
+const GloveMeshes = preload("res://assets/gear/glove-v2.glb")
 static var glove_parts := {}
 const KIT_HEM := 0.9
 const KIT_COLLAR := 1.535

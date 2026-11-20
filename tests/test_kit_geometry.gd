@@ -270,6 +270,10 @@ func gloves_and_helmet(v, Gear) -> void:
 			for p: Vector3 in arrays[Mesh.ARRAY_VERTEX]:
 				if absf(p.x) > absf(thumb_x): thumb_x = p.x
 			check(signf(thumb_x) == v.GLOVE_THUMB[i], "glove %d thumb on the wrong side" % i)
+			# Glove v2: each finger is ONE padded roll round the shaft (v1 had three
+			# separate egg-shaped pillows per finger - a bunch of grapes, 21 pieces).
+			var pieces := connected_pieces(arrays)
+			check(pieces <= 14, "glove %d fingers are separate pillows (%d mesh pieces)" % [i, pieces])
 
 	# --- Helmet: a sculpted shell with visor and fittings, not a ball.
 	var shell: MeshInstance3D = v.helmet.get_node("Shell")
@@ -290,3 +294,29 @@ func gloves_and_helmet(v, Gear) -> void:
 	if v.mesh_kit:
 		check(v.kit_sleeves != null and v.kit_sleeves.skin != null and vertex_count(v.kit_sleeves.mesh) > 400, "sculpted sleeves missing")
 		check(vertex_count(v.jersey.mesh) + vertex_count(v.kit_sleeves.mesh) <= 4400, "sweater too heavy for 12 players")
+
+
+## Number of separate pieces (index-connected, welding equal positions).
+func connected_pieces(arrays: Array) -> int:
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var idx: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	var key_of := {}
+	var parent := PackedInt32Array()
+	var vid := PackedInt32Array()
+	for p in verts:
+		var k := Vector3i((p * 100000.0).round())
+		if not key_of.has(k):
+			key_of[k] = parent.size()
+			parent.append(parent.size())
+		vid.append(key_of[k])
+	var find := func(x: int) -> int:
+		while parent[x] != x: x = parent[x]
+		return x
+	for t in range(0, idx.size(), 3):
+		var a: int = find.call(vid[idx[t]])
+		for j in [1, 2]:
+			var b: int = find.call(vid[idx[t + j]])
+			if a != b: parent[b] = a
+	var roots := {}
+	for x in range(parent.size()): roots[find.call(x)] = true
+	return roots.size()

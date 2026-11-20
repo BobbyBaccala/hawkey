@@ -501,8 +501,10 @@ static func socks(kit: Color, stripe: Color) -> ShaderMaterial:
 
 static func gloves() -> ShaderMaterial:
 	return cached("gloves", func() -> ShaderMaterial:
-		var m := _gear(leather_texture(), 40.0, 0.7, 0.55, 0.45)
-		m.set_shader_parameter("sheen", 0.25)
+		# Nylon shell over the padding: a fine, shallow grain (at 0.7 / 40 tiles
+		# the glove read as pebbled terrycloth in close-ups) and a soft sheen.
+		var m := _gear(leather_texture(), 70.0, 0.28, 0.5, 0.45)
+		m.set_shader_parameter("sheen", 0.4)
 		m.set_shader_parameter("albedo_variation", 0.12)
 		m.set_shader_parameter("quilting", 0.6)
 		return m)
