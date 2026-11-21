@@ -1,0 +1,10 @@
+.godot/
+build/
+*.tmp
+
+# Mixamo raw files may not be redistributed (Adobe terms); keep them local.
+assets/mixamo/
+
+# Claude Code: per-machine settings and agent worktrees stay local.
+.claude/settings.local.json
+.claude/worktrees/
