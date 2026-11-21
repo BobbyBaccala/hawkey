@@ -4,7 +4,7 @@ Read this first each session; update it before finishing (`/update-memory`).
 Keep it short: current state, decisions, gotchas, next steps. History lives in
 the run log at the bottom of `docs/BACKLOG.md`.
 
-_Last updated: 2026-11-20 (cloud session, branch prototype/skating-puck-lab)._
+_Last updated: 2026-11-21 (cloud session, branch prototype/skating-puck-lab)._
 
 ## Owner and working style
 - Owner: Ethan. Wants visible progress on the player and goalie models every
@@ -175,17 +175,20 @@ capture_skater_close.gd.
 1. Goals: second batch (seeds 21-24, 2026-11-20) 2.62/team, .902 sv%,
    26.9 SOG (games 2-1, 4-3, 5-3 on 15-31 shots, 3-0); with seeds 11-14
    (2.38) about 2.5/team over 8 games. Still under NHL ~3.0 but in range on
-   SOG and sv%; next lever GOALIE_READ ~0.18 only if a third batch agrees.
-   TOR (home) had 6 of the 7 point-per-game players in batch 2 - check for
-   a home/away bias.
+   SOG and sv%. GOALIE_READ 0.18 tried 2026-11-21 (seeds 31-34): 3.88
+   goals/team, .868 sv%, 29.4 SOG - overshoots, kept 0.16. If tuning again
+   try 0.17. No home/away bias: 48 saved full games, TOR 8.8% / MTL 8.4%
+   shooting on 1346 / 1291 SOG (batch 2's TOR scorers were chance).
 2. Strokes polish: no dive motion into stack/splits; blade face doesn't
    roll open/closed; skill-stick gestures untested on a real pad (owner).
 3. AI: teammates <2 m apart in ~18% of frames; OZ forwards could go lower.
 4. Skaters: knee cap knobby in a deep bend; teal thigh sock visible inside
    the far breezer opening; stripe edge wobbles; glove fingers blobby
    fixed in glove v2 (2026-11-20); glove cuff reads pale at grazing light
-   (normals checked: outward); thumb tip pokes out beside the shaft; cuff
-   camera shots hide the top hand; jersey hem folds.
+   (normals checked: outward); thumb fixed 2026-11-21; cuff
+   camera shots hide the top hand; jersey hem folds; a thin black/white
+   sparkle crack in the jersey mesh by the armpit (back view, sleeve-body
+   join) - geometry, not the side-panel shader (that got AA 2026-11-21).
 5. skating.gd:22 slerp logs "axis must be normalized" in sim games when a
    velocity has a small y (harmless; Codex's file - tell them).
 
