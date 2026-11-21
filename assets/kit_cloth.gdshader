@@ -56,6 +56,9 @@ void vertex() {
 	obj_n = NORMAL;
 }
 
+// Side gusset panel half-width (m from the flank line; = acos(0.985) of the girth).
+const float PANEL_HALF = 0.045;
+
 float band(float x, float a, float b, float aa) {
 	return smoothstep(a - aa, a + aa, x) - smoothstep(b - aa, b + aa, x);
 }
@@ -146,10 +149,16 @@ void fragment() {
 		}
 		// Side gusset panels: a darker strip down each flank from hem to armpit
 		// with a sewn seam line either side, as on a cut-and-sew pro sweater.
-		float flank = abs(cos(TAU * L.x));
-		float panel = smoothstep(0.985 - 0.012, 0.985 + 0.012, flank) * smoothstep(hem_v + 0.09, hem_v + 0.11, L.y) * (1.0 - smoothstep(1.20, 1.22, L.y));
+		// Measured in metres from the flank line (u = 0 or 0.5) with screen-space
+		// AA like the other sewn lines: as a threshold on |cos| (flat at the
+		// flank) the edge and its 2 mm seam had no AA and broke up into a
+		// ragged streak down the side (2026-11-21 close-ups).
+		float flank_m = abs(fract(L.x * 2.0 + 0.5) - 0.5) * 0.5 * metres_per_u;
+		float aa_f = max(fwidth(flank_m) * 0.75, 1e-5);
+		float rows = smoothstep(hem_v + 0.09, hem_v + 0.11, L.y) * (1.0 - smoothstep(1.20, 1.22, L.y));
+		float panel = (1.0 - smoothstep(PANEL_HALF - aa_f, PANEL_HALF + aa_f, flank_m)) * rows;
 		col = mix(col, stripe_color.rgb, 0.42 * panel);
-		float seam_l = (1.0 - smoothstep(0.0, 0.0022, abs(flank - 0.985))) * smoothstep(hem_v + 0.09, hem_v + 0.11, L.y) * (1.0 - smoothstep(1.20, 1.22, L.y));
+		float seam_l = band(flank_m, PANEL_HALF - 0.0015, PANEL_HALF + 0.0015, aa_f) * rows;
 		col *= 1.0 - 0.18 * seam_l;
 		// Under the arms: the sides of the upper torso sit in shadow.
 		float side = pow(abs(cos(TAU * L.x)), 6.0);

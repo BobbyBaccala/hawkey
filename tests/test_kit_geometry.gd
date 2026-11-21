@@ -266,6 +266,14 @@ func gloves_and_helmet(v, Gear) -> void:
 				var d: Vector3 = p - v.GLOVE_HOLE
 				if absf(p.x) < 0.036 and absf(d.y) < 0.009 and absf(d.z) < 0.012: in_hole += 1
 			check(in_hole == 0, "glove %d fist closes over the shaft hole (%d vertices inside)" % [i, in_hole])
+			# The thumb (beyond the fingers, |x| > 0.036) lies alongside the shaft,
+			# not through it: a thumb pad through the shaft left its tip showing as
+			# a loose shard beside the stick (glove v2 before 2026-11-21: 13).
+			var thumb_in := 0
+			for p: Vector3 in arrays[Mesh.ARRAY_VERTEX]:
+				var d: Vector3 = p - v.GLOVE_HOLE
+				if absf(p.x) >= 0.036 and absf(p.x) < 0.10 and absf(d.y) < 0.0095 and absf(d.z) < 0.0125: thumb_in += 1
+			check(thumb_in == 0, "glove %d thumb runs through the shaft (%d vertices inside)" % [i, thumb_in])
 			var thumb_x: float = 0.0
 			for p: Vector3 in arrays[Mesh.ARRAY_VERTEX]:
 				if absf(p.x) > absf(thumb_x): thumb_x = p.x

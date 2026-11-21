@@ -159,8 +159,11 @@ def build(side):
         p.add(*box_pillow(Vector((0, y, z)), ((1, 0, 0), (0, 0, 1), (0, 1, 0)), (0.052, hz, hy), bend=4.5), m)
     # Thumb (two pads) and the stiff thumb lock along its outside.
     t = side
-    p.add(*seg_pillow((0.052 * t, 0.024, 0.012), (0.060 * t, -0.016, 0.006), (t, 0, 0.3), 0.017, 0.016, nu=12, nv=4), 'roll')
-    p.add(*seg_pillow((0.063 * t, -0.020, 0.002), (0.049 * t, -0.052, -0.030), (t, -0.3, 0), 0.015, 0.0145, nu=12, nv=4, e1=0.8), 'roll')
+    # v2: the thumb comes down the palm side of the shaft and presses against
+    # it (v1's lower pad ran straight through the shaft, so the stick hid its
+    # middle and the tip showed as a loose shard beside the shaft).
+    p.add(*seg_pillow((0.052 * t, 0.024, 0.010), (0.062 * t, -0.012, -0.018), (t, 0, 0.3), 0.017, 0.016, nu=12, nv=4), 'roll')
+    p.add(*seg_pillow((0.064 * t, -0.014, -0.034), (0.050 * t, -0.052, -0.040), (t, -0.3, 0), 0.015, 0.0145, nu=12, nv=4, e1=0.8), 'roll')
     p.add(*seg_pillow((0.062 * t, 0.042, 0.020), (0.068 * t, -0.012, 0.015), (t, 0, 0.5), 0.010, 0.012, nu=10, nv=4), 'kit')
     p.ncuff_from = len(p.faces)
     cuff(p)
