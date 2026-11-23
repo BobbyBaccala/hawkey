@@ -145,6 +145,7 @@ func run() -> void:
 	else:
 		check_procedural_pants(Gear, pants)
 	gloves_and_helmet(v, Gear)
+	jersey_angle_seam(v)
 	v.queue_free()
 	await process_frame
 	print("Kit geometry failures: ", failures)
@@ -230,6 +231,20 @@ func check_procedural_pants(Gear, pants: Mesh) -> void:
 		hem_r = maxf(hem_r, absf(pv[Gear.PANTS_SIDES * (Gear.PANTS_RINGS - 3) + k].z))
 		knee_r = maxf(knee_r, absf(pv[Gear.PANTS_SIDES * int((Gear.PANTS_RINGS - 3) * 0.86) + k].z))
 	check(hem_r > knee_r + 0.003, "pants hem does not flare over the knee")
+
+## The body's UV2.x is the angle round the body (wraps 1 -> 0 down one
+## flank): no triangle may interpolate across the wrap (it showed as a
+## sparkling black/white crack under the arm before 2026-11-23).
+func jersey_angle_seam(v) -> void:
+	var a: Array = v.jersey.mesh.surface_get_arrays(0)
+	var uv2: PackedVector2Array = a[Mesh.ARRAY_TEX_UV2]
+	var idx: PackedInt32Array = a[Mesh.ARRAY_INDEX]
+	var bad := 0
+	for t in range(0, idx.size(), 3):
+		var lo := minf(uv2[idx[t]].x, minf(uv2[idx[t + 1]].x, uv2[idx[t + 2]].x))
+		var hi := maxf(uv2[idx[t]].x, maxf(uv2[idx[t + 1]].x, uv2[idx[t + 2]].x))
+		if hi - lo > 0.5: bad += 1
+	check(bad == 0, "%d jersey triangles span the body-angle wrap (sparkle crack)" % bad)
 
 func gloves_and_helmet(v, Gear) -> void:
 

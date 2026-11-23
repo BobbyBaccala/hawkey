@@ -1332,7 +1332,7 @@ func kit_garments() -> Dictionary:
 		var front := (Vector3.BACK-axis*axis.dot(Vector3.BACK)).normalized()
 		var ang := atan2(r.dot(axis.cross(front)),r.dot(front))
 		return [Vector2(absf(ang)/PI,clampf(arc/(l1+l2),0.0,1.0)),Vector2(0.0,p.y)]
-	_kit_cache["body"] = [garment_surface(arrays,body_tris,per,body_uv,Color.WHITE),skin]
+	_kit_cache["body"] = [garment_surface(arrays,body_tris,per,body_uv,Color.WHITE,true),skin]
 	_kit_cache["sleeves"] = [garment_surface(arrays,sleeve_tris,per,sleeve_uv,Color.WHITE),skin]
 	var pants_arrays: Array = pants_src.mesh.surface_get_arrays(0)
 	var pants_index: PackedInt32Array = pants_arrays[Mesh.ARRAY_INDEX]
@@ -1367,7 +1367,7 @@ func breezer_side_out(p: Vector3) -> float:
 
 ## One welded, smooth-shaded surface holding the given triangles of an
 ## imported skinned mesh, with UVs from uv_of(rest point) and tangents.
-func garment_surface(arrays: Array, tris: PackedInt32Array, per: int, uv_of: Callable, tint: Color) -> ArrayMesh:
+func garment_surface(arrays: Array, tris: PackedInt32Array, per: int, uv_of: Callable, tint: Color, wrap_u2 := false) -> ArrayMesh:
 	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 	var bones: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
@@ -1394,6 +1394,7 @@ func garment_surface(arrays: Array, tris: PackedInt32Array, per: int, uv_of: Cal
 				out_b.append(bones[src*per+k] if k < per else 0)
 				out_w.append(weights[src*per+k] if k < per else 0.0)
 		out_i.append(remap[src])
+	if wrap_u2: unwrap_u2_seam(out_v,out_n,out_uv,out_uv2,out_c,out_b,out_w,out_i)
 	var out := []
 	out.resize(Mesh.ARRAY_MAX)
 	out[Mesh.ARRAY_VERTEX] = out_v
@@ -1408,6 +1409,32 @@ func garment_surface(arrays: Array, tris: PackedInt32Array, per: int, uv_of: Cal
 	st.create_from_arrays(out)
 	st.generate_tangents()
 	return st.commit()
+
+## UV2.x is the angle round the body (0..1), so it wraps from 1 to 0 down one
+## flank. A triangle across the wrap interpolated through every angle in a
+## thin sliver, and the knit, panel and stripes squeezed into it showed as a
+## sparkling black/white crack under the arm (2026-11-23 close-ups). Vertices
+## on the low side of such a triangle are duplicated at u + 1 (the shader's
+## uses of the angle are periodic or far from the wrap).
+static func unwrap_u2_seam(v: PackedVector3Array, n: PackedVector3Array, uv: PackedVector2Array, uv2: PackedVector2Array, c: PackedColorArray, b: PackedInt32Array, w: PackedFloat32Array, idx: PackedInt32Array) -> void:
+	var twin := {}
+	for t in range(0,idx.size(),3):
+		var lo := INF
+		var hi := -INF
+		for k in range(3):
+			lo = minf(lo,uv2[idx[t+k]].x)
+			hi = maxf(hi,uv2[idx[t+k]].x)
+		if hi-lo <= 0.5: continue
+		for k in range(3):
+			var i := idx[t+k]
+			if uv2[i].x >= 0.5: continue
+			if not twin.has(i):
+				twin[i] = v.size()
+				v.append(v[i]); n.append(n[i]); uv.append(uv[i]); c.append(c[i])
+				uv2.append(Vector2(uv2[i].x+1.0,uv2[i].y))
+				for j in range(4):
+					b.append(b[i*4+j]); w.append(w[i*4+j])
+			idx[t+k] = twin[i]
 
 func override_pose(name: String, transform_: Transform3D) -> void:
 	var bone := skeleton.find_bone(name)
