@@ -289,6 +289,14 @@ func gloves_and_helmet(v, Gear) -> void:
 				var d: Vector3 = p - v.GLOVE_HOLE
 				if absf(p.x) >= 0.036 and absf(p.x) < 0.10 and absf(d.y) < 0.0095 and absf(d.z) < 0.0125: thumb_in += 1
 			check(thumb_in == 0, "glove %d thumb runs through the shaft (%d vertices inside)" % [i, thumb_in])
+			# A dark liner fills the cuff mouth: the cuff was an open tube and
+			# looking into it showed its pale inside wall (2026-11-25).
+			var liner := 0
+			var cols: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
+			var vs: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			for k in range(vs.size()):
+				if vs[k].y > 0.10 and vs[k].y < 0.175 and cols[k].v < 0.2: liner += 1
+			check(liner >= 36, "glove %d cuff has no dark liner (%d dark vertices in the mouth)" % [i, liner])
 			var thumb_x: float = 0.0
 			for p: Vector3 in arrays[Mesh.ARRAY_VERTEX]:
 				if absf(p.x) > absf(thumb_x): thumb_x = p.x

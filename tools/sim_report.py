@@ -16,7 +16,9 @@ for g in games:
         pts[k][0] += p["g"]; pts[k][1] += p["a"]; pts[k][2] += 1
 n = len(games)
 avg = lambda xs: sum(xs) / max(len(xs), 1)
-print(f"{n} games (scaled to 3 periods)")
+part = sum(1 for g in games if g.get("partial"))
+tunes = sorted({json.dumps(g.get("tunes", {}), sort_keys=True) for g in games})
+print(f"{n} games (scaled to 3 periods; {part} partial)  tunes: {', '.join(tunes)}")
 print(f"SOG per team   {avg(sog):5.1f}  range {min(sog):.0f}-{max(sog):.0f}   (NHL 25-30)")
 print(f"attempts/team  {avg(att):5.1f}")
 print(f"goals per team {avg(goals):5.2f}  (NHL ~3.0)")

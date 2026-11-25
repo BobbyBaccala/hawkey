@@ -4,10 +4,14 @@ extends SceneTree
 ## Writes /tmp/hawkey-skate-side.png, -skate-front.png, -stick.png, -full.png,
 ## -torso.png, -torso-back.png, -helmet.png, -glove.png, -front.png, -knee.png,
 ## -knee-side.png, -cuff0.png, -cuff1.png
-## (--out=<prefix> replaces /tmp/hawkey).
+## (--out=<prefix> replaces /tmp/hawkey; --only=torso,glove renders just those
+## shots - each Forward+ shot costs ~10-15 s on lavapipe).
 func _initialize() -> void: call_deferred("run")
 
+var only: PackedStringArray = []
+
 func shot(cam: Camera3D, pos: Vector3, at: Vector3, fov: float, path: String) -> void:
+	if not only.is_empty() and not Array(only).any(func(n): return path.ends_with("-" + n + ".png")): return
 	cam.position = pos
 	cam.look_at(at)
 	cam.fov = fov
@@ -24,6 +28,7 @@ func run() -> void:
 		if arg.begins_with("--speed="): speed = float(arg.substr(8))
 		if arg.begins_with("--phase="): phase = float(arg.substr(8))
 		if arg.begins_with("--out="): out = arg.substr(6)
+		if arg.begins_with("--only="): only = arg.substr(7).split(",")
 	var scene = load("res://practice.tscn").instantiate()
 	root.add_child(scene)
 	await physics_frame

@@ -111,6 +111,8 @@ var auto_lines := true
 ## from distance still leave plenty of time; quick shots in tight do not.
 const GOALIE_READ := 0.16
 const GOALIE_READ_BODY := 0.30   # m either side of his centre: read at once
+## Tunable copy of GOALIE_READ (tools/sim_game.gd --tune=goalie_read_time=0.17).
+var goalie_read_time := GOALIE_READ
 var goalie_threat_time: Array[float] = [0.0, 0.0]
 var goalie_targets: Array[Vector3] = [Vector3(0,0,-(Arena.GOAL_LINE-1.0)),Vector3(0,0,Arena.GOAL_LINE-1.0)]
 var goalie_reaction := 0.0
@@ -2056,7 +2058,7 @@ func update_goalkeepers(delta: float) -> void:
 			kind=visual.choose_save(local.x,intercept_height,visual.lateral,visual.save_kind)
 			# Still reading a shot that needs a move: hold what he was doing.
 			# A puck at his body (GOALIE_READ_BODY) needs no read.
-			if goalie_threat_time[i]<GOALIE_READ and absf(local.x)>GOALIE_READ_BODY:
+			if goalie_threat_time[i]<goalie_read_time and absf(local.x)>GOALIE_READ_BODY:
 				kind=visual.save_kind
 				crossing=visual.save_target
 		else:

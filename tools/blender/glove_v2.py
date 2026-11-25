@@ -115,6 +115,29 @@ def finger_roll(x, r, phis, hn, hb, nu=11, e2=0.8, thin=(1.0, 0.95, 0.88)):
     for i in range(nu): faces.append((top + i, top + (i + 1) % nu, last))
     return verts, faces
 
+def liner(part, sides=18):
+    """Dark padded liner inside the cuff mouth with a floor ~7 cm down: the
+    cuff was an open tube, and looking into it showed the pale inside of the
+    cuff wall (2026-11-25 torso shot). Normals face inward/up the opening."""
+    rings = [(0.170, 0.93), (0.140, 0.93), (0.105, 0.93)]
+    o = len(part.v)
+    for (y, k) in rings:
+        a_ = (min(y, 0.165) - 0.050) / 0.115
+        rx = (0.046 + 0.026 * a_) * k; rz = (0.040 + 0.025 * a_) * k
+        for j in range(sides):
+            a = 2 * math.pi * j / sides
+            part.v.append(Vector((math.cos(a) * rx, y, math.sin(a) * rz + 0.004)))
+            part.col.append(MASK['palm'])
+    for r in range(len(rings) - 1):
+        for j in range(sides):
+            j2 = (j + 1) % sides
+            a = o + r * sides; b = a + sides
+            part.faces.append((a + j, a + j2, b + j2, b + j))   # inward
+    c = len(part.v); part.v.append(Vector((0, rings[-1][0], 0.004))); part.col.append(MASK['palm'])
+    f0 = o + (len(rings) - 1) * sides
+    for j in range(sides):
+        part.faces.append((f0 + j, f0 + (j + 1) % sides, c))    # floor, facing up the cuff
+
 def cuff(part, sides=18):
     """Banded gauntlet: three horizontal padded bands, white binding, rolled-in lip."""
     rings = []
@@ -167,6 +190,7 @@ def build(side):
     p.add(*seg_pillow((0.062 * t, 0.042, 0.020), (0.068 * t, -0.012, 0.015), (t, 0, 0.5), 0.010, 0.012, nu=10, nv=4), 'kit')
     p.ncuff_from = len(p.faces)
     cuff(p)
+    liner(p)   # after ncuff_from: keeps its hand-set inward normals
     return p
 
 objs = []
