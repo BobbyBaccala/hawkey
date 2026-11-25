@@ -45,7 +45,7 @@ Godot 4.6.2 is the reference version (`godot` on PATH; on Windows see
 - One test: `godot --headless --script tests/test_clipping.gd`
 - Some tests while iterating: `tools/run_tests.sh goalie clipping` (names containing a word).
 - All tests: `tools/run_tests.sh` (Linux/macOS) or
-  `powershell -File tools/run_tests.ps1` (Windows). ~20–30 min; logs in
+  `powershell -File tools/run_tests.ps1` (Windows). ~6-7 min on 4 cores (2026-11-25; test_boards and test_play_now_ai take most of it); logs in
   `build/test-logs/`. Every suite must exit 0 with 0 failures.
 - Match render: `godot --rendering-method gl_compatibility --resolution 1728x1080 main.tscn -- --capture`
   (writes `hawkey-match-preview.png` in the temp folder; options `--camera=0..3`,

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Runs tests/test_*.gd headless, two at a time (JOBS=n to change), one log per
 # suite in build/test-logs/. Exit status is non-zero if any suite failed.
-#   tools/run_tests.sh                 every suite (~20-30 min on 2 CPUs)
+#   tools/run_tests.sh                 every suite (~6-7 min, 2 at a time on 4 cores, 2026-11-25)
 #   tools/run_tests.sh goalie clipping only suites whose names contain a word
 set -u
 cd "$(dirname "$0")/.."
