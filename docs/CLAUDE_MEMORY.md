@@ -177,7 +177,9 @@ capture_skater_close.gd.
    (2.38) about 2.5/team over 8 games. Still under NHL ~3.0 but in range on
    SOG and sv%. GOALIE_READ 0.18 tried 2026-11-21 (seeds 31-34): 3.88
    goals/team, .868 sv%, 29.4 SOG - overshoots, kept 0.16. If tuning again
-   try 0.17. No home/away bias: 48 saved full games, TOR 8.8% / MTL 8.4%
+   try 0.17. 0.17 tried 2026-11-25 (seeds 51-54, --tune): 2.50 goals,
+   .916, 29.9 SOG = same as 0.16, so 0.18's 3.88 was mostly batch noise;
+   kept 0.16. Tune goals only on 8-12-game batches. No home/away bias: 48 saved full games, TOR 8.8% / MTL 8.4%
    shooting on 1346 / 1291 SOG (batch 2's TOR scorers were chance).
 2. Strokes polish: no dive motion into stack/splits; blade face doesn't
    roll open/closed; skill-stick gestures untested on a real pad (owner).
