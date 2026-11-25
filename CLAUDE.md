@@ -64,6 +64,18 @@ Godot 4.6.2 is the reference version (`godot` on PATH; on Windows see
   (mesa-vulkan-drivers, installed by the hawkey environment's setup script):
   `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1728x1080x24" godot --rendering-method forward_plus --resolution 1728x1080 --script tools/capture_goalie.gd -- --only=front`
   (~80 s per shot).
+- Before/after sheets: `tools/sheet.py out.png --cols 3 --crop x0,y0,x1,y1 --diff
+  "BEFORE=a.png" "AFTER=b.png"` (labels, crop/scale; `--diff` adds a cell with
+  the changed pixels in red and prints their share - check that a fix only
+  touched what it should). `capture_skater_close.gd --only=torso,glove` renders
+  just those shots (~10-15 s each in Forward+ instead of all 15).
+- Stat batches: `tools/sim_batch.sh <label> 51 52 53 54 -- --tune=goalie_read_time=0.17`
+  (full CPU games in parallel into build/sims/<label>/, ~40-60 min for 4).
+  Tune match variables with `--tune`, never by editing constants mid-batch.
+  Games save after every period: a container restart between turns kills
+  running jobs, so start long batches early and wait for them in the same turn.
+- `tools/run_tests.sh` prints each suite's time, remembers them in
+  build/test-durations.txt and starts the longest first.
 - Save the best render as `docs/screenshots/<name>-auto-<YYYYMMDD>.png`, then
   run the import again so its `.import` file exists, and commit both.
 

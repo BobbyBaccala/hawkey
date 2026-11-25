@@ -4,7 +4,7 @@ Read this first each session; update it before finishing (`/update-memory`).
 Keep it short: current state, decisions, gotchas, next steps. History lives in
 the run log at the bottom of `docs/BACKLOG.md`.
 
-_Last updated: 2026-11-21 (cloud session, branch prototype/skating-puck-lab)._
+_Last updated: 2026-11-25 (cloud session, branch prototype/skating-puck-lab)._
 
 ## Owner and working style
 - Owner: Ethan. Wants visible progress on the player and goalie models every
@@ -184,8 +184,8 @@ capture_skater_close.gd.
 3. AI: teammates <2 m apart in ~18% of frames; OZ forwards could go lower.
 4. Skaters: knee cap knobby in a deep bend; teal thigh sock visible inside
    the far breezer opening; stripe edge wobbles; glove fingers blobby
-   fixed in glove v2 (2026-11-20); glove cuff reads pale at grazing light
-   (normals checked: outward); thumb fixed 2026-11-21; cuff
+   fixed in glove v2 (2026-11-20); cuff mouth now has a dark liner
+   (2026-11-25: the open cuff showed its pale inside wall); thumb fixed 2026-11-21; cuff
    camera shots hide the top hand; jersey hem folds; a thin black/white
    sparkle crack in the jersey mesh by the armpit (back view, sleeve-body
    join) - geometry, not the side-panel shader (that got AA 2026-11-21).
@@ -207,6 +207,22 @@ capture_skater_close.gd.
 - Goalie visuals may differ from the save collision proxies; keep the
   proxies' behaviour identical unless gameplay is the task (compare
   `get_goalie_gear()` at sampled poses before/after).
+
+## Process (review 2026-11-25, report published to the owner)
+- Tools: tools/sheet.py (labelled sheets, --crop, --diff = changed pixels),
+  capture_skater_close.gd --only=<shots>, tools/sim_batch.sh + sim_game.gd
+  --tune=<match var>=<v> (never edit constants mid-batch), per-period JSON
+  saves (partial games), run_tests.sh timings + longest-first.
+- Container restarts between turns kill background jobs (lost a 4-game
+  batch 2026-11-23): wait for long batches inside the turn.
+- Before designing a model change, grep tests/ for that area: tests encode
+  owner decisions (kit v11's flared breezers failed the "no drum" taper rule).
+- Owner decisions pending (asked 2026-11-25): (1) Blender 5.2.5 LTS tarball
+  in the env setup script (download verified by checksum; running a fetched
+  binary was blocked by the permission classifier - needs owner OK);
+  (2) Godot 4.6.2 -> 4.6.3 (86 fixes; 4.7.1 later on a branch);
+  (3) stat batches in separate cloud sessions; (4) trim this file to ~100
+  lines.
 
 ## Gotchas
 - Blender in the cloud (2026-11-18; now in the hawkey env setup script, so
