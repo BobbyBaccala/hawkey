@@ -15,8 +15,9 @@ _Last updated: 2026-11-26 (cloud session, branch prototype/skating-puck-lab)._
   plainly what is still wrong. Prefer one agent; parallel only when worth it.
 
 ## Current state (details: run log + docs/DEVELOPMENT.md)
-- Skater kit v11 (`tools/blender/kit_v11.py`): rounded yoke, side panels,
-  padded breezers tapering to the knee (keep opening < 0.88 x thigh: owner
+- Skater kit v12 (`tools/blender/kit_v12.py`): v11 with the hem eased closer
+  over the breezers (HEM_EASE 3.0/2.2 cm; v11's 4.4/3.2 cm made a bell).
+  v11: rounded yoke, side panels, padded breezers tapering to the knee (keep opening < 0.88 x thigh: owner
   rejected a "drum" look). Socks from the knee with shin-guard cap + thigh
   sock (Gear.sock/sock_thigh). Glove v2 (`glove_v2.py`): continuous finger
   rolls, thumb beside the shaft, dark cuff liner. Scanned head with 6 skin
@@ -31,12 +32,12 @@ _Last updated: 2026-11-26 (cloud session, branch prototype/skating-puck-lab)._
   lineups (end-zone wingers stacked on the middle hash, NZ D staggered;
   tests/test_faceoff_alignment.gd).
 - Stats (owner target: 25-30 SOG/team, .870-.930 sv%, a few 1+ P/GP):
-  goalie_read_time 0.16 s gives ~2.5 goals/team, .905, 26.4 SOG (8 games).
-  0.17 = same; 0.18 = 3.88 on 4 games (likely noise; 8-game re-test
-  started 2026-11-26 in two helper cloud sessions).
+  GOALIE_READ 0.18 s since 2026-11-26: 12 games (seeds 31-34, 61-68) =
+  2.92 goals/team, .903 sv%, 30.2 SOG; its three 4-game batches read 3.88,
+  1.75 and 3.12, so never tune on 4 games. 0.16 s gave 2.50 / .905 / 26.4.
 
 ## Open problems / next steps
-1. Goals ~2.5/team vs NHL ~3.0: decide 0.16 vs 0.18 on 12 games.
+1. Stats on target with 0.18 s; SOG at the top edge (30.2) - watch it.
 2. Skaters: knee cap knobby in a deep bend; teal thigh sock visible inside
    the far breezer opening; breezer stripe edge wobbles; jersey hem flares
    stiffly; cuff close-up camera hides the top hand.

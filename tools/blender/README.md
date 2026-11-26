@@ -1,6 +1,6 @@
 # Blender kit pipeline
 
-**Current kit: `kit_v11.py` -> `assets/kit/skater-kit-v11.glb`** (selected in `skater_visual.gd` `KitMeshes`; v10 = rounded shoulder/yoke, v11 = padded breezers, BREEZER_GIRTH/BREEZER_TAPER). History below.
+**Current kit: `kit_v12.py` -> `assets/kit/skater-kit-v12.glb`** (v12 = v11 with the hem eased over the breezers, HEM_EASE) (selected in `skater_visual.gd` `KitMeshes`; v10 = rounded shoulder/yoke, v11 = padded breezers, BREEZER_GIRTH/BREEZER_TAPER). History below.
 v5 (`kit_v5.py`, Codex model session: rounder torso loft, tapered legs) and v2 stay in `assets/kit/` for rollback. v7 = v5 plus a strong breezer taper
 (legs narrow 26 % wide / 22 % deep by the knee) and slimmer thighs (ease 0.034, max radius 0.135), checked by
 `tests/test_kit_geometry.gd` (pants opening < 0.88 x upper-thigh width) and `tests/test_clipping.gd`.
@@ -82,7 +82,7 @@ on the owner's PC: double-click `Start Blender bridge.bat`; it runs any
 
 
 ## Cloud (Linux) sessions
-Blender 4.0 from apt works headless here:
+Blender 5.2.5 LTS (official tarball, set up by the hawkey environment; same as the owner's PC) runs headless here as `blender` (2026-11-26; Blender 4.0 from apt before):
 
     apt-get install -y blender python3-numpy libegl1 libgl1-mesa-dri
     xvfb-run -a blender -b --factory-startup --python-exit-code 1 --python tools/blender/kit_v11.py -- <bridge>

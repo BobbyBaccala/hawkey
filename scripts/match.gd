@@ -109,7 +109,7 @@ var auto_lines := true
 ## to pick the exact save on the frame of release, so only one-timers ever
 ## beat him clean (sim goal logs 2026-11-19: 1.75 goals/team, .934). Shots
 ## from distance still leave plenty of time; quick shots in tight do not.
-const GOALIE_READ := 0.16
+const GOALIE_READ := 0.18
 const GOALIE_READ_BODY := 0.30   # m either side of his centre: read at once
 ## Tunable copy of GOALIE_READ (tools/sim_game.gd --tune=goalie_read_time=0.17).
 var goalie_read_time := GOALIE_READ
