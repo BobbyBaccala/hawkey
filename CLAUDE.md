@@ -36,11 +36,11 @@ you finish. The `/update-memory` command does this.
   independently justified change in the commit.
 
 ## Running things
-Godot 4.6.2 is the reference version (`godot` on PATH; on Windows see
+Godot 4.6.3 is the reference version (4.6.2 until 2026-11-26) (`godot` on PATH; on Windows see
 `tools/setup_windows.ps1`).
 
 - Cloud/Linux session setup (idempotent, ~1 s once cached): `tools/cloud_setup.sh`
-  (Godot 4.6.2, xvfb, and the import only when assets changed).
+  (Godot 4.6.3, xvfb, and the import only when assets changed).
 - Import after pulling or adding assets: `godot --headless --import`
 - One test: `godot --headless --script tests/test_clipping.gd`
 - Some tests while iterating: `tools/run_tests.sh goalie clipping` (names containing a word).

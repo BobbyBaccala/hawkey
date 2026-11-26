@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Idempotent setup for a Linux cloud session (Claude Code on the web, scheduled
 # runs). Safe to run every time; it only does what is missing:
-#   - Godot 4.6.2 headless binary, cached in ~/.cache/hawkey-godot and linked
+#   - Godot 4.6.3 headless binary, cached in ~/.cache/hawkey-godot and linked
 #     to /usr/local/bin/godot (falls back to ~/.local/bin if not writable)
 #   - xvfb for renders (only installs if apt is available and it's missing)
 #   - the Godot import, skipped when .godot/ is newer than every asset
 # Usage: tools/cloud_setup.sh            (from anywhere inside the repo)
 set -euo pipefail
 cd "$(dirname "$0")/.."
-VER=4.6.2
+VER=4.6.3
 NAME="Godot_v${VER}-stable_linux.x86_64"
 CACHE="${HOME}/.cache/hawkey-godot"
 BIN="${CACHE}/${NAME}"

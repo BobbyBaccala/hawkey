@@ -1,6 +1,6 @@
 # One-time setup of Hawkey for Claude Code on Windows.
 # Run from any folder:  powershell -ExecutionPolicy Bypass -File setup_windows.ps1
-# It clones (or updates) the repo, puts Godot 4.6.2 next to it and on PATH for
+# It clones (or updates) the repo, puts Godot 4.6.3 next to it and on PATH for
 # this user, checks Blender and Claude Code, then tells you how to start.
 param(
     [string]$Root = "$env:USERPROFILE\Documents\Hawkey",
@@ -23,13 +23,13 @@ git checkout $Branch
 git pull --rebase origin $Branch
 Pop-Location
 
-# Godot 4.6.2 (the version the tests are run with).
-$godotDir = Join-Path $Root "godot-4.6.2"
-$godotExe = Join-Path $godotDir "Godot_v4.6.2-stable_win64_console.exe"
+# Godot 4.6.3 (the version the tests are run with).
+$godotDir = Join-Path $Root "godot-4.6.3"
+$godotExe = Join-Path $godotDir "Godot_v4.6.3-stable_win64_console.exe"
 if (-not (Test-Path $godotExe)) {
     New-Item -ItemType Directory -Force $godotDir | Out-Null
     $zip = Join-Path $godotDir "godot.zip"
-    Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/4.6.2-stable/Godot_v4.6.2-stable_win64.exe.zip" -OutFile $zip
+    Invoke-WebRequest "https://github.com/godotengine/godot/releases/download/4.6.3-stable/Godot_v4.6.3-stable_win64.exe.zip" -OutFile $zip
     Expand-Archive $zip -DestinationPath $godotDir -Force
     Remove-Item $zip
 }
